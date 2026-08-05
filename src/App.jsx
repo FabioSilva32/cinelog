@@ -32,30 +32,6 @@ const GENRE_MAP = {
   10765:'Sci-Fi & Fantasy', 10764:'Reality',
 };
 
-const DEFAULT_SEEDS = [
-  {
-    id: 'seed-1', tmdb_id: 27205, media_type: 'movie', title: 'Inception',
-    poster_path: '/xlaY2zyzMfkhk0HSC5VUwzoZPU1.jpg', release_year: '2010',
-    genres: ['Action', 'Sci-Fi', 'Adventure'], tmdb_score: 8.4,
-    status: 'watched', rating: 5, review: 'Incredible!', favorite: true,
-    date_added: new Date().toISOString(), tags: ['Favorites', 'Sci-Fi'],
-  },
-  {
-    id: 'seed-2', tmdb_id: 157336, media_type: 'movie', title: 'Interstellar',
-    poster_path: '/yQvGrMoipbRoddT0ZR8tPoR7NfX.jpg', release_year: '2014',
-    genres: ['Adventure', 'Drama', 'Sci-Fi'], tmdb_score: 8.4,
-    status: 'watched', rating: 4.5, review: 'Beautiful.', favorite: true,
-    date_added: new Date(Date.now() - 86400000).toISOString(), tags: ['Favorites'],
-  },
-  {
-    id: 'seed-3', tmdb_id: 194, media_type: 'movie', title: 'Amélie',
-    poster_path: '/nSxDa3M9aMvGVLoItzWTepQ5h5d.jpg', release_year: '2001',
-    genres: ['Comedy', 'Romance'], tmdb_score: 7.9,
-    status: 'plan_to_watch', rating: null, review: '', favorite: false,
-    date_added: new Date(Date.now() - 172800000).toISOString(), tags: [],
-  },
-];
-
 export default function App() {
   return (
     <ToastProvider>
@@ -332,29 +308,7 @@ function AppInner() {
     }
   }, [currentUser, useSupabase]);
 
-  const getDefaultSeeds = () => [
-    {
-      id: 'seed-1', tmdb_id: 27205, media_type: 'movie', title: 'Inception',
-      poster_path: '/xlaY2zyzMfkhk0HSC5VUwzoZPU1.jpg', release_year: '2010',
-      genres: ['Action', 'Sci-Fi', 'Adventure'], tmdb_score: 8.4,
-      status: 'watched', rating: 5, review: 'Incredible!', favorite: true,
-      date_added: new Date().toISOString(), tags: ['Favorites', 'Sci-Fi'],
-    },
-    {
-      id: 'seed-2', tmdb_id: 157336, media_type: 'movie', title: 'Interstellar',
-      poster_path: '/yQvGrMoipbRoddT0ZR8tPoR7NfX.jpg', release_year: '2014',
-      genres: ['Adventure', 'Drama', 'Sci-Fi'], tmdb_score: 8.4,
-      status: 'watched', rating: 4.5, review: 'Beautiful.', favorite: true,
-      date_added: new Date(Date.now() - 86400000).toISOString(), tags: ['Favorites'],
-    },
-    {
-      id: 'seed-3', tmdb_id: 194, media_type: 'movie', title: 'Amélie',
-      poster_path: '/nSxDa3M9aMvGVLoItzWTepQ5h5d.jpg', release_year: '2001',
-      genres: ['Comedy', 'Romance'], tmdb_score: 7.9,
-      status: 'plan_to_watch', rating: null, review: '', favorite: false,
-      date_added: new Date(Date.now() - 172800000).toISOString(), tags: [],
-    },
-  ];
+  const getDefaultSeeds = () => [];
 
   const handleSaveMovie = async (updatedMovie) => {
     const tmdbId = updatedMovie.tmdb_id || updatedMovie.id;
