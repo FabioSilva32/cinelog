@@ -3,41 +3,8 @@ import { Camera, Edit2, Check, Heart, Calendar, Star, Film, Trophy, BarChart3, T
 import { ACHIEVEMENTS, BORDER_STYLES, BADGE_COLORS } from '../utils/achievements';
 import AvatarWithBorder from './AvatarWithBorder';
 
-const MOCK_FRIENDS = [
-  {
-    username: 'CinemaBuff99',
-    displayName: 'Aria Vance',
-    avatar: '/avatar_critic.png',
-    equippedBorder: 'gold',
-    genres: ['Action', 'Sci-Fi', 'Thriller'],
-    library: [
-      { tmdb_id: 27205, title: 'Inception', rating: 5 },
-      { tmdb_id: 157336, title: 'Interstellar', rating: 5 },
-      { tmdb_id: 194, title: 'Amélie', rating: 4 }
-    ]
-  },
-  {
-    username: 'DirectorStan',
-    displayName: 'Stanislav K.',
-    avatar: '/avatar_cinephile.png',
-    equippedBorder: 'purple-glow',
-    genres: ['Drama', 'Mystery', 'Crime'],
-    library: [
-      { tmdb_id: 27205, title: 'Inception', rating: 5 },
-      { tmdb_id: 194, title: 'Amélie', rating: 4 }
-    ]
-  },
-  {
-    username: 'AnimeLover22',
-    displayName: 'Yuki Sato',
-    avatar: '/avatar_watcher.png',
-    equippedBorder: 'none',
-    genres: ['Animation', 'Fantasy', 'Adventure'],
-    library: [
-      { tmdb_id: 194, title: 'Amélie', rating: 5 }
-    ]
-  }
-];
+const MOCK_FRIENDS = [];
+
 
 const DEFAULT_AVATARS = [
   { id: 'cinephile', name: 'Cinephile', path: '/avatar_cinephile.png', border: '2px solid #ec4899', glow: 'rgba(236,72,153,0.4)' },

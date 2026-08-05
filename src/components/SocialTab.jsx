@@ -78,7 +78,7 @@ export default function SocialTab({ currentUser, onMovieClick }) {
           console.warn("Profiles query failed:", error.message);
           return;
         }
-        if (data) setSuggestedUsers(data.filter(u => !following.has(u.id)));
+        if (data) setSuggestedUsers(data.filter(u => !following.has(u.id) && u.username !== 'tester' && u.username !== 'test'));
       })
       .catch(err => console.warn("Profiles query exception:", err));
   }, [currentUser?.id, following]);
@@ -94,7 +94,7 @@ export default function SocialTab({ currentUser, onMovieClick }) {
         .ilike("username", "%" + searchQuery + "%")
         .neq("id", currentUser?.id || "")
         .limit(8);
-      setSearchResults(data || []);
+      setSearchResults((data || []).filter(u => u.username !== 'tester' && u.username !== 'test'));
       setSearching(false);
     }, 350);
     return () => clearTimeout(t);
