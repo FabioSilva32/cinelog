@@ -42,8 +42,50 @@ export default function App() {
 }
 
 function AppInner() {
-  const toast = useToast();
   const [activeTab, setActiveTab] = useState('landing');
+
+  // Synchronize tab navigation with browser history (enables browser Back < and Forward > buttons)
+  const handleTabChange = useCallback((newTab, replace = false) => {
+    setActiveTab(newTab);
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', newTab);
+      if (replace) {
+        window.history.replaceState({ tab: newTab }, '', url.toString());
+      } else {
+        window.history.pushState({ tab: newTab }, '', url.toString());
+      }
+    } catch (e) {}
+  }, []);
+
+  // Listen for browser Back/Forward (popstate) events
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const initialTab = params.get('tab');
+      if (initialTab) {
+        setActiveTab(initialTab);
+        window.history.replaceState({ tab: initialTab }, '', window.location.href);
+      } else {
+        window.history.replaceState({ tab: 'landing' }, '', window.location.href);
+      }
+    } catch (e) {}
+
+    const handlePopState = (e) => {
+      if (e.state && e.state.tab) {
+        setActiveTab(e.state.tab);
+      } else {
+        try {
+          const p = new URLSearchParams(window.location.search);
+          const t = p.get('tab') || 'landing';
+          setActiveTab(t);
+        } catch (err) {}
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
   const [showSettings, setShowSettings] = useState(false);
   const [showCommandCenter, setShowCommandCenter] = useState(false);
   const [cmdQuery, setCmdQuery] = useState('');
@@ -795,7 +837,7 @@ function AppInner() {
       }} />
       <Header
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleTabChange}
         currentUser={currentUser}
         onLogout={handleLogout}
         onOpenAuth={() => setShowAuth(true)}
@@ -807,14 +849,14 @@ function AppInner() {
 
       <main className="page-content">
         {activeTab === 'landing' && (
-          <LandingPage onMovieClick={handleMovieClick} setActiveTab={setActiveTab} library={library} />
+          <LandingPage onMovieClick={handleMovieClick} setActiveTab={handleTabChange} library={library} />
         )}
         {activeTab === 'library' && (
           <LibraryTab
             library={library}
             onRemove={handleRemoveMovie}
             onEditClick={setActiveEditMovie}
-            onOpenExplore={() => setActiveTab('explore')}
+            onOpenExplore={() => handleTabChange('explore')}
             onImportMovies={handleImportMovies}
           />
         )}
