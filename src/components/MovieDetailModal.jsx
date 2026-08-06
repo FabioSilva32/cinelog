@@ -325,24 +325,6 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
         }
       }
 
-      // Merge mock community reviews matching this tmdb_id if available
-      const matchingMocks = MOCK_REVIEWS.filter(r => String(r.tmdb_id) === String(targetTmdbId));
-      matchingMocks.forEach(m => {
-        if (!allReviews.some(existing => existing.username === m.username || existing.id === m.id)) {
-          allReviews.push({
-            id: m.id,
-            user_id: 'mock-' + m.username,
-            username: m.username,
-            displayName: m.displayName,
-            avatar: m.avatar,
-            rating: m.rating,
-            review: m.review,
-            date_added: m.date_added,
-            contains_spoilers: false
-          });
-        }
-      });
-
       if (active) {
         setPublicReviews(allReviews);
         setLoadingReviews(false);

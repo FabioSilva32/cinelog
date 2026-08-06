@@ -145,18 +145,8 @@ function AppInner() {
 
   useEffect(() => {
     if (!useSupabase) {
-      try {
-        const stored = localStorage.getItem('cinelog_library_v2');
-        setLibrary(stored ? JSON.parse(stored) : getDefaultSeeds());
-      } catch {
-        setLibrary(getDefaultSeeds());
-      }
-      try {
-        const storedUser = localStorage.getItem('cinelog_current_user_v1');
-        setCurrentUser(storedUser ? JSON.parse(storedUser) : MOCK_USERS[0]);
-      } catch {
-        setCurrentUser(MOCK_USERS[0]);
-      }
+      setLibrary([]);
+      setCurrentUser(null);
       setIsLibraryLoaded(true);
       return;
     }
@@ -253,42 +243,23 @@ function AppInner() {
               // Keep localStorage in sync as a local cache
               localStorage.setItem('cinelog_library_v2', JSON.stringify(mapped));
             } else {
-              // Supabase returned empty — fall back to localStorage cache
-              // This prevents data loss when Supabase sync hasn't completed yet
-              try {
-                const cached = localStorage.getItem('cinelog_library_v2');
-                const cachedData = cached ? JSON.parse(cached) : [];
-                if (cachedData.length > 0) {
-                  console.log(`Supabase empty, using ${cachedData.length} items from localStorage cache`);
-                  setLibrary(cachedData);
-                } else {
-                  setLibrary([]);
-                }
-              } catch {
-                setLibrary([]);
-              }
+              // New user or empty library in cloud database: start with clean empty library
+              setLibrary([]);
+              localStorage.removeItem('cinelog_library_v2');
             }
             setIsLibraryLoaded(true);
           })
           .catch(err => {
             console.error('Error loading library from cloud database:', err);
-            // On network error, fall back to localStorage
-            try {
-              const cached = localStorage.getItem('cinelog_library_v2');
-              if (cached) setLibrary(JSON.parse(cached));
-            } catch {}
+            setLibrary([]);
             setIsLibraryLoaded(true);
           });
       } else {
-        // Logged out in Supabase mode: load local storage data so user doesn't lose local modifications
+        // Logged out in Supabase mode: clean empty library
         setCurrentUser(null);
         localStorage.removeItem('cinelog_supabase_cached_user');
-        try {
-          const stored = localStorage.getItem('cinelog_library_v2');
-          setLibrary(stored ? JSON.parse(stored) : getDefaultSeeds());
-        } catch {
-          setLibrary(getDefaultSeeds());
-        }
+        localStorage.removeItem('cinelog_library_v2');
+        setLibrary([]);
         setIsLibraryLoaded(true);
       }
     });
@@ -357,16 +328,38 @@ function AppInner() {
         tags: normalizedMovie.tags,
       };
 
-      let { data, error } = await supabase.from('library').upsert(payload, { onConflict: 'user_id,tmdb_id' }).select();
-      if (error) {
-        console.warn("Primary upsert failed, retrying standard upsert:", error.message);
-        const retry = await supabase.from('library').upsert(payload).select();
-        data = retry.data;
-        error = retry.error;
+      // Robust check-and-update/insert to avoid any unique constraint or onConflict errors
+      const { data: existingRows } = await supabase
+        .from('library')
+        .select('id')
+        .eq('user_id', currentUser.id)
+        .eq('tmdb_id', normalizedMovie.tmdb_id);
+
+      let data, error;
+      if (existingRows && existingRows.length > 0) {
+        const targetId = existingRows[0].id;
+        normalizedMovie.id = targetId;
+        const res = await supabase
+          .from('library')
+          .update({
+            ...payload,
+            id: targetId
+          })
+          .eq('id', targetId)
+          .select();
+        data = res.data;
+        error = res.error;
+      } else {
+        const res = await supabase
+          .from('library')
+          .insert(payload)
+          .select();
+        data = res.data;
+        error = res.error;
       }
 
       if (error) {
-        console.error("Supabase upsert failed in handleSaveMovie:", error.message, error.details);
+        console.error("Supabase save failed in handleSaveMovie:", error.message, error.details);
       } else if (data && data[0]) {
         normalizedMovie.id = data[0].id;
       }
@@ -432,11 +425,33 @@ function AppInner() {
         tags: cleanMovie.tags,
       };
 
-      let { data, error } = await supabase.from('library').upsert(addPayload, { onConflict: 'user_id,tmdb_id' }).select();
-      if (error) {
-        const retry = await supabase.from('library').upsert(addPayload).select();
-        data = retry.data;
-        error = retry.error;
+      const { data: existingAddRows } = await supabase
+        .from('library')
+        .select('id')
+        .eq('user_id', currentUser.id)
+        .eq('tmdb_id', cleanMovie.tmdb_id);
+
+      let data, error;
+      if (existingAddRows && existingAddRows.length > 0) {
+        const targetId = existingAddRows[0].id;
+        cleanMovie.id = targetId;
+        const res = await supabase
+          .from('library')
+          .update({
+            ...addPayload,
+            id: targetId
+          })
+          .eq('id', targetId)
+          .select();
+        data = res.data;
+        error = res.error;
+      } else {
+        const res = await supabase
+          .from('library')
+          .insert(addPayload)
+          .select();
+        data = res.data;
+        error = res.error;
       }
 
       if (error) {
