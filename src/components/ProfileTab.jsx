@@ -604,15 +604,48 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
         <div
           className={bannerUrl && bannerUrl.startsWith('animated-') ? `banner-${bannerUrl.replace('animated-', '')}` : ''}
           style={{
-            height: '240px',
+            height: '220px',
             width: '100%',
-            background: (bannerUrl && !bannerUrl.startsWith('animated-'))
-              ? `linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(10,8,19,0.6) 70%, rgba(10,8,19,0.95) 100%), url("${bannerUrl}") center center / cover no-repeat`
-              : (!bannerUrl ? 'linear-gradient(135deg, #1e1b4b 0%, #311b92 50%, #0f172a 100%)' : ''),
             position: 'relative',
-            transition: 'all 0.3s'
+            overflow: 'hidden',
+            background: (!bannerUrl ? 'linear-gradient(135deg, #1e1b4b 0%, #311b92 50%, #0f172a 100%)' : '#08070e')
           }}
         >
+          {bannerUrl && !bannerUrl.startsWith('animated-') && (
+            <>
+              {/* Blurred Background Fill Layer */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '-20px', left: '-20px', right: '-20px', bottom: '-20px',
+                  backgroundImage: `url("${bannerUrl}")`,
+                  backgroundPosition: 'center top',
+                  backgroundSize: 'cover',
+                  filter: 'blur(24px) brightness(0.5)',
+                  transform: 'scale(1.1)'
+                }}
+              />
+              {/* Crisp Foreground Banner Image (Framed at center 15% so character heads & titles fit) */}
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  backgroundImage: `url("${bannerUrl}")`,
+                  backgroundPosition: 'center 15%',
+                  backgroundSize: 'cover',
+                  backgroundRepeat: 'no-repeat'
+                }}
+              />
+              {/* Gradient Darkening Overlay */}
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(10,8,19,0.45) 60%, rgba(10,8,19,0.95) 100%)'
+                }}
+              />
+            </>
+          )}
           <button
             type="button"
             onClick={() => {
@@ -1786,7 +1819,7 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
                 {library.filter(m => m.backdrop_path || m.poster_path).length > 0 ? (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                     {library.filter(m => m.backdrop_path || m.poster_path).slice(0, 18).map(m => {
-                      const coverUrl = m.backdrop_path ? `https://image.tmdb.org/t/p/w780${m.backdrop_path}` : `https://image.tmdb.org/t/p/w780${m.poster_path}`;
+                      const coverUrl = m.backdrop_path ? `https://image.tmdb.org/t/p/w1280${m.backdrop_path}` : `https://image.tmdb.org/t/p/w780${m.poster_path}`;
                       const thumbUrl = m.backdrop_path ? `https://image.tmdb.org/t/p/w300${m.backdrop_path}` : `https://image.tmdb.org/t/p/w300${m.poster_path}`;
                       const isSelected = bannerUrl === coverUrl;
                       return (
