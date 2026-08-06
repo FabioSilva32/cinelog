@@ -604,10 +604,10 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
         <div
           className={bannerUrl && bannerUrl.startsWith('animated-') ? `banner-${bannerUrl.replace('animated-', '')}` : ''}
           style={{
-            height: '180px',
+            height: '240px',
             width: '100%',
             background: (bannerUrl && !bannerUrl.startsWith('animated-'))
-              ? `linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(10,8,19,0.7) 100%), url("${bannerUrl}") center 30%/cover no-repeat`
+              ? `linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(10,8,19,0.6) 70%, rgba(10,8,19,0.95) 100%), url("${bannerUrl}") center center / cover no-repeat`
               : (!bannerUrl ? 'linear-gradient(135deg, #1e1b4b 0%, #311b92 50%, #0f172a 100%)' : ''),
             position: 'relative',
             transition: 'all 0.3s'
