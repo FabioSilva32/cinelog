@@ -597,35 +597,51 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '32px', position: 'relative' }}>
 
       {/* ── PROFILE HERO CARD ── */}
-      <div className="glass" style={{ borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
-        {/* Banner */}
-        <div
-          className={bannerUrl && bannerUrl.startsWith('animated-') ? `banner-${bannerUrl.replace('animated-', '')}` : ''}
-          style={{
-            height: '140px',
-            background: (bannerUrl && !bannerUrl.startsWith('animated-')) ? `url(${bannerUrl}) center/cover no-repeat` : (!bannerUrl ? 'linear-gradient(135deg, rgba(124,111,247,0.3) 0%, rgba(184,124,248,0.2) 50%, rgba(59,130,246,0.15) 100%)' : ''),
-            position: 'relative',
-            transition: 'all 0.3s'
+      <div
+        className={`glass ${bannerUrl && bannerUrl.startsWith('animated-') ? `banner-${bannerUrl.replace('animated-', '')}` : ''}`}
+        style={{
+          borderRadius: 'var(--radius-xl)',
+          overflow: 'hidden',
+          position: 'relative',
+          background: (bannerUrl && !bannerUrl.startsWith('animated-'))
+            ? `linear-gradient(180deg, rgba(10,8,19,0.3) 0%, rgba(10,8,19,0.85) 55%, rgba(10,8,19,0.98) 100%), url(${bannerUrl}) center 25%/cover no-repeat`
+            : undefined,
+          border: '1px solid var(--border)',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.6)'
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => {
+            if (!isEditing) {
+              setDisplayName(currentUser?.displayName || '');
+              setUsername(currentUser?.username || '');
+              setBio(currentUser?.bio || '');
+              setAvatar(currentUser?.avatar || '');
+              setFavorites(Array.from({ length: 6 }, (_, i) => (currentUser?.favorites || [])[i] || null));
+              setEquippedBorder(currentUser?.equippedBorder || 'none');
+              setBannerUrl(currentUser?.bannerUrl || '');
+              setIsEditing(true);
+            }
+            setShowBannerSelector(true);
           }}
+          style={{
+            position: 'absolute', top: '16px', right: '16px',
+            background: 'rgba(8,7,11,0.85)', border: '1px solid var(--accent)',
+            borderRadius: '8px', padding: '8px 16px', fontSize: '12px',
+            fontWeight: 800, color: '#fff', cursor: 'pointer', zIndex: 10,
+            transition: 'all 0.2s', backdropFilter: 'blur(10px)',
+            boxShadow: '0 4px 14px rgba(124,111,247,0.3)'
+          }}
+          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.04)'}
+          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
         >
-          {bannerUrl && !bannerUrl.startsWith('animated-') && <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,8,19,0.35)' }} />}
-          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 30% 50%, rgba(124,111,247,0.1) 0%, transparent 60%), radial-gradient(circle at 70% 50%, rgba(184,124,248,0.08) 0%, transparent 60%)' }} />
-          {isEditing && (
-            <button
-              type="button"
-              onClick={() => setShowBannerSelector(true)}
-              style={{ position: 'absolute', top: '12px', right: '12px', background: 'rgba(8,7,11,0.85)', border: '1px solid var(--border)', borderRadius: '6px', padding: '6px 12px', fontSize: '11px', fontWeight: 700, color: '#fff', cursor: 'pointer', zIndex: 5, transition: 'all 0.2s', backdropFilter: 'blur(8px)' }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
-              onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
-            >
-              🖼️ Change Banner
-            </button>
-          )}
-        </div>
+          🖼️ Change Profile Banner
+        </button>
 
-        <div style={{ padding: '0 28px 28px', position: 'relative' }}>
-          {/* Avatar overlapping banner */}
-          <div style={{ position: 'relative', width: '96px', marginTop: '-48px', marginBottom: '14px' }}>
+        <div style={{ padding: '28px', position: 'relative', zIndex: 2 }}>
+          {/* Avatar Header */}
+          <div style={{ position: 'relative', width: '96px', marginBottom: '16px' }}>
             <AvatarWithBorder
               src={avatarSrc}
               username={currentUser?.username || 'Profile'}
@@ -644,9 +660,9 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
                   setBannerUrl(currentUser?.bannerUrl || '');
                   setIsEditing(true);
                 }}
-                style={{ position: 'absolute', bottom: '2px', right: '2px', width: '28px', height: '28px', borderRadius: '50%', background: 'var(--accent)', border: '2px solid #0a0813', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                style={{ position: 'absolute', bottom: '2px', right: '2px', width: '30px', height: '30px', borderRadius: '50%', background: 'var(--accent)', border: '2px solid #0a0813', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 4px 10px rgba(0,0,0,0.5)' }}
               >
-                <Camera size={13} color="#fff" />
+                <Camera size={14} color="#fff" />
               </button>
             )}
           </div>
@@ -1621,28 +1637,70 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
 
       {/* ── BANNER SELECTOR MODAL ── */}
       {showBannerSelector && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(4,3,8,0.85)', backdropFilter: 'blur(16px)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
-          onClick={() => setShowBannerSelector(false)}>
-          <div className="glass" style={{ width: '100%', maxWidth: '540px', maxHeight: '90vh', borderRadius: '16px', border: '1px solid var(--border)', background: '#0a0813', padding: '24px', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 50px rgba(0,0,0,0.8)' }}
-            onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--accent)' }}>Choose Profile Banner</h3>
-              <button onClick={() => setShowBannerSelector(false)} style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}><X size={18} /></button>
+        <div
+          style={{
+            position: 'fixed',
+            top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(4,3,8,0.88)',
+            backdropFilter: 'blur(16px)',
+            zIndex: 999999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px'
+          }}
+          onClick={() => setShowBannerSelector(false)}
+        >
+          <div
+            className="glass"
+            style={{
+              width: '92vw',
+              maxWidth: '740px',
+              maxHeight: '88vh',
+              borderRadius: '20px',
+              border: '1px solid var(--border)',
+              background: '#0c0a17',
+              padding: '28px',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 24px 60px rgba(0,0,0,0.85)'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div>
+                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  🖼️ Choose Profile Banner
+                </h3>
+                <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                  Select a preset cinematic cover, an animated shop banner, or a backdrop from your library.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowBannerSelector(false)}
+                style={{ background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)', cursor: 'pointer', transition: 'all 0.2s' }}
+                onMouseEnter={e => e.currentTarget.style.color = '#fff'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-dim)'}
+              >
+                <X size={18} />
+              </button>
             </div>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '20px', maxHeight: '480px', overflowY: 'auto', paddingRight: '4px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '24px', maxHeight: '58vh', overflowY: 'auto', paddingRight: '8px' }}>
               {(() => {
                 const owned = (currentUser?.purchasedBanners || []).filter(id => id.startsWith('animated-'));
                 if (owned.length === 0) return null;
                 const BANNERS_MAP = {
-                  'animated-scanlines': { name: 'Film Reel Scanlines', bg: 'linear-gradient(rgba(124, 111, 247, 0.1), rgba(184, 124, 248, 0.05)), #08070b' },
-                  'animated-stars': { name: 'Neon Shooting Stars', bg: 'linear-gradient(135deg, #090615 0%, #150d30 100%)' },
-                  'animated-matrix': { name: 'Retro Matrix Code', bg: '#030a05' }
+                  'animated-scanlines': { name: 'Film Reel Scanlines Banner', bg: 'linear-gradient(rgba(124, 111, 247, 0.1), rgba(184, 124, 248, 0.05)), #08070b' },
+                  'animated-stars': { name: 'Neon Shooting Stars Banner', bg: 'linear-gradient(135deg, #090615 0%, #150d30 100%)' },
+                  'animated-matrix': { name: 'Retro Matrix Code Banner', bg: '#030a05' }
                 };
                 return (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700 }}>EQUIP ANIMATED BANNER</label>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label style={{ fontSize: '11.5px', color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      EQUIP UNLOCKED ANIMATED SHOP BANNER
+                    </label>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                       {owned.map(id => {
                         const info = BANNERS_MAP[id] || { name: 'Animated Banner', bg: '#111' };
                         const isActive = bannerUrl === id;
@@ -1651,13 +1709,14 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
                             key={id}
                             onClick={() => setBannerUrl(id)}
                             style={{
-                              aspectRatio: '16/9', borderRadius: '6px', cursor: 'pointer',
+                              aspectRatio: '16/9', borderRadius: '10px', cursor: 'pointer',
                               border: isActive ? '2px solid var(--accent)' : '1px solid var(--border)',
+                              boxShadow: isActive ? '0 0 14px var(--accent)' : 'none',
                               background: info.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              padding: '4px', textAlign: 'center', overflow: 'hidden'
+                              padding: '8px', textAlign: 'center', overflow: 'hidden'
                             }}
                           >
-                            <span style={{ fontSize: '9px', fontWeight: 800, color: isActive ? 'var(--accent)' : '#fff', lineHeight: 1.1 }}>{info.name}</span>
+                            <span style={{ fontSize: '11px', fontWeight: 800, color: isActive ? 'var(--accent)' : '#fff', lineHeight: 1.2 }}>{info.name}</span>
                           </div>
                         );
                       })}
@@ -1666,9 +1725,11 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
                 );
               })()}
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700 }}>PRESET CINEMATIC BANNERS</label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontSize: '11.5px', color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  PRESET HIGH-RES CINEMATIC BANNERS
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                   {[
                     { name: 'Cyberpunk Neon', url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80' },
                     { name: 'Cosmic Nebula', url: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80' },
@@ -1684,13 +1745,14 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
                       key={b.name}
                       onClick={() => setBannerUrl(b.url)}
                       style={{
-                        aspectRatio: '16/9', borderRadius: '6px', overflow: 'hidden',
+                        aspectRatio: '16/9', borderRadius: '10px', overflow: 'hidden',
                         border: bannerUrl === b.url ? '2px solid var(--accent)' : '1px solid var(--border)',
-                        cursor: 'pointer', position: 'relative'
+                        boxShadow: bannerUrl === b.url ? '0 0 14px var(--accent)' : 'none',
+                        cursor: 'pointer', position: 'relative', background: '#110e1f'
                       }}
                     >
-                      <img src={b.url} alt={b.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.65)', padding: '2px 4px', fontSize: '9px', fontWeight: 700, textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <img src={b.url} alt={b.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%)', padding: '6px', fontSize: '10.5px', fontWeight: 800, textAlign: 'center', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {b.name}
                       </div>
                     </div>
@@ -1698,59 +1760,81 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
                 </div>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700 }}>PASTE CUSTOM IMAGE URL</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '11.5px', color: 'var(--text-dim)', fontWeight: 700 }}>PASTE CUSTOM IMAGE URL</label>
                 <input
                   type="text"
                   placeholder="https://example.com/banner.jpg"
                   value={bannerUrl && bannerUrl.startsWith('animated-') ? '' : (bannerUrl || '')}
                   onChange={e => setBannerUrl(e.target.value)}
                   className="form-input"
-                  style={{ fontSize: '13px' }}
+                  style={{ fontSize: '13px', padding: '10px 14px' }}
                 />
               </div>
 
-              <div style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700, marginTop: '4px' }}>OR SELECT COVER FROM YOUR WATCHED LIBRARY</div>
-              {library.filter(m => m.backdrop_path || m.poster_path).length > 0 ? (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', maxHeight: '180px', overflowY: 'auto', paddingRight: '4px' }}>
-                  {library.filter(m => m.backdrop_path || m.poster_path).slice(0, 15).map(m => {
-                    const coverUrl = m.backdrop_path ? `https://image.tmdb.org/t/p/w780${m.backdrop_path}` : `https://image.tmdb.org/t/p/w780${m.poster_path}`;
-                    const thumbUrl = m.backdrop_path ? `https://image.tmdb.org/t/p/w300${m.backdrop_path}` : `https://image.tmdb.org/t/p/w300${m.poster_path}`;
-                    return (
-                      <div
-                        key={m.id || m.tmdb_id}
-                        onClick={() => setBannerUrl(coverUrl)}
-                        style={{
-                          aspectRatio: '16/9', borderRadius: '6px', overflow: 'hidden',
-                          border: bannerUrl === coverUrl ? '2px solid var(--accent)' : '1px solid var(--border)',
-                          cursor: 'pointer', position: 'relative'
-                        }}
-                      >
-                        <img src={thumbUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85 }} />
-                        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.65)', padding: '2px 4px', fontSize: '9px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
-                          {m.title}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontSize: '11.5px', color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  SELECT COVER FROM YOUR WATCHED LIBRARY
+                </label>
+                {library.filter(m => m.backdrop_path || m.poster_path).length > 0 ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                    {library.filter(m => m.backdrop_path || m.poster_path).slice(0, 18).map(m => {
+                      const coverUrl = m.backdrop_path ? `https://image.tmdb.org/t/p/w780${m.backdrop_path}` : `https://image.tmdb.org/t/p/w780${m.poster_path}`;
+                      const thumbUrl = m.backdrop_path ? `https://image.tmdb.org/t/p/w300${m.backdrop_path}` : `https://image.tmdb.org/t/p/w300${m.poster_path}`;
+                      const isSelected = bannerUrl === coverUrl;
+                      return (
+                        <div
+                          key={m.id || m.tmdb_id}
+                          onClick={() => setBannerUrl(coverUrl)}
+                          style={{
+                            aspectRatio: '16/9',
+                            borderRadius: '10px',
+                            overflow: 'hidden',
+                            border: isSelected ? '2px solid var(--accent)' : '1px solid var(--border)',
+                            boxShadow: isSelected ? '0 0 14px var(--accent)' : 'none',
+                            cursor: 'pointer',
+                            position: 'relative',
+                            background: '#151224'
+                          }}
+                        >
+                          <img src={thumbUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: 0.9 }} />
+                          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%)', padding: '6px', fontSize: '10.5px', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center', color: '#fff' }}>
+                            {m.title}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div style={{ fontSize: '12px', color: 'var(--text-dim)', textAlign: 'center', padding: '12px' }}>
-                  No movies or series found in your library yet.
-                </div>
-              )}
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '12.5px', color: 'var(--text-dim)', textAlign: 'center', padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px solid var(--border)' }}>
+                    No movies or series found in your watched library yet. Add titles to pick your favorite film cover backdrops!
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button className="btn btn-secondary" onClick={() => {
-                setBannerUrl('');
-                if (onUpdateProfile) onUpdateProfile({ bannerUrl: '' });
-                setShowBannerSelector(false);
-              }} style={{ padding: '6px 12px', fontSize: '12px' }}>Reset Banner</button>
-              <button className="btn btn-primary" onClick={() => {
-                if (onUpdateProfile) onUpdateProfile({ bannerUrl });
-                setShowBannerSelector(false);
-              }} style={{ padding: '6px 16px', fontSize: '12px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Done</button>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', paddingTop: '12px', borderTop: '1px solid var(--border)' }}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => {
+                  setBannerUrl('');
+                  if (onUpdateProfile) onUpdateProfile({ bannerUrl: '' });
+                  setShowBannerSelector(false);
+                }}
+                style={{ padding: '8px 16px', fontSize: '12.5px' }}
+              >
+                Reset Banner
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  if (onUpdateProfile) onUpdateProfile({ bannerUrl });
+                  setShowBannerSelector(false);
+                }}
+                style={{ padding: '8px 22px', fontSize: '12.5px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 700 }}
+              >
+                Done
+              </button>
             </div>
           </div>
         </div>
