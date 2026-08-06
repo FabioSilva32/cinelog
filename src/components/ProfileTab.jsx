@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+// Version: 2.4.0 - Banner Alignment Controls
 import { Camera, Edit2, Check, Heart, Calendar, Star, Film, Trophy, BarChart3, TrendingUp, X, Search, Plus, Trash2, Upload } from 'lucide-react';
 import { ACHIEVEMENTS, BORDER_STYLES, BADGE_COLORS } from '../utils/achievements';
 import AvatarWithBorder from './AvatarWithBorder';
