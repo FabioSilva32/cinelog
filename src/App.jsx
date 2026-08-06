@@ -341,7 +341,7 @@ function AppInner() {
       const cleanId = (normalizedMovie.id && uuidRegex.test(normalizedMovie.id)) ? normalizedMovie.id : crypto.randomUUID();
       normalizedMovie.id = cleanId;
 
-      const { data, error } = await supabase.from('library').upsert({
+      const payload = {
         id: cleanId,
         user_id: currentUser.id,
         tmdb_id: normalizedMovie.tmdb_id,
@@ -355,9 +355,15 @@ function AppInner() {
         review: dbReview,
         favorite: normalizedMovie.favorite,
         tags: normalizedMovie.tags,
-      }, {
-        onConflict: 'id'
-      }).select();
+      };
+
+      let { data, error } = await supabase.from('library').upsert(payload, { onConflict: 'user_id,tmdb_id' }).select();
+      if (error) {
+        console.warn("Primary upsert failed, retrying standard upsert:", error.message);
+        const retry = await supabase.from('library').upsert(payload).select();
+        data = retry.data;
+        error = retry.error;
+      }
 
       if (error) {
         console.error("Supabase upsert failed in handleSaveMovie:", error.message, error.details);
@@ -410,7 +416,7 @@ function AppInner() {
       const cleanId = (cleanMovie.id && uuidRegex.test(cleanMovie.id)) ? cleanMovie.id : crypto.randomUUID();
       cleanMovie.id = cleanId;
 
-      const { data, error } = await supabase.from('library').upsert({
+      const addPayload = {
         id: cleanId,
         user_id: currentUser.id,
         tmdb_id: cleanMovie.tmdb_id,
@@ -424,9 +430,14 @@ function AppInner() {
         review: cleanMovie.review,
         favorite: cleanMovie.favorite,
         tags: cleanMovie.tags,
-      }, {
-        onConflict: 'id'
-      }).select();
+      };
+
+      let { data, error } = await supabase.from('library').upsert(addPayload, { onConflict: 'user_id,tmdb_id' }).select();
+      if (error) {
+        const retry = await supabase.from('library').upsert(addPayload).select();
+        data = retry.data;
+        error = retry.error;
+      }
 
       if (error) {
         console.error("Supabase upsert failed in handleAddMovie:", error.message, error.details);
