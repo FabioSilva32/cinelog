@@ -1938,25 +1938,28 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
                   SELECT WIDESCREEN BACKDROP FROM YOUR LIBRARY
                 </label>
                 {(() => {
-                  const validItems = library.filter(m => m.backdrop_path || m.details?.backdrop_path || m.poster_path);
+                  const validItems = library.filter(m => m.backdrop_path || m.details?.backdrop_path);
                   if (validItems.length === 0) {
                     return (
                       <div style={{ fontSize: '12.5px', color: 'var(--text-dim)', textAlign: 'center', padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px solid var(--border)' }}>
-                        No movies or series found in your library yet. Add titles to pick your favorite film cover backdrops!
+                        No movies or series with widescreen backdrops found in your library yet. Add titles to pick your favorite film cover backdrops!
                       </div>
                     );
                   }
                   return (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                       {validItems.slice(0, 18).map(m => {
-                        const path = m.backdrop_path || m.details?.backdrop_path || m.poster_path;
+                        const path = m.backdrop_path || m.details?.backdrop_path;
                         const coverUrl = `https://image.tmdb.org/t/p/w1280${path}`;
                         const thumbUrl = `https://image.tmdb.org/t/p/w500${path}`;
                         const isSelected = bannerUrl === coverUrl;
                         return (
                           <div
                             key={m.id || m.tmdb_id}
-                            onClick={() => setBannerUrl(coverUrl)}
+                            onClick={() => {
+                              setBannerUrl(coverUrl);
+                              setBannerFitMode('cover');
+                            }}
                             style={{
                               aspectRatio: '16/9',
                               borderRadius: '10px',
