@@ -249,24 +249,32 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
       if (isSupabaseConfigured && targetTmdbId) {
         try {
           const tmdbIdNum = Number(targetTmdbId);
-          
-          // Try querying library with JOIN on profiles, supporting both numeric and string tmdb_id
-          let { data, error } = await supabase
+          const isValidNum = !isNaN(tmdbIdNum);
+
+          let dbQuery = supabase
             .from('library')
             .select('id, rating, review, date_added, user_id, contains_spoilers, profiles(username, display_name, avatar_url)')
-            .or(`tmdb_id.eq.${tmdbIdNum},tmdb_id.eq.${String(targetTmdbId)}`)
             .not('review', 'is', null)
             .neq('review', '');
 
+          if (isValidNum) {
+            dbQuery = dbQuery.eq('tmdb_id', tmdbIdNum);
+          } else {
+            dbQuery = dbQuery.eq('title', movie.title);
+          }
+
+          let { data, error } = await dbQuery;
+
           // Fallback if joined query has syntax/relationship error
           if (error) {
-            console.warn("Joined query failed, trying simple query:", error.message);
-            const res = await supabase
+            let fallbackQuery = supabase
               .from('library')
               .select('id, rating, review, date_added, user_id, contains_spoilers')
-              .or(`tmdb_id.eq.${tmdbIdNum},tmdb_id.eq.${String(targetTmdbId)}`)
               .not('review', 'is', null)
               .neq('review', '');
+            if (isValidNum) fallbackQuery = fallbackQuery.eq('tmdb_id', tmdbIdNum);
+            else fallbackQuery = fallbackQuery.eq('title', movie.title);
+            const res = await fallbackQuery;
             data = res.data;
           }
 

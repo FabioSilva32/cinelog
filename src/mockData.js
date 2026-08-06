@@ -13,6 +13,16 @@ export const MOCK_USERS = [
 
 export const MOCK_REVIEWS = [
   {
+    id: "mock-rev-marracarrao",
+    tmdb_id: 969681,
+    username: "marracarrao",
+    displayName: "marracarrao",
+    avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80",
+    rating: 9.5,
+    review: "Absolutely legendary Spider-Man film! The story twists and villain entrance blew me away. 10/10 peak cinema!",
+    date_added: "2026-08-06T00:30:00.000Z"
+  },
+  {
     id: "mock-rev-1",
     tmdb_id: 969681,
     username: "alex_movies",
