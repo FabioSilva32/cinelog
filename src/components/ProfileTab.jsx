@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Camera, Edit2, Check, Heart, Calendar, Star, Film, Trophy, BarChart3, TrendingUp, X, Search, Plus, Trash2, Upload } from 'lucide-react';
 import { ACHIEVEMENTS, BORDER_STYLES, BADGE_COLORS } from '../utils/achievements';
 import AvatarWithBorder from './AvatarWithBorder';
@@ -1636,11 +1637,13 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
       )}
 
       {/* ── BANNER SELECTOR MODAL ── */}
-      {showBannerSelector && (
+      {showBannerSelector && createPortal(
         <div
           style={{
             position: 'fixed',
             top: 0, left: 0, right: 0, bottom: 0,
+            width: '100vw',
+            height: '100vh',
             background: 'rgba(4,3,8,0.88)',
             backdropFilter: 'blur(16px)',
             zIndex: 999999,
@@ -1663,7 +1666,8 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
               padding: '28px',
               display: 'flex',
               flexDirection: 'column',
-              boxShadow: '0 24px 60px rgba(0,0,0,0.85)'
+              boxShadow: '0 24px 60px rgba(0,0,0,0.85)',
+              position: 'relative'
             }}
             onClick={e => e.stopPropagation()}
           >
@@ -1837,7 +1841,8 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Share Card Modal Infographic Overlay */}
