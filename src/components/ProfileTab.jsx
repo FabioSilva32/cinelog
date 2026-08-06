@@ -568,6 +568,24 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
     reader.readAsDataURL(file);
   };
 
+  // Convert uploaded banner image file to base64 Data URL
+  const handleBannerFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    // Limit to 3MB for base64 storage limits
+    if (file.size > 3 * 1024 * 1024) {
+      alert("Image is too large! Please choose an image file smaller than 3MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (uploadEvent) => {
+      setBannerUrl(uploadEvent.target.result); // Base64 data URL
+    };
+    reader.readAsDataURL(file);
+  };
+
   // Filter watched library titles for showcase search matching current popupActiveTab (media_type)
   const filteredLibrary = useMemo(() => {
     // Collect all movie IDs currently assigned to other showcase slots
@@ -1802,55 +1820,90 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '11.5px', color: 'var(--text-dim)', fontWeight: 700 }}>PASTE CUSTOM IMAGE URL</label>
-                <input
-                  type="text"
-                  placeholder="https://example.com/banner.jpg"
-                  value={bannerUrl && bannerUrl.startsWith('animated-') ? '' : (bannerUrl || '')}
-                  onChange={e => setBannerUrl(e.target.value)}
-                  className="form-input"
-                  style={{ fontSize: '13px', padding: '10px 14px' }}
-                />
+                <label style={{ fontSize: '11.5px', color: 'var(--text-dim)', fontWeight: 700 }}>PASTE CUSTOM IMAGE URL OR UPLOAD BANNER FILE</label>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <input
+                    type="text"
+                    placeholder="https://example.com/banner.jpg"
+                    value={bannerUrl && bannerUrl.startsWith('animated-') ? '' : (bannerUrl || '')}
+                    onChange={e => setBannerUrl(e.target.value)}
+                    className="form-input"
+                    style={{ flex: 1, fontSize: '13px', padding: '10px 14px' }}
+                  />
+                  <label
+                    style={{
+                      background: 'rgba(124,111,247,0.18)',
+                      border: '1px solid var(--accent)',
+                      borderRadius: '8px',
+                      padding: '8px 16px',
+                      fontSize: '12px',
+                      fontWeight: 800,
+                      color: '#fff',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      whiteSpace: 'nowrap',
+                      transition: 'all 0.2s',
+                      boxShadow: '0 4px 12px rgba(124,111,247,0.2)'
+                    }}
+                  >
+                    <Upload size={14} /> Upload Banner File...
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleBannerFileUpload}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+                </div>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <label style={{ fontSize: '11.5px', color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   SELECT WIDESCREEN BACKDROP FROM YOUR LIBRARY
                 </label>
-                {library.filter(m => m.backdrop_path).length > 0 ? (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                    {library.filter(m => m.backdrop_path).slice(0, 18).map(m => {
-                      const coverUrl = `https://image.tmdb.org/t/p/w1280${m.backdrop_path}`;
-                      const thumbUrl = `https://image.tmdb.org/t/p/w500${m.backdrop_path}`;
-                      const isSelected = bannerUrl === coverUrl;
-                      return (
-                        <div
-                          key={m.id || m.tmdb_id}
-                          onClick={() => setBannerUrl(coverUrl)}
-                          style={{
-                            aspectRatio: '16/9',
-                            borderRadius: '10px',
-                            overflow: 'hidden',
-                            border: isSelected ? '2px solid var(--accent)' : '1px solid var(--border)',
-                            boxShadow: isSelected ? '0 0 14px var(--accent)' : 'none',
-                            cursor: 'pointer',
-                            position: 'relative',
-                            background: '#151224'
-                          }}
-                        >
-                          <img src={thumbUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: 0.9 }} />
-                          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%)', padding: '6px', fontSize: '10.5px', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center', color: '#fff' }}>
-                            {m.title}
+                {(() => {
+                  const validItems = library.filter(m => m.backdrop_path || m.details?.backdrop_path || m.poster_path);
+                  if (validItems.length === 0) {
+                    return (
+                      <div style={{ fontSize: '12.5px', color: 'var(--text-dim)', textAlign: 'center', padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px solid var(--border)' }}>
+                        No movies or series found in your library yet. Add titles to pick your favorite film cover backdrops!
+                      </div>
+                    );
+                  }
+                  return (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                      {validItems.slice(0, 18).map(m => {
+                        const path = m.backdrop_path || m.details?.backdrop_path || m.poster_path;
+                        const coverUrl = `https://image.tmdb.org/t/p/w1280${path}`;
+                        const thumbUrl = `https://image.tmdb.org/t/p/w500${path}`;
+                        const isSelected = bannerUrl === coverUrl;
+                        return (
+                          <div
+                            key={m.id || m.tmdb_id}
+                            onClick={() => setBannerUrl(coverUrl)}
+                            style={{
+                              aspectRatio: '16/9',
+                              borderRadius: '10px',
+                              overflow: 'hidden',
+                              border: isSelected ? '2px solid var(--accent)' : '1px solid var(--border)',
+                              boxShadow: isSelected ? '0 0 14px var(--accent)' : 'none',
+                              cursor: 'pointer',
+                              position: 'relative',
+                              background: '#151224'
+                            }}
+                          >
+                            <img src={thumbUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: 0.9 }} />
+                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%)', padding: '6px', fontSize: '10.5px', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center', color: '#fff' }}>
+                              {m.title}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div style={{ fontSize: '12.5px', color: 'var(--text-dim)', textAlign: 'center', padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px solid var(--border)' }}>
-                    No movies or series found in your watched library yet. Add titles to pick your favorite film cover backdrops!
-                  </div>
-                )}
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
