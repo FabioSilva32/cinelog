@@ -609,44 +609,11 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
             width: '100%',
             position: 'relative',
             overflow: 'hidden',
-            background: (!bannerUrl ? 'linear-gradient(135deg, #1e1b4b 0%, #311b92 50%, #0f172a 100%)' : '#08070e')
+            background: (bannerUrl && !bannerUrl.startsWith('animated-'))
+              ? `linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(10,8,19,0.5) 65%, rgba(10,8,19,0.96) 100%), url("${bannerUrl}") center 25% / cover no-repeat`
+              : (!bannerUrl ? 'linear-gradient(135deg, #1e1b4b 0%, #311b92 50%, #0f172a 100%)' : '#08070e')
           }}
         >
-          {bannerUrl && !bannerUrl.startsWith('animated-') && (
-            <>
-              {/* Blurred Background Fill Layer */}
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '-20px', left: '-20px', right: '-20px', bottom: '-20px',
-                  backgroundImage: `url("${bannerUrl}")`,
-                  backgroundPosition: 'center top',
-                  backgroundSize: 'cover',
-                  filter: 'blur(24px) brightness(0.5)',
-                  transform: 'scale(1.1)'
-                }}
-              />
-              {/* Crisp Foreground Banner Image (Adjustable Fit: contain = no cropping, cover = widescreen fill) */}
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  backgroundImage: `url("${bannerUrl}")`,
-                  backgroundPosition: bannerFit === 'cover' ? 'center 15%' : 'center center',
-                  backgroundSize: bannerFit === 'cover' ? 'cover' : 'contain',
-                  backgroundRepeat: 'no-repeat'
-                }}
-              />
-              {/* Gradient Darkening Overlay */}
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  background: 'linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(10,8,19,0.45) 60%, rgba(10,8,19,0.95) 100%)'
-                }}
-              />
-            </>
-          )}
           <button
             type="button"
             onClick={() => {
@@ -1728,47 +1695,6 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
             </div>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '24px', maxHeight: '58vh', overflowY: 'auto', paddingRight: '8px' }}>
-              
-              {/* Fit Mode Toggle */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px 14px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                <label style={{ fontSize: '11.5px', color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  BANNER DISPLAY FIT MODE
-                </label>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setBannerFit('contain');
-                      if (onUpdateProfile) onUpdateProfile({ bannerFit: 'contain' });
-                    }}
-                    style={{
-                      flex: 1, padding: '10px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 800,
-                      border: bannerFit === 'contain' ? '2px solid var(--accent)' : '1px solid var(--border)',
-                      background: bannerFit === 'contain' ? 'rgba(124,111,247,0.2)' : 'rgba(0,0,0,0.3)',
-                      color: bannerFit === 'contain' ? '#fff' : 'var(--text-muted)', cursor: 'pointer',
-                      transition: 'all 0.2s', boxShadow: bannerFit === 'contain' ? '0 0 12px rgba(124,111,247,0.3)' : 'none'
-                    }}
-                  >
-                    🔎 FIT WHOLE IMAGE (No Cropping - Fits 100% of Image)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setBannerFit('cover');
-                      if (onUpdateProfile) onUpdateProfile({ bannerFit: 'cover' });
-                    }}
-                    style={{
-                      flex: 1, padding: '10px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 800,
-                      border: bannerFit === 'cover' ? '2px solid var(--accent)' : '1px solid var(--border)',
-                      background: bannerFit === 'cover' ? 'rgba(124,111,247,0.2)' : 'rgba(0,0,0,0.3)',
-                      color: bannerFit === 'cover' ? '#fff' : 'var(--text-muted)', cursor: 'pointer',
-                      transition: 'all 0.2s', boxShadow: bannerFit === 'cover' ? '0 0 12px rgba(124,111,247,0.3)' : 'none'
-                    }}
-                  >
-                    🖼️ FILL BANNER (Widescreen Crop)
-                  </button>
-                </div>
-              </div>
               {(() => {
                 const owned = (currentUser?.purchasedBanners || []).filter(id => id.startsWith('animated-'));
                 if (owned.length === 0) return null;
@@ -1856,13 +1782,13 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <label style={{ fontSize: '11.5px', color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  SELECT COVER FROM YOUR WATCHED LIBRARY
+                  SELECT WIDESCREEN BACKDROP FROM YOUR LIBRARY
                 </label>
-                {library.filter(m => m.backdrop_path || m.poster_path).length > 0 ? (
+                {library.filter(m => m.backdrop_path).length > 0 ? (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                    {library.filter(m => m.backdrop_path || m.poster_path).slice(0, 18).map(m => {
-                      const coverUrl = m.backdrop_path ? `https://image.tmdb.org/t/p/w1280${m.backdrop_path}` : `https://image.tmdb.org/t/p/w780${m.poster_path}`;
-                      const thumbUrl = m.backdrop_path ? `https://image.tmdb.org/t/p/w300${m.backdrop_path}` : `https://image.tmdb.org/t/p/w300${m.poster_path}`;
+                    {library.filter(m => m.backdrop_path).slice(0, 18).map(m => {
+                      const coverUrl = `https://image.tmdb.org/t/p/w1280${m.backdrop_path}`;
+                      const thumbUrl = `https://image.tmdb.org/t/p/w500${m.backdrop_path}`;
                       const isSelected = bannerUrl === coverUrl;
                       return (
                         <div
