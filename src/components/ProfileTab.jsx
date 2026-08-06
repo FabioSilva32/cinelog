@@ -254,7 +254,7 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
   const [selectingSlotIdx, setSelectingSlotIdx] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [popupActiveTab, setPopupActiveTab] = useState('movie'); // 'movie', 'tv', 'anime'
-  const [bannerFit, setBannerFit] = useState(currentUser?.bannerFit || 'contain');
+  const [bannerPosition, setBannerPosition] = useState(currentUser?.bannerPosition || 'top');
 
   const watchedMovies = library.filter(m => m.status === 'watched');
   const watchedCount = watchedMovies.length;
@@ -520,7 +520,7 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
   const handleSave = () => {
     // Strip trailing nulls or keep array representation
     const savedFavorites = favorites.filter(f => f !== null);
-    onUpdateProfile({ displayName, username, bio, avatar, favorites: savedFavorites, equippedBorder, bannerUrl, bannerFit });
+    onUpdateProfile({ displayName, username, bio, avatar, favorites: savedFavorites, equippedBorder, bannerUrl, bannerPosition });
     setIsEditing(false);
   };
 
@@ -610,7 +610,7 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
             position: 'relative',
             overflow: 'hidden',
             background: (bannerUrl && !bannerUrl.startsWith('animated-'))
-              ? `linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(10,8,19,0.5) 65%, rgba(10,8,19,0.96) 100%), url("${bannerUrl}") center 25% / cover no-repeat`
+              ? `linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(10,8,19,0.5) 65%, rgba(10,8,19,0.96) 100%), url("${bannerUrl}") center ${bannerPosition === 'center' ? 'center' : bannerPosition === 'bottom' ? 'bottom' : 'top'} / cover no-repeat`
               : (!bannerUrl ? 'linear-gradient(135deg, #1e1b4b 0%, #311b92 50%, #0f172a 100%)' : '#08070e')
           }}
         >
@@ -1695,6 +1695,38 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
             </div>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '24px', maxHeight: '58vh', overflowY: 'auto', paddingRight: '8px' }}>
+              
+              {/* Vertical Position Adjustment Controls */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px 14px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                <label style={{ fontSize: '11.5px', color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  BANNER VERTICAL ALIGNMENT (FOCUS HEADS / FACES / LOGOS)
+                </label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {[
+                    { id: 'top', label: '⬆️ Top (Faces & Heads)' },
+                    { id: 'center', label: '↔️ Center' },
+                    { id: 'bottom', label: '⬇️ Bottom' }
+                  ].map(pos => (
+                    <button
+                      key={pos.id}
+                      type="button"
+                      onClick={() => {
+                        setBannerPosition(pos.id);
+                        if (onUpdateProfile) onUpdateProfile({ bannerPosition: pos.id });
+                      }}
+                      style={{
+                        flex: 1, padding: '8px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 800,
+                        border: bannerPosition === pos.id ? '2px solid var(--accent)' : '1px solid var(--border)',
+                        background: bannerPosition === pos.id ? 'rgba(124,111,247,0.2)' : 'rgba(0,0,0,0.3)',
+                        color: bannerPosition === pos.id ? '#fff' : 'var(--text-muted)', cursor: 'pointer',
+                        transition: 'all 0.15s', boxShadow: bannerPosition === pos.id ? '0 0 12px rgba(124,111,247,0.3)' : 'none'
+                      }}
+                    >
+                      {pos.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               {(() => {
                 const owned = (currentUser?.purchasedBanners || []).filter(id => id.startsWith('animated-'));
                 if (owned.length === 0) return null;
