@@ -215,14 +215,16 @@ export default function MovieDetailModal({ movie, onClose, onSave, onToggleFavor
   }, [backdropUrl]);
 
 
+  const targetTmdbId = movie.tmdb_id || movie.id;
+
   useEffect(() => {
-    if (!movie.tmdb_id) return;
+    if (!targetTmdbId) return;
     let active = true;
 
     const loadReviews = async () => {
       setLoadingReviews(true);
       
-      const tmdbIdNum = Number(movie.tmdb_id || movie.id);
+      const tmdbIdNum = Number(targetTmdbId);
 
       if (isSupabaseConfigured && tmdbIdNum) {
         try {
@@ -256,7 +258,7 @@ export default function MovieDetailModal({ movie, onClose, onSave, onToggleFavor
               }
             }
 
-            const formatted = data
+            let formatted = data
               .map(item => {
                 const profile = profilesMap[item.user_id];
                 let cleanReview = (item.review || '')
@@ -280,6 +282,22 @@ export default function MovieDetailModal({ movie, onClose, onSave, onToggleFavor
               })
               .filter(Boolean);
 
+            // Include local draft review if present
+            if (review.trim()) {
+              const draftReviewObj = {
+                id: 'draft-review',
+                user_id: 'draft',
+                username: 'You',
+                displayName: 'Your Draft Review',
+                avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80',
+                rating: rating > 0 ? rating : null,
+                review: review.trim(),
+                date_added: new Date().toISOString(),
+                contains_spoilers: containsSpoilers
+              };
+              formatted = [draftReviewObj, ...formatted.filter(r => r.user_id !== 'draft')];
+            }
+
             setPublicReviews(formatted);
           }
         } catch (err) {
@@ -287,22 +305,38 @@ export default function MovieDetailModal({ movie, onClose, onSave, onToggleFavor
           if (active) setPublicReviews([]);
         }
       } else {
-        if (active) setPublicReviews([]);
+        if (active) {
+          if (review.trim()) {
+            setPublicReviews([{
+              id: 'draft-review',
+              user_id: 'draft',
+              username: 'You',
+              displayName: 'Your Draft Review',
+              avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80',
+              rating: rating > 0 ? rating : null,
+              review: review.trim(),
+              date_added: new Date().toISOString(),
+              contains_spoilers: containsSpoilers
+            }]);
+          } else {
+            setPublicReviews([]);
+          }
+        }
       }
       if (active) setLoadingReviews(false);
     };
 
     loadReviews();
     return () => { active = false; };
-  }, [movie.tmdb_id]);
+  }, [targetTmdbId, review, rating, containsSpoilers]);
 
   useEffect(() => {
-    if (!movie.tmdb_id) return;
+    if (!targetTmdbId) return;
     const mt = movie.media_type === 'tv' ? 'tv' : 'movie';
     let active = true;
 
     // Fetch details + credits + similar in parallel
-    const base = `https://api.themoviedb.org/3/${mt}/${movie.tmdb_id}`;
+    const base = `https://api.themoviedb.org/3/${mt}/${targetTmdbId}`;
     const p = `?api_key=${TMDB_KEY}&language=en-US`;
 
     Promise.all([
@@ -320,15 +354,15 @@ export default function MovieDetailModal({ movie, onClose, onSave, onToggleFavor
       setSimilar((sim.results || []).slice(0, 8));
     }).catch(() => {});
 
-  }, [movie.tmdb_id, movie.media_type]);
+  }, [targetTmdbId, movie.media_type]);
 
   useEffect(() => {
-    if (movie.media_type !== 'tv' || !movie.tmdb_id) return;
+    if (movie.media_type !== 'tv' || !targetTmdbId) return;
     
     let active = true;
     setLoadingEpisodes(true);
     
-    const url = `https://api.themoviedb.org/3/tv/${movie.tmdb_id}/season/${selectedSeason}?api_key=${TMDB_KEY}&language=en-US`;
+    const url = `https://api.themoviedb.org/3/tv/${targetTmdbId}/season/${selectedSeason}?api_key=${TMDB_KEY}&language=en-US`;
     
     fetch(url)
       .then(r => r.json())
@@ -349,13 +383,13 @@ export default function MovieDetailModal({ movie, onClose, onSave, onToggleFavor
         }
       });
 
-  }, [movie.tmdb_id, movie.media_type, selectedSeason]);
+  }, [targetTmdbId, movie.media_type, selectedSeason]);
 
   // Fetch streaming availability
   useEffect(() => {
-    if (!movie.tmdb_id) return;
+    if (!targetTmdbId) return;
     const mt = movie.media_type === 'tv' ? 'tv' : 'movie';
-    fetch(`https://api.themoviedb.org/3/${mt}/${movie.tmdb_id}/watch/providers?api_key=${TMDB_KEY}`)
+    fetch(`https://api.themoviedb.org/3/${mt}/${targetTmdbId}/watch/providers?api_key=${TMDB_KEY}`)
       .then(r => r.json())
       .then(data => {
         // Try to get US providers, fall back to first available country
@@ -364,7 +398,7 @@ export default function MovieDetailModal({ movie, onClose, onSave, onToggleFavor
         setWatchProviders(providers);
       })
       .catch(() => {});
-  }, [movie.tmdb_id, movie.media_type]);
+  }, [targetTmdbId, movie.media_type]);
 
   // Auto-calculate main TV series rating average from all rated episodes
   useEffect(() => {
