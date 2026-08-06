@@ -168,6 +168,11 @@ function AppInner() {
           followingCount: 0,
         });
 
+        // Load local shop persistence for this user
+        const localShopStr = localStorage.getItem(`cinelog_shop_${session.user.id}`);
+        let localShop = {};
+        try { if (localShopStr) localShop = JSON.parse(localShopStr); } catch {}
+
         // Parallel load of profile details
         supabase.from('profiles').select('*').eq('id', session.user.id).single()
           .then(({ data: profile }) => {
@@ -179,7 +184,13 @@ function AppInner() {
                 avatar: profile.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80',
                 bio: profile.bio || '',
                 favorites: profile.favorites || [],
-                equippedBorder: profile.equipped_border || localStorage.getItem(`equipped_border_${session.user.id}`) || 'none',
+                equippedBorder: profile.equipped_border || localShop.equippedBorder || localStorage.getItem(`equipped_border_${session.user.id}`) || 'none',
+                spentCinePoints: profile.spent_cine_points ?? localShop.spentCinePoints ?? 0,
+                purchasedBorders: profile.purchased_borders || localShop.purchasedBorders || [],
+                purchasedBadges: profile.purchased_badges || localShop.purchasedBadges || [],
+                purchasedBanners: profile.purchased_banners || localShop.purchasedBanners || [],
+                purchasedThemes: profile.purchased_themes || localShop.purchasedThemes || [],
+                triviaCinePoints: profile.trivia_cine_points ?? localShop.triviaCinePoints ?? 0,
               };
               setCurrentUser(fullUser);
               localStorage.setItem('cinelog_supabase_cached_user', JSON.stringify(fullUser));
@@ -535,11 +546,21 @@ function AppInner() {
   };
 
   const handleUpdateProfile = async (updatedDetails) => {
-    // Immediately update local state
+    // Immediately update local state & local storage cache
     setCurrentUser(prev => {
       const nextUser = { ...prev, ...updatedDetails };
       if (nextUser.id) {
         localStorage.setItem(`equipped_border_${nextUser.id}`, nextUser.equippedBorder || 'none');
+        localStorage.setItem(`cinelog_shop_${nextUser.id}`, JSON.stringify({
+          equippedBorder: nextUser.equippedBorder || 'none',
+          spentCinePoints: nextUser.spentCinePoints || 0,
+          purchasedBorders: nextUser.purchasedBorders || [],
+          purchasedBadges: nextUser.purchasedBadges || [],
+          purchasedBanners: nextUser.purchasedBanners || [],
+          purchasedThemes: nextUser.purchasedThemes || [],
+          triviaCinePoints: nextUser.triviaCinePoints || 0
+        }));
+        localStorage.setItem('cinelog_supabase_cached_user', JSON.stringify(nextUser));
       } else {
         localStorage.setItem('equipped_border_sandbox', nextUser.equippedBorder || 'none');
       }
@@ -553,16 +574,25 @@ function AppInner() {
         bio: updatedDetails.bio !== undefined ? updatedDetails.bio : currentUser.bio,
         avatar_url: updatedDetails.avatar !== undefined ? updatedDetails.avatar : currentUser.avatar,
         favorites: updatedDetails.favorites !== undefined ? updatedDetails.favorites : (currentUser.favorites || []),
-        equipped_border: updatedDetails.equippedBorder !== undefined ? updatedDetails.equippedBorder : (currentUser.equippedBorder || 'none')
+        equipped_border: updatedDetails.equippedBorder !== undefined ? updatedDetails.equippedBorder : (currentUser.equippedBorder || 'none'),
+        spent_cine_points: updatedDetails.spentCinePoints !== undefined ? updatedDetails.spentCinePoints : (currentUser.spentCinePoints || 0),
+        purchased_borders: updatedDetails.purchasedBorders !== undefined ? updatedDetails.purchasedBorders : (currentUser.purchasedBorders || []),
+        purchased_badges: updatedDetails.purchasedBadges !== undefined ? updatedDetails.purchasedBadges : (currentUser.purchasedBadges || []),
+        purchased_banners: updatedDetails.purchasedBanners !== undefined ? updatedDetails.purchasedBanners : (currentUser.purchasedBanners || []),
+        purchased_themes: updatedDetails.purchasedThemes !== undefined ? updatedDetails.purchasedThemes : (currentUser.purchasedThemes || [])
       };
 
       const { error } = await supabase.from('profiles').update(fullPayload).eq('id', currentUser.id);
 
       if (error) {
-        console.warn("Retrying profile save without equipped_border column...", error);
-        const fallbackPayload = { ...fullPayload };
-        delete fallbackPayload.equipped_border;
-        await supabase.from('profiles').update(fallbackPayload).eq('id', currentUser.id);
+        console.warn("Retrying profile save with basic fields...", error.message);
+        await supabase.from('profiles').update({
+          username: fullPayload.username,
+          display_name: fullPayload.display_name,
+          bio: fullPayload.bio,
+          avatar_url: fullPayload.avatar_url,
+          favorites: fullPayload.favorites
+        }).eq('id', currentUser.id);
       }
     }
   };
