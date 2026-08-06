@@ -412,6 +412,52 @@ export const BORDER_STYLES = {
       boxShadow: '0 0 0 2px rgba(124,111,247,0.3), 0 0 25px rgba(124,111,247,0.95), 0 0 10px rgba(251,191,36,0.5), inset 0 0 8px rgba(236,72,153,0.5)',
       animation: 'hue-rotation 4s infinite linear'
     }
+  },
+  'cyber-violet': {
+    name: '🌌 Cyber Violet Aura',
+    style: {
+      border: '4px solid #8b5cf6',
+      boxShadow: '0 0 18px rgba(139,92,246,0.95), 0 0 30px rgba(168,85,247,0.5)',
+      animation: 'pulse-glow 2s infinite alternate'
+    }
+  },
+  'plasma-red': {
+    name: '⚡ Plasma Crimson Pulse',
+    style: {
+      border: '4px solid #ef4444',
+      boxShadow: '0 0 20px rgba(239,68,68,0.95), inset 0 0 8px rgba(248,113,113,0.6)',
+      animation: 'pulse-glow 1.5s infinite alternate'
+    }
+  },
+  'matrix-code': {
+    name: '📟 Matrix Code Shift',
+    style: {
+      border: '4px solid #10b981',
+      boxShadow: '0 0 18px rgba(16,185,129,0.95), inset 0 0 6px rgba(52,211,153,0.5)',
+      animation: 'pulse-glow 2.5s infinite alternate'
+    }
+  },
+  'hyper-drive': {
+    name: '🚀 Hyperdrive Speed',
+    style: {
+      border: '4px solid transparent',
+      backgroundImage: 'linear-gradient(#0a0813, #0a0813), linear-gradient(135deg, #06b6d4, #3b82f6, #60a5fa)',
+      backgroundOrigin: 'border-box',
+      backgroundClip: 'padding-box, border-box',
+      boxShadow: '0 0 22px rgba(6,182,212,0.95), inset 0 0 8px rgba(59,130,246,0.6)',
+      animation: 'pulse-glow 1.8s infinite alternate'
+    }
+  },
+  'royal-amethyst': {
+    name: '💎 Royal Amethyst Crown',
+    style: {
+      border: '4px solid transparent',
+      backgroundImage: 'linear-gradient(#0a0813, #0a0813), linear-gradient(135deg, #c084fc, #fbbf24, #a855f7)',
+      backgroundOrigin: 'border-box',
+      backgroundClip: 'padding-box, border-box',
+      boxShadow: '0 0 25px rgba(192,132,252,0.95), 0 0 10px rgba(251,191,36,0.6)',
+      animation: 'hue-rotation 6s infinite linear'
+    }
   }
 };
 
@@ -439,5 +485,9 @@ export const BADGE_COLORS = {
   'Anime Otaku': { border: '1px solid #a855f7', color: '#c084fc', bg: 'rgba(168,85,247,0.1)' },
   'Tastemaker': { border: '1px solid #f472b6', color: '#f472b6', bg: 'rgba(244,114,182,0.1)' },
   'Grand Collector': { border: '1px solid #fbbf24', color: '#fbbf24', bg: 'rgba(251,191,36,0.15)' },
-  'Creator': { border: '1px solid #fbbf24', color: '#fbbf24', bg: 'linear-gradient(135deg, rgba(251,191,36,0.2) 0%, rgba(184,124,248,0.2) 100%)' }
+  'Creator': { border: '1px solid #fbbf24', color: '#fbbf24', bg: 'linear-gradient(135deg, rgba(251,191,36,0.2) 0%, rgba(184,124,248,0.2) 100%)' },
+  'VIP Cinephile': { border: '1px solid #a855f7', color: '#c084fc', bg: 'rgba(168,85,247,0.15)' },
+  'Popcorn Overlord': { border: '1px solid #f59e0b', color: '#fbbf24', bg: 'rgba(245,158,11,0.15)' },
+  'Midnight Binger': { border: '1px solid #3b82f6', color: '#60a5fa', bg: 'rgba(59,130,246,0.15)' },
+  'Cinema Tycoon': { border: '1px solid #10b981', color: '#34d399', bg: 'rgba(16,185,129,0.15)' }
 };

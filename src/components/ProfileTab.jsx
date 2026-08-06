@@ -1244,11 +1244,13 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
             </h4>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
               {[
-                { id: 'cyber-neon', name: '⚡ Cyberpunk Neon Border', cost: 150, desc: 'Dashed electric cyan glow.' },
-                { id: 'fire-glow', name: '🔥 Solar Flare Border', cost: 250, desc: 'A blazing animated sun border.' },
-                { id: 'crystal-diamond', name: '💎 Crystal Diamond Border', cost: 350, desc: 'Elegantly double-layered clear azure.' }
+                { id: 'cyber-violet', name: '🌌 Cyber Violet Aura', cost: 150, desc: 'Glowing neon violet border with high-intensity pulse.' },
+                { id: 'plasma-red', name: '⚡ Plasma Crimson Pulse', cost: 250, desc: 'An electric blazing plasma red border.' },
+                { id: 'matrix-code', name: '📟 Matrix Code Shift', cost: 350, desc: 'Cascading digital green hacker border.' },
+                { id: 'hyper-drive', name: '🚀 Hyperdrive Speed', cost: 500, desc: 'Cosmic cyan-blue speed particle glow.' },
+                { id: 'royal-amethyst', name: '💎 Royal Amethyst Crown', cost: 750, desc: 'Luxurious deep purple-gold glowing crown border.' }
               ].map(item => {
-                const purchased = unlockedBorders.has(item.id);
+                const purchased = (currentUser?.purchasedBorders || []).includes(item.id) || equippedBorder === item.id;
                 return (
                   <div key={item.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1281,15 +1283,16 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
           {/* Badges Section */}
           <div>
             <h4 style={{ fontSize: '14px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '14px' }}>
-              Rare Profile Badges
+              Exclusive Shop Badges
             </h4>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
               {[
-                { name: 'Master Curator', cost: 100, desc: 'A cyan title indicating a master of movie organization.' },
-                { name: 'Film Legend', cost: 200, desc: 'A prestigious gold title indicating elite cinema status.' },
-                { name: 'Absolute Critic', cost: 300, desc: 'A pink badge reserved for highly opinionated film critics.' }
+                { name: 'VIP Cinephile', cost: 100, desc: 'A royal purple title for dedicated cinema enthusiasts.' },
+                { name: 'Popcorn Overlord', cost: 200, desc: 'An exclusive gold badge for heavy movie marathoners.' },
+                { name: 'Midnight Binger', cost: 300, desc: 'A cosmic blue title for late night film watchers.' },
+                { name: 'Cinema Tycoon', cost: 500, desc: 'A prestigious emerald badge for CinePoints collectors.' }
               ].map(item => {
-                const purchased = unlockedBadges.includes(item.name);
+                const purchased = (currentUser?.purchasedBadges || []).includes(item.name);
                 return (
                   <div key={item.name} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
