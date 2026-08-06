@@ -254,6 +254,7 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
   const [selectingSlotIdx, setSelectingSlotIdx] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [popupActiveTab, setPopupActiveTab] = useState('movie'); // 'movie', 'tv', 'anime'
+  const [bannerFit, setBannerFit] = useState(currentUser?.bannerFit || 'contain');
 
   const watchedMovies = library.filter(m => m.status === 'watched');
   const watchedCount = watchedMovies.length;
@@ -519,7 +520,7 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
   const handleSave = () => {
     // Strip trailing nulls or keep array representation
     const savedFavorites = favorites.filter(f => f !== null);
-    onUpdateProfile({ displayName, username, bio, avatar, favorites: savedFavorites, equippedBorder, bannerUrl });
+    onUpdateProfile({ displayName, username, bio, avatar, favorites: savedFavorites, equippedBorder, bannerUrl, bannerFit });
     setIsEditing(false);
   };
 
@@ -625,14 +626,14 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
                   transform: 'scale(1.1)'
                 }}
               />
-              {/* Crisp Foreground Banner Image (Framed at center 15% so character heads & titles fit) */}
+              {/* Crisp Foreground Banner Image (Adjustable Fit: contain = no cropping, cover = widescreen fill) */}
               <div
                 style={{
                   position: 'absolute',
                   inset: 0,
                   backgroundImage: `url("${bannerUrl}")`,
-                  backgroundPosition: 'center 15%',
-                  backgroundSize: 'cover',
+                  backgroundPosition: bannerFit === 'cover' ? 'center 15%' : 'center center',
+                  backgroundSize: bannerFit === 'cover' ? 'cover' : 'contain',
                   backgroundRepeat: 'no-repeat'
                 }}
               />
@@ -1727,6 +1728,47 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
             </div>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '24px', maxHeight: '58vh', overflowY: 'auto', paddingRight: '8px' }}>
+              
+              {/* Fit Mode Toggle */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px 14px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                <label style={{ fontSize: '11.5px', color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  BANNER DISPLAY FIT MODE
+                </label>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBannerFit('contain');
+                      if (onUpdateProfile) onUpdateProfile({ bannerFit: 'contain' });
+                    }}
+                    style={{
+                      flex: 1, padding: '10px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 800,
+                      border: bannerFit === 'contain' ? '2px solid var(--accent)' : '1px solid var(--border)',
+                      background: bannerFit === 'contain' ? 'rgba(124,111,247,0.2)' : 'rgba(0,0,0,0.3)',
+                      color: bannerFit === 'contain' ? '#fff' : 'var(--text-muted)', cursor: 'pointer',
+                      transition: 'all 0.2s', boxShadow: bannerFit === 'contain' ? '0 0 12px rgba(124,111,247,0.3)' : 'none'
+                    }}
+                  >
+                    🔎 FIT WHOLE IMAGE (No Cropping - Fits 100% of Image)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBannerFit('cover');
+                      if (onUpdateProfile) onUpdateProfile({ bannerFit: 'cover' });
+                    }}
+                    style={{
+                      flex: 1, padding: '10px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 800,
+                      border: bannerFit === 'cover' ? '2px solid var(--accent)' : '1px solid var(--border)',
+                      background: bannerFit === 'cover' ? 'rgba(124,111,247,0.2)' : 'rgba(0,0,0,0.3)',
+                      color: bannerFit === 'cover' ? '#fff' : 'var(--text-muted)', cursor: 'pointer',
+                      transition: 'all 0.2s', boxShadow: bannerFit === 'cover' ? '0 0 12px rgba(124,111,247,0.3)' : 'none'
+                    }}
+                  >
+                    🖼️ FILL BANNER (Widescreen Crop)
+                  </button>
+                </div>
+              </div>
               {(() => {
                 const owned = (currentUser?.purchasedBanners || []).filter(id => id.startsWith('animated-'));
                 if (owned.length === 0) return null;
