@@ -77,13 +77,41 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
       return;
     }
     setLoadingFollowing(true);
+    const ids = [...following];
     supabase.from("profiles")
-      .select("id, username, display_name, avatar_url, bio, equipped_border")
-      .in("id", [...following])
-      .then(({ data }) => {
-        setFollowingUsers(data || []);
+      .select("id, username, display_name, avatar_url, bio")
+      .in("id", ids)
+      .then(({ data, error }) => {
+        if (error) console.warn("Failed to load following users from profiles:", error.message);
+        
+        const fetchedMap = {};
+        (data || []).forEach(p => { fetchedMap[p.id] = p; });
+
+        // Map every followed ID to either a fetched profile or a clean fallback user object
+        const list = ids.map(id => {
+          const p = fetchedMap[id];
+          return {
+            id,
+            username: p?.username || `user_${String(id).slice(0, 6)}`,
+            display_name: p?.display_name || p?.username || 'CineLog Member',
+            avatar_url: p?.avatar_url || null,
+            bio: p?.bio || ''
+          };
+        });
+
+        setFollowingUsers(list);
       })
-      .catch(err => console.warn("Failed to load following users:", err))
+      .catch(err => {
+        console.warn("Failed to load following users:", err);
+        const fallbackList = ids.map(id => ({
+          id,
+          username: `user_${String(id).slice(0, 6)}`,
+          display_name: 'CineLog Member',
+          avatar_url: null,
+          bio: ''
+        }));
+        setFollowingUsers(fallbackList);
+      })
       .finally(() => setLoadingFollowing(false));
   }, [currentUser?.id, following]);
 
@@ -286,7 +314,7 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
               <div style={{ fontSize: "32px", animation: "spin 1s linear infinite", display: "inline-block", marginBottom: "12px" }}>⟳</div>
               <div>Loading following list...</div>
             </div>
-          ) : followingUsers.length === 0 ? (
+          ) : following.size === 0 ? (
             <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--text-muted)" }}>
               <div style={{ fontSize: "48px", marginBottom: "16px" }}>👥</div>
               <div style={{ fontWeight: 800, fontSize: "17px", marginBottom: "8px" }}>You aren't following anyone yet</div>

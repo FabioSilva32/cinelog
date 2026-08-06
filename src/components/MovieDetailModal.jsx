@@ -221,36 +221,33 @@ export default function MovieDetailModal({ movie, onClose, onSave, onToggleFavor
     const loadReviews = async () => {
       setLoadingReviews(true);
       
-      const matchedMocks = MOCK_REVIEWS
-        .filter(r => String(r.tmdb_id) === String(movie.tmdb_id))
-        .map(r => ({
-          id: r.id,
-          username: r.username,
-          displayName: r.displayName,
-          avatar: r.avatar,
-          rating: r.rating,
-          review: r.content,
-          date_added: r.date
-        }));
+      const tmdbIdNum = Number(movie.tmdb_id || movie.id);
 
-      const isDbMode = true;
-      if (isDbMode && isSupabaseConfigured) {
+      if (isSupabaseConfigured && tmdbIdNum) {
         try {
           const { data, error } = await supabase
             .from('library')
             .select('id, rating, review, date_added, user_id, contains_spoilers')
-            .eq('tmdb_id', String(movie.tmdb_id))
+            .eq('tmdb_id', tmdbIdNum)
             .not('review', 'is', null)
             .neq('review', '');
 
-          if (!error && data && active) {
+          if (error) {
+            console.warn("Library query error in loadReviews:", error.message);
+          }
+
+          if (data && active) {
             const userIds = [...new Set(data.map(d => d.user_id))];
             let profilesMap = {};
             if (userIds.length > 0) {
-              const { data: profilesData } = await supabase
+              const { data: profilesData, error: profErr } = await supabase
                 .from('profiles')
-                .select('id, username, avatar, displayName')
+                .select('id, username, avatar_url, display_name')
                 .in('id', userIds);
+
+              if (profErr) {
+                console.warn("Profiles query error in loadReviews:", profErr.message);
+              }
               if (profilesData) {
                 profilesData.forEach(p => {
                   profilesMap[p.id] = p;
@@ -258,36 +255,38 @@ export default function MovieDetailModal({ movie, onClose, onSave, onToggleFavor
               }
             }
 
-            const formatted = data.map(item => {
-              const profile = profilesMap[item.user_id];
-              return {
-                id: item.id,
-                username: profile?.username || 'user_' + item.user_id.slice(0, 6),
-                displayName: profile?.displayName || 'CineLog Fan',
-                avatar: profile?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80',
-                rating: item.rating,
-                review: item.review,
-                date_added: item.date_added,
-                contains_spoilers: item.contains_spoilers
-              };
-            });
-            
-            const combined = [...formatted];
-            matchedMocks.forEach(m => {
-              if (!combined.some(c => c.username === m.username)) {
-                combined.push(m);
-              }
-            });
-            setPublicReviews(combined);
-          } else if (active) {
-            setPublicReviews(matchedMocks);
+            const formatted = data
+              .map(item => {
+                const profile = profilesMap[item.user_id];
+                let cleanReview = (item.review || '')
+                  .replace(/__EPISODE_DATA__:.+$/s, '')
+                  .replace(/__EPISODE_RATINGS__:.+$/s, '')
+                  .trim();
+
+                if (!cleanReview) return null;
+
+                return {
+                  id: item.id,
+                  user_id: item.user_id,
+                  username: profile?.username || (item.user_id ? 'user_' + String(item.user_id).slice(0, 6) : 'user'),
+                  displayName: profile?.display_name || profile?.username || 'CineLog Member',
+                  avatar: profile?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80',
+                  rating: item.rating,
+                  review: cleanReview,
+                  date_added: item.date_added,
+                  contains_spoilers: item.contains_spoilers
+                };
+              })
+              .filter(Boolean);
+
+            setPublicReviews(formatted);
           }
         } catch (err) {
           console.error("Error loading public reviews:", err);
-          if (active) setPublicReviews(matchedMocks);
+          if (active) setPublicReviews([]);
         }
       } else {
-        if (active) setPublicReviews(matchedMocks);
+        if (active) setPublicReviews([]);
       }
       if (active) setLoadingReviews(false);
     };
