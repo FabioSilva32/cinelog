@@ -803,6 +803,7 @@ function AppInner() {
       {activeEditMovie && (
         <MovieDetailModal
           movie={activeEditMovie}
+          currentUser={currentUser}
           onClose={() => setActiveEditMovie(null)}
           onSave={handleSaveMovie}
           onToggleFavorite={handleToggleFavorite}

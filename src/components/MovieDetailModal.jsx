@@ -32,7 +32,7 @@ const ratingLabel = (r) => {
   return '💀 Poor';
 };
 
-export default function MovieDetailModal({ movie, onClose, onSave, onToggleFavorite, isFavorite, onOpenUserProfile }) {
+export default function MovieDetailModal({ movie, currentUser, onClose, onSave, onToggleFavorite, isFavorite, onOpenUserProfile }) {
   const [status, setStatus] = useState(movie.status || 'plan_to_watch');
   const [rating, setRating] = useState(movie.rating != null ? Number(movie.rating) : 0);
   const [episodeData, setEpisodeData] = useState(() => {
@@ -226,6 +226,23 @@ export default function MovieDetailModal({ movie, onClose, onSave, onToggleFavor
       
       const tmdbIdNum = Number(targetTmdbId);
 
+      const currentUserReviewText = (review || movie.review || '')
+        .replace(/__EPISODE_DATA__:.+$/s, '')
+        .replace(/__EPISODE_RATINGS__:.+$/s, '')
+        .trim();
+
+      const userReviewObj = currentUserReviewText ? {
+        id: 'user-current-review',
+        user_id: currentUser?.id || 'me',
+        username: currentUser?.username || 'You',
+        displayName: currentUser?.display_name || currentUser?.displayName || currentUser?.username || 'You',
+        avatar: currentUser?.avatar_url || currentUser?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80',
+        rating: rating > 0 ? rating : (movie.rating ? Number(movie.rating) : null),
+        review: currentUserReviewText,
+        date_added: movie.date_added || watchDate || new Date().toISOString(),
+        contains_spoilers: containsSpoilers
+      } : null;
+
       if (isSupabaseConfigured && tmdbIdNum) {
         try {
           const { data, error } = await supabase
@@ -282,45 +299,26 @@ export default function MovieDetailModal({ movie, onClose, onSave, onToggleFavor
               })
               .filter(Boolean);
 
-            // Include local draft review if present
-            if (review.trim()) {
-              const draftReviewObj = {
-                id: 'draft-review',
-                user_id: 'draft',
-                username: 'You',
-                displayName: 'Your Draft Review',
-                avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80',
-                rating: rating > 0 ? rating : null,
-                review: review.trim(),
-                date_added: new Date().toISOString(),
-                contains_spoilers: containsSpoilers
-              };
-              formatted = [draftReviewObj, ...formatted.filter(r => r.user_id !== 'draft')];
+            if (userReviewObj) {
+              const existingIdx = formatted.findIndex(r => r.user_id === currentUser?.id || r.id === 'user-current-review');
+              if (existingIdx !== -1) {
+                formatted[existingIdx] = userReviewObj;
+              } else {
+                formatted.unshift(userReviewObj);
+              }
             }
 
             setPublicReviews(formatted);
+          } else if (active && userReviewObj) {
+            setPublicReviews([userReviewObj]);
           }
         } catch (err) {
           console.error("Error loading public reviews:", err);
-          if (active) setPublicReviews([]);
+          if (active) setPublicReviews(userReviewObj ? [userReviewObj] : []);
         }
       } else {
         if (active) {
-          if (review.trim()) {
-            setPublicReviews([{
-              id: 'draft-review',
-              user_id: 'draft',
-              username: 'You',
-              displayName: 'Your Draft Review',
-              avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80',
-              rating: rating > 0 ? rating : null,
-              review: review.trim(),
-              date_added: new Date().toISOString(),
-              contains_spoilers: containsSpoilers
-            }]);
-          } else {
-            setPublicReviews([]);
-          }
+          setPublicReviews(userReviewObj ? [userReviewObj] : []);
         }
       }
       if (active) setLoadingReviews(false);
@@ -328,7 +326,7 @@ export default function MovieDetailModal({ movie, onClose, onSave, onToggleFavor
 
     loadReviews();
     return () => { active = false; };
-  }, [targetTmdbId, review, rating, containsSpoilers]);
+  }, [targetTmdbId, review, rating, containsSpoilers, currentUser?.id, movie.review]);
 
   useEffect(() => {
     if (!targetTmdbId) return;
