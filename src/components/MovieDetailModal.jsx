@@ -253,7 +253,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
 
           let dbQuery = supabase
             .from('library')
-            .select('id, rating, review, date_added, user_id, contains_spoilers, profiles(username, display_name, avatar_url)')
+            .select('id, rating, review, date_added, user_id, profiles(username, display_name, avatar_url)')
             .not('review', 'is', null)
             .neq('review', '');
 
@@ -269,7 +269,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
           if (error) {
             let fallbackQuery = supabase
               .from('library')
-              .select('id, rating, review, date_added, user_id, contains_spoilers')
+              .select('id, rating, review, date_added, user_id')
               .not('review', 'is', null)
               .neq('review', '');
             if (isValidNum) fallbackQuery = fallbackQuery.eq('tmdb_id', tmdbIdNum);
