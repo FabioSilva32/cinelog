@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "../supabaseClient";
-import { Search, UserPlus, UserMinus, Activity, Users } from "lucide-react";
+import { Search, UserPlus, UserMinus, UserCheck, Activity, Users } from "lucide-react";
 
 function timeAgo(ts) {
   const diff = Date.now() - new Date(ts).getTime();
@@ -21,11 +21,14 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [following, setFollowing] = useState(new Set());
+  const [followingUsers, setFollowingUsers] = useState([]);
+  const [loadingFollowing, setLoadingFollowing] = useState(false);
   const [feed, setFeed] = useState([]);
   const [loadingFeed, setLoadingFeed] = useState(false);
-  const [activeTab, setActiveTab] = useState("feed"); // feed | discover
+  const [activeTab, setActiveTab] = useState("feed"); // feed | following | discover
   const [suggestedUsers, setSuggestedUsers] = useState([]);
   const [dbError, setDbError] = useState(null);
+
 
   // Load who the current user follows
   useEffect(() => {
@@ -66,6 +69,23 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
   }, [currentUser?.id, following]);
 
   useEffect(() => { loadFeed(); }, [loadFeed]);
+
+  // Load full profile details for people the user follows
+  useEffect(() => {
+    if (!currentUser?.id || following.size === 0) {
+      setFollowingUsers([]);
+      return;
+    }
+    setLoadingFollowing(true);
+    supabase.from("profiles")
+      .select("id, username, display_name, avatar_url, bio, equipped_border")
+      .in("id", [...following])
+      .then(({ data }) => {
+        setFollowingUsers(data || []);
+      })
+      .catch(err => console.warn("Failed to load following users:", err))
+      .finally(() => setLoadingFollowing(false));
+  }, [currentUser?.id, following]);
 
   // Load suggested users (people not yet followed)
   useEffect(() => {
@@ -151,6 +171,7 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
       <div style={{ display: "flex", gap: "4px", background: "rgba(255,255,255,0.03)", borderRadius: "10px", padding: "4px", width: "fit-content" }}>
         {[
           { id: "feed", label: "Activity Feed", icon: <Activity size={14} /> },
+          { id: "following", label: `Following (${following.size})`, icon: <UserCheck size={14} /> },
           { id: "discover", label: "Discover People", icon: <Users size={14} /> },
         ].map(t => (
           <button key={t.id} onClick={() => setActiveTab(t.id)} style={{
@@ -248,6 +269,76 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
                   </div>
                 );
               })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* FOLLOWING TAB */}
+      {activeTab === "following" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          <div style={{ fontSize: "12px", fontWeight: 800, color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            People You Follow ({following.size})
+          </div>
+
+          {loadingFollowing ? (
+            <div style={{ textAlign: "center", padding: "60px 0", color: "var(--text-muted)" }}>
+              <div style={{ fontSize: "32px", animation: "spin 1s linear infinite", display: "inline-block", marginBottom: "12px" }}>⟳</div>
+              <div>Loading following list...</div>
+            </div>
+          ) : followingUsers.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--text-muted)" }}>
+              <div style={{ fontSize: "48px", marginBottom: "16px" }}>👥</div>
+              <div style={{ fontWeight: 800, fontSize: "17px", marginBottom: "8px" }}>You aren't following anyone yet</div>
+              <div style={{ fontSize: "14px", color: "var(--text-dim)" }}>Explore Discover People to find and follow film lovers on CineLog</div>
+              <button onClick={() => setActiveTab("discover")} style={{ marginTop: "16px", background: "linear-gradient(135deg,#7c6ff7,#a855f7)", border: "none", borderRadius: "50px", padding: "10px 24px", color: "#fff", fontWeight: 800, fontSize: "14px", cursor: "pointer" }}>
+                Discover People
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {followingUsers.map(user => (
+                <div
+                  key={user.id}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "14px",
+                    padding: "14px 16px", background: "rgba(255,255,255,0.02)",
+                    border: "1px solid var(--border)", borderRadius: "14px",
+                    transition: "all 0.15s"
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(124,111,247,0.3)"}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
+                >
+                  <div
+                    onClick={() => onOpenUserProfile && onOpenUserProfile(user)}
+                    style={{ width: "44px", height: "44px", borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(124,111,247,0.15)", border: "1px solid var(--border)", cursor: "pointer" }}
+                  >
+                    {user.avatar_url ? <img src={user.avatar_url} alt={user.username} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> :
+                      <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>👤</div>}
+                  </div>
+                  <div
+                    onClick={() => onOpenUserProfile && onOpenUserProfile(user)}
+                    style={{ flex: 1, minWidth: 0, cursor: "pointer" }}
+                  >
+                    <div style={{ fontWeight: 800, fontSize: "14px" }}>{user.display_name || user.username}</div>
+                    <div style={{ fontSize: "12px", color: "var(--text-dim)" }}>@{user.username}</div>
+                    {user.bio && <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.bio}</div>}
+                  </div>
+                  <button
+                    onClick={() => handleFollow(user.id)}
+                    style={{
+                      background: "rgba(239,68,68,0.1)",
+                      border: "1px solid rgba(239,68,68,0.3)",
+                      borderRadius: "50px", padding: "8px 16px",
+                      color: "#f87171", fontWeight: 800, fontSize: "12px", cursor: "pointer",
+                      display: "flex", alignItems: "center", gap: "5px",
+                      transition: "all 0.2s", flexShrink: 0
+                    }}
+                  >
+                    <UserMinus size={12} /> Unfollow
+                  </button>
+                </div>
+              ))}
             </div>
           )}
         </div>
