@@ -1612,7 +1612,7 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
               <button onClick={() => setShowBannerSelector(false)} style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}><X size={18} /></button>
             </div>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px', maxHeight: '420px', overflowY: 'auto', paddingRight: '4px' }}>
               {(() => {
                 const owned = (currentUser?.purchasedBanners || []).filter(id => id.startsWith('animated-'));
                 if (owned.length === 0) return null;
@@ -1631,7 +1631,7 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
                         return (
                           <div
                             key={id}
-                            onClick={() => { setBannerUrl(id); setShowBannerSelector(false); }}
+                            onClick={() => setBannerUrl(id)}
                             style={{
                               aspectRatio: '16/9', borderRadius: '6px', cursor: 'pointer',
                               border: isActive ? '2px solid var(--accent)' : '1px solid var(--border)',
@@ -1648,6 +1648,38 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
                 );
               })()}
 
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700 }}>PRESET CINEMATIC BANNERS</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                  {[
+                    { name: 'Cyberpunk Neon', url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80' },
+                    { name: 'Cosmic Nebula', url: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1200&q=80' },
+                    { name: 'Classic Cinema', url: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1200&q=80' },
+                    { name: 'Tokyo Night', url: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=1200&q=80' },
+                    { name: 'Synthwave Sky', url: 'https://images.unsplash.com/photo-1508739773434-c26b3d09e071?auto=format&fit=crop&w=1200&q=80' },
+                    { name: 'Golden Mountains', url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80' },
+                    { name: 'Film Grain Vintage', url: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=1200&q=80' },
+                    { name: 'Sunset Ocean', url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80' },
+                    { name: 'Sci-Fi Horizon', url: 'https://images.unsplash.com/photo-1511447333015-45b65e60f6d5?auto=format&fit=crop&w=1200&q=80' }
+                  ].map(b => (
+                    <div
+                      key={b.name}
+                      onClick={() => setBannerUrl(b.url)}
+                      style={{
+                        aspectRatio: '16/9', borderRadius: '6px', overflow: 'hidden',
+                        border: bannerUrl === b.url ? '2px solid var(--accent)' : '1px solid var(--border)',
+                        cursor: 'pointer', position: 'relative'
+                      }}
+                    >
+                      <img src={b.url} alt={b.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.65)', padding: '2px 4px', fontSize: '9px', fontWeight: 700, textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {b.name}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                 <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700 }}>PASTE CUSTOM IMAGE URL</label>
                 <input
@@ -1660,13 +1692,13 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
                 />
               </div>
 
-              <div style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700, marginTop: '8px' }}>OR SELECT BACKDROP FROM YOUR LIBRARY</div>
+              <div style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700, marginTop: '4px' }}>OR SELECT BACKDROP FROM YOUR LIBRARY</div>
               {library.filter(m => m.backdrop_path).length > 0 ? (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', maxHeight: '200px', overflowY: 'auto', paddingRight: '4px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', maxHeight: '180px', overflowY: 'auto', paddingRight: '4px' }}>
                   {library.filter(m => m.backdrop_path).slice(0, 12).map(m => (
                     <div
                       key={m.id || m.tmdb_id}
-                      onClick={() => { setBannerUrl(`https://image.tmdb.org/t/p/w780${m.backdrop_path}`); setShowBannerSelector(false); }}
+                      onClick={() => setBannerUrl(`https://image.tmdb.org/t/p/w780${m.backdrop_path}`)}
                       style={{ aspectRatio: '16/9', borderRadius: '6px', overflow: 'hidden', border: bannerUrl === `https://image.tmdb.org/t/p/w780${m.backdrop_path}` ? '2px solid var(--accent)' : '1px solid var(--border)', cursor: 'pointer', position: 'relative' }}
                     >
                       <img src={`https://image.tmdb.org/t/p/w300${m.backdrop_path}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }} />
@@ -1677,15 +1709,22 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
                   ))}
                 </div>
               ) : (
-                <div style={{ fontSize: '12px', color: 'var(--text-dim)', textAlign: 'center', padding: '20px' }}>
-                  No backdrops found. Watch database items will supply cover banners here!
+                <div style={{ fontSize: '12px', color: 'var(--text-dim)', textAlign: 'center', padding: '12px' }}>
+                  No movie backdrops found in your library yet.
                 </div>
               )}
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button className="btn btn-secondary" onClick={() => { setBannerUrl(''); setShowBannerSelector(false); }} style={{ padding: '6px 12px', fontSize: '12px' }}>Reset Banner</button>
-              <button className="btn className-primary" onClick={() => setShowBannerSelector(false)} style={{ padding: '6px 16px', fontSize: '12px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Done</button>
+              <button className="btn btn-secondary" onClick={() => {
+                setBannerUrl('');
+                if (onUpdateProfile) onUpdateProfile({ bannerUrl: '' });
+                setShowBannerSelector(false);
+              }} style={{ padding: '6px 12px', fontSize: '12px' }}>Reset Banner</button>
+              <button className="btn btn-primary" onClick={() => {
+                if (onUpdateProfile) onUpdateProfile({ bannerUrl });
+                setShowBannerSelector(false);
+              }} style={{ padding: '6px 16px', fontSize: '12px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Done</button>
             </div>
           </div>
         </div>

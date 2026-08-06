@@ -185,6 +185,7 @@ function AppInner() {
                 bio: profile.bio || '',
                 favorites: profile.favorites || [],
                 equippedBorder: profile.equipped_border || localShop.equippedBorder || localStorage.getItem(`equipped_border_${session.user.id}`) || 'none',
+                bannerUrl: profile.banner_url || localShop.bannerUrl || '',
                 spentCinePoints: profile.spent_cine_points ?? localShop.spentCinePoints ?? 0,
                 purchasedBorders: profile.purchased_borders || localShop.purchasedBorders || [],
                 purchasedBadges: profile.purchased_badges || localShop.purchasedBadges || [],
@@ -553,6 +554,7 @@ function AppInner() {
         localStorage.setItem(`equipped_border_${nextUser.id}`, nextUser.equippedBorder || 'none');
         localStorage.setItem(`cinelog_shop_${nextUser.id}`, JSON.stringify({
           equippedBorder: nextUser.equippedBorder || 'none',
+          bannerUrl: nextUser.bannerUrl || '',
           spentCinePoints: nextUser.spentCinePoints || 0,
           purchasedBorders: nextUser.purchasedBorders || [],
           purchasedBadges: nextUser.purchasedBadges || [],
@@ -575,6 +577,7 @@ function AppInner() {
         avatar_url: updatedDetails.avatar !== undefined ? updatedDetails.avatar : currentUser.avatar,
         favorites: updatedDetails.favorites !== undefined ? updatedDetails.favorites : (currentUser.favorites || []),
         equipped_border: updatedDetails.equippedBorder !== undefined ? updatedDetails.equippedBorder : (currentUser.equippedBorder || 'none'),
+        banner_url: updatedDetails.bannerUrl !== undefined ? updatedDetails.bannerUrl : (currentUser.bannerUrl || ''),
         spent_cine_points: updatedDetails.spentCinePoints !== undefined ? updatedDetails.spentCinePoints : (currentUser.spentCinePoints || 0),
         purchased_borders: updatedDetails.purchasedBorders !== undefined ? updatedDetails.purchasedBorders : (currentUser.purchasedBorders || []),
         purchased_badges: updatedDetails.purchasedBadges !== undefined ? updatedDetails.purchasedBadges : (currentUser.purchasedBadges || []),
