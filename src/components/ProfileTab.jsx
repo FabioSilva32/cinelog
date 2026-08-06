@@ -256,6 +256,8 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
   const [searchQuery, setSearchQuery] = useState('');
   const [popupActiveTab, setPopupActiveTab] = useState('movie'); // 'movie', 'tv', 'anime'
   const [bannerPosition, setBannerPosition] = useState(currentUser?.bannerPosition || 'top');
+  const [bannerPosPercent, setBannerPosPercent] = useState(currentUser?.bannerPosPercent ?? 20);
+  const [bannerFitMode, setBannerFitMode] = useState(currentUser?.bannerFitMode || 'cover');
 
   const watchedMovies = library.filter(m => m.status === 'watched');
   const watchedCount = watchedMovies.length;
@@ -521,7 +523,7 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
   const handleSave = () => {
     // Strip trailing nulls or keep array representation
     const savedFavorites = favorites.filter(f => f !== null);
-    onUpdateProfile({ displayName, username, bio, avatar, favorites: savedFavorites, equippedBorder, bannerUrl, bannerPosition });
+    onUpdateProfile({ displayName, username, bio, avatar, favorites: savedFavorites, equippedBorder, bannerUrl, bannerPosition, bannerPosPercent, bannerFitMode });
     setIsEditing(false);
   };
 
@@ -628,11 +630,45 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
             width: '100%',
             position: 'relative',
             overflow: 'hidden',
-            background: (bannerUrl && !bannerUrl.startsWith('animated-'))
-              ? `linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(10,8,19,0.5) 65%, rgba(10,8,19,0.96) 100%), url("${bannerUrl}") center ${bannerPosition === 'center' ? 'center' : bannerPosition === 'bottom' ? 'bottom' : 'top'} / cover no-repeat`
-              : (!bannerUrl ? 'linear-gradient(135deg, #1e1b4b 0%, #311b92 50%, #0f172a 100%)' : '#08070e')
+            background: (!bannerUrl ? 'linear-gradient(135deg, #1e1b4b 0%, #311b92 50%, #0f172a 100%)' : '#08070e')
           }}
         >
+          {bannerUrl && !bannerUrl.startsWith('animated-') && (
+            <>
+              {/* Ambient Blurred Glow Fill Layer */}
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: '-20px',
+                  backgroundImage: `url("${bannerUrl}")`,
+                  backgroundPosition: `center ${bannerPosPercent}%`,
+                  backgroundSize: 'cover',
+                  filter: bannerFitMode === 'contain' ? 'blur(28px) brightness(0.45) saturate(140%)' : 'blur(16px) brightness(0.55)',
+                  transform: 'scale(1.15)',
+                  opacity: bannerFitMode === 'contain' ? 0.95 : 0.4
+                }}
+              />
+              {/* Main Crisp Foreground Banner Image */}
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  backgroundImage: `url("${bannerUrl}")`,
+                  backgroundPosition: bannerFitMode === 'contain' ? 'center center' : `center ${bannerPosPercent}%`,
+                  backgroundSize: bannerFitMode === 'contain' ? 'contain' : 'cover',
+                  backgroundRepeat: 'no-repeat'
+                }}
+              />
+              {/* Darkening Gradient Overlay */}
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(10,8,19,0.45) 60%, rgba(10,8,19,0.96) 100%)'
+                }}
+              />
+            </>
+          )}
           <button
             type="button"
             onClick={() => {
@@ -1715,36 +1751,74 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '24px', maxHeight: '58vh', overflowY: 'auto', paddingRight: '8px' }}>
               
-              {/* Vertical Position Adjustment Controls */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px 14px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                <label style={{ fontSize: '11.5px', color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  BANNER VERTICAL ALIGNMENT (FOCUS HEADS / FACES / LOGOS)
-                </label>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  {[
-                    { id: 'top', label: '⬆️ Top (Faces & Heads)' },
-                    { id: 'center', label: '↔️ Center' },
-                    { id: 'bottom', label: '⬇️ Bottom' }
-                  ].map(pos => (
-                    <button
-                      key={pos.id}
-                      type="button"
-                      onClick={() => {
-                        setBannerPosition(pos.id);
-                        if (onUpdateProfile) onUpdateProfile({ bannerPosition: pos.id });
-                      }}
-                      style={{
-                        flex: 1, padding: '8px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 800,
-                        border: bannerPosition === pos.id ? '2px solid var(--accent)' : '1px solid var(--border)',
-                        background: bannerPosition === pos.id ? 'rgba(124,111,247,0.2)' : 'rgba(0,0,0,0.3)',
-                        color: bannerPosition === pos.id ? '#fff' : 'var(--text-muted)', cursor: 'pointer',
-                        transition: 'all 0.15s', boxShadow: bannerPosition === pos.id ? '0 0 12px rgba(124,111,247,0.3)' : 'none'
-                      }}
-                    >
-                      {pos.label}
-                    </button>
-                  ))}
+              {/* Banner Framing & Position Customizer */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '14px 16px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '11.5px', color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    BANNER DISPLAY & FRAMING MODE
+                  </label>
+                  <span style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700 }}>
+                    Vertical Focus: {bannerPosPercent}%
+                  </span>
                 </div>
+
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBannerFitMode('cover');
+                      if (onUpdateProfile) onUpdateProfile({ bannerFitMode: 'cover' });
+                    }}
+                    style={{
+                      flex: 1, padding: '9px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 800,
+                      border: bannerFitMode === 'cover' ? '2px solid var(--accent)' : '1px solid var(--border)',
+                      background: bannerFitMode === 'cover' ? 'rgba(124,111,247,0.2)' : 'rgba(0,0,0,0.3)',
+                      color: bannerFitMode === 'cover' ? '#fff' : 'var(--text-muted)', cursor: 'pointer',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    🖼️ Full-Bleed Widescreen Fill
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBannerFitMode('contain');
+                      if (onUpdateProfile) onUpdateProfile({ bannerFitMode: 'contain' });
+                    }}
+                    style={{
+                      flex: 1, padding: '9px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 800,
+                      border: bannerFitMode === 'contain' ? '2px solid var(--accent)' : '1px solid var(--border)',
+                      background: bannerFitMode === 'contain' ? 'rgba(124,111,247,0.2)' : 'rgba(0,0,0,0.3)',
+                      color: bannerFitMode === 'contain' ? '#fff' : 'var(--text-muted)', cursor: 'pointer',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    🍿 Ambient Cinema Glow (Fit 100% Entire Scene)
+                  </button>
+                </div>
+
+                {bannerFitMode === 'cover' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700 }}>
+                      <span>⬆️ Top (Focus Heads/Titles)</span>
+                      <span>↔️ Center</span>
+                      <span>⬇️ Bottom</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="5"
+                      value={bannerPosPercent}
+                      onChange={e => {
+                        const val = Number(e.target.value);
+                        setBannerPosPercent(val);
+                        if (onUpdateProfile) onUpdateProfile({ bannerPosPercent: val });
+                      }}
+                      style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer' }}
+                    />
+                  </div>
+                )}
               </div>
               {(() => {
                 const owned = (currentUser?.purchasedBanners || []).filter(id => id.startsWith('animated-'));
