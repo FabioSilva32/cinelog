@@ -223,8 +223,6 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
 
     const loadReviews = async () => {
       setLoadingReviews(true);
-      
-      const tmdbIdNum = Number(targetTmdbId);
 
       const currentUserReviewText = (review || movie.review || '')
         .replace(/__EPISODE_DATA__:.+$/s, '')
@@ -243,85 +241,86 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
         contains_spoilers: containsSpoilers
       } : null;
 
-      if (isSupabaseConfigured && tmdbIdNum) {
+      let allReviews = [];
+      if (userReviewObj) {
+        allReviews.push(userReviewObj);
+      }
+
+      if (isSupabaseConfigured && targetTmdbId) {
         try {
-          const { data, error } = await supabase
+          const tmdbIdNum = Number(targetTmdbId);
+          
+          // Try querying library with JOIN on profiles, supporting both numeric and string tmdb_id
+          let { data, error } = await supabase
             .from('library')
-            .select('id, rating, review, date_added, user_id, contains_spoilers')
-            .eq('tmdb_id', tmdbIdNum)
+            .select('id, rating, review, date_added, user_id, contains_spoilers, profiles(username, display_name, avatar_url)')
+            .or(`tmdb_id.eq.${tmdbIdNum},tmdb_id.eq.${String(targetTmdbId)}`)
             .not('review', 'is', null)
             .neq('review', '');
 
+          // Fallback if joined query has syntax/relationship error
           if (error) {
-            console.warn("Library query error in loadReviews:", error.message);
+            console.warn("Joined query failed, trying simple query:", error.message);
+            const res = await supabase
+              .from('library')
+              .select('id, rating, review, date_added, user_id, contains_spoilers')
+              .or(`tmdb_id.eq.${tmdbIdNum},tmdb_id.eq.${String(targetTmdbId)}`)
+              .not('review', 'is', null)
+              .neq('review', '');
+            data = res.data;
           }
 
-          if (data && active) {
-            const userIds = [...new Set(data.map(d => d.user_id))];
+          if (data && data.length > 0) {
+            // Fetch missing profiles if not already joined
+            const missingProfileUserIds = data
+              .filter(d => !d.profiles && d.user_id)
+              .map(d => d.user_id);
+
             let profilesMap = {};
-            if (userIds.length > 0) {
-              const { data: profilesData, error: profErr } = await supabase
+            if (missingProfileUserIds.length > 0) {
+              const { data: profs } = await supabase
                 .from('profiles')
-                .select('id, username, avatar_url, display_name')
-                .in('id', userIds);
-
-              if (profErr) {
-                console.warn("Profiles query error in loadReviews:", profErr.message);
-              }
-              if (profilesData) {
-                profilesData.forEach(p => {
-                  profilesMap[p.id] = p;
-                });
+                .select('id, username, display_name, avatar_url')
+                .in('id', [...new Set(missingProfileUserIds)]);
+              if (profs) {
+                profs.forEach(p => { profilesMap[p.id] = p; });
               }
             }
 
-            let formatted = data
-              .map(item => {
-                const profile = profilesMap[item.user_id];
-                let cleanReview = (item.review || '')
-                  .replace(/__EPISODE_DATA__:.+$/s, '')
-                  .replace(/__EPISODE_RATINGS__:.+$/s, '')
-                  .trim();
+            data.forEach(item => {
+              // Skip if this is the current user's review (already added at top)
+              if (currentUser?.id && item.user_id === currentUser.id) return;
 
-                if (!cleanReview) return null;
+              let cleanReview = (item.review || '')
+                .replace(/__EPISODE_DATA__:.+$/s, '')
+                .replace(/__EPISODE_RATINGS__:.+$/s, '')
+                .trim();
 
-                return {
-                  id: item.id,
-                  user_id: item.user_id,
-                  username: profile?.username || (item.user_id ? 'user_' + String(item.user_id).slice(0, 6) : 'user'),
-                  displayName: profile?.display_name || profile?.username || 'CineLog Member',
-                  avatar: profile?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80',
-                  rating: item.rating,
-                  review: cleanReview,
-                  date_added: item.date_added,
-                  contains_spoilers: item.contains_spoilers
-                };
-              })
-              .filter(Boolean);
+              if (!cleanReview) return;
 
-            if (userReviewObj) {
-              const existingIdx = formatted.findIndex(r => r.user_id === currentUser?.id || r.id === 'user-current-review');
-              if (existingIdx !== -1) {
-                formatted[existingIdx] = userReviewObj;
-              } else {
-                formatted.unshift(userReviewObj);
-              }
-            }
-
-            setPublicReviews(formatted);
-          } else if (active && userReviewObj) {
-            setPublicReviews([userReviewObj]);
+              const prof = item.profiles || profilesMap[item.user_id];
+              allReviews.push({
+                id: item.id,
+                user_id: item.user_id,
+                username: prof?.username || (item.user_id ? 'user_' + String(item.user_id).slice(0, 6) : 'cinephile'),
+                displayName: prof?.display_name || prof?.username || 'CineLog Member',
+                avatar: prof?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80',
+                rating: item.rating,
+                review: cleanReview,
+                date_added: item.date_added,
+                contains_spoilers: item.contains_spoilers
+              });
+            });
           }
         } catch (err) {
-          console.error("Error loading public reviews:", err);
-          if (active) setPublicReviews(userReviewObj ? [userReviewObj] : []);
-        }
-      } else {
-        if (active) {
-          setPublicReviews(userReviewObj ? [userReviewObj] : []);
+          console.error("Error loading public reviews from Supabase:", err);
         }
       }
-      if (active) setLoadingReviews(false);
+
+      if (active) {
+        setPublicReviews(allReviews);
+        setLoadingReviews(false);
+      }
     };
 
     loadReviews();
