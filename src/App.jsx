@@ -338,7 +338,8 @@ function AppInner() {
         : normalizedMovie.review;
 
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      const cleanId = normalizedMovie.id && uuidRegex.test(normalizedMovie.id) ? normalizedMovie.id : undefined;
+      const cleanId = (normalizedMovie.id && uuidRegex.test(normalizedMovie.id)) ? normalizedMovie.id : crypto.randomUUID();
+      normalizedMovie.id = cleanId;
 
       const { data, error } = await supabase.from('library').upsert({
         id: cleanId,
@@ -406,7 +407,8 @@ function AppInner() {
 
     if (useSupabase && currentUser) {
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      const cleanId = cleanMovie.id && uuidRegex.test(cleanMovie.id) ? cleanMovie.id : undefined;
+      const cleanId = (cleanMovie.id && uuidRegex.test(cleanMovie.id)) ? cleanMovie.id : crypto.randomUUID();
+      cleanMovie.id = cleanId;
 
       const { data, error } = await supabase.from('library').upsert({
         id: cleanId,

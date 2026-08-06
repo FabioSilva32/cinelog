@@ -214,6 +214,7 @@ export default function MovieDetailModal({ movie, onClose, onSave, onToggleFavor
     };
   }, [backdropUrl]);
 
+
   useEffect(() => {
     if (!movie.tmdb_id) return;
     let active = true;
