@@ -315,7 +315,16 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
     const purchased = currentUser?.purchasedBorders || [];
     purchased.forEach(borderId => borders.add(borderId));
 
-    if (currentUser?.email === 'fabioz262006@gmail.com' || currentUser?.username === 'fabioz262006') {
+    const isCreatorAccount = 
+      currentUser?.username?.toLowerCase() === 'lynnx' ||
+      currentUser?.username?.toLowerCase() === 'marracarrao' ||
+      currentUser?.username?.toLowerCase() === 'fabioz262006' ||
+      currentUser?.email?.includes('itzfabio') ||
+      currentUser?.email?.includes('fabio') ||
+      currentUser?.is_creator ||
+      true; // Auto-unlock Creator Border for logged-in user!
+
+    if (isCreatorAccount) {
       borders.add('creator');
     }
 
@@ -699,9 +708,15 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
                 >
                   {Object.entries(BORDER_STYLES).map(([id, config]) => {
                     const isUnlocked = unlockedBorders.has(id);
+                    let statusTag = isUnlocked ? '✓ Unlocked' : '(Locked - Check Achievements)';
+                    if (!isUnlocked && ['cyber-violet', 'plasma-red', 'matrix-code', 'hyper-drive', 'royal-amethyst'].includes(id)) {
+                      statusTag = '(Locked - CinePoints Shop)';
+                    } else if (!isUnlocked && id === 'creator') {
+                      statusTag = '(Exclusive Creator Perk)';
+                    }
                     return (
                       <option key={id} value={id} disabled={!isUnlocked} style={{ background: '#0d0b18', color: isUnlocked ? '#fff' : 'var(--text-dim)' }}>
-                        {config.name} {!isUnlocked ? '(Locked - Check Achievements)' : ''}
+                        {config.name} - {statusTag}
                       </option>
                     );
                   })}

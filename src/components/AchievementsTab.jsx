@@ -99,73 +99,132 @@ export default function AchievementsTab({ library, currentUser, onUpdateProfile 
             );
           })}
         </div>
-
-        {/* Right column: Avatar Border customization & preview */}
+        {/* ── ACHIEVEMENTS LIST ── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <Sparkles size={18} color="var(--gold)" />
-            <h3 style={{ fontSize: '17px', fontWeight: 800 }}>Profile Border Rewards</h3>
-          </div>
-
-          <div className="glass" style={{ padding: '20px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            
-            {/* Visual Border Preview */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px', background: 'rgba(0,0,0,0.18)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.02)' }}>
-              <div style={{ position: 'relative', width: '92px', height: '92px', margin: '8px 0' }}>
-                <AvatarWithBorder
-                  src={currentUser?.avatar}
-                  username={currentUser?.username}
-                  borderId={equippedBorder}
-                  size={92}
-                />
+          {achievementsStatus.map(ach => (
+            <div
+              key={ach.id}
+              className="glass"
+              style={{
+                borderRadius: 'var(--radius-lg)',
+                padding: '20px',
+                border: `1px solid ${ach.isUnlocked ? 'rgba(16,185,129,0.3)' : 'var(--border)'}`,
+                background: ach.isUnlocked ? 'rgba(16,185,129,0.02)' : 'rgba(255,255,255,0.01)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '18px'
+              }}
+            >
+              <div style={{
+                width: '48px', height: '48px', borderRadius: '12px',
+                background: ach.isUnlocked ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.03)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: `1px solid ${ach.isUnlocked ? 'rgba(16,185,129,0.3)' : 'var(--border)'}`
+              }}>
+                {ach.isUnlocked ? (
+                  <CheckCircle2 size={24} color="var(--green)" />
+                ) : (
+                  <Lock size={22} color="var(--text-dim)" />
+                )}
               </div>
-              <span style={{ fontSize: '13.5px', fontWeight: 800, marginTop: '8px' }}>{currentUser?.displayName || 'CineLog Fan'}</span>
-              <span style={{ fontSize: '11px', color: 'var(--text-dim)', marginTop: '2px' }}>Previewing: {BORDER_STYLES[equippedBorder]?.name}</span>
+
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <h4 style={{ fontSize: '15px', fontWeight: 800, color: ach.isUnlocked ? '#fff' : 'var(--text-muted)' }}>
+                    {ach.title}
+                  </h4>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: ach.isUnlocked ? 'var(--green)' : 'var(--text-dim)' }}>
+                    {ach.currentVal} / {ach.target}
+                  </span>
+                </div>
+
+                <p style={{ fontSize: '12.5px', color: 'var(--text-dim)', marginBottom: '10px' }}>
+                  {ach.description}
+                </p>
+
+                {/* Progress Bar */}
+                <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
+                  <div style={{
+                    width: `${Math.min(100, (ach.currentVal / ach.target) * 100)}%`,
+                    height: '100%',
+                    background: ach.isUnlocked ? 'var(--green)' : 'var(--accent)',
+                    borderRadius: '3px',
+                    transition: 'width 0.4s ease'
+                  }} />
+                </div>
+              </div>
             </div>
-
-            {/* Borders Selector List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {Object.entries(BORDER_STYLES).map(([borderId, config]) => {
-                const isUnlocked = unlockedBorders.has(borderId);
-                const isEquipped = equippedBorder === borderId;
-
-                // Find unlock source
-                let unlockSource = '';
-                if (!isUnlocked) {
-                  const sourceAch = ACHIEVEMENTS.find(ach => ach.reward.borderId === borderId);
-                  if (sourceAch) unlockSource = sourceAch.title;
-                }
-
-                return (
-                  <div key={borderId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: isEquipped ? 'rgba(124,111,247,0.06)' : 'rgba(255,255,255,0.01)', opacity: isUnlocked ? 1 : 0.7 }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                      <span style={{ fontSize: '12.5px', fontWeight: 700, color: isUnlocked ? '#fff' : 'var(--text-dim)' }}>{config.name}</span>
-                      {!isUnlocked && (
-                        <span style={{ fontSize: '9.5px', color: 'var(--text-dim)' }}>Lock: Unlock <strong>{unlockSource}</strong></span>
-                      )}
-                    </div>
-
-                    <div>
-                      {isEquipped ? (
-                        <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent)', background: 'rgba(124,111,247,0.15)', padding: '4px 10px', borderRadius: '4px' }}>Equipped</span>
-                      ) : isUnlocked ? (
-                        <button onClick={() => handleEquipBorder(borderId)} className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: '11.5px', height: 'auto' }}>
-                          Equip
-                        </button>
-                      ) : (
-                        <Lock size={12} color="var(--text-dim)" style={{ marginRight: '8px' }} />
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-          </div>
+          ))}
         </div>
 
-      </div>
+        {/* ── BORDER REWARDS SIDEBAR ── */}
+        <div className="glass" style={{ borderRadius: 'var(--radius-xl)', padding: '24px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '20px', position: 'sticky', top: '100px' }}>
+          <div>
+            <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Award size={18} color="var(--accent)" /> Avatar Border Wardrobe
+            </h3>
+            <p style={{ fontSize: '12px', color: 'var(--text-dim)', marginTop: '2px' }}>
+              Equip unlocked borders on your profile avatar.
+            </p>
+          </div>
 
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+            <AvatarWithBorder
+              src={currentUser?.avatar}
+              username={currentUser?.username}
+              borderId={equippedBorder}
+              size={72}
+            />
+            <span style={{ fontSize: '13.5px', fontWeight: 800, marginTop: '8px' }}>{currentUser?.displayName || 'CineLog Fan'}</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-dim)', marginTop: '2px' }}>Previewing: {BORDER_STYLES[equippedBorder]?.name || 'Default Border'}</span>
+          </div>
+
+          {/* Borders Selector List */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '450px', overflowY: 'auto', paddingRight: '4px' }}>
+            {Object.entries(BORDER_STYLES).map(([borderId, config]) => {
+              const isUnlocked = unlockedBorders.has(borderId);
+              const isEquipped = equippedBorder === borderId;
+
+              // Find unlock source
+              let unlockSource = '';
+              if (!isUnlocked) {
+                if (borderId === 'creator') {
+                  unlockSource = 'Developer & Creator Perks';
+                } else if (['cyber-violet', 'plasma-red', 'matrix-code', 'hyper-drive', 'royal-amethyst'].includes(borderId)) {
+                  unlockSource = 'CinePoints Shop';
+                } else {
+                  const sourceAch = ACHIEVEMENTS.find(ach => ach.reward.borderId === borderId);
+                  if (sourceAch) unlockSource = sourceAch.title;
+                  else unlockSource = 'Special Achievement';
+                }
+              }
+
+              return (
+                <div key={borderId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: isEquipped ? 'rgba(124,111,247,0.06)' : 'rgba(255,255,255,0.01)', opacity: isUnlocked ? 1 : 0.7 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <span style={{ fontSize: '12.5px', fontWeight: 700, color: isUnlocked ? '#fff' : 'var(--text-dim)' }}>{config.name}</span>
+                    {!isUnlocked && (
+                      <span style={{ fontSize: '9.5px', color: 'var(--text-dim)' }}>Lock: Unlock <strong>{unlockSource}</strong></span>
+                    )}
+                  </div>
+
+                  <div>
+                    {isEquipped ? (
+                      <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent)', background: 'rgba(124,111,247,0.15)', padding: '4px 10px', borderRadius: '4px' }}>Equipped</span>
+                    ) : isUnlocked ? (
+                      <button onClick={() => handleEquipBorder(borderId)} className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: '11.5px', height: 'auto' }}>
+                        Equip
+                      </button>
+                    ) : (
+                      <Lock size={12} color="var(--text-dim)" style={{ marginRight: '8px' }} />
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
