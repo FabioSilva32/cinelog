@@ -19,6 +19,7 @@ import ChallengesTab from './components/ChallengesTab';
 import WrappedTab from './components/WrappedTab';
 import ForYouTab from './components/ForYouTab';
 import SocialTab from './components/SocialTab';
+import UserProfileModal from './components/UserProfileModal';
 import SettingsPanel, { applyTheme, THEMES } from './components/SettingsPanel';
 import { ToastProvider, useToast } from './components/ToastSystem';
 import { MOCK_USERS } from './mockData';
@@ -127,6 +128,7 @@ function AppInner() {
   const [showAuth, setShowAuth] = useState(false);
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
   const [activeEditMovie, setActiveEditMovie] = useState(null);
+  const [viewingUserProfile, setViewingUserProfile] = useState(null);
 
   const [confirmConfig, setConfirmConfig] = useState({
     isOpen: false,
@@ -792,7 +794,7 @@ function AppInner() {
           <ForYouTab library={library} currentUser={currentUser} onAddMovie={handleAddMovie} onMovieClick={handleMovieClick} />
         )}
         {activeTab === 'social' && (
-          <SocialTab currentUser={currentUser} onMovieClick={handleMovieClick} />
+          <SocialTab currentUser={currentUser} onMovieClick={handleMovieClick} onOpenUserProfile={setViewingUserProfile} />
         )}
       </main>
 
@@ -803,6 +805,16 @@ function AppInner() {
           onSave={handleSaveMovie}
           onToggleFavorite={handleToggleFavorite}
           isFavorite={library.find(m => String(m.tmdb_id) === String(activeEditMovie.tmdb_id))?.favorite || false}
+          onOpenUserProfile={setViewingUserProfile}
+        />
+      )}
+
+      {viewingUserProfile && (
+        <UserProfileModal
+          targetUser={viewingUserProfile}
+          currentUser={currentUser}
+          onClose={() => setViewingUserProfile(null)}
+          onMovieClick={handleMovieClick}
         />
       )}
 

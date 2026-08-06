@@ -32,7 +32,7 @@ const ratingLabel = (r) => {
   return '💀 Poor';
 };
 
-export default function MovieDetailModal({ movie, onClose, onSave, onToggleFavorite, isFavorite }) {
+export default function MovieDetailModal({ movie, onClose, onSave, onToggleFavorite, isFavorite, onOpenUserProfile }) {
   const [status, setStatus] = useState(movie.status || 'plan_to_watch');
   const [rating, setRating] = useState(movie.rating != null ? Number(movie.rating) : 0);
   const [episodeData, setEpisodeData] = useState(() => {
@@ -1157,11 +1157,15 @@ export default function MovieDetailModal({ movie, onClose, onSave, onToggleFavor
                       <img
                         src={r.avatar}
                         alt={r.displayName}
-                        style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--border)' }}
+                        onClick={() => { if (onOpenUserProfile) { onOpenUserProfile({ id: r.user_id, username: r.username, displayName: r.displayName, avatar: r.avatar }); onClose(); } }}
+                        style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--border)', cursor: 'pointer' }}
                       />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
-                          <div>
+                          <div
+                            onClick={() => { if (onOpenUserProfile) { onOpenUserProfile({ id: r.user_id, username: r.username, displayName: r.displayName, avatar: r.avatar }); onClose(); } }}
+                            style={{ cursor: 'pointer' }}
+                          >
                             <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>{r.displayName}</span>
                             <span style={{ fontSize: '11px', color: 'var(--text-dim)', marginLeft: '6px' }}>@{r.username}</span>
                           </div>

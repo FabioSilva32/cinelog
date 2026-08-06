@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Camera, Edit2, Check, Heart, Calendar, Star, Film, Trophy, BarChart3, TrendingUp, X, Search, Plus, Trash2, Upload } from 'lucide-react';
 import { ACHIEVEMENTS, BORDER_STYLES, BADGE_COLORS } from '../utils/achievements';
 import AvatarWithBorder from './AvatarWithBorder';
+import { supabase } from '../supabaseClient';
 
 const MOCK_FRIENDS = [];
 
@@ -380,6 +381,90 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
     return Math.max(0, basePoints + multiplierBonus - spent);
   }, [library, watchedCount, reviewsCount, currentUser, streakMultiplier]);
 
+  const handlePurchaseBorder = (borderId, cost) => {
+    if (cinePoints < cost) return;
+    const currentPurchased = currentUser?.purchasedBorders || [];
+    if (currentPurchased.includes(borderId)) return;
+
+    const newPurchased = [...currentPurchased, borderId];
+    const newSpent = (currentUser?.spentCinePoints || 0) + cost;
+
+    const updatedUser = {
+      ...currentUser,
+      purchasedBorders: newPurchased,
+      spentCinePoints: newSpent,
+      equippedBorder: borderId
+    };
+
+    setEquippedBorder(borderId);
+    if (onUpdateProfile) onUpdateProfile(updatedUser);
+
+    if (currentUser?.id && supabase) {
+      supabase.from('profiles').update({
+        equipped_border: borderId,
+        purchased_borders: newPurchased,
+        spent_cine_points: newSpent
+      }).eq('id', currentUser.id).then(({ error }) => {
+        if (error) console.warn('Failed to update shop border in Supabase:', error.message);
+      });
+    }
+  };
+
+  const handlePurchaseBadge = (badgeName, cost) => {
+    if (cinePoints < cost) return;
+    const currentPurchased = currentUser?.purchasedBadges || [];
+    if (currentPurchased.includes(badgeName)) return;
+
+    const newPurchased = [...currentPurchased, badgeName];
+    const newSpent = (currentUser?.spentCinePoints || 0) + cost;
+
+    const updatedUser = {
+      ...currentUser,
+      purchasedBadges: newPurchased,
+      spentCinePoints: newSpent
+    };
+
+    if (onUpdateProfile) onUpdateProfile(updatedUser);
+
+    if (currentUser?.id && supabase) {
+      supabase.from('profiles').update({
+        purchased_badges: newPurchased,
+        spent_cine_points: newSpent
+      }).eq('id', currentUser.id).then(({ error }) => {
+        if (error) console.warn('Failed to update shop badge in Supabase:', error.message);
+      });
+    }
+  };
+
+  const handlePurchaseBanner = (bannerId, cost) => {
+    if (cinePoints < cost) return;
+    const currentPurchased = currentUser?.purchasedBanners || [];
+    if (currentPurchased.includes(bannerId)) return;
+
+    const newPurchased = [...currentPurchased, bannerId];
+    const newSpent = (currentUser?.spentCinePoints || 0) + cost;
+
+    const updatedUser = {
+      ...currentUser,
+      purchasedBanners: newPurchased,
+      spentCinePoints: newSpent,
+      bannerUrl: bannerId
+    };
+
+    setBannerUrl(bannerId);
+    if (onUpdateProfile) onUpdateProfile(updatedUser);
+
+    if (currentUser?.id && supabase) {
+      supabase.from('profiles').update({
+        banner_url: bannerId,
+        purchased_banners: newPurchased,
+        spent_cine_points: newSpent
+      }).eq('id', currentUser.id).then(({ error }) => {
+        if (error) console.warn('Failed to update shop banner in Supabase:', error.message);
+      });
+    }
+  };
+
   const matcherStats = useMemo(() => {
     if (!selectedFriend) return null;
     const common = library.filter(m => 
@@ -420,50 +505,6 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
     };
   }, [library, selectedFriend]);
 
-  const handlePurchaseBorder = (borderId, cost) => {
-    if (cinePoints < cost) {
-      alert("Not enough CinePoints!");
-      return;
-    }
-    const currentBorders = currentUser?.purchasedBorders || [];
-    const updatedBorders = [...new Set([...currentBorders, borderId])];
-    const spent = (currentUser?.spentCinePoints || 0) + cost;
-    onUpdateProfile({
-      ...currentUser,
-      purchasedBorders: updatedBorders,
-      spentCinePoints: spent
-    });
-  };
-
-  const handlePurchaseBadge = (badgeName, cost) => {
-    if (cinePoints < cost) {
-      alert("Not enough CinePoints!");
-      return;
-    }
-    const currentBadges = currentUser?.purchasedBadges || [];
-    const updatedBadges = [...new Set([...currentBadges, badgeName])];
-    const spent = (currentUser?.spentCinePoints || 0) + cost;
-    onUpdateProfile({
-      ...currentUser,
-      purchasedBadges: updatedBadges,
-      spentCinePoints: spent
-    });
-  };
-
-  const handlePurchaseBanner = (bannerId, cost) => {
-    if (cinePoints < cost) {
-      alert("Not enough CinePoints!");
-      return;
-    }
-    const currentBanners = currentUser?.purchasedBanners || [];
-    const updatedBanners = [...new Set([...currentBanners, bannerId])];
-    const spent = (currentUser?.spentCinePoints || 0) + cost;
-    onUpdateProfile({
-      ...currentUser,
-      purchasedBanners: updatedBanners,
-      spentCinePoints: spent
-    });
-  };
 
   const handleSave = () => {
     // Strip trailing nulls or keep array representation

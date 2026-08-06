@@ -16,7 +16,7 @@ function timeAgo(ts) {
 const STATUS_EMOJI = { watched: "✅", plan_to_watch: "📋", watching: "▶️", dropped: "❌" };
 const STATUS_LABEL = { watched: "watched", plan_to_watch: "added to watchlist", watching: "is watching", dropped: "dropped" };
 
-export default function SocialTab({ currentUser, onMovieClick }) {
+export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
@@ -204,7 +204,10 @@ export default function SocialTab({ currentUser, onMovieClick }) {
                     onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.02)"; e.currentTarget.style.borderColor = "var(--border)"; }}
                   >
                     {/* Avatar */}
-                    <div style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(124,111,247,0.15)", border: "1px solid var(--border)" }}>
+                    <div
+                      onClick={() => onOpenUserProfile && onOpenUserProfile({ id: item.user_id, ...profile })}
+                      style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(124,111,247,0.15)", border: "1px solid var(--border)", cursor: "pointer" }}
+                    >
                       {avatar ? <img src={avatar} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> :
                         <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px" }}>👤</div>}
                     </div>
@@ -220,7 +223,12 @@ export default function SocialTab({ currentUser, onMovieClick }) {
                     {/* Content */}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: "13.5px", fontWeight: 600, lineHeight: 1.4, marginBottom: "4px" }}>
-                        <span style={{ fontWeight: 800, color: "#a78bfa" }}>{name}</span>{" "}
+                        <span
+                          onClick={() => onOpenUserProfile && onOpenUserProfile({ id: item.user_id, ...profile })}
+                          style={{ fontWeight: 800, color: "#a78bfa", cursor: "pointer" }}
+                        >
+                          {name}
+                        </span>{" "}
                         <span style={{ color: "var(--text-muted)" }}>{STATUS_LABEL[item.status] || "logged"}</span>{" "}
                         <span style={{ fontWeight: 800, cursor: "pointer" }}
                           onClick={() => onMovieClick && onMovieClick(item.tmdb_id, item.media_type)}>
@@ -284,11 +292,17 @@ export default function SocialTab({ currentUser, onMovieClick }) {
                   onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(124,111,247,0.3)"}
                   onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
                 >
-                  <div style={{ width: "44px", height: "44px", borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(124,111,247,0.15)", border: "1px solid var(--border)" }}>
+                  <div
+                    onClick={() => onOpenUserProfile && onOpenUserProfile(user)}
+                    style={{ width: "44px", height: "44px", borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(124,111,247,0.15)", border: "1px solid var(--border)", cursor: "pointer" }}
+                  >
                     {user.avatar_url ? <img src={user.avatar_url} alt={user.username} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> :
                       <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>👤</div>}
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    onClick={() => onOpenUserProfile && onOpenUserProfile(user)}
+                    style={{ flex: 1, minWidth: 0, cursor: "pointer" }}
+                  >
                     <div style={{ fontWeight: 800, fontSize: "14px" }}>{user.display_name || user.username}</div>
                     <div style={{ fontSize: "12px", color: "var(--text-dim)" }}>@{user.username}</div>
                     {user.bio && <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.bio}</div>}
