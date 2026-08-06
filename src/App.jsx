@@ -199,24 +199,35 @@ function AppInner() {
         setShowRecoveryModal(true);
       }
       if (session?.user) {
-        // Immediately set a fallback user representation to keep UI responsive
-        setCurrentUser({
-          id: session.user.id,
-          username: session.user.email ? session.user.email.split('@')[0] : 'user',
-          displayName: session.user.email ? session.user.email.split('@')[0] : 'User',
-          avatar: DEFAULT_GREY_AVATAR,
-          bio: '',
-          favorites: [],
-          followersCount: 0,
-          followingCount: 0,
-        });
+        // Immediately set cached user or fallback to keep UI responsive without resetting avatar on F5
+        const cachedStr = localStorage.getItem('cinelog_supabase_cached_user');
+        let initialUser = null;
+        if (cachedStr) {
+          try {
+            const parsed = JSON.parse(cachedStr);
+            if (parsed.id === session.user.id) initialUser = parsed;
+          } catch {}
+        }
+        if (!initialUser) {
+          initialUser = {
+            id: session.user.id,
+            username: session.user.email ? session.user.email.split('@')[0] : 'user',
+            displayName: session.user.email ? session.user.email.split('@')[0] : 'User',
+            avatar: DEFAULT_GREY_AVATAR,
+            bio: '',
+            favorites: [],
+            followersCount: 0,
+            followingCount: 0,
+          };
+        }
+        setCurrentUser(initialUser);
 
         // Load local shop persistence for this user
         const localShopStr = localStorage.getItem(`cinelog_shop_${session.user.id}`);
         let localShop = {};
         try { if (localShopStr) localShop = JSON.parse(localShopStr); } catch {}
 
-        // Parallel load of profile details
+        // Parallel load of profile details from cloud DB
         supabase.from('profiles').select('*').eq('id', session.user.id).single()
           .then(({ data: profile }) => {
             if (profile) {
@@ -224,7 +235,7 @@ function AppInner() {
                 id: session.user.id,
                 username: profile.username || (session.user.email ? session.user.email.split('@')[0] : 'user'),
                 displayName: profile.display_name || (session.user.email ? session.user.email.split('@')[0] : 'User'),
-                avatar: profile.avatar_url || DEFAULT_GREY_AVATAR,
+                avatar: profile.avatar_url || initialUser.avatar || DEFAULT_GREY_AVATAR,
                 bio: profile.bio || '',
                 favorites: profile.favorites || [],
                 equippedBorder: profile.equipped_border || localShop.equippedBorder || localStorage.getItem(`equipped_border_${session.user.id}`) || 'none',

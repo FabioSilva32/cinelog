@@ -1772,15 +1772,15 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
                 </label>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                   {[
-                    { name: 'Cyberpunk Skyline', url: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=1200&h=220&q=80' },
-                    { name: 'Cosmic Nebula', url: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1200&h=220&q=80' },
-                    { name: 'Classic Cinema Theater', url: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1200&h=220&q=80' },
-                    { name: 'Tokyo Neon City', url: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?auto=format&fit=crop&w=1200&h=220&q=80' },
-                    { name: 'Synthwave Sunset', url: 'https://images.unsplash.com/photo-1508739773434-c26b3d09e071?auto=format&fit=crop&w=1200&h=220&q=80' },
-                    { name: 'Alpine Mountain Peaks', url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&h=220&q=80' },
-                    { name: 'Retro Drive-In Marquee', url: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=1200&h=220&q=80' },
-                    { name: 'Sunset Ocean Horizon', url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&h=220&q=80' },
-                    { name: 'Sci-Fi Warp Tunnel', url: 'https://images.unsplash.com/photo-1511447333015-45b65e60f6d5?auto=format&fit=crop&w=1200&h=220&q=80' }
+                    { name: '🎮 Pro Gaming Setup', url: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=1200&h=220&q=80' },
+                    { name: '🌌 Cosmic Nebula', url: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1200&h=220&q=80' },
+                    { name: '🎬 Classic Cinema Theater', url: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1200&h=220&q=80' },
+                    { name: '🏙️ Tokyo Neon City', url: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?auto=format&fit=crop&w=1200&h=220&q=80' },
+                    { name: '⛰️ Alpine Mountain Peaks', url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&h=220&q=80' },
+                    { name: '🍿 Cinema Audience', url: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=1200&h=220&q=80' },
+                    { name: '🌅 Sunset Ocean Horizon', url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&h=220&q=80' },
+                    { name: '🔮 Sci-Fi Warp Tunnel', url: 'https://images.unsplash.com/photo-1511447333015-45b65e60f6d5?auto=format&fit=crop&w=1200&h=220&q=80' },
+                    { name: '📽️ Vintage Film Studio', url: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&w=1200&h=220&q=80' }
                   ].map(b => (
                     <div
                       key={b.name}
