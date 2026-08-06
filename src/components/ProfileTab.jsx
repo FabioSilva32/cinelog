@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 // Version: 2.4.0 - Banner Alignment Controls
 import { Camera, Edit2, Check, Heart, Calendar, Star, Film, Trophy, BarChart3, TrendingUp, X, Search, Plus, Trash2, Upload } from 'lucide-react';
 import { ACHIEVEMENTS, BORDER_STYLES, BADGE_COLORS } from '../utils/achievements';
-import AvatarWithBorder from './AvatarWithBorder';
+import AvatarWithBorder, { DEFAULT_GREY_AVATAR } from './AvatarWithBorder';
 import { supabase } from '../supabaseClient';
 
 const MOCK_FRIENDS = [];
@@ -590,7 +590,7 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
   // Determine if user has a custom avatar (not one of the 4 defaults)
   const isDefaultAvatar = DEFAULT_AVATARS.some(item => item.path === avatar);
   const hasCustomAvatar = avatar && !isDefaultAvatar;
-  const avatarSrc = avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80';
+  const avatarSrc = avatar || DEFAULT_GREY_AVATAR;
 
   // Profile PFP Border Styles
   const activeBorder = isEditing ? equippedBorder : (currentUser?.equippedBorder || 'none');
@@ -1772,15 +1772,15 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
                 </label>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                   {[
-                    { name: 'Cyberpunk Neon', url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80' },
-                    { name: 'Cosmic Nebula', url: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80' },
-                    { name: 'Classic Cinema', url: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1200&q=80' },
-                    { name: 'Tokyo Night', url: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=1200&q=80' },
-                    { name: 'Synthwave Sunset', url: 'https://images.unsplash.com/photo-1508739773434-c26b3d09e071?auto=format&fit=crop&w=1200&q=80' },
-                    { name: 'Alpine Mountains', url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80' },
-                    { name: 'Retro Marquee', url: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=1200&q=80' },
-                    { name: 'Sunset Ocean', url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80' },
-                    { name: 'Sci-Fi Tunnel', url: 'https://images.unsplash.com/photo-1511447333015-45b65e60f6d5?auto=format&fit=crop&w=1200&q=80' }
+                    { name: 'Cyberpunk Skyline', url: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=1600&h=450&q=80' },
+                    { name: 'Cosmic Galaxy Widescreen', url: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1600&h=450&q=80' },
+                    { name: 'Classic Cinema Hall', url: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1600&h=450&q=80' },
+                    { name: 'Tokyo Neon Street', url: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?auto=format&fit=crop&w=1600&h=450&q=80' },
+                    { name: 'Synthwave Sunset', url: 'https://images.unsplash.com/photo-1508739773434-c26b3d09e071?auto=format&fit=crop&w=1600&h=450&q=80' },
+                    { name: 'Alpine Peak Widescreen', url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1600&h=450&q=80' },
+                    { name: 'Retro Drive-In Marquee', url: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=1600&h=450&q=80' },
+                    { name: 'Sunset Ocean Widescreen', url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&h=450&q=80' },
+                    { name: 'Sci-Fi Warp Tunnel', url: 'https://images.unsplash.com/photo-1511447333015-45b65e60f6d5?auto=format&fit=crop&w=1600&h=450&q=80' }
                   ].map(b => (
                     <div
                       key={b.name}

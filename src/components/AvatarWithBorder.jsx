@@ -2,6 +2,8 @@ import React from 'react';
 import { BORDER_STYLES } from '../utils/achievements';
 import { Sparkles, Flame } from 'lucide-react';
 
+export const DEFAULT_GREY_AVATAR = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><circle cx="64" cy="64" r="64" fill="%23242038"/><circle cx="64" cy="45" r="22" fill="%239ca3af"/><path d="M64 74c-22 0-38 14-38 32v6h76v-6c0-18-16-32-38-32z" fill="%239ca3af"/></svg>`;
+
 export default function AvatarWithBorder({ src, username, borderId, size = 96, onClick, className, style, onError }) {
   const activeBorder = borderId || 'none';
   const borderConfig = BORDER_STYLES[activeBorder] || BORDER_STYLES.none;
@@ -28,11 +30,13 @@ export default function AvatarWithBorder({ src, username, borderId, size = 96, o
     ...style
   };
 
+  const finalSrc = src && src.trim() ? src : DEFAULT_GREY_AVATAR;
+
   return (
     <div className={className} onClick={onClick} style={wrapperStyle}>
       {/* Avatar Image inside the frame */}
       <img
-        src={src || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80'}
+        src={finalSrc}
         alt={username || 'Profile'}
         style={{
           width: '100%',
@@ -45,7 +49,7 @@ export default function AvatarWithBorder({ src, username, borderId, size = 96, o
           padding: borderStyle.border?.includes('transparent') ? (isSmall ? '2px' : '4px') : '0',
           background: 'var(--bg-dark)'
         }}
-        onError={onError || (e => e.target.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80')}
+        onError={onError || (e => e.target.src = DEFAULT_GREY_AVATAR)}
       />
 
       {/* Decorative details for premium borders */}

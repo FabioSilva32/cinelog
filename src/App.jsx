@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Header from './components/Header';
 import LandingPage from './components/LandingPage';
+import { DEFAULT_GREY_AVATAR } from './components/AvatarWithBorder';
 import LibraryTab from './components/LibraryTab';
 import ExploreTab from './components/ExploreTab';
 import CollectionsTab from './components/CollectionsTab';
@@ -203,7 +204,7 @@ function AppInner() {
           id: session.user.id,
           username: session.user.email ? session.user.email.split('@')[0] : 'user',
           displayName: session.user.email ? session.user.email.split('@')[0] : 'User',
-          avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80',
+          avatar: DEFAULT_GREY_AVATAR,
           bio: '',
           favorites: [],
           followersCount: 0,
@@ -223,7 +224,7 @@ function AppInner() {
                 id: session.user.id,
                 username: profile.username || (session.user.email ? session.user.email.split('@')[0] : 'user'),
                 displayName: profile.display_name || (session.user.email ? session.user.email.split('@')[0] : 'User'),
-                avatar: profile.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80',
+                avatar: profile.avatar_url || DEFAULT_GREY_AVATAR,
                 bio: profile.bio || '',
                 favorites: profile.favorites || [],
                 equippedBorder: profile.equipped_border || localShop.equippedBorder || localStorage.getItem(`equipped_border_${session.user.id}`) || 'none',
