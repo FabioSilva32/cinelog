@@ -598,51 +598,54 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '32px', position: 'relative' }}>
 
       {/* ── PROFILE HERO CARD ── */}
-      <div
-        className={`glass ${bannerUrl && bannerUrl.startsWith('animated-') ? `banner-${bannerUrl.replace('animated-', '')}` : ''}`}
-        style={{
-          borderRadius: 'var(--radius-xl)',
-          overflow: 'hidden',
-          position: 'relative',
-          background: (bannerUrl && !bannerUrl.startsWith('animated-'))
-            ? `linear-gradient(180deg, rgba(10,8,19,0.3) 0%, rgba(10,8,19,0.85) 55%, rgba(10,8,19,0.98) 100%), url(${bannerUrl}) center 25%/cover no-repeat`
-            : undefined,
-          border: '1px solid var(--border)',
-          boxShadow: '0 20px 50px rgba(0,0,0,0.6)'
-        }}
-      >
-        <button
-          type="button"
-          onClick={() => {
-            if (!isEditing) {
-              setDisplayName(currentUser?.displayName || '');
-              setUsername(currentUser?.username || '');
-              setBio(currentUser?.bio || '');
-              setAvatar(currentUser?.avatar || '');
-              setFavorites(Array.from({ length: 6 }, (_, i) => (currentUser?.favorites || [])[i] || null));
-              setEquippedBorder(currentUser?.equippedBorder || 'none');
-              setBannerUrl(currentUser?.bannerUrl || '');
-              setIsEditing(true);
-            }
-            setShowBannerSelector(true);
-          }}
+      <div className="glass" style={{ borderRadius: 'var(--radius-xl)', overflow: 'hidden', border: '1px solid var(--border)', background: '#0a0813', position: 'relative' }}>
+        
+        {/* Banner Cover Area */}
+        <div
+          className={bannerUrl && bannerUrl.startsWith('animated-') ? `banner-${bannerUrl.replace('animated-', '')}` : ''}
           style={{
-            position: 'absolute', top: '16px', right: '16px',
-            background: 'rgba(8,7,11,0.85)', border: '1px solid var(--accent)',
-            borderRadius: '8px', padding: '8px 16px', fontSize: '12px',
-            fontWeight: 800, color: '#fff', cursor: 'pointer', zIndex: 10,
-            transition: 'all 0.2s', backdropFilter: 'blur(10px)',
-            boxShadow: '0 4px 14px rgba(124,111,247,0.3)'
+            height: '180px',
+            width: '100%',
+            background: (bannerUrl && !bannerUrl.startsWith('animated-'))
+              ? `linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(10,8,19,0.7) 100%), url("${bannerUrl}") center 30%/cover no-repeat`
+              : (!bannerUrl ? 'linear-gradient(135deg, #1e1b4b 0%, #311b92 50%, #0f172a 100%)' : ''),
+            position: 'relative',
+            transition: 'all 0.3s'
           }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.04)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
         >
-          🖼️ Change Profile Banner
-        </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!isEditing) {
+                setDisplayName(currentUser?.displayName || '');
+                setUsername(currentUser?.username || '');
+                setBio(currentUser?.bio || '');
+                setAvatar(currentUser?.avatar || '');
+                setFavorites(Array.from({ length: 6 }, (_, i) => (currentUser?.favorites || [])[i] || null));
+                setEquippedBorder(currentUser?.equippedBorder || 'none');
+                setBannerUrl(currentUser?.bannerUrl || '');
+                setIsEditing(true);
+              }
+              setShowBannerSelector(true);
+            }}
+            style={{
+              position: 'absolute', top: '16px', right: '16px',
+              background: 'rgba(8,7,11,0.85)', border: '1px solid var(--accent)',
+              borderRadius: '8px', padding: '8px 16px', fontSize: '12px',
+              fontWeight: 800, color: '#fff', cursor: 'pointer', zIndex: 10,
+              transition: 'all 0.2s', backdropFilter: 'blur(10px)',
+              boxShadow: '0 4px 14px rgba(124,111,247,0.3)'
+            }}
+            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.04)'}
+            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            🖼️ Change Profile Banner
+          </button>
+        </div>
 
-        <div style={{ padding: '28px', position: 'relative', zIndex: 2 }}>
+        <div style={{ padding: '0 28px 28px', position: 'relative' }}>
           {/* Avatar Header */}
-          <div style={{ position: 'relative', width: '96px', marginBottom: '16px' }}>
+          <div style={{ position: 'relative', width: '96px', marginTop: '-48px', marginBottom: '16px' }}>
             <AvatarWithBorder
               src={avatarSrc}
               username={currentUser?.username || 'Profile'}
