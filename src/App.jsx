@@ -240,6 +240,8 @@ function AppInner() {
                 favorites: profile.favorites || [],
                 equippedBorder: profile.equipped_border || localShop.equippedBorder || localStorage.getItem(`equipped_border_${session.user.id}`) || 'none',
                 bannerUrl: profile.banner_url || localShop.bannerUrl || '',
+                bannerFitMode: profile.banner_fit_mode || 'cover',
+                bannerPosPercent: profile.banner_pos_percent ?? 20,
                 spentCinePoints: profile.spent_cine_points ?? localShop.spentCinePoints ?? 0,
                 purchasedBorders: profile.purchased_borders || localShop.purchasedBorders || [],
                 purchasedBadges: profile.purchased_badges || localShop.purchasedBadges || [],
@@ -600,6 +602,15 @@ function AppInner() {
       });
   };
 
+  const handleOpenUserProfile = useCallback((userObjOrUsername) => {
+    let target = userObjOrUsername;
+    if (typeof userObjOrUsername === 'string') {
+      target = { username: userObjOrUsername };
+    }
+    setViewingUserProfile(target);
+    handleTabChange('profile');
+  }, [handleTabChange]);
+
   const handleUpdateProfile = async (updatedDetails) => {
     // Immediately update local state & local storage cache
     setCurrentUser(prev => {
@@ -632,6 +643,8 @@ function AppInner() {
         favorites: updatedDetails.favorites !== undefined ? updatedDetails.favorites : (currentUser.favorites || []),
         equipped_border: updatedDetails.equippedBorder !== undefined ? updatedDetails.equippedBorder : (currentUser.equippedBorder || 'none'),
         banner_url: updatedDetails.bannerUrl !== undefined ? updatedDetails.bannerUrl : (currentUser.bannerUrl || ''),
+        banner_fit_mode: updatedDetails.bannerFitMode !== undefined ? updatedDetails.bannerFitMode : (currentUser.bannerFitMode || 'cover'),
+        banner_pos_percent: updatedDetails.bannerPosPercent !== undefined ? updatedDetails.bannerPosPercent : (currentUser.bannerPosPercent ?? 20),
         spent_cine_points: updatedDetails.spentCinePoints !== undefined ? updatedDetails.spentCinePoints : (currentUser.spentCinePoints || 0),
         purchased_borders: updatedDetails.purchasedBorders !== undefined ? updatedDetails.purchasedBorders : (currentUser.purchasedBorders || []),
         purchased_badges: updatedDetails.purchasedBadges !== undefined ? updatedDetails.purchasedBadges : (currentUser.purchasedBadges || []),
@@ -891,7 +904,14 @@ function AppInner() {
           <StatsTab library={library} onMovieClick={handleMovieClick} />
         )}
         {activeTab === 'profile' && (
-          <ProfileTab currentUser={currentUser} onUpdateProfile={handleUpdateProfile} library={library} />
+          <ProfileTab
+            targetUser={viewingUserProfile}
+            currentUser={currentUser}
+            onUpdateProfile={handleUpdateProfile}
+            library={library}
+            onMovieClick={handleMovieClick}
+            onOpenUserProfile={handleOpenUserProfile}
+          />
         )}
         {activeTab === 'achievements' && (
           <AchievementsTab library={library} currentUser={currentUser} onUpdateProfile={handleUpdateProfile} />
@@ -909,7 +929,7 @@ function AppInner() {
           <ForYouTab library={library} currentUser={currentUser} onAddMovie={handleAddMovie} onMovieClick={handleMovieClick} />
         )}
         {activeTab === 'social' && (
-          <SocialTab currentUser={currentUser} onMovieClick={handleMovieClick} onOpenUserProfile={setViewingUserProfile} />
+          <SocialTab currentUser={currentUser} onMovieClick={handleMovieClick} onOpenUserProfile={handleOpenUserProfile} />
         )}
       </main>
 
@@ -921,16 +941,7 @@ function AppInner() {
           onSave={handleSaveMovie}
           onToggleFavorite={handleToggleFavorite}
           isFavorite={library.find(m => String(m.tmdb_id) === String(activeEditMovie.tmdb_id))?.favorite || false}
-          onOpenUserProfile={setViewingUserProfile}
-        />
-      )}
-
-      {viewingUserProfile && (
-        <UserProfileModal
-          targetUser={viewingUserProfile}
-          currentUser={currentUser}
-          onClose={() => setViewingUserProfile(null)}
-          onMovieClick={handleMovieClick}
+          onOpenUserProfile={handleOpenUserProfile}
         />
       )}
 

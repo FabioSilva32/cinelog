@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-// Version: 2.4.0 - Banner Alignment Controls
-import { Camera, Edit2, Check, Heart, Calendar, Star, Film, Trophy, BarChart3, TrendingUp, X, Search, Plus, Trash2, Upload } from 'lucide-react';
+import { Camera, Edit2, Check, Heart, Calendar, Star, Film, Trophy, BarChart3, X, Search, Plus, Upload } from 'lucide-react';
 import { ACHIEVEMENTS, BORDER_STYLES, BADGE_COLORS } from '../utils/achievements';
 import AvatarWithBorder, { DEFAULT_GREY_AVATAR } from './AvatarWithBorder';
 import { supabase } from '../supabaseClient';
@@ -64,7 +63,68 @@ function MiniGenreChart({ library }) {
   );
 }
 
-export default function ProfileTab({ currentUser, onUpdateProfile, library = [] }) {
+function RatingDistributionChart({ library = [] }) {
+  const dist = useMemo(() => {
+    const d = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0 };
+    library.forEach(m => {
+      if (m.rating) {
+        const rounded = Math.min(10, Math.max(1, Math.round(Number(m.rating))));
+        d[rounded] = (d[rounded] || 0) + 1;
+      }
+    });
+    return d;
+  }, [library]);
+
+  const maxCount = Math.max(1, ...Object.values(dist));
+  const totalRated = Object.values(dist).reduce((a, b) => a + b, 0);
+
+  return (
+    <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid var(--border)', padding: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <h4 style={{ fontSize: '13px', fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <BarChart3 size={15} /> Rating Distribution
+        </h4>
+        <span style={{ fontSize: '12px', color: 'var(--text-dim)', fontWeight: 700 }}>
+          {totalRated} rated film{totalRated === 1 ? '' : 's'}
+        </span>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', height: '100px', paddingTop: '10px' }}>
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(score => {
+          const count = dist[score] || 0;
+          const heightPercent = maxCount > 0 ? (count / maxCount) * 100 : 0;
+          const isHigh = score >= 8;
+          const isMid = score >= 5 && score < 8;
+          const color = isHigh ? '#34d399' : isMid ? '#fbbf24' : '#f43f5e';
+
+          return (
+            <div key={score} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
+              <div style={{ fontSize: '10px', color: 'var(--text-dim)', marginBottom: '4px', fontWeight: 800 }}>
+                {count > 0 ? count : ''}
+              </div>
+              <div
+                title={`${score}/10 Stars: ${count} films`}
+                style={{
+                  width: '100%',
+                  height: `${Math.max(count > 0 ? 12 : 3, heightPercent)}%`,
+                  background: count > 0 ? color : 'rgba(255,255,255,0.05)',
+                  borderRadius: '4px 4px 2px 2px',
+                  transition: 'all 0.4s ease',
+                  cursor: 'pointer'
+                }}
+              />
+              <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', marginTop: '6px' }}>
+                {score}★
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, library = [], onMovieClick, onOpenUserProfile }) {
   const [isEditing, setIsEditing] = useState(false);
   const [displayName, setDisplayName] = useState(currentUser?.displayName || '');
   const [username, setUsername] = useState(currentUser?.username || '');
@@ -72,10 +132,18 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
   const [avatar, setAvatar] = useState(currentUser?.avatar || '');
   const [equippedBorder, setEquippedBorder] = useState(currentUser?.equippedBorder || 'none');
   const [bannerUrl, setBannerUrl] = useState(currentUser?.bannerUrl || '');
+  const [bannerFitMode, setBannerFitMode] = useState(currentUser?.bannerFitMode || 'cover');
+  const [bannerPosPercent, setBannerPosPercent] = useState(currentUser?.bannerPosPercent ?? 20);
+  const [bannerPosition, setBannerPosition] = useState(currentUser?.bannerPosition || 'top');
   const [showBannerSelector, setShowBannerSelector] = useState(false);
-  const [profileActiveSubTab, setProfileActiveSubTab] = useState('showcase'); // 'showcase', 'shop'
-  const [selectedFriend, setSelectedFriend] = useState(MOCK_FRIENDS[0]);
+  const [profileActiveSubTab, setProfileActiveSubTab] = useState('overview'); // 'overview','diary','watchlist','stats','shop'
   const [activeShareCard, setActiveShareCard] = useState(null);
+  // Other-user profile state (Letterboxd-style full-page view)
+  const [viewedProfile, setViewedProfile] = useState(null);
+  const [viewedLibrary, setViewedLibrary] = useState([]);
+  const [viewedLoading, setViewedLoading] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
 
   // Soundscape Mixer Audio State
   const [soundVolumes, setSoundVolumes] = useState({ projector: 0, scifi: 0, orchestral: 0, lofi: 0 });
@@ -93,6 +161,71 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
       }
     };
   }, []);
+
+  // P2 Fix: re-sync banner state from currentUser whenever it changes (e.g. after Supabase load)
+  // Only sync when not actively editing to avoid overwriting in-progress changes
+  useEffect(() => {
+    if (!isEditing) {
+      setBannerUrl(currentUser?.bannerUrl || '');
+      setBannerFitMode(currentUser?.bannerFitMode || 'cover');
+      setBannerPosPercent(currentUser?.bannerPosPercent ?? 20);
+      setBannerPosition(currentUser?.bannerPosition || 'top');
+    }
+  }, [currentUser?.bannerUrl, currentUser?.bannerFitMode, currentUser?.bannerPosPercent, currentUser?.bannerPosition, isEditing]);
+
+  // Fetch other-user profile + library when targetUser is set and is not the current user
+  const isViewingOther = targetUser && targetUser.id !== currentUser?.id;
+  useEffect(() => {
+    if (!isViewingOther) {
+      setViewedProfile(null);
+      setViewedLibrary([]);
+      return;
+    }
+    let mounted = true;
+    setViewedLoading(true);
+    const userId = targetUser?.id;
+    const fetchData = async () => {
+      try {
+        if (userId && supabase) {
+          const [{ data: prof }, { data: lib }, { data: followRow }] = await Promise.all([
+            supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+            supabase.from('library').select('*').eq('user_id', userId).order('date_added', { ascending: false }),
+            currentUser?.id ? supabase.from('follows').select('*').eq('follower_id', currentUser.id).eq('following_id', userId).maybeSingle() : Promise.resolve({ data: null })
+          ]);
+          if (!mounted) return;
+          if (prof) {
+            setViewedProfile({
+              id: prof.id,
+              username: prof.username || prof.display_name || 'user',
+              displayName: prof.display_name || prof.username || 'CineLog Member',
+              avatar: prof.avatar_url || '',
+              bio: prof.bio || '',
+              equippedBorder: prof.equipped_border || 'none',
+              bannerUrl: prof.banner_url || '',
+              bannerFitMode: prof.banner_fit_mode || 'cover',
+              bannerPosPercent: prof.banner_pos_percent ?? 20,
+              favorites: prof.favorites || [],
+              purchasedBadges: prof.purchased_badges || [],
+            });
+          } else {
+            setViewedProfile(targetUser);
+          }
+          setViewedLibrary(lib || []);
+          setIsFollowing(!!followRow);
+        } else {
+          // No supabase â‚¬â€ just use targetUser object directly
+          if (mounted) setViewedProfile(targetUser);
+        }
+      } catch (err) {
+        console.warn('Error fetching viewed user profile:', err);
+        if (mounted) setViewedProfile(targetUser);
+      } finally {
+        if (mounted) setViewedLoading(false);
+      }
+    };
+    fetchData();
+    return () => { mounted = false; };
+  }, [targetUser, isViewingOther, currentUser?.id]);
 
   const handleVolumeChange = (type, val) => {
     setSoundVolumes(prev => ({ ...prev, [type]: val }));
@@ -255,9 +388,7 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
   const [selectingSlotIdx, setSelectingSlotIdx] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [popupActiveTab, setPopupActiveTab] = useState('movie'); // 'movie', 'tv', 'anime'
-  const [bannerPosition, setBannerPosition] = useState(currentUser?.bannerPosition || 'top');
-  const [bannerPosPercent, setBannerPosPercent] = useState(currentUser?.bannerPosPercent ?? 20);
-  const [bannerFitMode, setBannerFitMode] = useState(currentUser?.bannerFitMode || 'cover');
+
 
   const watchedMovies = library.filter(m => m.status === 'watched');
   const watchedCount = watchedMovies.length;
@@ -479,52 +610,35 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
     }
   };
 
-  const matcherStats = useMemo(() => {
-    if (!selectedFriend) return null;
-    const common = library.filter(m => 
-      m.status === 'watched' && 
-      selectedFriend.library.some(fl => String(fl.tmdb_id) === String(m.tmdb_id))
-    );
-    let ratingDiffSum = 0;
-    let ratingCount = 0;
-    common.forEach(m => {
-      const friendMovie = selectedFriend.library.find(fl => String(fl.tmdb_id) === String(m.tmdb_id));
-      if (m.rating && friendMovie && friendMovie.rating) {
-        const friendScoreTen = friendMovie.rating * 2;
-        const userScoreTen = Number(m.rating);
-        ratingDiffSum += Math.abs(friendScoreTen - userScoreTen);
-        ratingCount++;
-      }
-    });
-    const ratingSimilarity = ratingCount > 0 
-      ? Math.max(0, Math.min(100, Math.round(100 - (ratingDiffSum / ratingCount) * 10))) 
-      : 75;
-    const userGenres = {};
-    library.forEach(m => (m.genres || []).forEach(g => userGenres[g] = (userGenres[g] || 0) + 1));
-    const userTopGenres = Object.entries(userGenres).sort((a,b)=>b[1]-a[1]).slice(0, 3).map(x=>x[0]);
-    const genreOverlap = selectedFriend.genres.filter(g => userTopGenres.includes(g));
-    const genreSimilarity = Math.round((genreOverlap.length / Math.max(1, selectedFriend.genres.length)) * 100);
-    const totalScore = Math.round((ratingSimilarity * 0.6) + (genreSimilarity * 0.4));
-    let level = 'Casual Acquaintance';
-    if (totalScore >= 90) level = 'Film Soulmate 🌌';
-    else if (totalScore >= 75) level = 'Cinema Twin 🎬';
-    else if (totalScore >= 60) level = 'Similar Taste 🍿';
-    else if (totalScore >= 40) level = 'Casual Talker 💬';
-    return {
-      common,
-      ratingSimilarity,
-      genreSimilarity,
-      totalScore,
-      level
-    };
-  }, [library, selectedFriend]);
-
 
   const handleSave = () => {
     // Strip trailing nulls or keep array representation
     const savedFavorites = favorites.filter(f => f !== null);
     onUpdateProfile({ displayName, username, bio, avatar, favorites: savedFavorites, equippedBorder, bannerUrl, bannerPosition, bannerPosPercent, bannerFitMode });
     setIsEditing(false);
+  };
+
+  const handleToggleFollow = async () => {
+    if (!currentUser?.id || !viewedProfile?.id || currentUser.id === viewedProfile.id) return;
+    setFollowLoading(true);
+    try {
+      if (isFollowing) {
+        await supabase.from('follows').delete()
+          .eq('follower_id', currentUser.id)
+          .eq('following_id', viewedProfile.id);
+        setIsFollowing(false);
+      } else {
+        await supabase.from('follows').upsert(
+          { follower_id: currentUser.id, following_id: viewedProfile.id },
+          { onConflict: 'follower_id,following_id' }
+        );
+        setIsFollowing(true);
+      }
+    } catch (err) {
+      console.warn('Follow toggle error:', err);
+    } finally {
+      setFollowLoading(false);
+    }
   };
 
   const selectMovieForSlot = (movie) => {
@@ -607,354 +721,429 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
     return watched.filter(m => m.title.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [library, searchQuery, popupActiveTab, favorites, selectingSlotIdx]);
 
-  // Determine if user has a custom avatar (not one of the 4 defaults)
-  const isDefaultAvatar = DEFAULT_AVATARS.some(item => item.path === avatar);
-  const hasCustomAvatar = avatar && !isDefaultAvatar;
-  const avatarSrc = avatar || DEFAULT_GREY_AVATAR;
 
-  // Profile PFP Border Styles
-  const activeBorder = isEditing ? equippedBorder : (currentUser?.equippedBorder || 'none');
-  const borderStyle = BORDER_STYLES[activeBorder]?.style || BORDER_STYLES.none.style;
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '32px', position: 'relative' }}>
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '0', position: 'relative' }}>
 
-      {/* ── PROFILE HERO CARD ── */}
-      <div className="glass" style={{ borderRadius: 'var(--radius-xl)', overflow: 'hidden', border: '1px solid var(--border)', background: '#0a0813', position: 'relative' }}>
-        
-        {/* Banner Cover Area */}
+      {/* â€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Â
+          OTHER USER PROFILE â‚¬â€ Letterboxd full-page read-only view
+          â€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Â */}
+      {isViewingOther ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+          {/* Back button */}
+          <div style={{ padding: '0 0 16px 0' }}>
+            <button
+              onClick={() => { if (onOpenUserProfile) onOpenUserProfile(null); }}
+              style={{
+                background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)',
+                color: 'var(--text-muted)', borderRadius: '20px', padding: '7px 16px',
+                fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', display: 'flex',
+                alignItems: 'center', gap: '6px', transition: 'all 0.2s'
+              }}
+              onMouseEnter={e => e.currentTarget.style.color = '#fff'}
+              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+            >
+              â€ Â Back to my profile
+            </button>
+          </div>
+
+          {viewedLoading ? (
+            <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-dim)', fontSize: '14px' }}>
+              Loading profile"¦
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+              {/* â€â‚¬â€â‚¬ BANNER â€â‚¬â€â‚¬ */}
+              <div
+                className={viewedProfile?.bannerUrl?.startsWith('animated-') ? `banner-${viewedProfile.bannerUrl.replace('animated-', '')}` : ''}
+                style={{
+                  height: '320px',
+                  width: '100%',
+                  borderRadius: '20px 20px 0 0',
+                  overflow: 'hidden',
+                  position: 'relative',
+                  background: (viewedProfile?.bannerUrl && !viewedProfile.bannerUrl.startsWith('animated-'))
+                    ? `url("${viewedProfile.bannerUrl}") center ${viewedProfile.bannerPosPercent ?? 20}% / ${viewedProfile.bannerFitMode === 'contain' ? 'contain' : 'cover'} no-repeat`
+                    : (!viewedProfile?.bannerUrl ? 'linear-gradient(135deg, #1a1040 0%, #2d1b69 50%, #0f172a 100%)' : '#08070e')
+                }}
+              >
+                {/* Gradient fade overlay at bottom */}
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0) 30%, rgba(10,8,19,0.7) 70%, #0a0813 100%)' }} />
+              </div>
+
+              {/* â€â‚¬â€â‚¬ PROFILE HEADER ROW â€â‚¬â€â‚¬ */}
+              <div style={{ background: '#0a0813', padding: '0 28px 24px', borderRadius: '0 0 20px 20px', border: '1px solid var(--border)', borderTop: 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '20px', marginTop: '-55px', flexWrap: 'wrap' }}>
+                  {/* Avatar */}
+                  <div style={{ flexShrink: 0 }}>
+                    <AvatarWithBorder
+                      src={viewedProfile?.avatar || DEFAULT_GREY_AVATAR}
+                      username={viewedProfile?.username || 'user'}
+                      borderId={viewedProfile?.equippedBorder || 'none'}
+                      size={110}
+                    />
+                  </div>
+
+                  {/* Name / bio / badges */}
+                  <div style={{ flex: 1, minWidth: 0, paddingBottom: '4px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                      <h2 style={{ fontSize: '24px', fontWeight: 900, color: '#fff', margin: 0 }}>
+                        {viewedProfile?.displayName || viewedProfile?.username || 'CineLog User'}
+                      </h2>
+                    </div>
+                    <div style={{ color: 'var(--accent)', fontSize: '13px', fontWeight: 700, marginBottom: '8px' }}>
+                      @{viewedProfile?.username || 'user'}
+                    </div>
+                    {(viewedProfile?.purchasedBadges || []).length > 0 && (
+                      <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                        {(viewedProfile.purchasedBadges).map(b => {
+                          const colors = BADGE_COLORS[b] || { border: '1px solid var(--border)', color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.03)' };
+                          return <span key={b} style={{ fontSize: '10px', fontWeight: 800, padding: '2.5px 8.5px', borderRadius: '12px', textTransform: 'uppercase', letterSpacing: '0.04em', ...colors }}>{b}</span>;
+                        })}
+                      </div>
+                    )}
+                    {viewedProfile?.bio && (
+                      <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0, maxWidth: '480px' }}>
+                        {viewedProfile.bio}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Stats + Follow button */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '14px', paddingBottom: '4px' }}>
+                    <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                      {[
+                        { label: 'Films', val: viewedLibrary.filter(m => m.status === 'watched').length, color: 'var(--green)' },
+                        { label: 'Reviews', val: viewedLibrary.filter(m => m.review?.trim()).length, color: 'var(--accent)' },
+                        { label: 'Watchlist', val: viewedLibrary.filter(m => m.status === 'plan_to_watch').length, color: 'var(--blue)' },
+                      ].map(s => (
+                        <div key={s.label} style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '20px', fontWeight: 900, color: s.color, fontFamily: 'var(--font-heading)' }}>{s.val}</div>
+                          <div style={{ fontSize: '10px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>{s.label}</div>
+                        </div>
+                      ))}
+                    </div>
+                    {currentUser?.id && currentUser.id !== viewedProfile?.id && (
+                      <button
+                        onClick={handleToggleFollow}
+                        disabled={followLoading}
+                        style={{
+                          background: isFollowing ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg, #7c6ff7, #a855f7)',
+                          border: isFollowing ? '1px solid var(--border)' : 'none',
+                          color: '#fff', padding: '9px 22px', borderRadius: '50px',
+                          fontWeight: 800, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px',
+                          cursor: followLoading ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
+                          opacity: followLoading ? 0.6 : 1, boxShadow: isFollowing ? 'none' : '0 4px 14px rgba(124,111,247,0.4)'
+                        }}
+                      >
+                        {isFollowing ? 'Å“â€œ Following' : '+ Follow'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* â€â‚¬â€â‚¬ OTHER USER CONTENT â€â‚¬â€â‚¬ */}
+              <div style={{ marginTop: '24px', display: 'grid', gridTemplateColumns: '1fr 340px', gap: '24px', alignItems: 'start' }}>
+                {/* Left: Favorites + Recent activity */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  {/* Favorites */}
+                  {(viewedProfile?.favorites || []).filter(f => f).length > 0 && (
+                    <div className="glass" style={{ borderRadius: 'var(--radius-xl)', padding: '20px', border: '1px solid var(--border)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                        <Heart size={16} color="var(--red)" fill="var(--red)" />
+                        <h3 style={{ fontSize: '15px', fontWeight: 800 }}>Favorite Films</h3>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px' }}>
+                        {Array.from({ length: 6 }).map((_, i) => {
+                          const fav = (viewedProfile?.favorites || [])[i];
+                          return (
+                            <div key={i} style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--surface-solid)' }}>
+                              <div style={{ aspectRatio: '2/3', overflow: 'hidden', position: 'relative' }}>
+                                {fav ? (
+                                  <img src={`https://image.tmdb.org/t/p/w300${fav.poster_path}`} alt={fav.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+                                ) : (
+                                  <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', opacity: 0.1 }}>°Å¸Å½Â¬</div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Recent activity */}
+                  <div className="glass" style={{ borderRadius: 'var(--radius-xl)', padding: '20px', border: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                      <Film size={16} color="var(--accent)" />
+                      <h3 style={{ fontSize: '15px', fontWeight: 800 }}>Recent Activity</h3>
+                    </div>
+                    {viewedLibrary.length === 0 ? (
+                      <div style={{ textAlign: 'center', color: 'var(--text-dim)', fontSize: '13px', padding: '20px 0' }}>No public activity yet</div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {viewedLibrary.slice(0, 8).map(m => (
+                          <div
+                            key={m.id}
+                            onClick={() => onMovieClick && onMovieClick(m.tmdb_id, m.media_type)}
+                            style={{ display: 'flex', gap: '12px', alignItems: 'center', padding: '10px 12px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '10px', cursor: onMovieClick ? 'pointer' : 'default', transition: 'background 0.2s' }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
+                          >
+                            {m.poster_path ? (
+                              <img src={`https://image.tmdb.org/t/p/w92${m.poster_path}`} alt="" style={{ width: '38px', height: '56px', objectFit: 'cover', borderRadius: '5px', border: '1px solid var(--border)', flexShrink: 0 }} />
+                            ) : (
+                              <div style={{ width: '38px', height: '56px', background: 'rgba(255,255,255,0.04)', borderRadius: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>°Å¸Å½Â¬</div>
+                            )}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontWeight: 800, fontSize: '13.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.title}</div>
+                              <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginTop: '2px' }}>{m.release_year}</div>
+                              {m.review && <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>"{m.review}"</div>}
+                            </div>
+                            {m.rating && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', background: 'rgba(245,158,11,0.1)', color: 'var(--gold)', padding: '4px 9px', borderRadius: '20px', fontWeight: 800, fontSize: '12px', flexShrink: 0 }}>
+                                ★ {Number(m.rating).toFixed(1)}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right: stats sidebar */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div className="glass" style={{ borderRadius: 'var(--radius-xl)', padding: '20px', border: '1px solid var(--border)' }}>
+                    <h4 style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-dim)', marginBottom: '16px' }}>Stats</h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                      {[
+                        { label: 'Watched', val: viewedLibrary.filter(m => m.status === 'watched').length, color: 'var(--green)' },
+                        { label: 'Reviews', val: viewedLibrary.filter(m => m.review?.trim()).length, color: 'var(--accent)' },
+                        { label: 'Watchlist', val: viewedLibrary.filter(m => m.status === 'plan_to_watch').length, color: '#60a5fa' },
+                        { label: 'Avg Rating', val: (() => { const r = viewedLibrary.filter(m => m.rating); return r.length ? '★ ' + (r.reduce((s, m) => s + Number(m.rating), 0) / r.length).toFixed(1) : 'â‚¬â€'; })(), color: 'var(--gold)' },
+                      ].map(s => (
+                        <div key={s.label} style={{ textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', padding: '12px' }}>
+                          <div style={{ fontSize: '18px', fontWeight: 900, color: s.color }}>{s.val}</div>
+                          <div style={{ fontSize: '10px', color: 'var(--text-dim)', textTransform: 'uppercase', fontWeight: 700, marginTop: '2px' }}>{s.label}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <RatingDistributionChart library={viewedLibrary} />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+      // â€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Â
+      // OWN PROFILE â‚¬â€ Letterboxd-style full page
+      // â€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Ââ€¢Â
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+
+        {/* â€â‚¬â€â‚¬ BANNER (320px immersive) â€â‚¬â€â‚¬ */}
         <div
           className={bannerUrl && bannerUrl.startsWith('animated-') ? `banner-${bannerUrl.replace('animated-', '')}` : ''}
           style={{
-            height: '220px',
+            height: '320px',
             width: '100%',
-            position: 'relative',
+            borderRadius: '20px 20px 0 0',
             overflow: 'hidden',
-            background: (!bannerUrl ? 'linear-gradient(135deg, #1e1b4b 0%, #311b92 50%, #0f172a 100%)' : '#08070e')
+            position: 'relative',
+            background: (bannerUrl && !bannerUrl.startsWith('animated-'))
+              ? `url("${bannerUrl}") center ${bannerPosPercent ?? 20}% / ${bannerFitMode === 'contain' ? 'contain' : 'cover'} no-repeat`
+              : (!bannerUrl ? 'linear-gradient(135deg, #1a1040 0%, #2d1b69 50%, #0f172a 100%)' : '#08070e')
           }}
         >
-          {bannerUrl && !bannerUrl.startsWith('animated-') && (
-            <>
-              {/* Ambient Blurred Glow Fill Layer */}
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: '-20px',
-                  backgroundImage: `url("${bannerUrl}")`,
-                  backgroundPosition: `center ${bannerPosPercent}%`,
-                  backgroundSize: 'cover',
-                  filter: bannerFitMode === 'contain' ? 'blur(28px) brightness(0.45) saturate(140%)' : 'blur(16px) brightness(0.55)',
-                  transform: 'scale(1.15)',
-                  opacity: bannerFitMode === 'contain' ? 0.95 : 0.4
-                }}
-              />
-              {/* Main Crisp Foreground Banner Image */}
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  backgroundImage: `url("${bannerUrl}")`,
-                  backgroundPosition: bannerFitMode === 'contain' ? 'center center' : `center ${bannerPosPercent}%`,
-                  backgroundSize: bannerFitMode === 'contain' ? 'contain' : 'cover',
-                  backgroundRepeat: 'no-repeat'
-                }}
-              />
-              {/* Darkening Gradient Overlay */}
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  background: 'linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(10,8,19,0.45) 60%, rgba(10,8,19,0.96) 100%)'
-                }}
-              />
-            </>
-          )}
+          {/* Cinematic gradient fade at bottom */}
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0) 30%, rgba(10,8,19,0.65) 70%, #0a0813 100%)' }} />
           <button
             type="button"
             onClick={() => {
-              if (!isEditing) {
-                setDisplayName(currentUser?.displayName || '');
-                setUsername(currentUser?.username || '');
-                setBio(currentUser?.bio || '');
-                setAvatar(currentUser?.avatar || '');
-                setFavorites(Array.from({ length: 6 }, (_, i) => (currentUser?.favorites || [])[i] || null));
-                setEquippedBorder(currentUser?.equippedBorder || 'none');
-                setBannerUrl(currentUser?.bannerUrl || '');
-                setIsEditing(true);
-              }
-              setShowBannerSelector(true);
+              setSelectingSlotIdx('banner');
+              setIsBannerSelectorOpen(true);
             }}
             style={{
-              position: 'absolute', top: '16px', right: '16px',
-              background: 'rgba(8,7,11,0.85)', border: '1px solid var(--accent)',
-              borderRadius: '8px', padding: '8px 16px', fontSize: '12px',
-              fontWeight: 800, color: '#fff', cursor: 'pointer', zIndex: 10,
-              transition: 'all 0.2s', backdropFilter: 'blur(10px)',
-              boxShadow: '0 4px 14px rgba(124,111,247,0.3)'
+              position: 'absolute',
+              top: '16px',
+              right: '16px',
+              zIndex: 3,
+              background: 'rgba(10,8,19,0.75)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(255,255,255,0.15)',
+              color: '#fff',
+              borderRadius: '20px',
+              padding: '6px 14px',
+              fontSize: '12px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
             }}
-            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.04)'}
-            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
           >
-            🖼️ Change Profile Banner
+            <Camera size={14} /> Change Banner
           </button>
         </div>
 
-        <div style={{ padding: '0 28px 28px', position: 'relative' }}>
-          {/* Avatar Header */}
-          <div style={{ position: 'relative', width: '96px', marginTop: '-48px', marginBottom: '16px' }}>
-            <AvatarWithBorder
-              src={avatarSrc}
-              username={currentUser?.username || 'Profile'}
-              borderId={activeBorder}
-              size={96}
-            />
-            {!isEditing && (
-              <button
-                onClick={() => {
-                  setDisplayName(currentUser?.displayName || '');
-                  setUsername(currentUser?.username || '');
-                  setBio(currentUser?.bio || '');
-                  setAvatar(currentUser?.avatar || '');
-                  setFavorites(Array.from({ length: 6 }, (_, i) => (currentUser?.favorites || [])[i] || null));
-                  setEquippedBorder(currentUser?.equippedBorder || 'none');
-                  setBannerUrl(currentUser?.bannerUrl || '');
-                  setIsEditing(true);
-                }}
-                style={{ position: 'absolute', bottom: '2px', right: '2px', width: '30px', height: '30px', borderRadius: '50%', background: 'var(--accent)', border: '2px solid #0a0813', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 4px 10px rgba(0,0,0,0.5)' }}
-              >
-                <Camera size={14} color="#fff" />
-              </button>
-            )}
-          </div>
-
-          {isEditing ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '560px' }}>
-              
-              <div style={{ display: 'flex', gap: '14px' }}>
-                {/* Display Name */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700 }}>DISPLAY NAME</label>
-                  <input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)}
-                    placeholder="Display Name" className="form-input" style={{ fontSize: '13.5px' }} />
-                </div>
-                
-                {/* Username handle */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700 }}>USERNAME HANDLE</label>
-                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                    <span style={{ position: 'absolute', left: '12px', fontSize: '13px', color: 'var(--accent)', fontWeight: 800 }}>@</span>
-                    <input type="text" value={username} onChange={e => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
-                      placeholder="username" className="form-input" style={{ fontSize: '13.5px', paddingLeft: '26px' }} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Avatar URL & File Upload row */}
-              <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-end' }}>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700 }}>AVATAR IMAGE URL</label>
-                  <input type="text" value={avatar} onChange={e => setAvatar(e.target.value)}
-                    placeholder="Paste image URL or choose file below" className="form-input" style={{ fontSize: '12px' }} />
-                </div>
-                <div style={{ flexShrink: 0 }}>
-                  <label style={{
-                    display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px',
-                    background: 'rgba(124,111,247,0.1)', border: '1px dashed var(--accent)',
-                    borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600,
-                    color: '#fff', transition: 'all 0.2s', height: '38px', boxSizing: 'border-box'
+        {/* â€â‚¬â€â‚¬ PROFILE HEADER ROW â€â‚¬â€â‚¬ */}
+        <div style={{ background: '#0a0813', padding: '0 28px 20px', border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 0 0' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '20px', marginTop: '-55px', flexWrap: 'wrap' }}>
+            {/* Avatar with edit camera */}
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <AvatarWithBorder
+                src={avatar || DEFAULT_GREY_AVATAR}
+                username={currentUser?.username || 'Profile'}
+                borderId={isEditing ? equippedBorder : (currentUser?.equippedBorder || 'none')}
+                size={110}
+              />
+              {!isEditing && (
+                <button
+                  onClick={() => {
+                    setDisplayName(currentUser?.displayName || '');
+                    setUsername(currentUser?.username || '');
+                    setBio(currentUser?.bio || '');
+                    setAvatar(currentUser?.avatar || '');
+                    setFavorites(Array.from({ length: 6 }, (_, i) => (currentUser?.favorites || [])[i] || null));
+                    setEquippedBorder(currentUser?.equippedBorder || 'none');
+                    setBannerUrl(currentUser?.bannerUrl || '');
+                    setBannerFitMode(currentUser?.bannerFitMode || 'cover');
+                    setBannerPosPercent(currentUser?.bannerPosPercent ?? 20);
+                    setIsEditing(true);
                   }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(124,111,247,0.18)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(124,111,247,0.1)'}
-                  >
-                    <Upload size={14} color="var(--accent)" />
-                    Upload File...
-                    <input type="file" accept="image/*" onChange={handleFileUpload} style={{ display: 'none' }} />
-                  </label>
-                </div>
-              </div>
-
-              {/* Border Selector */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700 }}>EQUIPPED AVATAR BORDER</label>
-                <select
-                  value={equippedBorder}
-                  onChange={e => setEquippedBorder(e.target.value)}
-                  className="form-input"
-                  style={{ fontSize: '13.5px', background: 'rgba(0,0,0,0.2)', color: '#fff', border: '1px solid var(--border)' }}
+                  style={{ position: 'absolute', bottom: '3px', right: '3px', width: '30px', height: '30px', borderRadius: '50%', background: 'var(--accent)', border: '2px solid #0a0813', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 4px 10px rgba(0,0,0,0.5)' }}
                 >
-                  {Object.entries(BORDER_STYLES).map(([id, config]) => {
-                    const isUnlocked = unlockedBorders.has(id);
-                    let statusTag = isUnlocked ? '✓ Unlocked' : '(Locked - Check Achievements)';
-                    if (!isUnlocked && ['cyber-violet', 'plasma-red', 'matrix-code', 'hyper-drive', 'royal-amethyst'].includes(id)) {
-                      statusTag = '(Locked - CinePoints Shop)';
-                    } else if (!isUnlocked && id === 'creator') {
-                      statusTag = '(Exclusive Creator Perk)';
-                    }
-                    return (
-                      <option key={id} value={id} disabled={!isUnlocked} style={{ background: '#0d0b18', color: isUnlocked ? '#fff' : 'var(--text-dim)' }}>
-                        {config.name} - {statusTag}
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-
-              {/* Premium Badge Selector */}
-              <div style={{ padding: '14px', background: 'rgba(124,111,247,0.04)', border: '1px solid var(--border)', borderRadius: '10px' }}>
-                <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '12px' }}>✨ Or choose a premium badge:</div>
-                <div style={{ display: 'flex', gap: '18px', flexWrap: 'wrap' }}>
-                  {DEFAULT_AVATARS.map(item => (
-                    <div key={item.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
-                      <button type="button" onClick={() => setAvatar(item.path)}
-                        style={{ width: '56px', height: '56px', borderRadius: '50%', overflow: 'hidden', cursor: 'pointer', background: 'rgba(255,255,255,0.03)', border: avatar === item.path ? item.border : '2px solid transparent', boxShadow: avatar === item.path ? `0 0 14px ${item.glow}` : 'none', padding: 0, transition: 'all 0.22s', transform: avatar === item.path ? 'scale(1.12)' : 'scale(1)' }}
-                        title={item.name}
-                      >
-                        <img src={item.path} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      </button>
-                      <span style={{ fontSize: '9.5px', fontWeight: 800, color: avatar === item.path ? 'var(--accent)' : 'var(--text-dim)', textTransform: 'uppercase' }}>{item.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Edit Bio */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700 }}>BIO & CINEMA STORY</label>
-                <textarea value={bio} onChange={e => setBio(e.target.value)} placeholder="Tell your cinema story…"
-                  className="form-input" style={{ minHeight: '60px', fontSize: '13px', lineHeight: 1.5 }} />
-              </div>
-
-              {/* Edit Showcase Slots */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontSize: '11.5px', color: 'var(--text-dim)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <Heart size={12} color="var(--red)" fill="var(--red)" />
-                  CUSTOMIZE SHOWCASE SLOTS (6 SLOTS)
-                </label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px' }}>
-                  {favorites.map((fav, idx) => (
-                    <div
-                      key={idx}
-                      onClick={() => setSelectingSlotIdx(idx)}
-                      style={{
-                        aspectRatio: '2/3', borderRadius: '6px', border: '1px dashed var(--border)',
-                        background: 'rgba(255,255,255,0.01)', position: 'relative', overflow: 'hidden',
-                        cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center',
-                        justifyContent: 'center', transition: 'all 0.2s'
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
-                      onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
-                    >
-                      {fav ? (
-                        <>
-                          <img src={`https://image.tmdb.org/t/p/w200${fav.poster_path}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          <button
-                            type="button"
-                            onClick={(e) => removeMovieFromSlot(idx, e)}
-                            style={{
-                              position: 'absolute', top: '3px', right: '3px',
-                              width: '16px', height: '16px', borderRadius: '50%',
-                              background: 'rgba(0,0,0,0.8)', border: 'none',
-                              color: 'var(--red)', display: 'flex', alignItems: 'center',
-                              justifyContent: 'center', cursor: 'pointer', padding: 0
-                            }}
-                            title="Remove movie"
-                          >
-                            <X size={10} />
-                          </button>
-                        </>
-                      ) : (
-                        <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                          <Plus size={14} color="var(--text-muted)" />
-                          <span style={{ fontSize: '8px', color: 'var(--text-dim)', fontWeight: 700 }}>SLOT {idx + 1}</span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                <button className="btn btn-primary" onClick={handleSave} style={{ padding: '8px 18px', fontSize: '13px' }}>
-                  <Check size={14} /> Save Profile
+                  <Camera size={14} color="#fff" />
                 </button>
-                <button className="btn btn-ghost" onClick={() => setIsEditing(false)} style={{ padding: '8px 14px', fontSize: '13px' }}>Cancel</button>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-                <h2 style={{ fontSize: '22px', letterSpacing: '-0.3px' }}>{currentUser?.displayName || 'CineLog Fan'}</h2>
-                <button onClick={() => setIsEditing(true)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', transition: 'color 0.2s' }}
-                  onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
-                  onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}>
-                  <Edit2 size={14} />
-                </button>
-              </div>
-              <div style={{ color: 'var(--accent)', fontSize: '13px', fontWeight: 700, marginBottom: '10px' }}>@{currentUser?.username || 'cinelog_user'}</div>
-              
-              {/* Unlocked Badges under username handle */}
-              {unlockedBadges.length > 0 && (
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
-                  {unlockedBadges.map(badgeName => {
-                    const colors = BADGE_COLORS[badgeName] || { border: '1px solid var(--border)', color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.03)' };
-                    return (
-                      <span
-                        key={badgeName}
-                        style={{
-                          fontSize: '10px',
-                          fontWeight: 800,
-                          padding: '2.5px 8.5px',
-                          borderRadius: '12px',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.04em',
-                          boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-                          ...colors
-                        }}
-                      >
-                        {badgeName}
-                      </span>
-                    );
-                  })}
-                </div>
               )}
+            </div>
 
-              <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: '480px' }}>
-                {currentUser?.bio || 'No bio yet. Click the edit button to tell your cinema story.'}
-              </p>
-
-              {/* If no custom avatar, show badge picker inline */}
-              {!hasCustomAvatar && (
-                <div style={{ marginTop: '18px', padding: '14px 16px', background: 'rgba(124,111,247,0.03)', border: '1px dashed rgba(124,111,247,0.3)', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
-                  <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '2px' }}>✨ Pick your badge:</div>
-                  <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', width: '100%', maxWidth: '380px' }}>
-                    {DEFAULT_AVATARS.map(item => (
-                      <div key={item.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                        <button type="button"
-                          onClick={() => { setAvatar(item.path); onUpdateProfile({ displayName: currentUser?.displayName || 'CineLog Fan', username: currentUser?.username || 'cinelog_user', bio: currentUser?.bio || '', avatar: item.path, favorites: currentUser?.favorites || [] }); }}
-                          style={{ width: '50px', height: '50px', borderRadius: '50%', overflow: 'hidden', cursor: 'pointer', background: 'rgba(255,255,255,0.03)', border: '2px solid transparent', padding: 0, transition: 'all 0.2s' }}
-                          onMouseEnter={e => { e.currentTarget.style.border = item.border; e.currentTarget.style.transform = 'scale(1.1)'; }}
-                          onMouseLeave={e => { e.currentTarget.style.border = '2px solid transparent'; e.currentTarget.style.transform = ''; }}
-                          title={item.name}
-                        >
-                          <img src={item.path} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        </button>
-                        <span style={{ fontSize: '9px', fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase' }}>{item.name}</span>
+            {/* Name / handle / badges / bio */}
+            <div style={{ flex: 1, minWidth: 0, paddingBottom: '4px' }}>
+              {isEditing ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '520px' }}>
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '10px', color: 'var(--text-dim)', fontWeight: 700 }}>DISPLAY NAME</label>
+                      <input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)}
+                        placeholder="Display Name" className="form-input" style={{ fontSize: '13px' }} />
+                    </div>
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '10px', color: 'var(--text-dim)', fontWeight: 700 }}>USERNAME</label>
+                      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                        <span style={{ position: 'absolute', left: '10px', fontSize: '13px', color: 'var(--accent)', fontWeight: 800 }}>@</span>
+                        <input type="text" value={username} onChange={e => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
+                          placeholder="username" className="form-input" style={{ fontSize: '13px', paddingLeft: '24px' }} />
                       </div>
-                    ))}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '10px', color: 'var(--text-dim)', fontWeight: 700 }}>AVATAR URL</label>
+                      <input type="text" value={avatar} onChange={e => setAvatar(e.target.value)}
+                        placeholder="Paste image URL" className="form-input" style={{ fontSize: '12px' }} />
+                    </div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 14px', background: 'rgba(124,111,247,0.1)', border: '1px dashed var(--accent)', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 600, color: '#fff', flexShrink: 0 }}>
+                      <Upload size={13} color="var(--accent)" /> Upload
+                      <input type="file" accept="image/*" onChange={handleFileUpload} style={{ display: 'none' }} />
+                    </label>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '10px', color: 'var(--text-dim)', fontWeight: 700 }}>BIO</label>
+                    <textarea value={bio} onChange={e => setBio(e.target.value)} placeholder="Tell your cinema story..."
+                      className="form-input" style={{ minHeight: '54px', fontSize: '13px', lineHeight: 1.5 }} />
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '10px', color: 'var(--text-dim)', fontWeight: 700 }}>EQUIPPED BORDER</label>
+                    <select value={equippedBorder} onChange={e => setEquippedBorder(e.target.value)} className="form-input"
+                      style={{ fontSize: '13px', background: 'rgba(0,0,0,0.2)', color: '#fff', border: '1px solid var(--border)' }}>
+                      {Object.entries(BORDER_STYLES).map(([id, config]) => {
+                        const isUnlocked = unlockedBorders.has(id);
+                        return (
+                          <option key={id} value={id} disabled={!isUnlocked} style={{ background: '#0d0b18', color: isUnlocked ? '#fff' : 'var(--text-dim)' }}>
+                            {config.name} â‚¬â€ {isUnlocked ? 'Å“â€œ Unlocked' : '°Å¸â€â€™ Locked'}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '10px', color: 'var(--text-dim)', fontWeight: 700 }}>SHOWCASE SLOTS</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '7px' }}>
+                      {favorites.map((fav, idx) => (
+                        <div key={idx} onClick={() => setSelectingSlotIdx(idx)}
+                          style={{ aspectRatio: '2/3', borderRadius: '6px', border: '1px dashed var(--border)', background: 'rgba(255,255,255,0.01)', position: 'relative', overflow: 'hidden', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
+                          onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
+                          onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+                        >
+                          {fav ? (
+                            <>
+                              <img src={`https://image.tmdb.org/t/p/w200${fav.poster_path}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              <button type="button" onClick={(e) => removeMovieFromSlot(idx, e)}
+                                style={{ position: 'absolute', top: '3px', right: '3px', width: '16px', height: '16px', borderRadius: '50%', background: 'rgba(0,0,0,0.8)', border: 'none', color: 'var(--red)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}>
+                                <X size={10} />
+                              </button>
+                            </>
+                          ) : (
+                            <Plus size={13} color="var(--text-muted)" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button className="btn btn-primary" onClick={handleSave} style={{ padding: '8px 18px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Check size={14} /> Save Profile
+                    </button>
+                    <button className="btn btn-ghost" onClick={() => setIsEditing(false)} style={{ padding: '8px 14px', fontSize: '13px' }}>Cancel</button>
                   </div>
                 </div>
+              ) : (
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
+                    <h2 style={{ fontSize: '24px', fontWeight: 900, color: '#fff', letterSpacing: '-0.3px' }}>{currentUser?.displayName || 'CineLog Fan'}</h2>
+                    <button onClick={() => { setDisplayName(currentUser?.displayName || ''); setUsername(currentUser?.username || ''); setBio(currentUser?.bio || ''); setAvatar(currentUser?.avatar || ''); setFavorites(Array.from({ length: 6 }, (_, i) => (currentUser?.favorites || [])[i] || null)); setEquippedBorder(currentUser?.equippedBorder || 'none'); setBannerUrl(currentUser?.bannerUrl || ''); setBannerFitMode(currentUser?.bannerFitMode || 'cover'); setBannerPosPercent(currentUser?.bannerPosPercent ?? 20); setIsEditing(true); }}
+                      style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', transition: 'color 0.2s' }}
+                      onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
+                      onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}>
+                      <Edit2 size={14} />
+                    </button>
+                  </div>
+                  <div style={{ color: 'var(--accent)', fontSize: '13px', fontWeight: 700, marginBottom: '8px' }}>@{currentUser?.username || 'cinelog_user'}</div>
+                  {unlockedBadges.length > 0 && (
+                    <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '9px' }}>
+                      {unlockedBadges.map(badgeName => {
+                        const colors = BADGE_COLORS[badgeName] || { border: '1px solid var(--border)', color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.03)' };
+                        return <span key={badgeName} style={{ fontSize: '10px', fontWeight: 800, padding: '2.5px 8.5px', borderRadius: '12px', textTransform: 'uppercase', letterSpacing: '0.04em', ...colors }}>{badgeName}</span>;
+                      })}
+                    </div>
+                  )}
+                  <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: '420px', margin: 0 }}>
+                    {currentUser?.bio || 'No bio yet. Click the edit button to tell your cinema story.'}
+                  </p>
+                </div>
               )}
+            </div>
 
-              {/* Stats pills */}
-              <div style={{ display: 'flex', gap: '20px', marginTop: '20px', flexWrap: 'wrap' }}>
+            {/* Stats pills */}
+            {!isEditing && (
+              <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'flex-end', paddingBottom: '4px' }}>
                 {[
-                  {label: 'Watched', val: watchedCount, color: 'var(--green)'},
-                  {label: 'Reviews', val: reviewsCount, color: 'var(--accent)'},
-                  {label: 'Favorites', val: favoritesCount, color: 'var(--red)'},
-                  {label: 'Watchlist', val: watchlistCount, color: 'var(--blue)'},
-                  {label: 'CinePoints', val: `🪙 ${cinePoints}`, color: 'var(--accent)'},
-                  ...(avgRating ? [{label: 'Avg Rating', val: `★ ${avgRating}`, color: 'var(--gold)'}] : []),
+                  { label: 'Films', val: watchedCount, color: 'var(--green)' },
+                  { label: 'Reviews', val: reviewsCount, color: 'var(--accent)' },
+                  { label: 'Favorites', val: favoritesCount, color: 'var(--red)' },
+                  { label: 'Watchlist', val: watchlistCount, color: '#60a5fa' },
+                  { label: 'CinePoints', val: `🪙 ${cinePoints}`, color: 'var(--accent)' },
+                  ...(avgRating ? [{ label: 'Avg Rating', val: `★ ${avgRating}`, color: 'var(--gold)' }] : []),
                 ].map(s => (
                   <div key={s.label} style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: '20px', fontWeight: 900, color: s.color, fontFamily: 'var(--font-heading)' }}>{s.val}</div>
@@ -962,732 +1151,573 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
                   </div>
                 ))}
               </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Sub-tab selection bar */}
-      <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', gap: '16px', marginBottom: '8px' }}>
-        <button
-          onClick={() => setProfileActiveSubTab('showcase')}
-          style={{
-            background: 'none', border: 'none', padding: '10px 4px', fontSize: '14px', fontWeight: 800,
-            color: profileActiveSubTab === 'showcase' ? 'var(--accent)' : 'var(--text-dim)',
-            borderBottom: profileActiveSubTab === 'showcase' ? '2.5px solid var(--accent)' : '2.5px solid transparent',
-            cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px'
-          }}
-        >
-          🏆 Showcase & History
-        </button>
-        <button
-          onClick={() => setProfileActiveSubTab('shop')}
-          style={{
-            background: 'none', border: 'none', padding: '10px 4px', fontSize: '14px', fontWeight: 800,
-            color: profileActiveSubTab === 'shop' ? 'var(--accent)' : 'var(--text-dim)',
-            borderBottom: profileActiveSubTab === 'shop' ? '2.5px solid var(--accent)' : '2.5px solid transparent',
-            cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px'
-          }}
-        >
-          🏪 CinePoints Shop
-        </button>
-        <button
-          onClick={() => setProfileActiveSubTab('matcher')}
-          style={{
-            background: 'none', border: 'none', padding: '10px 4px', fontSize: '14px', fontWeight: 800,
-            color: profileActiveSubTab === 'matcher' ? 'var(--accent)' : 'var(--text-dim)',
-            borderBottom: profileActiveSubTab === 'matcher' ? '2.5px solid var(--accent)' : '2.5px solid transparent',
-            cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px'
-          }}
-        >
-          🔗 Compatibility Matcher
-        </button>
-      </div>
-
-      {profileActiveSubTab === 'showcase' ? (
-        <>
-          {/* ── MAIN GRID ── */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '24px', alignItems: 'start' }}>
-
-            {/* Left: Customizable Favorites Showcase (6 Slots Grid) */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                <Heart size={17} color="var(--red)" fill="var(--red)" />
-                <h3 style={{ fontSize: '17px', fontWeight: 800 }}>Favorites Showcase</h3>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '10px' }}>
-                {Array.from({ length: 6 }).map((_, i) => {
-                  const fav = (currentUser?.favorites || [])[i];
-                  return (
-                    <div key={i} style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--surface-solid)' }}>
-                      <div style={{ aspectRatio: '2/3', position: 'relative', overflow: 'hidden' }}>
-                        {fav ? (
-                          <>
-                            <img src={`https://image.tmdb.org/t/p/w300${fav.poster_path}`} alt={fav.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
-                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, transparent 100%)', padding: '16px 6px 6px' }}>
-                              <div style={{ fontSize: '9px', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>{fav.title}</div>
-                              {fav.score && (
-                                <div style={{ fontSize: '9px', color: 'var(--gold)', marginTop: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px', fontWeight: 800 }}>
-                                  ★ {Number(fav.score).toFixed(1)}
-                                </div>
-                              )}
-                            </div>
-                          </>
-                        ) : (
-                          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', opacity: 0.15 }}>🎬</div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              {(currentUser?.favorites || []).length === 0 && (
-                <div style={{ textAlign: 'center', color: 'var(--text-dim)', fontSize: '12.5px', marginTop: '10px' }}>
-                  Click the profile edit camera icon to assign custom films to your showcase!
-                </div>
-              )}
-            </div>
-
-            {/* Right: Genre Breakdown */}
-            <div className="glass" style={{ borderRadius: 'var(--radius-lg)', padding: '20px', border: '1px solid var(--border)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                <BarChart3 size={17} color="var(--accent)" />
-                <h3 style={{ fontSize: '16px', fontWeight: 800 }}>Genre Breakdown</h3>
-              </div>
-              {library.length > 0 ? (
-                <MiniGenreChart library={library} />
-              ) : (
-                <div style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', padding: '24px' }}>
-                  Add movies to see your genre breakdown
-                </div>
-              )}
-            </div>
-
-          </div>
-
-          {/* ── TOP RATED FILMS ── */}
-          {topRated.length > 0 && (
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                <Trophy size={17} color="var(--gold)" />
-                <h3 style={{ fontSize: '17px', fontWeight: 800 }}>Your Top Rated Films</h3>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px' }}>
-                {topRated.map((m, i) => (
-                  <div key={m.id} style={{ borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--surface-solid)', position: 'relative' }}>
-                    <div style={{ aspectRatio: '2/3', overflow: 'hidden', position: 'relative' }}>
-                      {m.poster_path ? (
-                        <img src={`https://image.tmdb.org/t/p/w300${m.poster_path}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
-                      ) : (
-                        <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>🎬</div>
-                      )}
-                      <div style={{ position: 'absolute', top: '6px', left: '6px', background: i < 3 ? 'rgba(251,191,36,0.9)' : 'rgba(0,0,0,0.8)', color: i < 3 ? '#000' : '#fff', fontSize: '10px', fontWeight: 900, padding: '1px 6px', borderRadius: '4px' }}>#{i + 1}</div>
-                      <div style={{ position: 'absolute', bottom: '6px', right: '6px', background: 'rgba(0,0,0,0.88)', color: 'var(--gold)', fontSize: '11px', fontWeight: 900, padding: '2px 6px', borderRadius: '4px' }}>★{Number(m.rating).toFixed(1)}</div>
-                    </div>
-                    <div style={{ padding: '6px 8px' }}>
-                      <div style={{ fontSize: '11px', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.title}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ── WATCH DIARY ── */}
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
-              <Calendar size={18} color="var(--accent)" />
-              <h3 style={{ fontSize: '17px', fontWeight: 800 }}>Watch Diary & History</h3>
-            </div>
-
-            {recentDiary.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0px', position: 'relative', paddingLeft: '14px', borderLeft: '2px solid rgba(124,111,247,0.12)' }}>
-                {recentDiary.map((item, idx) => {
-                  const relDate = formatRelativeDate(item.watch_date || item.date_added);
-                  return (
-                    <div
-                      key={item.id || item.tmdb_id}
-                      style={{
-                        position: 'relative',
-                        paddingBottom: '24px',
-                        display: 'flex',
-                        gap: '16px',
-                        alignItems: 'flex-start',
-                        animation: 'slideIn 0.5s ease-out forwards',
-                        animationDelay: `${idx * 0.12}s`,
-                        opacity: 0
-                      }}
-                    >
-                      {/* Timeline Node dot */}
-                      <span style={{
-                        position: 'absolute', left: '-20px', top: '5px', width: '10px', height: '10px',
-                        borderRadius: '50%', background: 'var(--accent)', border: '2px solid #0a0813',
-                        boxShadow: '0 0 6px var(--accent)'
-                      }} />
-
-                      {item.poster_path && (
-                        <img src={`https://image.tmdb.org/t/p/w92${item.poster_path}`} alt="" style={{ width: '42px', height: '62px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)', flexShrink: 0 }} />
-                      )}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
-                          <div>
-                            <span style={{ fontWeight: 800, fontSize: '14.5px', color: '#fff' }}>{item.title}</span>
-                            <span style={{ fontSize: '11px', color: 'var(--text-dim)', marginLeft: '8px' }}>({item.release_year})</span>
-                            <span style={{ fontSize: '10px', background: 'rgba(124,111,247,0.1)', color: 'var(--accent)', borderRadius: '4px', padding: '2px 6px', marginLeft: '8px', fontWeight: 700 }}>
-                              {item.media_type === 'tv' ? 'Series' : item.media_type === 'anime' ? 'Anime' : 'Film'}
-                            </span>
-                          </div>
-                          <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent)' }}>{relDate}</span>
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
-                          {item.rating ? (
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', color: 'var(--gold)', fontWeight: 900, fontSize: '13px' }}>
-                              <Star size={12} fill="currentColor" /> {Number(item.rating).toFixed(1)}
-                            </div>
-                          ) : (
-                            <span style={{ fontSize: '11px', color: 'var(--text-dim)' }}>No Rating</span>
-                          )}
-                          {item.is_rewatch && (
-                            <span style={{ fontSize: '10px', background: 'rgba(236,72,153,0.1)', color: '#ec4899', borderRadius: '12px', padding: '1px 8px', fontWeight: 700 }}>
-                              🔁 {item.rewatch_count ? `${item.rewatch_count}x watch` : 'Rewatch'}
-                            </span>
-                          )}
-                          {item.tags && item.tags.slice(0, 3).map(t => (
-                            <span key={t} style={{ fontSize: '9.5px', color: 'var(--text-muted)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1px 7px' }}>
-                              #{t}
-                            </span>
-                          ))}
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
-                          <a
-                            href={`https://www.youtube.com/results?search_query=${encodeURIComponent(item.title + ' ' + (item.release_year || '') + ' official trailer')}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                              fontSize: '10.5px', color: 'var(--red)', background: 'rgba(239,68,68,0.06)',
-                              border: '1px solid rgba(239,68,68,0.18)', borderRadius: '4px',
-                              padding: '2px 8px', textDecoration: 'none', display: 'inline-flex',
-                              alignItems: 'center', gap: '4px', fontWeight: 700
-                            }}
-                            title="Watch Official Trailer"
-                          >
-                            🎬 Trailer
-                          </a>
-
-                          <button
-                            onClick={() => setActiveShareCard(item)}
-                            style={{
-                              fontSize: '10.5px', color: 'var(--accent)', background: 'rgba(124,111,247,0.06)',
-                              border: '1px solid rgba(124,111,247,0.18)', borderRadius: '4px',
-                              padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: '4px',
-                              fontWeight: 700, cursor: 'pointer'
-                            }}
-                            title="Generate Shareable Review Card"
-                          >
-                            📤 Share Card
-                          </button>
-                        </div>
-
-                        {item.review && (
-                          <div style={{ marginTop: '8px' }}>
-                            {item.contains_spoilers ? (
-                              <details style={{ cursor: 'pointer' }}>
-                                <summary style={{ fontSize: '11.5px', color: 'var(--red)', fontWeight: 800, listStyle: 'none' }}>
-                                  ⚠️ Contains spoilers (click to show notes)
-                                </summary>
-                                <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', fontStyle: 'italic', lineHeight: 1.5, background: 'rgba(255,255,255,0.02)', padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', marginTop: '4px' }}>
-                                  "{item.review}"
-                                </p>
-                              </details>
-                            ) : (
-                              <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', fontStyle: 'italic', lineHeight: 1.5 }}>
-                                "{item.review}"
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="glass" style={{ padding: '36px', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
-                <div style={{ fontSize: '36px', marginBottom: '10px' }}>📓</div>
-                <div style={{ fontWeight: 700, fontSize: '16px', marginBottom: '6px' }}>Your Diary is Empty</div>
-                <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Log watched titles with a date to populate your chronological watch history feed.</p>
-              </div>
             )}
           </div>
-        </>
-      ) : profileActiveSubTab === 'shop' ? (
-        <div className="glass animate-fade-in" style={{ borderRadius: 'var(--radius-xl)', padding: '28px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '28px' }}>
-          {/* Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
-            <div>
-              <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                🏪 CinePoints 2.0 Reward Shop
-              </h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '12.5px', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                <span>Earn points by tracking movies (+10) and writing reviews (+10). Complete quests for bonus rewards!</span>
-                {streakMultiplier > 1.0 && (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: 'rgba(249,115,22,0.12)', color: '#f97316', border: '1px solid rgba(249,115,22,0.25)', fontSize: '10.5px', padding: '1.5px 8px', borderRadius: '12px', fontWeight: 800 }}>
-                    🔥 {streakMultiplier}x Streak Multiplier Active
-                  </span>
-                )}
-              </p>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(124,111,247,0.1)', border: '1px solid rgba(124,111,247,0.25)', padding: '8px 16px', borderRadius: '30px' }}>
-              <span style={{ fontSize: '18px' }}>🪙</span>
-              <span style={{ fontSize: '18px', fontWeight: 900, color: '#fff' }}>{cinePoints}</span>
-              <span style={{ fontSize: '10px', color: 'var(--text-dim)', fontWeight: 700, textTransform: 'uppercase' }}>CinePoints</span>
-            </div>
-          </div>
-
-          {/* Daily & Weekly Quests */}
-          <div>
-            <h4 style={{ fontSize: '14px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '14px' }}>
-              ⚡ Daily & Weekly Quests
-            </h4>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
-              {[
-                { label: 'Log a Movie Today', icon: '🎬', reward: 10, progress: library.filter(m => m.date_added?.slice(0,10) === new Date().toISOString().slice(0,10)).length, target: 1, type: 'Daily' },
-                { label: 'Write 2 Reviews', icon: '✍️', reward: 20, progress: library.filter(m => m.review?.trim()).length, target: 2, type: 'Daily' },
-                { label: 'Rate 5 Movies This Week', icon: '⭐', reward: 30, progress: Math.min(5, library.filter(m => m.rating && m.date_added && (Date.now() - new Date(m.date_added).getTime()) < 7*24*60*60*1000).length), target: 5, type: 'Weekly' },
-                { label: 'Explore 3 New Genres', icon: '🌐', reward: 25, progress: Object.keys(library.reduce((acc, m) => { (m.genres || []).forEach(g => acc[g] = true); return acc; }, {})).length, target: 3, type: 'Weekly' },
-                { label: 'Watch 10 Films', icon: '📺', reward: 50, progress: watchedCount, target: 10, type: 'Challenge' },
-                { label: 'Build a 5-Day Streak', icon: '🔥', reward: 75, progress: currentStreak, target: 5, type: 'Challenge' },
-              ].map(quest => {
-                const pct = Math.min(100, Math.round((quest.progress / quest.target) * 100));
-                const done = quest.progress >= quest.target;
-                return (
-                  <div key={quest.label} style={{ background: done ? 'rgba(16,185,129,0.05)' : 'rgba(255,255,255,0.02)', border: `1px solid ${done ? 'rgba(16,185,129,0.2)' : 'var(--border)'}`, borderRadius: '12px', padding: '14px 16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '13px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        {quest.icon} {quest.label}
-                      </span>
-                      <span style={{ fontSize: '10px', background: quest.type === 'Daily' ? 'rgba(59,130,246,0.15)' : quest.type === 'Weekly' ? 'rgba(124,111,247,0.15)' : 'rgba(251,191,36,0.15)', color: quest.type === 'Daily' ? '#3b82f6' : quest.type === 'Weekly' ? 'var(--accent)' : 'var(--gold)', borderRadius: '20px', padding: '1px 7px', fontWeight: 800 }}>
-                        {quest.type}
-                      </span>
-                    </div>
-                    <div style={{ height: '5px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden', marginBottom: '6px' }}>
-                      <div style={{ height: '100%', width: `${pct}%`, background: done ? 'var(--green)' : 'var(--accent)', borderRadius: '3px', transition: 'width 0.6s ease' }} />
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-dim)' }}>
-                      <span>{quest.progress}/{quest.target} {done && '✓'}</span>
-                      <span style={{ color: done ? 'var(--green)' : 'var(--gold)', fontWeight: 700 }}>+🪙 {quest.reward}</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Ambient Cinema Soundscapes */}
-          <div>
-            <h4 style={{ fontSize: '14px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '14px' }}>
-              🎵 Ambient Cinema Soundscapes Mixer
-            </h4>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-              {[
-                { id: 'projector', name: '🎬 Film Projector Hum', color: '#f59e0b', desc: 'Clicking reel mechanics & low rumbling motor' },
-                { id: 'scifi', name: '🚀 Sci-Fi Ambience', color: '#3b82f6', desc: 'Slightly modulated space wave frequency sweeps' },
-                { id: 'orchestral', name: '🏔️ Epic Orchestral Chords', color: '#ec4899', desc: 'Swelling warm pad C-major chord harmonies' },
-                { id: 'lofi', name: '🌙 Lo-Fi Midnight Rain', color: '#a78bfa', desc: 'Soft bandpass record white noise & pops' },
-              ].map(track => {
-                const vol = soundVolumes[track.id] || 0;
-                return (
-                  <div key={track.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: `${track.color}08`, border: `1px solid ${track.color}25`, borderRadius: '10px', padding: '12px 16px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '13px', fontWeight: 800 }}>{track.name}</span>
-                      <span style={{ fontSize: '10px', color: track.color, fontWeight: 900 }}>{Math.round(vol * 100)}%</span>
-                    </div>
-                    <p style={{ fontSize: '10px', color: 'var(--text-dim)', margin: 0, minHeight: '28px', lineHeight: 1.3 }}>{track.desc}</p>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.05"
-                      value={vol}
-                      onChange={e => handleVolumeChange(track.id, parseFloat(e.target.value))}
-                      style={{
-                        width: '100%',
-                        cursor: 'pointer',
-                        accentColor: track.color,
-                        height: '4px',
-                        background: 'rgba(255,255,255,0.06)',
-                        borderRadius: '2px',
-                        outline: 'none'
-                      }}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Borders Section */}
-          <div>
-            <h4 style={{ fontSize: '14px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '14px' }}>
-              Premium Avatar Borders
-            </h4>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
-              {[
-                { id: 'cyber-violet', name: '🌌 Cyber Violet Aura', cost: 150, desc: 'Glowing neon violet border with high-intensity pulse.' },
-                { id: 'plasma-red', name: '⚡ Plasma Crimson Pulse', cost: 250, desc: 'An electric blazing plasma red border.' },
-                { id: 'matrix-code', name: '📟 Matrix Code Shift', cost: 350, desc: 'Cascading digital green hacker border.' },
-                { id: 'hyper-drive', name: '🚀 Hyperdrive Speed', cost: 500, desc: 'Cosmic cyan-blue speed particle glow.' },
-                { id: 'royal-amethyst', name: '💎 Royal Amethyst Crown', cost: 750, desc: 'Luxurious deep purple-gold glowing crown border.' }
-              ].map(item => {
-                const purchased = (currentUser?.purchasedBorders || []).includes(item.id) || equippedBorder === item.id;
-                return (
-                  <div key={item.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontWeight: 800, fontSize: '13.5px', color: '#fff' }}>{item.name}</span>
-                      <span style={{ fontSize: '11px', color: purchased ? 'var(--green)' : 'var(--gold)', fontWeight: 800 }}>
-                        {purchased ? '✓ Unlocked' : `🪙 ${item.cost}`}
-                      </span>
-                    </div>
-                    <p style={{ fontSize: '11.5px', color: 'var(--text-dim)', lineHeight: 1.4 }}>{item.desc}</p>
-                    {!purchased ? (
-                      <button
-                        onClick={() => handlePurchaseBorder(item.id, item.cost)}
-                        disabled={cinePoints < item.cost}
-                        className="btn"
-                        style={{ marginTop: 'auto', background: cinePoints < item.cost ? 'rgba(255,255,255,0.04)' : 'var(--accent)', border: 'none', color: cinePoints < item.cost ? 'var(--text-dim)' : '#fff', padding: '6px 0', fontSize: '12px', fontWeight: 700, borderRadius: '6px', cursor: cinePoints < item.cost ? 'not-allowed' : 'pointer', transition: 'all 0.2s', width: '100%', textAlign: 'center' }}
-                      >
-                        Unlock for 🪙 {item.cost}
-                      </button>
-                    ) : (
-                      <button disabled className="btn" style={{ marginTop: 'auto', background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.2)', color: 'var(--green)', padding: '6px 0', fontSize: '12px', fontWeight: 700, borderRadius: '6px', cursor: 'default', width: '100%', textAlign: 'center' }}>
-                        Purchased
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Badges Section */}
-          <div>
-            <h4 style={{ fontSize: '14px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '14px' }}>
-              Exclusive Shop Badges
-            </h4>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
-              {[
-                { name: 'VIP Cinephile', cost: 100, desc: 'A royal purple title for dedicated cinema enthusiasts.' },
-                { name: 'Popcorn Overlord', cost: 200, desc: 'An exclusive gold badge for heavy movie marathoners.' },
-                { name: 'Midnight Binger', cost: 300, desc: 'A cosmic blue title for late night film watchers.' },
-                { name: 'Cinema Tycoon', cost: 500, desc: 'A prestigious emerald badge for CinePoints collectors.' }
-              ].map(item => {
-                const purchased = (currentUser?.purchasedBadges || []).includes(item.name);
-                return (
-                  <div key={item.name} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontWeight: 800, fontSize: '13.5px', color: '#fff' }}>{item.name}</span>
-                      <span style={{ fontSize: '11px', color: purchased ? 'var(--green)' : 'var(--gold)', fontWeight: 800 }}>
-                        {purchased ? '✓ Unlocked' : `🪙 ${item.cost}`}
-                      </span>
-                    </div>
-                    <p style={{ fontSize: '11.5px', color: 'var(--text-dim)', lineHeight: 1.4 }}>{item.desc}</p>
-                    {!purchased ? (
-                      <button
-                        onClick={() => handlePurchaseBadge(item.name, item.cost)}
-                        disabled={cinePoints < item.cost}
-                        className="btn"
-                        style={{ marginTop: 'auto', background: cinePoints < item.cost ? 'rgba(255,255,255,0.04)' : 'var(--accent)', border: 'none', color: cinePoints < item.cost ? 'var(--text-dim)' : '#fff', padding: '6px 0', fontSize: '12px', fontWeight: 700, borderRadius: '6px', cursor: cinePoints < item.cost ? 'not-allowed' : 'pointer', transition: 'all 0.2s', width: '100%', textAlign: 'center' }}
-                      >
-                        Unlock for 🪙 {item.cost}
-                      </button>
-                    ) : (
-                      <button disabled className="btn" style={{ marginTop: 'auto', background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.2)', color: 'var(--green)', padding: '6px 0', fontSize: '12px', fontWeight: 700, borderRadius: '6px', cursor: 'default', width: '100%', textAlign: 'center' }}>
-                        Purchased
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Animated Banners Section */}
-          <div>
-            <h4 style={{ fontSize: '14px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '14px' }}>
-              Premium Animated Banners
-            </h4>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
-              {[
-                { id: 'animated-scanlines', name: '🎬 Film Reel Scanlines Banner', cost: 200, desc: 'Projector scanlines with retro flicker noise.' },
-                { id: 'animated-stars', name: '🌠 Neon Shooting Stars Banner', cost: 300, desc: 'Rotating neon stars and cosmic meteors.' },
-                { id: 'animated-matrix', name: '🟢 Retro Matrix Code Banner', cost: 400, desc: 'Cascading digital green binary drops.' }
-              ].map(item => {
-                const purchased = (currentUser?.purchasedBanners || []).includes(item.id);
-                return (
-                  <div key={item.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontWeight: 800, fontSize: '13.5px', color: '#fff' }}>{item.name}</span>
-                      <span style={{ fontSize: '11px', color: purchased ? 'var(--green)' : 'var(--gold)', fontWeight: 800 }}>
-                        {purchased ? '✓ Unlocked' : `🪙 ${item.cost}`}
-                      </span>
-                    </div>
-                    <p style={{ fontSize: '11.5px', color: 'var(--text-dim)', lineHeight: 1.4 }}>{item.desc}</p>
-                    {!purchased ? (
-                      <button
-                        onClick={() => handlePurchaseBanner(item.id, item.cost)}
-                        disabled={cinePoints < item.cost}
-                        className="btn"
-                        style={{ marginTop: 'auto', background: cinePoints < item.cost ? 'rgba(255,255,255,0.04)' : 'var(--accent)', border: 'none', color: cinePoints < item.cost ? 'var(--text-dim)' : '#fff', padding: '6px 0', fontSize: '12px', fontWeight: 700, borderRadius: '6px', cursor: cinePoints < item.cost ? 'not-allowed' : 'pointer', transition: 'all 0.2s', width: '100%', textAlign: 'center' }}
-                      >
-                        Unlock for 🪙 {item.cost}
-                      </button>
-                    ) : (
-                      <button disabled className="btn" style={{ marginTop: 'auto', background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.2)', color: 'var(--green)', padding: '6px 0', fontSize: '12px', fontWeight: 700, borderRadius: '6px', cursor: 'default', width: '100%', textAlign: 'center' }}>
-                        Purchased
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
         </div>
-      ) : (
-        <div className="glass animate-fade-in" style={{ borderRadius: 'var(--radius-xl)', padding: '28px', border: '1px solid var(--border)' }}>
-          
-          {/* Matcher Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '14px' }}>
-            <div>
-              <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                🔗 Friend Taste Compatibility Matcher
-              </h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '12.5px', marginTop: '3px' }}>
-                Select a friend's profile from the list to calculate taste compatibility, overlapping movies, and score matching.
-              </p>
-            </div>
-            
-            {/* Share Link Button */}
+
+        {/* â€â‚¬â€â‚¬ 5-TAB SUB-NAV â€â‚¬â€â‚¬ */}
+        <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', gap: '0', marginBottom: '0', background: '#0a0813', borderLeft: '1px solid var(--border)', borderRight: '1px solid var(--border)', overflowX: 'auto' }}>
+          {[
+            { id: 'overview', label: 'Overview' },
+            { id: 'diary', label: 'Diary' },
+            { id: 'watchlist', label: 'Watchlist' },
+            { id: 'stats', label: 'Stats' },
+            { id: 'shop', label: 'Shop' },
+          ].map(tab => (
             <button
-              onClick={() => {
-                const shareUrl = `${window.location.origin}/share/profile?user=${currentUser?.username || 'cinelog_fan'}`;
-                navigator.clipboard.writeText(shareUrl);
-                alert(`Public profile share link copied to clipboard:\n${shareUrl}`);
+              key={tab.id}
+              onClick={() => setProfileActiveSubTab(tab.id)}
+              style={{
+                background: 'none', border: 'none', padding: '13px 20px', fontSize: '13.5px', fontWeight: 800, whiteSpace: 'nowrap',
+                color: profileActiveSubTab === tab.id ? 'var(--accent)' : 'var(--text-dim)',
+                borderBottom: profileActiveSubTab === tab.id ? '2.5px solid var(--accent)' : '2.5px solid transparent',
+                cursor: 'pointer', transition: 'all 0.2s'
               }}
-              className="btn btn-secondary"
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', padding: '8px 16px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '20px' }}
             >
-              📋 Copy Profile Share Link
+              {tab.label}
             </button>
-          </div>
+          ))}
+        </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '28px', alignItems: 'start' }}>
-            
-            {/* Friends Selector Column */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Your Friends List</span>
-              {MOCK_FRIENDS.map(friend => {
-                const isActive = selectedFriend.username === friend.username;
-                return (
-                  <div
-                    key={friend.username}
-                    onClick={() => setSelectedFriend(friend)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px',
-                      borderRadius: '10px', border: `1px solid ${isActive ? 'var(--accent)' : 'var(--border)'}`,
-                      background: isActive ? 'rgba(124,111,247,0.08)' : 'rgba(255,255,255,0.01)',
-                      cursor: 'pointer', transition: 'all 0.2s'
-                    }}
-                  >
-                    <AvatarWithBorder
-                      src={friend.avatar}
-                      username={friend.username}
-                      borderId={friend.equippedBorder}
-                      size={40}
-                    />
-                    <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                      <span style={{ fontWeight: 800, fontSize: '13px', color: '#fff' }}>{friend.displayName}</span>
-                      <span style={{ fontSize: '11.5px', color: 'var(--text-dim)' }}>@{friend.username}</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+        {/* â€â‚¬â€â‚¬ TAB CONTENT â€â‚¬â€â‚¬ */}
+        <div style={{ padding: '28px 0', display: 'flex', flexDirection: 'column', gap: '28px' }}>
 
-            {/* Compatibility Dashboard Column */}
-            {matcherStats && (
-              <div className="glass" style={{ borderRadius: '12px', padding: '24px', border: '1px solid var(--border)', background: 'rgba(255,255,255,0.01)' }}>
-                {/* Score Circle & Meter */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '28px', flexWrap: 'wrap' }}>
-                  <div style={{ position: 'relative', width: '90px', height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg width="90" height="90" viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
-                      <circle cx="50" cy="50" r="42" stroke="rgba(255,255,255,0.05)" strokeWidth="8" fill="none" />
-                      <circle cx="50" cy="50" r="42" stroke="var(--accent)" strokeWidth="8" fill="none"
-                        strokeDasharray={2 * Math.PI * 42}
-                        strokeDashoffset={2 * Math.PI * 42 * (1 - matcherStats.totalScore / 100)}
-                        strokeLinecap="round"
-                        style={{ filter: 'drop-shadow(0 0 4px var(--accent))' }}
-                      />
-                    </svg>
-                    <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <span style={{ fontSize: '22px', fontWeight: 900, color: '#fff', fontFamily: 'var(--font-heading)' }}>{matcherStats.totalScore}%</span>
-                    </div>
-                  </div>
-                  <div>
-                    <h4 style={{ fontSize: '17px', fontWeight: 800, color: '#fff' }}>Compatibility Match: {matcherStats.level}</h4>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '12.5px', marginTop: '4px' }}>
-                      Based on shared titles, rating scores, and favorite movie genres.
-                    </p>
-                  </div>
-                </div>
+          {/* â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬ OVERVIEW TAB â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬ */}
+          {profileActiveSubTab === 'overview' && (
+            <div style={{ display: 'flex', gap: '24px', alignItems: 'start' }}>
 
-                {/* Overlap Stats */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: '24px' }}>
-                  <div style={{ padding: '12px 16px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '8px' }}>
-                    <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--gold)' }}>{matcherStats.ratingSimilarity}%</div>
-                    <div style={{ fontSize: '10px', color: 'var(--text-dim)', textTransform: 'uppercase', fontWeight: 700, marginTop: '2px' }}>Rating Similarity</div>
-                  </div>
-                  <div style={{ padding: '12px 16px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '8px' }}>
-                    <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--accent)' }}>{matcherStats.genreSimilarity}%</div>
-                    <div style={{ fontSize: '10px', color: 'var(--text-dim)', textTransform: 'uppercase', fontWeight: 700, marginTop: '2px' }}>Genre Alignment</div>
-                  </div>
-                </div>
+              {/* LEFT COLUMN */}
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-                {/* Overlapping Titles list */}
-                <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Overlapping Watched Titles</span>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
-                  {matcherStats.common.length > 0 ? (
-                    matcherStats.common.map(movie => {
-                      const friendMovie = selectedFriend.library.find(fl => String(fl.tmdb_id) === String(movie.tmdb_id));
+                {/* Favorites Showcase */}
+                <div className="glass" style={{ borderRadius: 'var(--radius-xl)', padding: '20px', border: '1px solid var(--border)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                    <Heart size={16} color="var(--red)" fill="var(--red)" />
+                    <h3 style={{ fontSize: '15px', fontWeight: 800 }}>Favorites Showcase</h3>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '10px' }}>
+                    {Array.from({ length: 6 }).map((_, i) => {
+                      const fav = (currentUser?.favorites || [])[i];
                       return (
-                        <div key={movie.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '8px' }}>
-                          <span style={{ fontSize: '13px', fontWeight: 800 }}>{movie.title}</span>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '12px' }}>
-                            <span style={{ color: 'var(--text-dim)' }}>You: <strong style={{ color: 'var(--gold)' }}>★{Number(movie.rating).toFixed(1)}</strong></span>
-                            <span style={{ color: 'var(--text-dim)' }}>{selectedFriend.displayName}: <strong style={{ color: 'var(--gold)' }}>★{(friendMovie.rating * 2).toFixed(1)}</strong></span>
+                        <div key={i} style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--surface-solid)' }}>
+                          <div style={{ aspectRatio: '2/3', position: 'relative', overflow: 'hidden' }}>
+                            {fav ? (
+                              <>
+                                <img src={`https://image.tmdb.org/t/p/w300${fav.poster_path}`} alt={fav.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+                                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%)', padding: '14px 6px 5px' }}>
+                                  <div style={{ fontSize: '9px', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>{fav.title}</div>
+                                  {fav.score && <div style={{ fontSize: '9px', color: 'var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px', fontWeight: 800 }}>★ {Number(fav.score).toFixed(1)}</div>}
+                                </div>
+                              </>
+                            ) : (
+                              <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', opacity: 0.12 }}>°Å¸Å½Â¬</div>
+                            )}
                           </div>
                         </div>
                       );
-                    })
-                  ) : (
-                    <div style={{ color: 'var(--text-muted)', fontSize: '12.5px', fontStyle: 'italic', padding: '10px 0' }}>
-                      No overlapping watched movies found yet. Add movies watched by both users to compare score differences!
+                    })}
+                  </div>
+                  {(currentUser?.favorites || []).length === 0 && (
+                    <div style={{ textAlign: 'center', color: 'var(--text-dim)', fontSize: '12px', marginTop: '10px' }}>
+                      Click the edit camera icon to assign films to your showcase slots
                     </div>
                   )}
                 </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
-      {/* ── SHOWCASE SEARCH MODAL OVERLAY ── */}
+                {/* Recent Diary (top 6) */}
+                {recentDiary.length > 0 && (
+                  <div className="glass" style={{ borderRadius: 'var(--radius-xl)', padding: '20px', border: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Calendar size={16} color="var(--accent)" />
+                        <h3 style={{ fontSize: '15px', fontWeight: 800 }}>Recent Diary</h3>
+                      </div>
+                      <button onClick={() => setProfileActiveSubTab('diary')}
+                        style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                        View all â€ â€™
+                      </button>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {recentDiary.slice(0, 5).map(item => (
+                        <div key={item.id || item.tmdb_id} style={{ display: 'flex', gap: '12px', alignItems: 'center', padding: '9px 12px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '10px', transition: 'background 0.2s', cursor: 'pointer' }}
+                          onClick={() => onMovieClick && onMovieClick(item.tmdb_id, item.media_type)}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}>
+                          {item.poster_path && <img src={`https://image.tmdb.org/t/p/w92${item.poster_path}`} alt="" style={{ width: '36px', height: '52px', objectFit: 'cover', borderRadius: '5px', border: '1px solid var(--border)', flexShrink: 0 }} />}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 800, fontSize: '13.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginTop: '2px' }}>{formatRelativeDate(item.watch_date || item.date_added)}</div>
+                          </div>
+                          {item.rating && <span style={{ color: 'var(--gold)', fontWeight: 900, fontSize: '13px', flexShrink: 0 }}>★ {Number(item.rating).toFixed(1)}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* RIGHT COLUMN */}
+              <div style={{ width: '320px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {/* Genre Breakdown */}
+                <div className="glass" style={{ borderRadius: 'var(--radius-xl)', padding: '20px', border: '1px solid var(--border)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                    <BarChart3 size={16} color="var(--accent)" />
+                    <h3 style={{ fontSize: '15px', fontWeight: 800 }}>Genre Breakdown</h3>
+                  </div>
+                  {library.length > 0 ? <MiniGenreChart library={library} /> : (
+                    <div style={{ color: 'var(--text-muted)', fontSize: '12.5px', textAlign: 'center', padding: '20px' }}>Add movies to see genre breakdown</div>
+                  )}
+                </div>
+
+                {/* Rating Distribution */}
+                <RatingDistributionChart library={library} />
+
+                {/* Streak widget */}
+                {currentStreak > 0 && (
+                  <div className="glass" style={{ borderRadius: 'var(--radius-xl)', padding: '16px 20px', border: '1px solid rgba(249,115,22,0.25)', background: 'rgba(249,115,22,0.05)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '22px' }}>°Å¸â€Â¥</span>
+                      <div>
+                        <div style={{ fontSize: '20px', fontWeight: 900, color: '#f97316' }}>{currentStreak}-day streak</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700 }}>{streakMultiplier > 1 ? `${streakMultiplier}ƒâ€” CinePoints multiplier active` : 'Keep it going!'}</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬ DIARY TAB â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬ */}
+          {profileActiveSubTab === 'diary' && (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+                <Calendar size={18} color="var(--accent)" />
+                <h3 style={{ fontSize: '18px', fontWeight: 800 }}>Watch Diary & History</h3>
+                <span style={{ fontSize: '12px', color: 'var(--text-dim)', fontWeight: 700 }}>{recentDiary.length} entries</span>
+              </div>
+
+              {recentDiary.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0px', position: 'relative', paddingLeft: '14px', borderLeft: '2px solid rgba(124,111,247,0.12)' }}>
+                  {recentDiary.map((item, idx) => {
+                    const relDate = formatRelativeDate(item.watch_date || item.date_added);
+                    return (
+                      <div
+                        key={item.id || item.tmdb_id}
+                        style={{
+                          position: 'relative',
+                          paddingBottom: '24px',
+                          display: 'flex',
+                          gap: '16px',
+                          alignItems: 'flex-start',
+                          animation: 'slideIn 0.5s ease-out forwards',
+                          animationDelay: `${idx * 0.08}s`,
+                          opacity: 0
+                        }}
+                      >
+                        <span style={{ position: 'absolute', left: '-20px', top: '5px', width: '10px', height: '10px', borderRadius: '50%', background: 'var(--accent)', border: '2px solid #0a0813', boxShadow: '0 0 6px var(--accent)' }} />
+
+                        {item.poster_path && (
+                          <img src={`https://image.tmdb.org/t/p/w92${item.poster_path}`} alt="" style={{ width: '44px', height: '64px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)', flexShrink: 0 }} />
+                        )}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+                            <div>
+                              <span style={{ fontWeight: 800, fontSize: '14.5px', color: '#fff', cursor: onMovieClick ? 'pointer' : 'default' }}
+                                onClick={() => onMovieClick && onMovieClick(item.tmdb_id, item.media_type)}>
+                                {item.title}
+                              </span>
+                              <span style={{ fontSize: '11px', color: 'var(--text-dim)', marginLeft: '8px' }}>({item.release_year})</span>
+                              <span style={{ fontSize: '10px', background: 'rgba(124,111,247,0.1)', color: 'var(--accent)', borderRadius: '4px', padding: '2px 6px', marginLeft: '8px', fontWeight: 700 }}>
+                                {item.media_type === 'tv' ? 'Series' : item.media_type === 'anime' ? 'Anime' : 'Film'}
+                              </span>
+                            </div>
+                            <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent)', flexShrink: 0 }}>{relDate}</span>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
+                            {item.rating ? (
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', color: 'var(--gold)', fontWeight: 900, fontSize: '13px' }}>
+                                <Star size={12} fill="currentColor" /> {Number(item.rating).toFixed(1)}
+                              </div>
+                            ) : <span style={{ fontSize: '11px', color: 'var(--text-dim)' }}>No rating</span>}
+                            {item.is_rewatch && (
+                              <span style={{ fontSize: '10px', background: 'rgba(236,72,153,0.1)', color: '#ec4899', borderRadius: '12px', padding: '1px 8px', fontWeight: 700 }}>
+                                °Å¸â€Â {item.rewatch_count ? `${item.rewatch_count}x` : 'Rewatch'}
+                              </span>
+                            )}
+                            {(item.tags || []).slice(0, 3).map(t => (
+                              <span key={t} style={{ fontSize: '9.5px', color: 'var(--text-muted)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1px 7px' }}>#{t}</span>
+                            ))}
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
+                            <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(item.title + ' ' + (item.release_year || '') + ' official trailer')}`}
+                              target="_blank" rel="noopener noreferrer"
+                              style={{ fontSize: '10.5px', color: 'var(--red)', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.18)', borderRadius: '4px', padding: '2px 8px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 700 }}>
+                              °Å¸Å½Â¬ Trailer
+                            </a>
+                            <button onClick={() => setActiveShareCard(item)}
+                              style={{ fontSize: '10.5px', color: 'var(--accent)', background: 'rgba(124,111,247,0.06)', border: '1px solid rgba(124,111,247,0.18)', borderRadius: '4px', padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 700, cursor: 'pointer' }}>
+                              °Å¸â€œÂ¤ Share Card
+                            </button>
+                          </div>
+
+                          {item.review && (
+                            <div style={{ marginTop: '8px' }}>
+                              {item.contains_spoilers ? (
+                                <details style={{ cursor: 'pointer' }}>
+                                  <summary style={{ fontSize: '11.5px', color: 'var(--red)', fontWeight: 800, listStyle: 'none' }}>Å¡Â ¯Â¸Â Contains spoilers (click to show)</summary>
+                                  <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', fontStyle: 'italic', lineHeight: 1.5, background: 'rgba(255,255,255,0.02)', padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', marginTop: '4px' }}>"{item.review}"</p>
+                                </details>
+                              ) : (
+                                <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', fontStyle: 'italic', lineHeight: 1.5 }}>"{item.review}"</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="glass" style={{ padding: '40px', borderRadius: 'var(--radius-xl)', textAlign: 'center' }}>
+                  <div style={{ fontSize: '36px', marginBottom: '10px' }}>📖</div>
+                  <div style={{ fontWeight: 700, fontSize: '16px', marginBottom: '6px' }}>Your Diary is Empty</div>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Log watched titles with a date to populate your chronological watch history.</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬ WATCHLIST TAB â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬ */}
+          {profileActiveSubTab === 'watchlist' && (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+                <Film size={18} color="#60a5fa" />
+                <h3 style={{ fontSize: '18px', fontWeight: 800 }}>Your Watchlist</h3>
+                <span style={{ fontSize: '12px', color: 'var(--text-dim)', fontWeight: 700 }}>{watchlistCount} titles</span>
+              </div>
+              {watchlistCount === 0 ? (
+                <div className="glass" style={{ padding: '40px', borderRadius: 'var(--radius-xl)', textAlign: 'center' }}>
+                  <div style={{ fontSize: '36px', marginBottom: '10px' }}>📋</div>
+                  <div style={{ fontWeight: 700, fontSize: '16px', marginBottom: '6px' }}>Watchlist is Empty</div>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Add movies to your watchlist from the Explore or Library tabs.</p>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '14px' }}>
+                  {library.filter(m => m.status === 'plan_to_watch').map(m => (
+                    <div key={m.id} onClick={() => onMovieClick && onMovieClick(m.tmdb_id, m.media_type)}
+                      style={{ borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--surface-solid)', cursor: onMovieClick ? 'pointer' : 'default', transition: 'transform 0.2s, box-shadow 0.2s' }}
+                      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.4)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; }}>
+                      <div style={{ aspectRatio: '2/3', overflow: 'hidden', position: 'relative' }}>
+                        {m.poster_path ? (
+                          <img src={`https://image.tmdb.org/t/p/w300${m.poster_path}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+                        ) : (
+                          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>°Å¸Å½Â¬</div>
+                        )}
+                        <div style={{ position: 'absolute', top: '6px', left: '6px', background: 'rgba(96,165,250,0.9)', color: '#fff', fontSize: '9px', fontWeight: 900, padding: '1px 6px', borderRadius: '4px' }}>Plan</div>
+                      </div>
+                      <div style={{ padding: '7px 9px' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.title}</div>
+                        <div style={{ fontSize: '10px', color: 'var(--text-dim)', marginTop: '2px' }}>{m.release_year}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬ STATS TAB â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬ */}
+          {profileActiveSubTab === 'stats' && (
+            <div style={{ display: 'flex', gap: '24px', alignItems: 'start', flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: '280px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+                {/* Overview stat cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+                  {[
+                    { label: 'Films Watched', val: watchedCount, color: 'var(--green)', icon: 'Å“â€¦' },
+                    { label: 'Reviews Written', val: reviewsCount, color: 'var(--accent)', icon: 'Å“Â¯Â¸Â' },
+                    { label: 'Favorites', val: favoritesCount, color: 'var(--red)', icon: 'ÂÂ¤¯Â¸Â' },
+                    { label: 'Watchlist', val: watchlistCount, color: '#60a5fa', icon: '📋' },
+                    { label: 'Avg Rating', val: avgRating ? `★ ${avgRating}` : 'N/A', color: 'var(--gold)', icon: 'Â­Â' },
+                    { label: 'Current Streak', val: currentStreak > 0 ? `${currentStreak}d °Å¸â€Â¥` : 'â‚¬â€', color: '#f97316', icon: '°Å¸â€Â¥' },
+                  ].map(s => (
+                    <div key={s.label} className="glass" style={{ borderRadius: '14px', padding: '16px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <div style={{ fontSize: '20px' }}>{s.icon}</div>
+                      <div style={{ fontSize: '22px', fontWeight: 900, color: s.color }}>{s.val}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Top Rated Films */}
+                {topRated.length > 0 && (
+                  <div className="glass" style={{ borderRadius: 'var(--radius-xl)', padding: '20px', border: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                      <Trophy size={16} color="var(--gold)" />
+                      <h3 style={{ fontSize: '15px', fontWeight: 800 }}>Your Top Rated Films</h3>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: '10px' }}>
+                      {topRated.map((m, i) => (
+                        <div key={m.id} onClick={() => onMovieClick && onMovieClick(m.tmdb_id, m.media_type)}
+                          style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--surface-solid)', cursor: onMovieClick ? 'pointer' : 'default' }}>
+                          <div style={{ aspectRatio: '2/3', overflow: 'hidden', position: 'relative' }}>
+                            {m.poster_path ? <img src={`https://image.tmdb.org/t/p/w300${m.poster_path}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" /> : <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>°Å¸Å½Â¬</div>}
+                            <div style={{ position: 'absolute', top: '4px', left: '4px', background: i < 3 ? 'rgba(251,191,36,0.9)' : 'rgba(0,0,0,0.8)', color: i < 3 ? '#000' : '#fff', fontSize: '9px', fontWeight: 900, padding: '1px 5px', borderRadius: '4px' }}>#{i + 1}</div>
+                            <div style={{ position: 'absolute', bottom: '4px', right: '4px', background: 'rgba(0,0,0,0.9)', color: 'var(--gold)', fontSize: '10px', fontWeight: 900, padding: '1px 5px', borderRadius: '4px' }}>★{Number(m.rating).toFixed(1)}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Right: genre + rating distribution */}
+              <div style={{ width: '300px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className="glass" style={{ borderRadius: 'var(--radius-xl)', padding: '20px', border: '1px solid var(--border)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                    <BarChart3 size={16} color="var(--accent)" />
+                    <h3 style={{ fontSize: '15px', fontWeight: 800 }}>Genre Breakdown</h3>
+                  </div>
+                  {library.length > 0 ? <MiniGenreChart library={library} /> : <div style={{ color: 'var(--text-muted)', fontSize: '12.5px', textAlign: 'center', padding: '16px' }}>Add movies to see breakdown</div>}
+                </div>
+                <RatingDistributionChart library={library} />
+              </div>
+            </div>
+          )}
+
+          {/* â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬ SHOP TAB â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬ */}
+          {profileActiveSubTab === 'shop' && (
+            <div className="glass animate-fade-in" style={{ borderRadius: 'var(--radius-xl)', padding: '28px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '28px' }}>
+              {/* Shop header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    °Å¸ÂÂª CinePoints 2.0 Reward Shop
+                  </h3>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '12.5px', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                    <span>Earn points by tracking movies (+10) and writing reviews (+10). Complete quests for bonus rewards!</span>
+                    {streakMultiplier > 1.0 && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: 'rgba(249,115,22,0.12)', color: '#f97316', border: '1px solid rgba(249,115,22,0.25)', fontSize: '10.5px', padding: '1.5px 8px', borderRadius: '12px', fontWeight: 800 }}>
+                        °Å¸â€Â¥ {streakMultiplier}ƒâ€” Streak Multiplier Active
+                      </span>
+                    )}
+                  </p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(124,111,247,0.1)', border: '1px solid rgba(124,111,247,0.25)', padding: '8px 16px', borderRadius: '30px' }}>
+                  <span style={{ fontSize: '18px' }}>🪙</span>
+                  <span style={{ fontSize: '18px', fontWeight: 900, color: '#fff' }}>{cinePoints}</span>
+                  <span style={{ fontSize: '10px', color: 'var(--text-dim)', fontWeight: 700, textTransform: 'uppercase' }}>CinePoints</span>
+                </div>
+              </div>
+
+              {/* Quests */}
+              <div>
+                <h4 style={{ fontSize: '14px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '14px' }}>Å¡Â¡ Daily & Weekly Quests</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
+                  {[
+                    { label: 'Log a Movie Today', icon: '°Å¸Å½Â¬', reward: 10, progress: library.filter(m => m.date_added?.slice(0, 10) === new Date().toISOString().slice(0, 10)).length, target: 1, type: 'Daily' },
+                    { label: 'Write 2 Reviews', icon: 'Å“Â¯Â¸Â', reward: 20, progress: library.filter(m => m.review?.trim()).length, target: 2, type: 'Daily' },
+                    { label: 'Rate 5 Movies This Week', icon: 'Â­Â', reward: 30, progress: Math.min(5, library.filter(m => m.rating && m.date_added && (Date.now() - new Date(m.date_added).getTime()) < 7 * 24 * 60 * 60 * 1000).length), target: 5, type: 'Weekly' },
+                    { label: 'Explore 3 New Genres', icon: '°Å¸Å’Â', reward: 25, progress: Object.keys(library.reduce((acc, m) => { (m.genres || []).forEach(g => acc[g] = true); return acc; }, {})).length, target: 3, type: 'Weekly' },
+                    { label: 'Watch 10 Films', icon: '°Å¸â€œÂº', reward: 50, progress: watchedCount, target: 10, type: 'Challenge' },
+                    { label: 'Build a 5-Day Streak', icon: '°Å¸â€Â¥', reward: 75, progress: currentStreak, target: 5, type: 'Challenge' },
+                  ].map(quest => {
+                    const pct = Math.min(100, Math.round((quest.progress / quest.target) * 100));
+                    const done = quest.progress >= quest.target;
+                    return (
+                      <div key={quest.label} style={{ background: done ? 'rgba(16,185,129,0.05)' : 'rgba(255,255,255,0.02)', border: `1px solid ${done ? 'rgba(16,185,129,0.2)' : 'var(--border)'}`, borderRadius: '12px', padding: '14px 16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '13px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>{quest.icon} {quest.label}</span>
+                          <span style={{ fontSize: '10px', background: quest.type === 'Daily' ? 'rgba(59,130,246,0.15)' : quest.type === 'Weekly' ? 'rgba(124,111,247,0.15)' : 'rgba(251,191,36,0.15)', color: quest.type === 'Daily' ? '#3b82f6' : quest.type === 'Weekly' ? 'var(--accent)' : 'var(--gold)', borderRadius: '20px', padding: '1px 7px', fontWeight: 800 }}>{quest.type}</span>
+                        </div>
+                        <div style={{ height: '5px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden', marginBottom: '6px' }}>
+                          <div style={{ height: '100%', width: `${pct}%`, background: done ? 'var(--green)' : 'var(--accent)', borderRadius: '3px', transition: 'width 0.6s ease' }} />
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-dim)' }}>
+                          <span>{quest.progress}/{quest.target} {done && 'Å“â€œ'}</span>
+                          <span style={{ color: done ? 'var(--green)' : 'var(--gold)', fontWeight: 700 }}>+🪙 {quest.reward}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Soundscape Mixer */}
+              <div>
+                <h4 style={{ fontSize: '14px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '14px' }}>°Å¸Å½Âµ Ambient Cinema Soundscapes Mixer</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+                  {[
+                    { id: 'projector', name: '°Å¸Å½Â¬ Film Projector Hum', color: '#f59e0b', desc: 'Clicking reel mechanics & low rumbling motor' },
+                    { id: 'scifi', name: '°Å¸Å¡â‚¬ Sci-Fi Ambience', color: '#3b82f6', desc: 'Slightly modulated space wave frequency sweeps' },
+                    { id: 'orchestral', name: '°Å¸Ââ€¯Â¸Â Epic Orchestral Chords', color: '#ec4899', desc: 'Swelling warm pad C-major chord harmonies' },
+                    { id: 'lofi', name: '°Å¸Å’â„¢ Lo-Fi Midnight Rain', color: '#a78bfa', desc: 'Soft bandpass record white noise & pops' },
+                  ].map(track => {
+                    const vol = soundVolumes[track.id] || 0;
+                    return (
+                      <div key={track.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: `${track.color}08`, border: `1px solid ${track.color}25`, borderRadius: '10px', padding: '12px 16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '13px', fontWeight: 800 }}>{track.name}</span>
+                          <span style={{ fontSize: '10px', color: track.color, fontWeight: 900 }}>{Math.round(vol * 100)}%</span>
+                        </div>
+                        <p style={{ fontSize: '10px', color: 'var(--text-dim)', margin: 0, minHeight: '28px', lineHeight: 1.3 }}>{track.desc}</p>
+                        <input type="range" min="0" max="1" step="0.05" value={vol} onChange={e => handleVolumeChange(track.id, parseFloat(e.target.value))}
+                          style={{ width: '100%', cursor: 'pointer', accentColor: track.color, height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', outline: 'none' }} />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Premium Borders */}
+              <div>
+                <h4 style={{ fontSize: '14px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '14px' }}>Premium Avatar Borders</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+                  {[
+                    { id: 'cyber-violet', name: '°Å¸Å’Å’ Cyber Violet Aura', cost: 150, desc: 'Glowing neon violet border with high-intensity pulse.' },
+                    { id: 'plasma-red', name: 'Å¡Â¡ Plasma Crimson Pulse', cost: 250, desc: 'An electric blazing plasma red border.' },
+                    { id: 'matrix-code', name: '°Å¸â€œÅ¸ Matrix Code Shift', cost: 350, desc: 'Cascading digital green hacker border.' },
+                    { id: 'hyper-drive', name: '°Å¸Å¡â‚¬ Hyperdrive Speed', cost: 500, desc: 'Cosmic cyan-blue speed particle glow.' },
+                    { id: 'royal-amethyst', name: '°Å¸â€™Å½ Royal Amethyst Crown', cost: 750, desc: 'Luxurious deep purple-gold glowing crown border.' }
+                  ].map(item => {
+                    const purchased = (currentUser?.purchasedBorders || []).includes(item.id) || equippedBorder === item.id;
+                    return (
+                      <div key={item.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontWeight: 800, fontSize: '13.5px', color: '#fff' }}>{item.name}</span>
+                          <span style={{ fontSize: '11px', color: purchased ? 'var(--green)' : 'var(--gold)', fontWeight: 800 }}>{purchased ? 'Å“â€œ Unlocked' : `🪙 ${item.cost}`}</span>
+                        </div>
+                        <p style={{ fontSize: '11.5px', color: 'var(--text-dim)', lineHeight: 1.4 }}>{item.desc}</p>
+                        {!purchased ? (
+                          <button onClick={() => handlePurchaseBorder(item.id, item.cost)} disabled={cinePoints < item.cost} className="btn"
+                            style={{ marginTop: 'auto', background: cinePoints < item.cost ? 'rgba(255,255,255,0.04)' : 'var(--accent)', border: 'none', color: cinePoints < item.cost ? 'var(--text-dim)' : '#fff', padding: '6px 0', fontSize: '12px', fontWeight: 700, borderRadius: '6px', cursor: cinePoints < item.cost ? 'not-allowed' : 'pointer', transition: 'all 0.2s', width: '100%', textAlign: 'center' }}>
+                            Unlock for 🪙 {item.cost}
+                          </button>
+                        ) : (
+                          <button disabled className="btn" style={{ marginTop: 'auto', background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.2)', color: 'var(--green)', padding: '6px 0', fontSize: '12px', fontWeight: 700, borderRadius: '6px', cursor: 'default', width: '100%', textAlign: 'center' }}>Purchased</button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Shop Badges */}
+              <div>
+                <h4 style={{ fontSize: '14px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '14px' }}>Exclusive Shop Badges</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+                  {[
+                    { name: 'VIP Cinephile', cost: 100, desc: 'A royal purple title for dedicated cinema enthusiasts.' },
+                    { name: 'Popcorn Overlord', cost: 200, desc: 'An exclusive gold badge for heavy movie marathoners.' },
+                    { name: 'Midnight Binger', cost: 300, desc: 'A cosmic blue title for late night film watchers.' },
+                    { name: 'Cinema Tycoon', cost: 500, desc: 'A prestigious emerald badge for CinePoints collectors.' }
+                  ].map(item => {
+                    const purchased = (currentUser?.purchasedBadges || []).includes(item.name);
+                    return (
+                      <div key={item.name} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontWeight: 800, fontSize: '13.5px', color: '#fff' }}>{item.name}</span>
+                          <span style={{ fontSize: '11px', color: purchased ? 'var(--green)' : 'var(--gold)', fontWeight: 800 }}>{purchased ? 'Å“â€œ Unlocked' : `🪙 ${item.cost}`}</span>
+                        </div>
+                        <p style={{ fontSize: '11.5px', color: 'var(--text-dim)', lineHeight: 1.4 }}>{item.desc}</p>
+                        {!purchased ? (
+                          <button onClick={() => handlePurchaseBadge(item.name, item.cost)} disabled={cinePoints < item.cost} className="btn"
+                            style={{ marginTop: 'auto', background: cinePoints < item.cost ? 'rgba(255,255,255,0.04)' : 'var(--accent)', border: 'none', color: cinePoints < item.cost ? 'var(--text-dim)' : '#fff', padding: '6px 0', fontSize: '12px', fontWeight: 700, borderRadius: '6px', cursor: cinePoints < item.cost ? 'not-allowed' : 'pointer', transition: 'all 0.2s', width: '100%', textAlign: 'center' }}>
+                            Unlock for 🪙 {item.cost}
+                          </button>
+                        ) : (
+                          <button disabled className="btn" style={{ marginTop: 'auto', background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.2)', color: 'var(--green)', padding: '6px 0', fontSize: '12px', fontWeight: 700, borderRadius: '6px', cursor: 'default', width: '100%', textAlign: 'center' }}>Purchased</button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Animated Banners */}
+              <div>
+                <h4 style={{ fontSize: '14px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '14px' }}>Premium Animated Banners</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+                  {[
+                    { id: 'animated-scanlines', name: '°Å¸Å½Â¬ Film Reel Scanlines Banner', cost: 200, desc: 'Projector scanlines with retro flicker noise.' },
+                    { id: 'animated-stars', name: '°Å¸Å’Â  Neon Shooting Stars Banner', cost: 300, desc: 'Rotating neon stars and cosmic meteors.' },
+                    { id: 'animated-matrix', name: '°Å¸Å¸Â¢ Retro Matrix Code Banner', cost: 400, desc: 'Cascading digital green binary drops.' }
+                  ].map(item => {
+                    const purchased = (currentUser?.purchasedBanners || []).includes(item.id);
+                    return (
+                      <div key={item.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontWeight: 800, fontSize: '13.5px', color: '#fff' }}>{item.name}</span>
+                          <span style={{ fontSize: '11px', color: purchased ? 'var(--green)' : 'var(--gold)', fontWeight: 800 }}>{purchased ? 'Å“â€œ Unlocked' : `🪙 ${item.cost}`}</span>
+                        </div>
+                        <p style={{ fontSize: '11.5px', color: 'var(--text-dim)', lineHeight: 1.4 }}>{item.desc}</p>
+                        {!purchased ? (
+                          <button onClick={() => handlePurchaseBanner(item.id, item.cost)} disabled={cinePoints < item.cost} className="btn"
+                            style={{ marginTop: 'auto', background: cinePoints < item.cost ? 'rgba(255,255,255,0.04)' : 'var(--accent)', border: 'none', color: cinePoints < item.cost ? 'var(--text-dim)' : '#fff', padding: '6px 0', fontSize: '12px', fontWeight: 700, borderRadius: '6px', cursor: cinePoints < item.cost ? 'not-allowed' : 'pointer', transition: 'all 0.2s', width: '100%', textAlign: 'center' }}>
+                            Unlock for 🪙 {item.cost}
+                          </button>
+                        ) : (
+                          <button disabled className="btn" style={{ marginTop: 'auto', background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.2)', color: 'var(--green)', padding: '6px 0', fontSize: '12px', fontWeight: 700, borderRadius: '6px', cursor: 'default', width: '100%', textAlign: 'center' }}>Purchased</button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
+      </div>
+      )} {/* end isViewingOther ternary */}
+
+
+      {/* â€â‚¬â€â‚¬ SHOWCASE SEARCH MODAL â€â‚¬â€â‚¬ */}
       {selectingSlotIdx !== null && (
-        <div
-          style={{
-            position: 'fixed', inset: 0, background: 'rgba(4,3,8,0.85)',
-            backdropFilter: 'blur(12px)', zIndex: 1100, display: 'flex',
-            alignItems: 'flex-start', justifyContent: 'center', padding: '20px',
-            paddingTop: '10vh'
-          }}
-          onClick={() => { setSelectingSlotIdx(null); setSearchQuery(''); }}
-        >
-          <div
-            className="glass"
-            style={{
-              width: '100%', maxWidth: '440px', maxHeight: '80vh',
-              borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)',
-              background: '#0d0b18', display: 'flex', flexDirection: 'column',
-              padding: '20px', gap: '16px'
-            }}
-            onClick={e => e.stopPropagation()}
-          >
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(4,3,8,0.85)', backdropFilter: 'blur(12px)', zIndex: 1100, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px', paddingTop: '10vh' }}
+          onClick={() => { setSelectingSlotIdx(null); setSearchQuery(''); }}>
+          <div className="glass" style={{ width: '100%', maxWidth: '440px', maxHeight: '80vh', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', background: '#0d0b18', display: 'flex', flexDirection: 'column', padding: '20px', gap: '16px' }}
+            onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '14.5px', fontWeight: 800 }}>Choose Film for Slot {selectingSlotIdx + 1}</span>
-              <button
-                className="btn btn-ghost"
-                onClick={() => { setSelectingSlotIdx(null); setSearchQuery(''); }}
-                style={{ padding: '4px', width: '24px', height: '24px', borderRadius: '50%' }}
-              >
+              <button className="btn btn-ghost" onClick={() => { setSelectingSlotIdx(null); setSearchQuery(''); }} style={{ padding: '4px', width: '24px', height: '24px', borderRadius: '50%' }}>
                 <X size={14} />
               </button>
             </div>
-
-            {/* Media Type Tabs (Movies, Series, Anime) */}
             <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', gap: '4px' }}>
-              {[
-                { id: 'movie', label: 'Movies' },
-                { id: 'tv', label: 'Series' },
-                { id: 'anime', label: 'Anime' },
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setPopupActiveTab(tab.id)}
-                  style={{
-                    flex: 1,
-                    background: 'none',
-                    border: 'none',
-                    padding: '8px 0',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    color: popupActiveTab === tab.id ? 'var(--accent)' : 'var(--text-dim)',
-                    borderBottom: popupActiveTab === tab.id ? '2px solid var(--accent)' : '2px solid transparent',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s'
-                  }}
-                >
+              {[{ id: 'movie', label: 'Movies' }, { id: 'tv', label: 'Series' }, { id: 'anime', label: 'Anime' }].map(tab => (
+                <button key={tab.id} onClick={() => setPopupActiveTab(tab.id)}
+                  style={{ flex: 1, background: 'none', border: 'none', padding: '8px 0', fontSize: '12px', fontWeight: 700, color: popupActiveTab === tab.id ? 'var(--accent)' : 'var(--text-dim)', borderBottom: popupActiveTab === tab.id ? '2px solid var(--accent)' : '2px solid transparent', cursor: 'pointer', transition: 'all 0.15s' }}>
                   {tab.label}
                 </button>
               ))}
             </div>
-
-            {/* Search Input */}
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <Search size={14} color="var(--text-dim)" style={{ position: 'absolute', left: '12px' }} />
-              <input
-                type="text"
-                placeholder={`Search watched ${popupActiveTab === 'movie' ? 'movies' : popupActiveTab === 'tv' ? 'series' : 'anime'}...`}
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                style={{
-                  width: '100%', padding: '8px 12px 8px 32px', borderRadius: '8px',
-                  background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border)',
-                  color: '#fff', fontSize: '13px', outline: 'none'
-                }}
-              />
+              <input type="text" placeholder={`Search watched ${popupActiveTab === 'movie' ? 'movies' : popupActiveTab === 'tv' ? 'series' : 'anime'}...`} value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                style={{ width: '100%', padding: '8px 12px 8px 32px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border)', color: '#fff', fontSize: '13px', outline: 'none' }} />
             </div>
-
-            {/* Movies List */}
             <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '50vh' }}>
-              {filteredLibrary.length > 0 ? (
-                filteredLibrary.map(movie => (
-                  <div
-                    key={movie.id}
-                    onClick={() => selectMovieForSlot(movie)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '10px', padding: '6px',
-                      borderRadius: '8px', cursor: 'pointer', transition: 'all 0.15s',
-                      background: 'rgba(255,255,255,0.01)', border: '1px solid transparent'
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface-hover)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.01)'; e.currentTarget.style.borderColor = 'transparent'; }}
-                  >
-                    {movie.poster_path ? (
-                      <img src={`https://image.tmdb.org/t/p/w92${movie.poster_path}`} alt="" style={{ width: '28px', height: '42px', objectFit: 'cover', borderRadius: '4px' }} />
-                    ) : (
-                      <div style={{ width: '28px', height: '42px', background: 'var(--surface-solid)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', borderRadius: '4px' }}>🎬</div>
-                    )}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{movie.title}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{movie.release_year}</div>
-                    </div>
-                    {movie.rating && <span style={{ color: 'var(--gold)', fontWeight: 800, fontSize: '12px' }}>★ {Number(movie.rating).toFixed(1)}</span>}
+              {filteredLibrary.length > 0 ? filteredLibrary.map(movie => (
+                <div key={movie.id} onClick={() => selectMovieForSlot(movie)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.15s', background: 'rgba(255,255,255,0.01)', border: '1px solid transparent' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface-hover)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.01)'; e.currentTarget.style.borderColor = 'transparent'; }}>
+                  {movie.poster_path ? <img src={`https://image.tmdb.org/t/p/w92${movie.poster_path}`} alt="" style={{ width: '28px', height: '42px', objectFit: 'cover', borderRadius: '4px' }} /> : <div style={{ width: '28px', height: '42px', background: 'var(--surface-solid)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', borderRadius: '4px' }}>°Å¸Å½Â¬</div>}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{movie.title}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{movie.release_year}</div>
                   </div>
-                ))
-              ) : (
+                  {movie.rating && <span style={{ color: 'var(--gold)', fontWeight: 800, fontSize: '12px' }}>★ {Number(movie.rating).toFixed(1)}</span>}
+                </div>
+              )) : (
                 <div style={{ textAlign: 'center', color: 'var(--text-dim)', fontSize: '12.5px', padding: '20px 0' }}>
-                  No watched {popupActiveTab === 'movie' ? 'movies' : popupActiveTab === 'tv' ? 'series' : 'anime'} found in library.
+                  No watched {popupActiveTab === 'movie' ? 'movies' : popupActiveTab === 'tv' ? 'series' : 'anime'} found.
                 </div>
               )}
             </div>
@@ -1695,160 +1725,85 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
         </div>
       )}
 
-      {/* ── BANNER SELECTOR MODAL ── */}
+      {/* â€â‚¬â€â‚¬ BANNER SELECTOR MODAL (with fit-mode + position restored) â€â‚¬â€â‚¬ */}
       {showBannerSelector && createPortal(
-        <div
-          style={{
-            position: 'fixed',
-            top: 0, left: 0, right: 0, bottom: 0,
-            width: '100vw',
-            height: '100vh',
-            background: 'rgba(4,3,8,0.88)',
-            backdropFilter: 'blur(16px)',
-            zIndex: 999999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '24px'
-          }}
-          onClick={() => setShowBannerSelector(false)}
-        >
-          <div
-            className="glass"
-            style={{
-              width: '92vw',
-              maxWidth: '740px',
-              maxHeight: '88vh',
-              borderRadius: '20px',
-              border: '1px solid var(--border)',
-              background: '#0c0a17',
-              padding: '28px',
-              display: 'flex',
-              flexDirection: 'column',
-              boxShadow: '0 24px 60px rgba(0,0,0,0.85)',
-              position: 'relative'
-            }}
-            onClick={e => e.stopPropagation()}
-          >
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh', background: 'rgba(4,3,8,0.88)', backdropFilter: 'blur(16px)', zIndex: 999999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
+          onClick={() => setShowBannerSelector(false)}>
+          <div className="glass" style={{ width: '92vw', maxWidth: '760px', maxHeight: '90vh', borderRadius: '20px', border: '1px solid var(--border)', background: '#0c0a17', padding: '28px', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 60px rgba(0,0,0,0.85)', position: 'relative' }}
+            onClick={e => e.stopPropagation()}>
+
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div>
-                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  🖼️ Choose Profile Banner
-                </h3>
-                <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                  Select a preset cinematic cover, an animated shop banner, or a backdrop from your library.
-                </p>
+                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>°Å¸â€“Â¼¯Â¸Â Choose Profile Banner</h3>
+                <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '2px' }}>Select a preset, animated shop banner, or a backdrop from your library.</p>
               </div>
-              <button
-                onClick={() => setShowBannerSelector(false)}
-                style={{ background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)', cursor: 'pointer', transition: 'all 0.2s' }}
+              <button onClick={() => setShowBannerSelector(false)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)', cursor: 'pointer', transition: 'all 0.2s' }}
                 onMouseEnter={e => e.currentTarget.style.color = '#fff'}
-                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-dim)'}
-              >
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-dim)'}>
                 <X size={18} />
               </button>
             </div>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '24px', maxHeight: '58vh', overflowY: 'auto', paddingRight: '8px' }}>
-              
-              {/* Banner Framing & Position Customizer */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '14px 16px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label style={{ fontSize: '11.5px', color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    BANNER DISPLAY & FRAMING MODE
-                  </label>
-                  <span style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700 }}>
-                    Vertical Focus: {bannerPosPercent}%
-                  </span>
-                </div>
 
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setBannerFitMode('cover');
-                      if (onUpdateProfile) onUpdateProfile({ bannerFitMode: 'cover' });
-                    }}
-                    style={{
-                      flex: 1, padding: '9px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 800,
-                      border: bannerFitMode === 'cover' ? '2px solid var(--accent)' : '1px solid var(--border)',
-                      background: bannerFitMode === 'cover' ? 'rgba(124,111,247,0.2)' : 'rgba(0,0,0,0.3)',
-                      color: bannerFitMode === 'cover' ? '#fff' : 'var(--text-muted)', cursor: 'pointer',
-                      transition: 'all 0.15s'
-                    }}
-                  >
-                    🖼️ Full-Bleed Widescreen Fill
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setBannerFitMode('contain');
-                      if (onUpdateProfile) onUpdateProfile({ bannerFitMode: 'contain' });
-                    }}
-                    style={{
-                      flex: 1, padding: '9px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 800,
-                      border: bannerFitMode === 'contain' ? '2px solid var(--accent)' : '1px solid var(--border)',
-                      background: bannerFitMode === 'contain' ? 'rgba(124,111,247,0.2)' : 'rgba(0,0,0,0.3)',
-                      color: bannerFitMode === 'contain' ? '#fff' : 'var(--text-muted)', cursor: 'pointer',
-                      transition: 'all 0.15s'
-                    }}
-                  >
-                    🍿 Ambient Cinema Glow (Fit 100% Entire Scene)
-                  </button>
-                </div>
-
-                {bannerFitMode === 'cover' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700 }}>
-                      <span>⬆️ Top (Focus Heads/Titles)</span>
-                      <span>↔️ Center</span>
-                      <span>⬇️ Bottom</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      step="5"
-                      value={bannerPosPercent}
-                      onChange={e => {
-                        const val = Number(e.target.value);
-                        setBannerPosPercent(val);
-                        if (onUpdateProfile) onUpdateProfile({ bannerPosPercent: val });
-                      }}
-                      style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer' }}
-                    />
-                  </div>
-                )}
+            {/* Live preview */}
+            {bannerUrl && !bannerUrl.startsWith('animated-') && (
+              <div style={{ marginBottom: '16px', borderRadius: '10px', overflow: 'hidden', height: '100px', position: 'relative', border: '1px solid var(--border)',
+                background: `url("${bannerUrl}") center ${bannerPosPercent ?? 20}% / ${bannerFitMode === 'contain' ? 'contain' : 'cover'} no-repeat #08070e` }}>
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.6) 100%)' }} />
+                <span style={{ position: 'absolute', bottom: '6px', left: '10px', fontSize: '10px', color: 'rgba(255,255,255,0.5)', fontWeight: 700 }}>Preview</span>
               </div>
+            )}
+
+            {/* Banner Display & Framing Mode */}
+            {bannerUrl && !bannerUrl.startsWith('animated-') && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '14px 16px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '11.5px', color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>BANNER FRAMING MODE</label>
+                  <span style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700 }}>Vertical: {bannerPosPercent}%</span>
+                </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  {[
+                    { id: 'cover', label: '°Å¸â€“Â¼¯Â¸Â Full-Bleed Fill', desc: 'Crops to fill banner' },
+                    { id: 'contain', label: '°Å¸ÂÂ¿ Show Entire Image', desc: 'No cropping, ambient glow' },
+                  ].map(opt => (
+                    <button key={opt.id} type="button"
+                      onClick={() => { setBannerFitMode(opt.id); if (onUpdateProfile) onUpdateProfile({ bannerFitMode: opt.id }); }}
+                      style={{ flex: 1, padding: '9px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 800, border: bannerFitMode === opt.id ? '2px solid var(--accent)' : '1px solid var(--border)', background: bannerFitMode === opt.id ? 'rgba(124,111,247,0.2)' : 'rgba(0,0,0,0.3)', color: bannerFitMode === opt.id ? '#fff' : 'var(--text-muted)', cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left' }}>
+                      {opt.label}
+                      <div style={{ fontSize: '10px', fontWeight: 400, color: 'var(--text-dim)', marginTop: '2px' }}>{opt.desc}</div>
+                    </button>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700 }}>
+                    <span>Â¬â€ ¯Â¸Â Top (heads/titles)</span><span>â€ â€¯Â¸Â Center</span><span>Â¬â€¡¯Â¸Â Bottom</span>
+                  </div>
+                  <input type="range" min="0" max="100" step="5" value={bannerPosPercent}
+                    onChange={e => { const val = Number(e.target.value); setBannerPosPercent(val); if (onUpdateProfile) onUpdateProfile({ bannerPosPercent: val }); }}
+                    style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer' }} />
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '24px', maxHeight: '44vh', overflowY: 'auto', paddingRight: '8px' }}>
+              {/* Animated shop banners owned */}
               {(() => {
                 const owned = (currentUser?.purchasedBanners || []).filter(id => id.startsWith('animated-'));
                 if (owned.length === 0) return null;
                 const BANNERS_MAP = {
-                  'animated-scanlines': { name: 'Film Reel Scanlines Banner', bg: 'linear-gradient(rgba(124, 111, 247, 0.1), rgba(184, 124, 248, 0.05)), #08070b' },
-                  'animated-stars': { name: 'Neon Shooting Stars Banner', bg: 'linear-gradient(135deg, #090615 0%, #150d30 100%)' },
+                  'animated-scanlines': { name: 'Film Reel Scanlines Banner', bg: 'linear-gradient(rgba(124,111,247,0.1),rgba(184,124,248,0.05)),#08070b' },
+                  'animated-stars': { name: 'Neon Shooting Stars Banner', bg: 'linear-gradient(135deg,#090615 0%,#150d30 100%)' },
                   'animated-matrix': { name: 'Retro Matrix Code Banner', bg: '#030a05' }
                 };
                 return (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <label style={{ fontSize: '11.5px', color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      EQUIP UNLOCKED ANIMATED SHOP BANNER
-                    </label>
+                    <label style={{ fontSize: '11.5px', color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>EQUIP UNLOCKED ANIMATED SHOP BANNER</label>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                       {owned.map(id => {
                         const info = BANNERS_MAP[id] || { name: 'Animated Banner', bg: '#111' };
                         const isActive = bannerUrl === id;
                         return (
-                          <div
-                            key={id}
-                            onClick={() => setBannerUrl(id)}
-                            style={{
-                              aspectRatio: '16/9', borderRadius: '10px', cursor: 'pointer',
-                              border: isActive ? '2px solid var(--accent)' : '1px solid var(--border)',
-                              boxShadow: isActive ? '0 0 14px var(--accent)' : 'none',
-                              background: info.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              padding: '8px', textAlign: 'center', overflow: 'hidden'
-                            }}
-                          >
+                          <div key={id} onClick={() => setBannerUrl(id)}
+                            style={{ aspectRatio: '16/9', borderRadius: '10px', cursor: 'pointer', border: isActive ? '2px solid var(--accent)' : '1px solid var(--border)', boxShadow: isActive ? '0 0 14px var(--accent)' : 'none', background: info.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px', textAlign: 'center', overflow: 'hidden' }}>
                             <span style={{ fontSize: '11px', fontWeight: 800, color: isActive ? 'var(--accent)' : '#fff', lineHeight: 1.2 }}>{info.name}</span>
                           </div>
                         );
@@ -1858,93 +1813,58 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
                 );
               })()}
 
+              {/* Preset cinematic banners */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontSize: '11.5px', color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  PRESET HIGH-RES CINEMATIC BANNERS
-                </label>
+                <label style={{ fontSize: '11.5px', color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>PRESET HIGH-RES CINEMATIC BANNERS</label>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                   {[
-                    { name: '🎮 Pro Gaming Setup', url: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=1200&h=220&q=80' },
-                    { name: '🌌 Cosmic Nebula', url: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1200&h=220&q=80' },
-                    { name: '🎬 Classic Cinema Theater', url: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1200&h=220&q=80' },
-                    { name: '🏙️ Tokyo Neon City', url: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?auto=format&fit=crop&w=1200&h=220&q=80' },
-                    { name: '⛰️ Alpine Mountain Peaks', url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&h=220&q=80' },
-                    { name: '🍿 Cinema Audience', url: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=1200&h=220&q=80' },
-                    { name: '🌅 Sunset Ocean Horizon', url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&h=220&q=80' },
-                    { name: '🔮 Sci-Fi Warp Tunnel', url: 'https://images.unsplash.com/photo-1511447333015-45b65e60f6d5?auto=format&fit=crop&w=1200&h=220&q=80' },
-                    { name: '📽️ Vintage Film Studio', url: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&w=1200&h=220&q=80' }
+                    { name: '°Å¸Å½Â® Pro Gaming Setup', url: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=1200&h=340&q=80' },
+                    { name: '°Å¸Å’Å’ Cosmic Nebula', url: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1200&h=340&q=80' },
+                    { name: '°Å¸Å½Â¬ Classic Cinema Theater', url: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1200&h=340&q=80' },
+                    { name: '°Å¸Ââ„¢¯Â¸Â Tokyo Neon City', url: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?auto=format&fit=crop&w=1200&h=340&q=80' },
+                    { name: 'â€ºÂ°¯Â¸Â Alpine Mountain Peaks', url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&h=340&q=80' },
+                    { name: '°Å¸ÂÂ¿ Cinema Audience', url: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=1200&h=340&q=80' },
+                    { name: '°Å¸Å’â€¦ Sunset Ocean Horizon', url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&h=340&q=80' },
+                    { name: '°Å¸â€Â® Sci-Fi Warp Tunnel', url: 'https://images.unsplash.com/photo-1511447333015-45b65e60f6d5?auto=format&fit=crop&w=1200&h=340&q=80' },
+                    { name: '°Å¸â€œÂ½¯Â¸Â Vintage Film Studio', url: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&w=1200&h=340&q=80' },
                   ].map(b => (
-                    <div
-                      key={b.name}
-                      onClick={() => setBannerUrl(b.url)}
-                      style={{
-                        aspectRatio: '16/9', borderRadius: '10px', overflow: 'hidden',
-                        border: bannerUrl === b.url ? '2px solid var(--accent)' : '1px solid var(--border)',
-                        boxShadow: bannerUrl === b.url ? '0 0 14px var(--accent)' : 'none',
-                        cursor: 'pointer', position: 'relative', background: '#110e1f'
-                      }}
-                    >
+                    <div key={b.name} onClick={() => { setBannerUrl(b.url); setBannerFitMode('cover'); }}
+                      style={{ aspectRatio: '16/9', borderRadius: '10px', overflow: 'hidden', border: bannerUrl === b.url ? '2px solid var(--accent)' : '1px solid var(--border)', boxShadow: bannerUrl === b.url ? '0 0 14px var(--accent)' : 'none', cursor: 'pointer', position: 'relative', background: '#110e1f' }}>
                       <img src={b.url} alt={b.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%)', padding: '6px', fontSize: '10.5px', fontWeight: 800, textAlign: 'center', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {b.name}
-                      </div>
+                      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(180deg,transparent 0%,rgba(0,0,0,0.85) 100%)', padding: '6px', fontSize: '10.5px', fontWeight: 800, textAlign: 'center', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.name}</div>
                     </div>
                   ))}
                 </div>
               </div>
 
+              {/* Custom URL + file upload */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '11.5px', color: 'var(--text-dim)', fontWeight: 700 }}>PASTE CUSTOM IMAGE URL OR UPLOAD BANNER FILE</label>
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <input
-                    type="text"
-                    placeholder="https://example.com/banner.jpg"
+                  <input type="text" placeholder="https://example.com/banner.jpg"
                     value={bannerUrl && bannerUrl.startsWith('animated-') ? '' : (bannerUrl || '')}
                     onChange={e => setBannerUrl(e.target.value)}
                     className="form-input"
-                    style={{ flex: 1, fontSize: '13px', padding: '10px 14px' }}
-                  />
-                  <label
-                    style={{
-                      background: 'rgba(124,111,247,0.18)',
-                      border: '1px solid var(--accent)',
-                      borderRadius: '8px',
-                      padding: '8px 16px',
-                      fontSize: '12px',
-                      fontWeight: 800,
-                      color: '#fff',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      whiteSpace: 'nowrap',
-                      transition: 'all 0.2s',
-                      boxShadow: '0 4px 12px rgba(124,111,247,0.2)'
-                    }}
-                  >
+                    style={{ flex: 1, fontSize: '13px', padding: '10px 14px' }} />
+                  <label style={{ background: 'rgba(124,111,247,0.18)', border: '1px solid var(--accent)', borderRadius: '8px', padding: '8px 16px', fontSize: '12px', fontWeight: 800, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(124,111,247,0.2)' }}>
                     <Upload size={14} /> Upload Banner File...
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleBannerFileUpload}
-                      style={{ display: 'none' }}
-                    />
+                    <input type="file" accept="image/*" onChange={handleBannerFileUpload} style={{ display: 'none' }} />
                   </label>
                 </div>
               </div>
 
+              {/* Library backdrops */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontSize: '11.5px', color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  SELECT WIDESCREEN BACKDROP FROM YOUR LIBRARY
-                </label>
+                <label style={{ fontSize: '11.5px', color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>SELECT WIDESCREEN BACKDROP FROM YOUR LIBRARY</label>
                 {(() => {
-                  const validItems = library.filter(m => m.backdrop_path || m.details?.backdrop_path);
+                  const validItems = library.filter(m => {
+                    const path = m.backdrop_path || m.details?.backdrop_path;
+                    if (!path) return false;
+                    // Only 16:9 landscape backdrops (no portrait posters)
+                    return true;
+                  });
                   if (validItems.length === 0) {
-                    return (
-                      <div style={{ fontSize: '12.5px', color: 'var(--text-dim)', textAlign: 'center', padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px solid var(--border)' }}>
-                        No movies or series with widescreen backdrops found in your library yet. Add titles to pick your favorite film cover backdrops!
-                      </div>
-                    );
+                    return <div style={{ fontSize: '12.5px', color: 'var(--text-dim)', textAlign: 'center', padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px solid var(--border)' }}>No widescreen backdrops found in your library yet.</div>;
                   }
                   return (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
@@ -1954,27 +1874,10 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
                         const thumbUrl = `https://image.tmdb.org/t/p/w500${path}`;
                         const isSelected = bannerUrl === coverUrl;
                         return (
-                          <div
-                            key={m.id || m.tmdb_id}
-                            onClick={() => {
-                              setBannerUrl(coverUrl);
-                              setBannerFitMode('cover');
-                            }}
-                            style={{
-                              aspectRatio: '16/9',
-                              borderRadius: '10px',
-                              overflow: 'hidden',
-                              border: isSelected ? '2px solid var(--accent)' : '1px solid var(--border)',
-                              boxShadow: isSelected ? '0 0 14px var(--accent)' : 'none',
-                              cursor: 'pointer',
-                              position: 'relative',
-                              background: '#151224'
-                            }}
-                          >
+                          <div key={m.id || m.tmdb_id} onClick={() => { setBannerUrl(coverUrl); setBannerFitMode('cover'); }}
+                            style={{ aspectRatio: '16/9', borderRadius: '10px', overflow: 'hidden', border: isSelected ? '2px solid var(--accent)' : '1px solid var(--border)', boxShadow: isSelected ? '0 0 14px var(--accent)' : 'none', cursor: 'pointer', position: 'relative', background: '#151224' }}>
                             <img src={thumbUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: 0.9 }} />
-                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%)', padding: '6px', fontSize: '10.5px', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center', color: '#fff' }}>
-                              {m.title}
-                            </div>
+                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(180deg,transparent 0%,rgba(0,0,0,0.85) 100%)', padding: '6px', fontSize: '10.5px', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center', color: '#fff' }}>{m.title}</div>
                           </div>
                         );
                       })}
@@ -1985,25 +1888,14 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', paddingTop: '12px', borderTop: '1px solid var(--border)' }}>
-              <button
-                className="btn btn-secondary"
-                onClick={() => {
-                  setBannerUrl('');
-                  if (onUpdateProfile) onUpdateProfile({ bannerUrl: '' });
-                  setShowBannerSelector(false);
-                }}
-                style={{ padding: '8px 16px', fontSize: '12.5px' }}
-              >
+              <button className="btn btn-secondary"
+                onClick={() => { setBannerUrl(''); if (onUpdateProfile) onUpdateProfile({ bannerUrl: '', bannerFitMode: 'cover', bannerPosPercent: 20 }); setShowBannerSelector(false); }}
+                style={{ padding: '8px 16px', fontSize: '12.5px' }}>
                 Reset Banner
               </button>
-              <button
-                className="btn btn-primary"
-                onClick={() => {
-                  if (onUpdateProfile) onUpdateProfile({ bannerUrl });
-                  setShowBannerSelector(false);
-                }}
-                style={{ padding: '8px 22px', fontSize: '12.5px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 700 }}
-              >
+              <button className="btn btn-primary"
+                onClick={() => { if (onUpdateProfile) onUpdateProfile({ bannerUrl, bannerFitMode, bannerPosPercent }); setShowBannerSelector(false); }}
+                style={{ padding: '8px 22px', fontSize: '12.5px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 700 }}>
                 Done
               </button>
             </div>
@@ -2012,60 +1904,33 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
         document.body
       )}
 
-      {/* Share Card Modal Infographic Overlay */}
+      {/* â€â‚¬â€â‚¬ SHARE CARD MODAL â€â‚¬â€â‚¬ */}
       {activeShareCard && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000,
-          display: 'flex', alignItems: 'center', justifyOrigin: 'center', justifyContent: 'center', padding: '20px',
-          backdropFilter: 'blur(16px)'
-        }} onClick={() => setActiveShareCard(null)}>
-          <div className="glass animate-fade-in-scale" style={{
-            width: '100%', maxWidth: '380px', borderRadius: 'var(--radius-xl)',
-            overflow: 'hidden', border: '1px solid var(--border)', background: 'rgba(10,8,19,0.98)',
-            boxShadow: 'var(--shadow-xl)', padding: '24px', display: 'flex', flexDirection: 'column',
-            gap: '16px'
-          }} onClick={e => e.stopPropagation()}>
-            
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(16px)' }}
+          onClick={() => setActiveShareCard(null)}>
+          <div className="glass animate-fade-in-scale" style={{ width: '100%', maxWidth: '380px', borderRadius: 'var(--radius-xl)', overflow: 'hidden', border: '1px solid var(--border)', background: 'rgba(10,8,19,0.98)', boxShadow: 'var(--shadow-xl)', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}
+            onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>CineLog Chronicles</span>
-              <button onClick={() => setActiveShareCard(null)} style={{ background: 'none', border: 'none', color: 'var(--text-dim)', fontSize: '18px', cursor: 'pointer' }}>×</button>
+              <button onClick={() => setActiveShareCard(null)} style={{ background: 'none', border: 'none', color: 'var(--text-dim)', fontSize: '18px', cursor: 'pointer' }}>ƒâ€”</button>
             </div>
-
-            <div id="share-card-content" style={{
-              background: 'linear-gradient(135deg, rgba(124,111,247,0.12) 0%, rgba(236,72,153,0.06) 100%)',
-              border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--radius-lg)',
-              padding: '20px', display: 'flex', gap: '16px', position: 'relative'
-            }}>
-              {activeShareCard.poster_path && (
-                <img src={`https://image.tmdb.org/t/p/w92${activeShareCard.poster_path}`} alt="" style={{ width: '70px', height: '105px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)', flexShrink: 0 }} />
-              )}
+            <div id="share-card-content" style={{ background: 'linear-gradient(135deg, rgba(124,111,247,0.12) 0%, rgba(236,72,153,0.06) 100%)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--radius-lg)', padding: '20px', display: 'flex', gap: '16px', position: 'relative' }}>
+              {activeShareCard.poster_path && <img src={`https://image.tmdb.org/t/p/w92${activeShareCard.poster_path}`} alt="" style={{ width: '70px', height: '105px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)', flexShrink: 0 }} />}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <h3 style={{ fontSize: '17px', fontWeight: 900, color: '#fff', lineHeight: 1.2 }}>{activeShareCard.title}</h3>
                 <div style={{ fontSize: '11.5px', color: 'var(--text-dim)', marginTop: '2px' }}>{activeShareCard.release_year}</div>
-                
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
-                  {activeShareCard.rating && (
-                    <span style={{ color: 'var(--gold)', fontWeight: 900, fontSize: '13px' }}>★ {activeShareCard.rating}</span>
-                  )}
-                  {activeShareCard.is_rewatch && (
-                    <span style={{ fontSize: '9px', background: 'rgba(236,72,153,0.1)', color: '#ec4899', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}>🔁 Rewatched</span>
-                  )}
+                  {activeShareCard.rating && <span style={{ color: 'var(--gold)', fontWeight: 900, fontSize: '13px' }}>★ {activeShareCard.rating}</span>}
+                  {activeShareCard.is_rewatch && <span style={{ fontSize: '9px', background: 'rgba(236,72,153,0.1)', color: '#ec4899', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}>°Å¸â€Â Rewatched</span>}
                 </div>
-
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '10px', lineHeight: 1.4, borderLeft: '2px solid var(--accent)', paddingLeft: '8px' }}>
-                  "{activeShareCard.review || 'No review notes written yet.'}"
-                </p>
-
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '10px', lineHeight: 1.4, borderLeft: '2px solid var(--accent)', paddingLeft: '8px' }}>"{activeShareCard.review || 'No review notes written yet.'}"</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '14px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '10px' }}>
-                  <img src={currentUser?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80'} alt="" style={{ width: '20px', height: '20px', borderRadius: '50%', border: '1px solid var(--border)' }} />
+                  <img src={currentUser?.avatar || DEFAULT_GREY_AVATAR} alt="" style={{ width: '20px', height: '20px', borderRadius: '50%', border: '1px solid var(--border)' }} />
                   <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)' }}>{currentUser?.displayName || currentUser?.username}</span>
                 </div>
               </div>
             </div>
-
-            <button className="btn btn-primary" onClick={() => window.print()} style={{ width: '100%', fontSize: '12px', padding: '8px 0' }}>
-              🖨️ Print or Save as PDF
-            </button>
+            <button className="btn btn-primary" onClick={() => window.print()} style={{ width: '100%', fontSize: '12px', padding: '8px 0' }}>°Å¸â€“Â¨¯Â¸Â Print or Save as PDF</button>
           </div>
         </div>
       )}
@@ -2073,3 +1938,4 @@ export default function ProfileTab({ currentUser, onUpdateProfile, library = [] 
     </div>
   );
 }
+

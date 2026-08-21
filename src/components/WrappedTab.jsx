@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 
 const GENRE_EMOJI = {
   "action": "💥", "adventure": "🗺️", "animation": "🎨", "comedy": "😂",
@@ -32,6 +32,19 @@ function useCountUp(target, duration = 1200, start = false) {
     requestAnimationFrame(step);
   }, [target, duration, start]);
   return count;
+}
+
+function AnimatedCountSlide({ target, duration, isActive, emoji, title, color, subtitle, unit }) {
+  const count = useCountUp(target, duration, isActive);
+  return (
+    <>
+      <div style={{ fontSize: "48px", marginBottom: "16px" }}>{emoji}</div>
+      <div style={{ fontSize: "13px", fontWeight: 800, letterSpacing: "0.12em", color, textTransform: "uppercase", marginBottom: "12px" }}>{title}</div>
+      <div style={{ fontSize: "88px", fontWeight: 900, color, lineHeight: 1, marginBottom: unit ? "8px" : "12px", fontFamily: "var(--font-heading)" }}>{count}</div>
+      {unit && <div style={{ fontSize: "13px", color: "var(--text-dim)", marginBottom: "12px" }}>{unit}</div>}
+      <p style={{ color: "var(--text-muted)", fontSize: "15px" }}>{subtitle}</p>
+    </>
+  );
 }
 
 function SlideCard({ children, color, gradient, isActive }) {
@@ -116,41 +129,39 @@ export default function WrappedTab({ library }) {
     {
       color: "#34d399",
       gradient: "linear-gradient(135deg, rgba(52,211,153,0.18), rgba(16,185,129,0.08))",
-      content: ({ isActive }) => {
-        const count = useCountUp(watchedThisYear.length, 1000, isActive);
-        return (
-          <>
-            <div style={{ fontSize: "48px", marginBottom: "16px" }}>✅</div>
-            <div style={{ fontSize: "13px", fontWeight: 800, letterSpacing: "0.12em", color: "#34d399", textTransform: "uppercase", marginBottom: "12px" }}>Films Watched</div>
-            <div style={{ fontSize: "88px", fontWeight: 900, color: "#34d399", lineHeight: 1, marginBottom: "12px", fontFamily: "var(--font-heading)" }}>{count}</div>
-            <p style={{ color: "var(--text-muted)", fontSize: "15px" }}>
-              {watchedThisYear.length === 0 ? "Start watching and come back!" :
-               watchedThisYear.length < 10 ? "Just getting started — keep going! 🌱" :
-               watchedThisYear.length < 30 ? "Solid year of watching! 🎉" :
-               watchedThisYear.length < 60 ? "You're a true film fan! 🍿" : "Absolute cinema legend! 👑"}
-            </p>
-          </>
-        );
-      },
+      content: ({ isActive }) => (
+        <AnimatedCountSlide
+          target={watchedThisYear.length}
+          duration={1000}
+          isActive={isActive}
+          emoji="✅"
+          title="Films Watched"
+          color="#34d399"
+          subtitle={
+            watchedThisYear.length === 0 ? "Start watching and come back!" :
+            watchedThisYear.length < 10 ? "Just getting started — keep going! 🌱" :
+            watchedThisYear.length < 30 ? "Solid year of watching! 🎉" :
+            watchedThisYear.length < 60 ? "You're a true film fan! 🍿" : "Absolute cinema legend! 👑"
+          }
+        />
+      ),
     },
     // 2: Hours
     {
       color: "#f97316",
       gradient: "linear-gradient(135deg, rgba(249,115,22,0.18), rgba(251,191,36,0.08))",
-      content: ({ isActive }) => {
-        const count = useCountUp(hoursWatched, 1200, isActive);
-        return (
-          <>
-            <div style={{ fontSize: "48px", marginBottom: "16px" }}>⏱️</div>
-            <div style={{ fontSize: "13px", fontWeight: 800, letterSpacing: "0.12em", color: "#fb923c", textTransform: "uppercase", marginBottom: "12px" }}>Hours Watched</div>
-            <div style={{ fontSize: "88px", fontWeight: 900, color: "#fb923c", lineHeight: 1, marginBottom: "8px" }}>{count}</div>
-            <div style={{ fontSize: "13px", color: "var(--text-dim)", marginBottom: "12px" }}>hours of cinema</div>
-            <p style={{ color: "var(--text-muted)", fontSize: "14px" }}>
-              {hoursWatched > 0 ? `That's ${Math.round(hoursWatched / 24)} full days in the dark! 🌑` : "No watch time yet this year."}
-            </p>
-          </>
-        );
-      },
+      content: ({ isActive }) => (
+        <AnimatedCountSlide
+          target={hoursWatched}
+          duration={1200}
+          isActive={isActive}
+          emoji="⏱️"
+          title="Hours Watched"
+          color="#fb923c"
+          unit="hours of cinema"
+          subtitle={hoursWatched > 0 ? `That's ${Math.round(hoursWatched / 24)} full days in the dark! 🌑` : "No watch time yet this year."}
+        />
+      ),
     },
     // 3: Top Genre
     {
@@ -220,21 +231,21 @@ export default function WrappedTab({ library }) {
     {
       color: "#f43f5e",
       gradient: "linear-gradient(135deg, rgba(244,63,94,0.18), rgba(239,68,68,0.08))",
-      content: ({ isActive }) => {
-        const count = useCountUp(reviewsWritten, 1000, isActive);
-        return (
-          <>
-            <div style={{ fontSize: "48px", marginBottom: "16px" }}>✍️</div>
-            <div style={{ fontSize: "13px", fontWeight: 800, letterSpacing: "0.12em", color: "#f43f5e", textTransform: "uppercase", marginBottom: "12px" }}>Reviews Written</div>
-            <div style={{ fontSize: "88px", fontWeight: 900, color: "#f43f5e", lineHeight: 1 }}>{count}</div>
-            <p style={{ color: "var(--text-muted)", fontSize: "15px", marginTop: "12px" }}>
-              {reviewsWritten === 0 ? "Write your first review — share your thoughts!" :
-               reviewsWritten === 1 ? "Your first review — the beginning of a critic's journey! 🌟" :
-               reviewsWritten < 10 ? "Your words are shaping the community! 📝" : "A true critic! The community loves your reviews! 🎙️"}
-            </p>
-          </>
-        );
-      },
+      content: ({ isActive }) => (
+        <AnimatedCountSlide
+          target={reviewsWritten}
+          duration={1000}
+          isActive={isActive}
+          emoji="✍️"
+          title="Reviews Written"
+          color="#f43f5e"
+          subtitle={
+            reviewsWritten === 0 ? "Write your first review — share your thoughts!" :
+            reviewsWritten === 1 ? "Your first review — the beginning of a critic's journey! 🌟" :
+            reviewsWritten < 10 ? "Your words are shaping the community! 📝" : "A true critic! The community loves your reviews! 🎙️"
+          }
+        />
+      ),
     },
     // 7: Grand Finale
     {
