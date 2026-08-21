@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Camera, Edit2, Check, Heart, Calendar, Star, Film, Trophy, BarChart3, X, Search, Plus, Upload } from 'lucide-react';
+import { Camera, Coins, Edit2, Check, Heart, Calendar, Star, Film, Trophy, BarChart3, X, Search, Plus, Upload, Flame, Sparkles } from 'lucide-react';
 import { ACHIEVEMENTS, BORDER_STYLES, BADGE_COLORS } from '../utils/achievements';
 import AvatarWithBorder, { DEFAULT_GREY_AVATAR } from './AvatarWithBorder';
 import { supabase } from '../supabaseClient';
@@ -837,7 +837,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                           opacity: followLoading ? 0.6 : 1, boxShadow: isFollowing ? 'none' : '0 4px 14px rgba(124,111,247,0.4)'
                         }}
                       >
-                        {isFollowing ? 'Å“â€œ Following' : '+ Follow'}
+                        {isFollowing ? '✓ Following' : '+ Follow'}
                       </button>
                     )}
                   </div>
@@ -864,7 +864,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                                 {fav ? (
                                   <img src={`https://image.tmdb.org/t/p/w300${fav.poster_path}`} alt={fav.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
                                 ) : (
-                                  <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', opacity: 0.1 }}>°Å¸Å½Â¬</div>
+                                  <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', opacity: 0.1 }}>🎬</div>
                                 )}
                               </div>
                             </div>
@@ -895,7 +895,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                             {m.poster_path ? (
                               <img src={`https://image.tmdb.org/t/p/w92${m.poster_path}`} alt="" style={{ width: '38px', height: '56px', objectFit: 'cover', borderRadius: '5px', border: '1px solid var(--border)', flexShrink: 0 }} />
                             ) : (
-                              <div style={{ width: '38px', height: '56px', background: 'rgba(255,255,255,0.04)', borderRadius: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>°Å¸Å½Â¬</div>
+                              <div style={{ width: '38px', height: '56px', background: 'rgba(255,255,255,0.04)', borderRadius: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>🎬</div>
                             )}
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ fontWeight: 800, fontSize: '13.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.title}</div>
@@ -1068,7 +1068,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                         const isUnlocked = unlockedBorders.has(id);
                         return (
                           <option key={id} value={id} disabled={!isUnlocked} style={{ background: '#0d0b18', color: isUnlocked ? '#fff' : 'var(--text-dim)' }}>
-                            {config.name} â‚¬â€ {isUnlocked ? 'Å“â€œ Unlocked' : '°Å¸â€â€™ Locked'}
+                            {config.name} â‚¬â€ {isUnlocked ? '✓ Unlocked' : ' Locked'}
                           </option>
                         );
                       })}
@@ -1182,7 +1182,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
         {/* â€â‚¬â€â‚¬ TAB CONTENT â€â‚¬â€â‚¬ */}
         <div style={{ padding: '28px 0', display: 'flex', flexDirection: 'column', gap: '28px' }}>
 
-          {/* â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬ OVERVIEW TAB â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬ */}
+          {/* ── OVERVIEW TAB ── */}
           {profileActiveSubTab === 'overview' && (
             <div style={{ display: 'flex', gap: '24px', alignItems: 'start' }}>
 
@@ -1210,7 +1210,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                                 </div>
                               </>
                             ) : (
-                              <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', opacity: 0.12 }}>°Å¸Å½Â¬</div>
+                              <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', opacity: 0.12 }}>🎬</div>
                             )}
                           </div>
                         </div>
@@ -1224,7 +1224,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                   )}
                 </div>
 
-                {/* Recent Diary (top 6) */}
+                {/* Recent Diary (top 5) */}
                 {recentDiary.length > 0 && (
                   <div className="glass" style={{ borderRadius: 'var(--radius-xl)', padding: '20px', border: '1px solid var(--border)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
@@ -1234,7 +1234,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                       </div>
                       <button onClick={() => setProfileActiveSubTab('diary')}
                         style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
-                        View all â€ â€™
+                        View all →
                       </button>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -1276,10 +1276,10 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                 {currentStreak > 0 && (
                   <div className="glass" style={{ borderRadius: 'var(--radius-xl)', padding: '16px 20px', border: '1px solid rgba(249,115,22,0.25)', background: 'rgba(249,115,22,0.05)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '22px' }}>°Å¸â€Â¥</span>
+                      <Flame size={22} color="#f97316" />
                       <div>
                         <div style={{ fontSize: '20px', fontWeight: 900, color: '#f97316' }}>{currentStreak}-day streak</div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700 }}>{streakMultiplier > 1 ? `${streakMultiplier}ƒâ€” CinePoints multiplier active` : 'Keep it going!'}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700 }}>{streakMultiplier > 1 ? `${streakMultiplier}x CinePoints multiplier active` : 'Keep it going!'}</div>
                       </div>
                     </div>
                   </div>
@@ -1288,7 +1288,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
             </div>
           )}
 
-          {/* â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬ DIARY TAB â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬ */}
+          {/* ── DIARY TAB ── */}
           {profileActiveSubTab === 'diary' && (
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
@@ -1343,7 +1343,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                             ) : <span style={{ fontSize: '11px', color: 'var(--text-dim)' }}>No rating</span>}
                             {item.is_rewatch && (
                               <span style={{ fontSize: '10px', background: 'rgba(236,72,153,0.1)', color: '#ec4899', borderRadius: '12px', padding: '1px 8px', fontWeight: 700 }}>
-                                °Å¸â€Â {item.rewatch_count ? `${item.rewatch_count}x` : 'Rewatch'}
+                                🔄 {item.rewatch_count ? `${item.rewatch_count}x` : 'Rewatch'}
                               </span>
                             )}
                             {(item.tags || []).slice(0, 3).map(t => (
@@ -1355,11 +1355,11 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                             <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(item.title + ' ' + (item.release_year || '') + ' official trailer')}`}
                               target="_blank" rel="noopener noreferrer"
                               style={{ fontSize: '10.5px', color: 'var(--red)', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.18)', borderRadius: '4px', padding: '2px 8px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 700 }}>
-                              °Å¸Å½Â¬ Trailer
+                              Trailer
                             </a>
                             <button onClick={() => setActiveShareCard(item)}
                               style={{ fontSize: '10.5px', color: 'var(--accent)', background: 'rgba(124,111,247,0.06)', border: '1px solid rgba(124,111,247,0.18)', borderRadius: '4px', padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 700, cursor: 'pointer' }}>
-                              °Å¸â€œÂ¤ Share Card
+                              Share Card
                             </button>
                           </div>
 
@@ -1367,7 +1367,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                             <div style={{ marginTop: '8px' }}>
                               {item.contains_spoilers ? (
                                 <details style={{ cursor: 'pointer' }}>
-                                  <summary style={{ fontSize: '11.5px', color: 'var(--red)', fontWeight: 800, listStyle: 'none' }}>Å¡Â ¯Â¸Â Contains spoilers (click to show)</summary>
+                                  <summary style={{ fontSize: '11.5px', color: 'var(--red)', fontWeight: 800, listStyle: 'none' }}>⚠️ Contains spoilers (click to show)</summary>
                                   <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', fontStyle: 'italic', lineHeight: 1.5, background: 'rgba(255,255,255,0.02)', padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', marginTop: '4px' }}>"{item.review}"</p>
                                 </details>
                               ) : (
@@ -1390,7 +1390,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
             </div>
           )}
 
-          {/* â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬ WATCHLIST TAB â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬ */}
+          {/* ── WATCHLIST TAB ── */}
           {profileActiveSubTab === 'watchlist' && (
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
@@ -1415,7 +1415,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                         {m.poster_path ? (
                           <img src={`https://image.tmdb.org/t/p/w300${m.poster_path}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
                         ) : (
-                          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>°Å¸Å½Â¬</div>
+                          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>🎬</div>
                         )}
                         <div style={{ position: 'absolute', top: '6px', left: '6px', background: 'rgba(96,165,250,0.9)', color: '#fff', fontSize: '9px', fontWeight: 900, padding: '1px 6px', borderRadius: '4px' }}>Plan</div>
                       </div>
@@ -1430,7 +1430,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
             </div>
           )}
 
-          {/* â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬ STATS TAB â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬â€â‚¬ */}
+          {/* ── STATS TAB ── */}
           {profileActiveSubTab === 'stats' && (
             <div style={{ display: 'flex', gap: '24px', alignItems: 'start', flexWrap: 'wrap' }}>
               <div style={{ flex: 1, minWidth: '280px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -1438,22 +1438,21 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                 {/* Overview stat cards */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
                   {[
-                    { label: 'Films Watched', val: watchedCount, color: 'var(--green)', icon: 'Å“â€¦' },
-                    { label: 'Reviews Written', val: reviewsCount, color: 'var(--accent)', icon: 'Å“Â¯Â¸Â' },
-                    { label: 'Favorites', val: favoritesCount, color: 'var(--red)', icon: 'ÂÂ¤¯Â¸Â' },
-                    { label: 'Watchlist', val: watchlistCount, color: '#60a5fa', icon: '📋' },
-                    { label: 'Avg Rating', val: avgRating ? `★ ${avgRating}` : 'N/A', color: 'var(--gold)', icon: 'Â­Â' },
-                    { label: 'Current Streak', val: currentStreak > 0 ? `${currentStreak}d °Å¸â€Â¥` : 'â‚¬â€', color: '#f97316', icon: '°Å¸â€Â¥' },
+                    { label: 'Films Watched', val: watchedCount, color: 'var(--green)', icon: <Film size={20} color="var(--green)" /> },
+                    { label: 'Reviews Written', val: reviewsCount, color: 'var(--accent)', icon: <Edit2 size={20} color="var(--accent)" /> },
+                    { label: 'Favorites', val: favoritesCount, color: 'var(--red)', icon: <Heart size={20} color="var(--red)" fill="var(--red)" /> },
+                    { label: 'Watchlist', val: watchlistCount, color: '#60a5fa', icon: <Calendar size={20} color="#60a5fa" /> },
+                    { label: 'Avg Rating', val: avgRating ? `★ ${avgRating}` : 'N/A', color: 'var(--gold)', icon: <Star size={20} color="var(--gold)" fill="var(--gold)" /> },
+                    { label: 'Current Streak', val: currentStreak > 0 ? `${currentStreak}d` : '—', color: '#f97316', icon: <Flame size={20} color="#f97316" /> },
                   ].map(s => (
                     <div key={s.label} className="glass" style={{ borderRadius: '14px', padding: '16px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <div style={{ fontSize: '20px' }}>{s.icon}</div>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>{s.icon}</div>
                       <div style={{ fontSize: '22px', fontWeight: 900, color: s.color }}>{s.val}</div>
                       <div style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</div>
                     </div>
                   ))}
                 </div>
 
-                {/* Top Rated Films */}
                 {topRated.length > 0 && (
                   <div className="glass" style={{ borderRadius: 'var(--radius-xl)', padding: '20px', border: '1px solid var(--border)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
@@ -1465,7 +1464,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                         <div key={m.id} onClick={() => onMovieClick && onMovieClick(m.tmdb_id, m.media_type)}
                           style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--surface-solid)', cursor: onMovieClick ? 'pointer' : 'default' }}>
                           <div style={{ aspectRatio: '2/3', overflow: 'hidden', position: 'relative' }}>
-                            {m.poster_path ? <img src={`https://image.tmdb.org/t/p/w300${m.poster_path}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" /> : <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>°Å¸Å½Â¬</div>}
+                            {m.poster_path ? <img src={`https://image.tmdb.org/t/p/w300${m.poster_path}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" /> : <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>🎬</div>}
                             <div style={{ position: 'absolute', top: '4px', left: '4px', background: i < 3 ? 'rgba(251,191,36,0.9)' : 'rgba(0,0,0,0.8)', color: i < 3 ? '#000' : '#fff', fontSize: '9px', fontWeight: 900, padding: '1px 5px', borderRadius: '4px' }}>#{i + 1}</div>
                             <div style={{ position: 'absolute', bottom: '4px', right: '4px', background: 'rgba(0,0,0,0.9)', color: 'var(--gold)', fontSize: '10px', fontWeight: 900, padding: '1px 5px', borderRadius: '4px' }}>★{Number(m.rating).toFixed(1)}</div>
                           </div>
@@ -1497,19 +1496,19 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
                 <div>
                   <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    °Å¸ÂÂª CinePoints 2.0 Reward Shop
+                     CinePoints 2.0 Reward Shop
                   </h3>
                   <p style={{ color: 'var(--text-muted)', fontSize: '12.5px', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                     <span>Earn points by tracking movies (+10) and writing reviews (+10). Complete quests for bonus rewards!</span>
                     {streakMultiplier > 1.0 && (
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: 'rgba(249,115,22,0.12)', color: '#f97316', border: '1px solid rgba(249,115,22,0.25)', fontSize: '10.5px', padding: '1.5px 8px', borderRadius: '12px', fontWeight: 800 }}>
-                        °Å¸â€Â¥ {streakMultiplier}ƒâ€” Streak Multiplier Active
+                         {streakMultiplier}x Streak Multiplier Active
                       </span>
                     )}
                   </p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(124,111,247,0.1)', border: '1px solid rgba(124,111,247,0.25)', padding: '8px 16px', borderRadius: '30px' }}>
-                  <span style={{ fontSize: '18px' }}>🪙</span>
+                  <Coins size={18} color='var(--gold)' />
                   <span style={{ fontSize: '18px', fontWeight: 900, color: '#fff' }}>{cinePoints}</span>
                   <span style={{ fontSize: '10px', color: 'var(--text-dim)', fontWeight: 700, textTransform: 'uppercase' }}>CinePoints</span>
                 </div>
@@ -1517,15 +1516,15 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
 
               {/* Quests */}
               <div>
-                <h4 style={{ fontSize: '14px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '14px' }}>Å¡Â¡ Daily & Weekly Quests</h4>
+                <h4 style={{ fontSize: '14px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '14px' }}>🎯 Daily & Weekly Quests</h4>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
                   {[
-                    { label: 'Log a Movie Today', icon: '°Å¸Å½Â¬', reward: 10, progress: library.filter(m => m.date_added?.slice(0, 10) === new Date().toISOString().slice(0, 10)).length, target: 1, type: 'Daily' },
-                    { label: 'Write 2 Reviews', icon: 'Å“Â¯Â¸Â', reward: 20, progress: library.filter(m => m.review?.trim()).length, target: 2, type: 'Daily' },
-                    { label: 'Rate 5 Movies This Week', icon: 'Â­Â', reward: 30, progress: Math.min(5, library.filter(m => m.rating && m.date_added && (Date.now() - new Date(m.date_added).getTime()) < 7 * 24 * 60 * 60 * 1000).length), target: 5, type: 'Weekly' },
-                    { label: 'Explore 3 New Genres', icon: '°Å¸Å’Â', reward: 25, progress: Object.keys(library.reduce((acc, m) => { (m.genres || []).forEach(g => acc[g] = true); return acc; }, {})).length, target: 3, type: 'Weekly' },
-                    { label: 'Watch 10 Films', icon: '°Å¸â€œÂº', reward: 50, progress: watchedCount, target: 10, type: 'Challenge' },
-                    { label: 'Build a 5-Day Streak', icon: '°Å¸â€Â¥', reward: 75, progress: currentStreak, target: 5, type: 'Challenge' },
+                    { label: 'Log a Movie Today', icon: '🎬', reward: 10, progress: library.filter(m => m.date_added?.slice(0, 10) === new Date().toISOString().slice(0, 10)).length, target: 1, type: 'Daily' },
+                    { label: 'Write 2 Reviews', icon: '✍️', reward: 20, progress: library.filter(m => m.review?.trim()).length, target: 2, type: 'Daily' },
+                    { label: 'Rate 5 Movies This Week', icon: '⭐', reward: 30, progress: Math.min(5, library.filter(m => m.rating && m.date_added && (Date.now() - new Date(m.date_added).getTime()) < 7 * 24 * 60 * 60 * 1000).length), target: 5, type: 'Weekly' },
+                    { label: 'Explore 3 New Genres', icon: '🌌', reward: 25, progress: Object.keys(library.reduce((acc, m) => { (m.genres || []).forEach(g => acc[g] = true); return acc; }, {})).length, target: 3, type: 'Weekly' },
+                    { label: 'Watch 10 Films', icon: '📺', reward: 50, progress: watchedCount, target: 10, type: 'Challenge' },
+                    { label: 'Build a 5-Day Streak', icon: '🔥', reward: 75, progress: currentStreak, target: 5, type: 'Challenge' },
                   ].map(quest => {
                     const pct = Math.min(100, Math.round((quest.progress / quest.target) * 100));
                     const done = quest.progress >= quest.target;
@@ -1539,7 +1538,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                           <div style={{ height: '100%', width: `${pct}%`, background: done ? 'var(--green)' : 'var(--accent)', borderRadius: '3px', transition: 'width 0.6s ease' }} />
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-dim)' }}>
-                          <span>{quest.progress}/{quest.target} {done && 'Å“â€œ'}</span>
+                          <span>{quest.progress}/{quest.target} {done && '✓'}</span>
                           <span style={{ color: done ? 'var(--green)' : 'var(--gold)', fontWeight: 700 }}>+🪙 {quest.reward}</span>
                         </div>
                       </div>
@@ -1550,13 +1549,13 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
 
               {/* Soundscape Mixer */}
               <div>
-                <h4 style={{ fontSize: '14px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '14px' }}>°Å¸Å½Âµ Ambient Cinema Soundscapes Mixer</h4>
+                <h4 style={{ fontSize: '14px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '14px' }}>🎵 Ambient Cinema Soundscapes Mixer</h4>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
                   {[
-                    { id: 'projector', name: '°Å¸Å½Â¬ Film Projector Hum', color: '#f59e0b', desc: 'Clicking reel mechanics & low rumbling motor' },
-                    { id: 'scifi', name: '°Å¸Å¡â‚¬ Sci-Fi Ambience', color: '#3b82f6', desc: 'Slightly modulated space wave frequency sweeps' },
-                    { id: 'orchestral', name: '°Å¸Ââ€¯Â¸Â Epic Orchestral Chords', color: '#ec4899', desc: 'Swelling warm pad C-major chord harmonies' },
-                    { id: 'lofi', name: '°Å¸Å’â„¢ Lo-Fi Midnight Rain', color: '#a78bfa', desc: 'Soft bandpass record white noise & pops' },
+                    { id: 'projector', name: '🎬 Film Projector Hum', color: '#f59e0b', desc: 'Clicking reel mechanics & low rumbling motor' },
+                    { id: 'scifi', name: '🚀 Sci-Fi Ambience', color: '#3b82f6', desc: 'Slightly modulated space wave frequency sweeps' },
+                    { id: 'orchestral', name: ' Epic Orchestral Chords', color: '#ec4899', desc: 'Swelling warm pad C-major chord harmonies' },
+                    { id: 'lofi', name: '🌧️ Lo-Fi Midnight Rain', color: '#a78bfa', desc: 'Soft bandpass record white noise & pops' },
                   ].map(track => {
                     const vol = soundVolumes[track.id] || 0;
                     return (
@@ -1579,18 +1578,18 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                 <h4 style={{ fontSize: '14px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '14px' }}>Premium Avatar Borders</h4>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
                   {[
-                    { id: 'cyber-violet', name: '°Å¸Å’Å’ Cyber Violet Aura', cost: 150, desc: 'Glowing neon violet border with high-intensity pulse.' },
-                    { id: 'plasma-red', name: 'Å¡Â¡ Plasma Crimson Pulse', cost: 250, desc: 'An electric blazing plasma red border.' },
-                    { id: 'matrix-code', name: '°Å¸â€œÅ¸ Matrix Code Shift', cost: 350, desc: 'Cascading digital green hacker border.' },
-                    { id: 'hyper-drive', name: '°Å¸Å¡â‚¬ Hyperdrive Speed', cost: 500, desc: 'Cosmic cyan-blue speed particle glow.' },
-                    { id: 'royal-amethyst', name: '°Å¸â€™Å½ Royal Amethyst Crown', cost: 750, desc: 'Luxurious deep purple-gold glowing crown border.' }
+                    { id: 'cyber-violet', name: 'Cyber Violet Aura', cost: 150, desc: 'Glowing neon violet border with high-intensity pulse.' },
+                    { id: 'plasma-red', name: 'Plasma Crimson Pulse', cost: 250, desc: 'An electric blazing plasma red border.' },
+                    { id: 'matrix-code', name: 'Matrix Code Shift', cost: 350, desc: 'Cascading digital green hacker border.' },
+                    { id: 'hyper-drive', name: 'Hyperdrive Speed', cost: 500, desc: 'Cosmic cyan-blue speed particle glow.' },
+                    { id: 'royal-amethyst', name: 'Royal Amethyst Crown', cost: 750, desc: 'Luxurious deep purple-gold glowing crown border.' }
                   ].map(item => {
                     const purchased = (currentUser?.purchasedBorders || []).includes(item.id) || equippedBorder === item.id;
                     return (
                       <div key={item.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ fontWeight: 800, fontSize: '13.5px', color: '#fff' }}>{item.name}</span>
-                          <span style={{ fontSize: '11px', color: purchased ? 'var(--green)' : 'var(--gold)', fontWeight: 800 }}>{purchased ? 'Å“â€œ Unlocked' : `🪙 ${item.cost}`}</span>
+                          <span style={{ fontSize: '11px', color: purchased ? 'var(--green)' : 'var(--gold)', fontWeight: 800 }}>{purchased ? '✓ Unlocked' : `🪙 ${item.cost}`}</span>
                         </div>
                         <p style={{ fontSize: '11.5px', color: 'var(--text-dim)', lineHeight: 1.4 }}>{item.desc}</p>
                         {!purchased ? (
@@ -1622,7 +1621,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                       <div key={item.name} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ fontWeight: 800, fontSize: '13.5px', color: '#fff' }}>{item.name}</span>
-                          <span style={{ fontSize: '11px', color: purchased ? 'var(--green)' : 'var(--gold)', fontWeight: 800 }}>{purchased ? 'Å“â€œ Unlocked' : `🪙 ${item.cost}`}</span>
+                          <span style={{ fontSize: '11px', color: purchased ? 'var(--green)' : 'var(--gold)', fontWeight: 800 }}>{purchased ? '✓ Unlocked' : `🪙 ${item.cost}`}</span>
                         </div>
                         <p style={{ fontSize: '11.5px', color: 'var(--text-dim)', lineHeight: 1.4 }}>{item.desc}</p>
                         {!purchased ? (
@@ -1644,16 +1643,16 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                 <h4 style={{ fontSize: '14px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '14px' }}>Premium Animated Banners</h4>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
                   {[
-                    { id: 'animated-scanlines', name: '°Å¸Å½Â¬ Film Reel Scanlines Banner', cost: 200, desc: 'Projector scanlines with retro flicker noise.' },
-                    { id: 'animated-stars', name: '°Å¸Å’Â  Neon Shooting Stars Banner', cost: 300, desc: 'Rotating neon stars and cosmic meteors.' },
-                    { id: 'animated-matrix', name: '°Å¸Å¸Â¢ Retro Matrix Code Banner', cost: 400, desc: 'Cascading digital green binary drops.' }
+                    { id: 'animated-scanlines', name: 'Film Reel Scanlines', cost: 200, desc: 'Projector scanlines with retro flicker noise.' },
+                    { id: 'animated-stars', name: 'Neon Shooting Stars', cost: 300, desc: 'Rotating neon stars and cosmic meteors.' },
+                    { id: 'animated-matrix', name: 'Retro Matrix Code', cost: 400, desc: 'Cascading digital green binary drops.' }
                   ].map(item => {
                     const purchased = (currentUser?.purchasedBanners || []).includes(item.id);
                     return (
                       <div key={item.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ fontWeight: 800, fontSize: '13.5px', color: '#fff' }}>{item.name}</span>
-                          <span style={{ fontSize: '11px', color: purchased ? 'var(--green)' : 'var(--gold)', fontWeight: 800 }}>{purchased ? 'Å“â€œ Unlocked' : `🪙 ${item.cost}`}</span>
+                          <span style={{ fontSize: '11px', color: purchased ? 'var(--green)' : 'var(--gold)', fontWeight: 800 }}>{purchased ? '✓ Unlocked' : `🪙 ${item.cost}`}</span>
                         </div>
                         <p style={{ fontSize: '11.5px', color: 'var(--text-dim)', lineHeight: 1.4 }}>{item.desc}</p>
                         {!purchased ? (
@@ -1708,7 +1707,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                   style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.15s', background: 'rgba(255,255,255,0.01)', border: '1px solid transparent' }}
                   onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface-hover)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)'; }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.01)'; e.currentTarget.style.borderColor = 'transparent'; }}>
-                  {movie.poster_path ? <img src={`https://image.tmdb.org/t/p/w92${movie.poster_path}`} alt="" style={{ width: '28px', height: '42px', objectFit: 'cover', borderRadius: '4px' }} /> : <div style={{ width: '28px', height: '42px', background: 'var(--surface-solid)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', borderRadius: '4px' }}>°Å¸Å½Â¬</div>}
+                  {movie.poster_path ? <img src={`https://image.tmdb.org/t/p/w92${movie.poster_path}`} alt="" style={{ width: '28px', height: '42px', objectFit: 'cover', borderRadius: '4px' }} /> : <div style={{ width: '28px', height: '42px', background: 'var(--surface-solid)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', borderRadius: '4px' }}>🎬</div>}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{movie.title}</div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{movie.release_year}</div>
@@ -1734,7 +1733,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div>
-                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>°Å¸â€“Â¼¯Â¸Â Choose Profile Banner</h3>
+                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}> Choose Profile Banner</h3>
                 <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '2px' }}>Select a preset, animated shop banner, or a backdrop from your library.</p>
               </div>
               <button onClick={() => setShowBannerSelector(false)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)', cursor: 'pointer', transition: 'all 0.2s' }}
@@ -1762,8 +1761,8 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                 </div>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   {[
-                    { id: 'cover', label: '°Å¸â€“Â¼¯Â¸Â Full-Bleed Fill', desc: 'Crops to fill banner' },
-                    { id: 'contain', label: '°Å¸ÂÂ¿ Show Entire Image', desc: 'No cropping, ambient glow' },
+                    { id: 'cover', label: 'Full-Bleed Fill', desc: 'Crops to fill banner' },
+                    { id: 'contain', label: 'Show Entire Image', desc: 'No cropping, ambient glow' },
                   ].map(opt => (
                     <button key={opt.id} type="button"
                       onClick={() => { setBannerFitMode(opt.id); if (onUpdateProfile) onUpdateProfile({ bannerFitMode: opt.id }); }}
@@ -1775,7 +1774,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700 }}>
-                    <span>Â¬â€ ¯Â¸Â Top (heads/titles)</span><span>â€ â€¯Â¸Â Center</span><span>Â¬â€¡¯Â¸Â Bottom</span>
+                    <span>▲ Top (heads/titles)</span><span>◆ Center</span><span>▼ Bottom</span>
                   </div>
                   <input type="range" min="0" max="100" step="5" value={bannerPosPercent}
                     onChange={e => { const val = Number(e.target.value); setBannerPosPercent(val); if (onUpdateProfile) onUpdateProfile({ bannerPosPercent: val }); }}
@@ -1818,15 +1817,15 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                 <label style={{ fontSize: '11.5px', color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>PRESET HIGH-RES CINEMATIC BANNERS</label>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                   {[
-                    { name: '°Å¸Å½Â® Pro Gaming Setup', url: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=1200&h=340&q=80' },
-                    { name: '°Å¸Å’Å’ Cosmic Nebula', url: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1200&h=340&q=80' },
-                    { name: '°Å¸Å½Â¬ Classic Cinema Theater', url: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1200&h=340&q=80' },
-                    { name: '°Å¸Ââ„¢¯Â¸Â Tokyo Neon City', url: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?auto=format&fit=crop&w=1200&h=340&q=80' },
-                    { name: 'â€ºÂ°¯Â¸Â Alpine Mountain Peaks', url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&h=340&q=80' },
-                    { name: '°Å¸ÂÂ¿ Cinema Audience', url: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=1200&h=340&q=80' },
-                    { name: '°Å¸Å’â€¦ Sunset Ocean Horizon', url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&h=340&q=80' },
-                    { name: '°Å¸â€Â® Sci-Fi Warp Tunnel', url: 'https://images.unsplash.com/photo-1511447333015-45b65e60f6d5?auto=format&fit=crop&w=1200&h=340&q=80' },
-                    { name: '°Å¸â€œÂ½¯Â¸Â Vintage Film Studio', url: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&w=1200&h=340&q=80' },
+                    { name: 'Pro Gaming Setup', url: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=1200&h=340&q=80' },
+                    { name: 'Cosmic Nebula', url: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1200&h=340&q=80' },
+                    { name: 'Classic Cinema Theater', url: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1200&h=340&q=80' },
+                    { name: ' Tokyo Neon City', url: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?auto=format&fit=crop&w=1200&h=340&q=80' },
+                    { name: ' Alpine Mountain Peaks', url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&h=340&q=80' },
+                    { name: ' Cinema Audience', url: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=1200&h=340&q=80' },
+                    { name: 'Sunset Ocean Horizon', url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&h=340&q=80' },
+                    { name: ' Sci-Fi Warp Tunnel', url: 'https://images.unsplash.com/photo-1511447333015-45b65e60f6d5?auto=format&fit=crop&w=1200&h=340&q=80' },
+                    { name: ' Vintage Film Studio', url: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&w=1200&h=340&q=80' },
                   ].map(b => (
                     <div key={b.name} onClick={() => { setBannerUrl(b.url); setBannerFitMode('cover'); }}
                       style={{ aspectRatio: '16/9', borderRadius: '10px', overflow: 'hidden', border: bannerUrl === b.url ? '2px solid var(--accent)' : '1px solid var(--border)', boxShadow: bannerUrl === b.url ? '0 0 14px var(--accent)' : 'none', cursor: 'pointer', position: 'relative', background: '#110e1f' }}>
@@ -1912,7 +1911,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
             onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>CineLog Chronicles</span>
-              <button onClick={() => setActiveShareCard(null)} style={{ background: 'none', border: 'none', color: 'var(--text-dim)', fontSize: '18px', cursor: 'pointer' }}>ƒâ€”</button>
+              <button onClick={() => setActiveShareCard(null)} style={{ background: 'none', border: 'none', color: 'var(--text-dim)', fontSize: '18px', cursor: 'pointer' }}>✕</button>
             </div>
             <div id="share-card-content" style={{ background: 'linear-gradient(135deg, rgba(124,111,247,0.12) 0%, rgba(236,72,153,0.06) 100%)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--radius-lg)', padding: '20px', display: 'flex', gap: '16px', position: 'relative' }}>
               {activeShareCard.poster_path && <img src={`https://image.tmdb.org/t/p/w92${activeShareCard.poster_path}`} alt="" style={{ width: '70px', height: '105px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)', flexShrink: 0 }} />}
@@ -1921,7 +1920,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                 <div style={{ fontSize: '11.5px', color: 'var(--text-dim)', marginTop: '2px' }}>{activeShareCard.release_year}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
                   {activeShareCard.rating && <span style={{ color: 'var(--gold)', fontWeight: 900, fontSize: '13px' }}>★ {activeShareCard.rating}</span>}
-                  {activeShareCard.is_rewatch && <span style={{ fontSize: '9px', background: 'rgba(236,72,153,0.1)', color: '#ec4899', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}>°Å¸â€Â Rewatched</span>}
+                  {activeShareCard.is_rewatch && <span style={{ fontSize: '9px', background: 'rgba(236,72,153,0.1)', color: '#ec4899', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}> Rewatched</span>}
                 </div>
                 <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '10px', lineHeight: 1.4, borderLeft: '2px solid var(--accent)', paddingLeft: '8px' }}>"{activeShareCard.review || 'No review notes written yet.'}"</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '14px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '10px' }}>
@@ -1930,7 +1929,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                 </div>
               </div>
             </div>
-            <button className="btn btn-primary" onClick={() => window.print()} style={{ width: '100%', fontSize: '12px', padding: '8px 0' }}>°Å¸â€“Â¨¯Â¸Â Print or Save as PDF</button>
+            <button className="btn btn-primary" onClick={() => window.print()} style={{ width: '100%', fontSize: '12px', padding: '8px 0' }}> Print or Save as PDF</button>
           </div>
         </div>
       )}
