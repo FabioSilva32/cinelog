@@ -17,6 +17,12 @@ export default function AvatarWithBorder({ src, username, borderId, size = 96, o
     position: 'relative',
     width: `${size}px`,
     height: `${size}px`,
+    minWidth: `${size}px`,
+    minHeight: `${size}px`,
+    maxWidth: `${size}px`,
+    maxHeight: `${size}px`,
+    aspectRatio: '1 / 1',
+    flexShrink: 0,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -41,12 +47,16 @@ export default function AvatarWithBorder({ src, username, borderId, size = 96, o
         style={{
           width: '100%',
           height: '100%',
+          minWidth: '100%',
+          minHeight: '100%',
+          aspectRatio: '1 / 1',
           borderRadius: '50%',
           objectFit: 'cover',
           display: 'block',
           boxSizing: 'border-box',
+          flexShrink: 0,
           // Pad the image if the border is a background-gradient boundary
-          padding: borderStyle.border?.includes('transparent') ? (isSmall ? '2px' : '4px') : '0',
+          padding: borderStyle.border?.includes('transparent') ? (isSmall ? '2px' : '3.5px') : '0',
           background: 'var(--bg-dark)'
         }}
         onError={onError || (e => e.target.src = DEFAULT_GREY_AVATAR)}

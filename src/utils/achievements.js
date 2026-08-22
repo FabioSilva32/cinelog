@@ -434,30 +434,49 @@ export const BORDER_STYLES = {
 
 // ── BADGE COLORS CATALOG ────────────────────────────────────────────────────
 export const BADGE_COLORS = {
-  // Achievement Badges
-  'Bronze Watcher': { border: '1px solid #cd7f32', color: '#cd7f32', bg: 'rgba(205,127,50,0.1)' },
-  'Silver Watcher': { border: '1px solid #c0c0c0', color: '#c0c0c0', bg: 'rgba(192,192,192,0.1)' },
-  'Gold Watcher': { border: '1px solid #fbbf24', color: '#fbbf24', bg: 'rgba(251,191,36,0.1)' },
-  'Diamond Legend': { border: '1px solid #38bdf8', color: '#38bdf8', bg: 'rgba(56,189,248,0.15)' },
-  'Cinema Overlord': { border: '1px solid #f59e0b', color: '#fbbf24', bg: 'rgba(245,158,11,0.2)' },
-  'Critic': { border: '1px solid #10b981', color: '#34d399', bg: 'rgba(16,185,129,0.1)' },
-  'Elite Critic': { border: '1px solid #3b82f6', color: '#60a5fa', bg: 'rgba(59,130,246,0.1)' },
-  'Master Essayist': { border: '1px solid #f472b6', color: '#f472b6', bg: 'rgba(244,114,182,0.1)' },
-  'Genre Master': { border: '1px solid #a855f7', color: '#c084fc', bg: 'rgba(168,85,247,0.1)' },
-  'Sci-Fi Explorer': { border: '1px solid #06b6d4', color: '#67e8f9', bg: 'rgba(6,182,212,0.1)' },
-  'Nightmare Survivor': { border: '1px solid #ef4444', color: '#f87171', bg: 'rgba(239,68,68,0.1)' },
-  'Anime Otaku': { border: '1px solid #ec4899', color: '#f472b6', bg: 'rgba(236,72,153,0.1)' },
-  'Master Curator': { border: '1px solid #f43f5e', color: '#fb7185', bg: 'rgba(244,63,94,0.1)' },
-  'Rewatch King': { border: '1px solid #0ea5e9', color: '#38bdf8', bg: 'rgba(14,165,233,0.1)' },
-  'Streak Master': { border: '1px solid #f97316', color: '#fb923c', bg: 'rgba(249,115,22,0.1)' },
+  // Creator Exclusives
   'Creator': { border: '1px solid #fbbf24', color: '#fbbf24', bg: 'linear-gradient(135deg, rgba(251,191,36,0.2) 0%, rgba(184,124,248,0.2) 100%)' },
 
+  // Milestone Watcher Tiers
+  'Bronze Watcher': { border: '1px solid #cd7f32', color: '#cd7f32', bg: 'rgba(205,127,50,0.15)' },
+  'Silver Watcher': { border: '1px solid #c0c0c0', color: '#e2e8f0', bg: 'rgba(192,192,192,0.15)' },
+  'Gold Watcher': { border: '1px solid #fbbf24', color: '#fbbf24', bg: 'rgba(251,191,36,0.15)' },
+  'Diamond Legend': { border: '1px solid #38bdf8', color: '#38bdf8', bg: 'rgba(56,189,248,0.18)' },
+  'Cinema Overlord': { border: '1px solid #f59e0b', color: '#fcd34d', bg: 'rgba(245,158,11,0.25)' },
+
+  // Critic & Reviewer Ranks
+  'Critic': { border: '1px solid #10b981', color: '#34d399', bg: 'rgba(16,185,129,0.15)' },
+  'Dedicated Critic': { border: '1px solid #10b981', color: '#34d399', bg: 'rgba(16,185,129,0.15)' },
+  'Elite Critic': { border: '1px solid #3b82f6', color: '#60a5fa', bg: 'rgba(59,130,246,0.15)' },
+  'Master Essayist': { border: '1px solid #f472b6', color: '#f472b6', bg: 'rgba(244,114,182,0.15)' },
+  'Grand Essayist': { border: '1px solid #f472b6', color: '#f472b6', bg: 'rgba(244,114,182,0.15)' },
+  'Absolute Critic': { border: '1px solid #2dd4bf', color: '#2dd4bf', bg: 'rgba(45,212,191,0.15)' },
+
+  // Genre Specializations
+  'Genre Master': { border: '1px solid #a855f7', color: '#c084fc', bg: 'rgba(168,85,247,0.18)' },
+  'Sci-Fi Explorer': { border: '1px solid #06b6d4', color: '#67e8f9', bg: 'rgba(6,182,212,0.15)' },
+  'Nightmare Survivor': { border: '1px solid #ef4444', color: '#f87171', bg: 'rgba(239,68,68,0.18)' },
+  'Anime Otaku': { border: '1px solid #ec4899', color: '#f472b6', bg: 'rgba(236,72,153,0.18)' },
+  'Master Curator': { border: '1px solid #f43f5e', color: '#fb7185', bg: 'rgba(244,63,94,0.15)' },
+  'Rewatch King': { border: '1px solid #0ea5e9', color: '#38bdf8', bg: 'rgba(14,165,233,0.15)' },
+  'Streak Master': { border: '1px solid #f97316', color: '#fb923c', bg: 'rgba(249,115,22,0.18)' },
+
+  // Prestigious Extra Achievements & Badges
+  'Triple Threat': { border: '1px solid #ec4899', color: '#f472b6', bg: 'rgba(236,72,153,0.15)' },
+  'Grand Collector': { border: '1px solid #8b5cf6', color: '#a78bfa', bg: 'rgba(139,92,246,0.15)' },
+  'Blockbuster Buff': { border: '1px solid #f59e0b', color: '#fbbf24', bg: 'rgba(245,158,11,0.15)' },
+  'Emotional Rollercoaster': { border: '1px solid #38bdf8', color: '#7dd3fc', bg: 'rgba(56,189,248,0.15)' },
+  'Nostalgia Trip': { border: '1px solid #d97706', color: '#fbbf24', bg: 'rgba(217,119,6,0.15)' },
+  'Night Owl': { border: '1px solid #6366f1', color: '#818cf8', bg: 'rgba(99,102,241,0.15)' },
+  'Film Legend': { border: '1px solid #eab308', color: '#fde047', bg: 'rgba(234,179,8,0.2)' },
+  'Active Watcher': { border: '1px solid #10b981', color: '#34d399', bg: 'rgba(16,185,129,0.15)' },
+
   // Exclusive Shop Badges (Purchased with CinePoints)
-  'VIP Cinephile': { border: '1px solid #8b5cf6', color: '#a78bfa', bg: 'rgba(139,92,246,0.15)' },
-  'Popcorn Overlord': { border: '1px solid #f59e0b', color: '#fbbf24', bg: 'rgba(245,158,11,0.15)' },
-  'Midnight Binger': { border: '1px solid #3b82f6', color: '#60a5fa', bg: 'rgba(59,130,246,0.15)' },
-  'Cinema Tycoon': { border: '1px solid #10b981', color: '#34d399', bg: 'rgba(16,185,129,0.15)' },
-  "Director's Cut": { border: '1px solid #ec4899', color: '#f472b6', bg: 'rgba(236,72,153,0.15)' }
+  'VIP Cinephile': { border: '1px solid #8b5cf6', color: '#c084fc', bg: 'rgba(139,92,246,0.18)' },
+  'Popcorn Overlord': { border: '1px solid #f59e0b', color: '#fbbf24', bg: 'rgba(245,158,11,0.18)' },
+  'Midnight Binger': { border: '1px solid #3b82f6', color: '#60a5fa', bg: 'rgba(59,130,246,0.18)' },
+  'Cinema Tycoon': { border: '1px solid #10b981', color: '#34d399', bg: 'rgba(16,185,129,0.18)' },
+  "Director's Cut": { border: '1px solid #ec4899', color: '#f472b6', bg: 'rgba(236,72,153,0.18)' }
 };
 
 // ── CREATOR RECOGNITION ─────────────────────────────────────────────────────
