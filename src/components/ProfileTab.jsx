@@ -511,15 +511,18 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
   const unlockedBadges = useMemo(() => {
     const earned = [];
     if (isCreator) {
-      earned.push('Creator');
+      // 👑 Creator account automatically unlocks all title badges!
+      Object.keys(BADGE_COLORS).forEach(b => earned.push(b));
+    } else {
+      ACHIEVEMENTS.forEach(ach => {
+        if (ach.check(library) >= ach.target) {
+          if (ach.reward.badgeName) earned.push(ach.reward.badgeName);
+        }
+      });
+      const purchased = currentUser?.purchasedBadges || [];
+      purchased.forEach(b => earned.push(b));
     }
-    ACHIEVEMENTS.forEach(ach => {
-      if (ach.check(library) >= ach.target) {
-        if (ach.reward.badgeName) earned.push(ach.reward.badgeName);
-      }
-    });
-    const purchased = currentUser?.purchasedBadges || [];
-    return Array.from(new Set([...earned, ...purchased]));
+    return Array.from(new Set(earned));
   }, [library, currentUser, isCreator]);
 
   const unlockedBorders = useMemo(() => {
