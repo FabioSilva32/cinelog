@@ -1,6 +1,6 @@
 import React from 'react';
 import { Trophy, CheckCircle2, Lock, Sparkles, Award } from 'lucide-react';
-import { ACHIEVEMENTS, BORDER_STYLES, BADGE_COLORS, isUserCreator } from '../utils/achievements';
+import { ACHIEVEMENTS, BORDER_STYLES, isUserCreator } from '../utils/achievements';
 import AvatarWithBorder from './AvatarWithBorder';
 
 export default function AchievementsTab({ library, currentUser, onUpdateProfile }) {
@@ -15,7 +15,7 @@ export default function AchievementsTab({ library, currentUser, onUpdateProfile 
     };
   });
 
-  const unlockedBorders = new Set(['none']);
+  const unlockedBorders = new Set(['none', 'bronze', 'silver', 'gold']);
   if (isUserCreator(currentUser)) {
     unlockedBorders.add('creator');
   }
@@ -24,6 +24,7 @@ export default function AchievementsTab({ library, currentUser, onUpdateProfile 
       unlockedBorders.add(ach.reward.borderId);
     }
   });
+  (currentUser?.purchasedBorders || []).forEach(b => unlockedBorders.add(b));
 
   const equippedBorder = currentUser?.equippedBorder || 'none';
 
@@ -45,9 +46,9 @@ export default function AchievementsTab({ library, currentUser, onUpdateProfile 
             <Trophy size={30} color="var(--gold)" />
           </div>
           <div>
-            <h2 style={{ fontSize: '24px', letterSpacing: '-0.3px', margin: 0 }}>CineLog Achievements & Rewards</h2>
+            <h2 style={{ fontSize: '24px', letterSpacing: '-0.3px', margin: 0 }}>CineLog Achievements & Milestones</h2>
             <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: '6px', maxWidth: '600px', lineHeight: 1.5 }}>
-              Unlock special badges and glowing avatar borders as you log movies, write reviews, and explore different genres. Show off your cinephile rank!
+              Unlock unique achievement badges and glowing avatar borders by tracking films, writing reviews, and exploring genres. Achievements are 100% distinct from Shop items!
             </p>
           </div>
         </div>
@@ -60,7 +61,7 @@ export default function AchievementsTab({ library, currentUser, onUpdateProfile 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
             <Award size={18} color="var(--accent)" />
-            <h3 style={{ fontSize: '17px', fontWeight: 800 }}>Available Achievements</h3>
+            <h3 style={{ fontSize: '17px', fontWeight: 800 }}>Milestone Achievements ({achievementsStatus.filter(a => a.isUnlocked).length}/{achievementsStatus.length} Unlocked)</h3>
           </div>
 
           {achievementsStatus.map(ach => {
@@ -110,7 +111,7 @@ export default function AchievementsTab({ library, currentUser, onUpdateProfile 
               <Award size={18} color="var(--accent)" /> Avatar Border Wardrobe
             </h3>
             <p style={{ fontSize: '12px', color: 'var(--text-dim)', marginTop: '2px' }}>
-              Equip unlocked borders on your profile avatar.
+              Equip unlocked achievement or shop borders on your profile avatar.
             </p>
           </div>
 
@@ -134,14 +135,14 @@ export default function AchievementsTab({ library, currentUser, onUpdateProfile 
               // Find unlock source
               let unlockSource = '';
               if (!isUnlocked) {
-                if (borderId === 'creator') {
+                if (config.category === 'creator') {
                   unlockSource = 'Developer & Creator Perks';
-                } else if (['cyber-violet', 'plasma-red', 'matrix-code', 'hyper-drive', 'royal-amethyst'].includes(borderId)) {
-                  unlockSource = 'CinePoints Shop';
+                } else if (config.category === 'shop') {
+                  unlockSource = `CinePoints Shop (${config.cost} pts)`;
                 } else {
                   const sourceAch = ACHIEVEMENTS.find(ach => ach.reward.borderId === borderId);
                   if (sourceAch) unlockSource = sourceAch.title;
-                  else unlockSource = 'Special Achievement';
+                  else unlockSource = 'Achievement Milestone';
                 }
               }
 
@@ -150,7 +151,7 @@ export default function AchievementsTab({ library, currentUser, onUpdateProfile 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <span style={{ fontSize: '12.5px', fontWeight: 700, color: isUnlocked ? '#fff' : 'var(--text-dim)' }}>{config.name}</span>
                     {!isUnlocked && (
-                      <span style={{ fontSize: '9.5px', color: 'var(--text-dim)' }}>Lock: Unlock <strong>{unlockSource}</strong></span>
+                      <span style={{ fontSize: '9.5px', color: 'var(--text-dim)' }}>Lock: <strong>{unlockSource}</strong></span>
                     )}
                   </div>
 

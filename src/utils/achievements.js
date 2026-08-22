@@ -1,9 +1,11 @@
+// CineLog System: Strictly Separated Achievements & Shop Catalog (Zero Overlaps)
+
 export const ACHIEVEMENTS = [
   {
     id: 'bronze_watcher',
     title: 'Bronze Watcher',
-    description: 'Watch 10 movies, series, or anime.',
-    target: 10,
+    description: 'Watch 5 movies, series, or anime.',
+    target: 5,
     check: (library) => library.filter(m => m.status === 'watched').length,
     reward: {
       type: 'border_and_badge',
@@ -39,6 +41,32 @@ export const ACHIEVEMENTS = [
     }
   },
   {
+    id: 'diamond_cinephile',
+    title: 'Diamond Cinephile',
+    description: 'Watch 100 movies, series, or anime.',
+    target: 100,
+    check: (library) => library.filter(m => m.status === 'watched').length,
+    reward: {
+      type: 'border_and_badge',
+      badgeName: 'Diamond Legend',
+      borderId: 'crystal-diamond',
+      borderName: 'Crystal Diamond Border',
+    }
+  },
+  {
+    id: 'cinema_overlord',
+    title: 'Cinema Overlord',
+    description: 'Watch 200 movies, series, or anime.',
+    target: 200,
+    check: (library) => library.filter(m => m.status === 'watched').length,
+    reward: {
+      type: 'border_and_badge',
+      badgeName: 'Cinema Overlord',
+      borderId: 'cinema-overlord',
+      borderName: 'Cinema Overlord Border',
+    }
+  },
+  {
     id: 'dedicated_critic',
     title: 'Dedicated Critic',
     description: 'Write reviews for 5 different movies or shows.',
@@ -47,8 +75,8 @@ export const ACHIEVEMENTS = [
     reward: {
       type: 'border_and_badge',
       badgeName: 'Critic',
-      borderId: 'purple-glow',
-      borderName: 'Purple Neon Border',
+      borderId: 'emerald-glow',
+      borderName: 'Emerald Glow Border',
     }
   },
   {
@@ -60,15 +88,28 @@ export const ACHIEVEMENTS = [
     reward: {
       type: 'border_and_badge',
       badgeName: 'Elite Critic',
-      borderId: 'rainbow',
-      borderName: 'Rainbow Glow Border',
+      borderId: 'sapphire-glow',
+      borderName: 'Sapphire Glow Border',
     }
   },
   {
-    id: 'genre_explorer',
-    title: 'Genre Explorer',
-    description: 'Watch movies or shows spanning 5 or more unique genres.',
-    target: 5,
+    id: 'grand_essayist',
+    title: 'Grand Essayist',
+    description: 'Write reviews for 30 different movies or shows.',
+    target: 30,
+    check: (library) => library.filter(m => m.review && m.review.trim()).length,
+    reward: {
+      type: 'border_and_badge',
+      badgeName: 'Master Essayist',
+      borderId: 'rose-quartz',
+      borderName: 'Rose Quartz Border',
+    }
+  },
+  {
+    id: 'genre_master',
+    title: 'Genre Master',
+    description: 'Watch movies or shows spanning 6 or more unique genres.',
+    target: 6,
     check: (library) => {
       const genres = new Set();
       library.forEach(m => {
@@ -81,21 +122,8 @@ export const ACHIEVEMENTS = [
     reward: {
       type: 'border_and_badge',
       badgeName: 'Genre Master',
-      borderId: 'emerald',
-      borderName: 'Emerald Glow Border',
-    }
-  },
-  {
-    id: 'completionist',
-    title: 'Completionist',
-    description: 'Give a rating of 9.0 or higher to at least 5 titles.',
-    target: 5,
-    check: (library) => library.filter(m => m.status === 'watched' && m.rating >= 9).length,
-    reward: {
-      type: 'border_and_badge',
-      badgeName: 'Completionist',
-      borderId: 'starry',
-      borderName: 'Starry Sparkle Border',
+      borderId: 'genre-prismatic',
+      borderName: 'Prismatic Genre Border',
     }
   },
   {
@@ -105,351 +133,244 @@ export const ACHIEVEMENTS = [
     target: 5,
     check: (library) => library.filter(m => m.status === 'watched' && Array.isArray(m.genres) && m.genres.some(g => g.toLowerCase().includes('sci-fi') || g.toLowerCase().includes('science fiction'))).length,
     reward: {
-      type: 'badge',
-      badgeName: 'Sci-Fi Explorer'
-    }
-  },
-  {
-    id: 'nostalgia_trip',
-    title: 'Nostalgia Trip',
-    description: 'Watch 5 films released before 1990.',
-    target: 5,
-    check: (library) => library.filter(m => m.status === 'watched' && m.release_year && Number(m.release_year) < 1990).length,
-    reward: {
-      type: 'badge',
-      badgeName: 'Nostalgia Trip'
-    }
-  },
-  {
-    id: 'night_owl',
-    title: 'Night Owl',
-    description: 'Log 3 movies after midnight (between 12 AM and 4 AM).',
-    target: 3,
-    check: (library) => library.filter(m => m.status === 'watched' && m.date_added && new Date(m.date_added).getHours() >= 0 && new Date(m.date_added).getHours() < 4).length,
-    reward: {
-      type: 'badge',
-      badgeName: 'Night Owl'
-    }
-  },
-  {
-    id: 'triple_threat',
-    title: 'Triple Threat',
-    description: 'Log 3 movies watched on the same day.',
-    target: 3,
-    check: (library) => {
-      const days = {};
-      library.filter(m => m.status === 'watched' && (m.watch_date || m.date_added)).forEach(m => {
-        const d = new Date(m.watch_date || m.date_added).toISOString().slice(0, 10);
-        days[d] = (days[d] || 0) + 1;
-      });
-      return Object.keys(days).length > 0 ? Math.max(...Object.values(days)) : 0;
-    },
-    reward: {
-      type: 'badge',
-      badgeName: 'Triple Threat'
-    }
-  },
-  {
-    id: 'cinephile_extraordinaire',
-    title: 'Cinephile Extraordinaire',
-    description: 'Write 10 reviews with detailed notes.',
-    target: 10,
-    check: (library) => library.filter(m => m.review && m.review.trim().length >= 10).length,
-    reward: {
-      type: 'badge',
-      badgeName: 'Cinephile Extraordinaire'
-    }
-  },
-  {
-    id: 'master_curator',
-    title: 'Master Curator',
-    description: 'Mark 10 movies or shows as Favorites.',
-    target: 10,
-    check: (library) => library.filter(m => m.favorite).length,
-    reward: {
       type: 'border_and_badge',
-      badgeName: 'Master Curator',
-      borderId: 'cyber-neon',
-      borderName: 'Cyberpunk Neon Border'
-    }
-  },
-  {
-    id: 'film_legend',
-    title: 'Film Legend',
-    description: 'Watch 100 movies, series, or anime.',
-    target: 100,
-    check: (library) => library.filter(m => m.status === 'watched').length,
-    reward: {
-      type: 'border_and_badge',
-      badgeName: 'Film Legend',
-      borderId: 'fire-glow',
-      borderName: 'Solar Flare Border'
-    }
-  },
-  {
-    id: 'absolute_critic',
-    title: 'Absolute Critic',
-    description: 'Write reviews for 30 different movies or shows.',
-    target: 30,
-    check: (library) => library.filter(m => m.review && m.review.trim()).length,
-    reward: {
-      type: 'border_and_badge',
-      badgeName: 'Absolute Critic',
-      borderId: 'crystal-diamond',
-      borderName: 'Crystal Diamond Border'
-    }
-  },
-  {
-    id: 'tv_marathoner',
-    title: 'TV Marathoner',
-    description: 'Watch 10 TV series or anime.',
-    target: 10,
-    check: (library) => library.filter(m => m.status === 'watched' && m.media_type === 'tv').length,
-    reward: {
-      type: 'border_and_badge',
-      badgeName: 'TV Marathoner',
-      borderId: 'sapphire-glow',
-      borderName: 'Sapphire Glow Border'
-    }
-  },
-  {
-    id: 'active_watcher',
-    title: 'Active Watcher',
-    description: 'Have at least 3 titles in your Currently Watching list.',
-    target: 3,
-    check: (library) => library.filter(m => m.status === 'watching').length,
-    reward: {
-      type: 'badge',
-      badgeName: 'Active Watcher'
-    }
-  },
-  {
-    id: 'blockbuster_buff',
-    title: 'Blockbuster Buff',
-    description: 'Watch 10 Action or Adventure movies or series.',
-    target: 10,
-    check: (library) => library.filter(m => m.status === 'watched' && Array.isArray(m.genres) && m.genres.some(g => ['action', 'adventure'].includes(g.toLowerCase()))).length,
-    reward: {
-      type: 'badge',
-      badgeName: 'Blockbuster Buff'
-    }
-  },
-  {
-    id: 'emotional_rollercoaster',
-    title: 'Emotional Rollercoaster',
-    description: 'Watch 10 Drama or Romance movies or series.',
-    target: 10,
-    check: (library) => library.filter(m => m.status === 'watched' && Array.isArray(m.genres) && m.genres.some(g => ['drama', 'romance'].includes(g.toLowerCase()))).length,
-    reward: {
-      type: 'badge',
-      badgeName: 'Emotional Rollercoaster'
+      badgeName: 'Sci-Fi Explorer',
+      borderId: 'scifi-nebula',
+      borderName: 'Sci-Fi Nebula Border'
     }
   },
   {
     id: 'nightmare_survivor',
     title: 'Nightmare Survivor',
-    description: 'Watch 5 Horror or Thriller movies or series.',
+    description: 'Log at least 5 Horror movies or series.',
     target: 5,
-    check: (library) => library.filter(m => m.status === 'watched' && Array.isArray(m.genres) && m.genres.some(g => ['horror', 'thriller'].includes(g.toLowerCase()))).length,
+    check: (library) => library.filter(m => m.status === 'watched' && Array.isArray(m.genres) && m.genres.some(g => g.toLowerCase().includes('horror'))).length,
     reward: {
-      type: 'badge',
-      badgeName: 'Nightmare Survivor'
+      type: 'border_and_badge',
+      badgeName: 'Nightmare Survivor',
+      borderId: 'nightmare-blood',
+      borderName: 'Nightmare Crimson Border'
     }
   },
   {
     id: 'anime_otaku',
     title: 'Anime Otaku',
-    description: 'Watch 5 Animation or Anime movies or series.',
+    description: 'Log at least 5 Anime titles.',
     target: 5,
-    check: (library) => library.filter(m => m.status === 'watched' && Array.isArray(m.genres) && m.genres.some(g => ['animation', 'anime'].includes(g.toLowerCase()))).length,
+    check: (library) => library.filter(m => m.status === 'watched' && (m.media_type === 'anime' || (Array.isArray(m.genres) && m.genres.some(g => g.toLowerCase().includes('animation'))))).length,
     reward: {
-      type: 'badge',
-      badgeName: 'Anime Otaku'
+      type: 'border_and_badge',
+      badgeName: 'Anime Otaku',
+      borderId: 'anime-sakura',
+      borderName: 'Anime Sakura Border'
     }
   },
   {
-    id: 'tastemaker',
-    title: 'Tastemaker',
-    description: 'Create 5 or more unique tags across your library items.',
-    target: 5,
+    id: 'master_curator',
+    title: 'Master Curator',
+    description: 'Mark 10 or more films as your favorites.',
+    target: 10,
+    check: (library) => library.filter(m => m.is_favorite).length,
+    reward: {
+      type: 'border_and_badge',
+      badgeName: 'Master Curator',
+      borderId: 'curator-heart',
+      borderName: 'Curator Passion Border'
+    }
+  },
+  {
+    id: 'rewatch_king',
+    title: 'Rewatch King',
+    description: 'Log 3 movies as rewatched.',
+    target: 3,
+    check: (library) => library.filter(m => m.is_rewatch || (m.rewatch_count && m.rewatch_count > 1)).length,
+    reward: {
+      type: 'border_and_badge',
+      badgeName: 'Rewatch King',
+      borderId: 'chrono-rewind',
+      borderName: 'Chrono Rewind Border'
+    }
+  },
+  {
+    id: 'streak_master',
+    title: 'Streak Master',
+    description: 'Build a 7-day consecutive movie watching streak.',
+    target: 7,
     check: (library) => {
-      const tags = new Set();
-      library.forEach(m => (m.tags || []).forEach(t => tags.add(t)));
-      return tags.size;
+      const dates = new Set(library.filter(m => m.status === 'watched' && (m.watch_date || m.date_added)).map(m => (m.watch_date || m.date_added).split('T')[0]));
+      let streak = 0;
+      let checkDate = new Date();
+      if (!dates.has(checkDate.toISOString().split('T')[0])) checkDate.setDate(checkDate.getDate() - 1);
+      while (dates.has(checkDate.toISOString().split('T')[0])) {
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      }
+      return streak;
     },
     reward: {
       type: 'border_and_badge',
-      badgeName: 'Tastemaker',
-      borderId: 'rose-quartz',
-      borderName: 'Rose Quartz Border'
-    }
-  },
-  {
-    id: 'grand_collector',
-    title: 'Grand Collector',
-    description: 'Add 100 total items to your library.',
-    target: 100,
-    check: (library) => library.length,
-    reward: {
-      type: 'border_and_badge',
-      badgeName: 'Grand Collector',
-      borderId: 'gold-neon',
-      borderName: 'Gold Neon Border'
+      badgeName: 'Streak Master',
+      borderId: 'fire-glow',
+      borderName: 'Solar Flare Border'
     }
   }
 ];
 
+// ── BORDER STYLES CATALOG ───────────────────────────────────────────────────
+// Divided cleanly between (1) Achievements, (2) CinePoints Shop, (3) Creator
 export const BORDER_STYLES = {
   none: {
     name: 'Default Border',
-    style: { border: '4px solid #0a0813', boxShadow: '0 8px 24px rgba(0,0,0,0.6)' }
+    category: 'base',
+    style: { border: '3px solid rgba(255,255,255,0.1)' }
   },
+
+  // ── ACHIEVEMENT BORDERS (Unlocked via Milestones) ──
   bronze: {
-    name: 'Bronze Border',
-    style: { border: '4px solid #cd7f32', boxShadow: '0 0 14px rgba(205,127,50,0.7)' }
+    name: '🥉 Bronze Border',
+    category: 'achievement',
+    style: { border: '3px solid #cd7f32', boxShadow: '0 0 10px rgba(205,127,50,0.5)' }
   },
   silver: {
-    name: 'Silver Border',
-    style: { border: '4px solid #c0c0c0', boxShadow: '0 0 14px rgba(192,192,192,0.7)' }
+    name: '🥈 Silver Border',
+    category: 'achievement',
+    style: { border: '3px solid #e0e0e0', boxShadow: '0 0 12px rgba(255,255,255,0.6)' }
   },
   gold: {
-    name: 'Gold Border',
-    style: {
-      border: '4px solid #fbbf24',
-      boxShadow: '0 0 18px rgba(251,191,36,0.85)',
-      animation: 'pulse-glow 2.5s infinite alternate'
-    }
-  },
-  'purple-glow': {
-    name: 'Purple Neon Border',
-    style: { border: '4px solid #a855f7', boxShadow: '0 0 18px rgba(168,85,247,0.85)' }
-  },
-  rainbow: {
-    name: 'Rainbow Glow Border',
-    style: {
-      border: '4px solid transparent',
-      backgroundImage: 'linear-gradient(#0a0813, #0a0813), linear-gradient(to right, #ec4899, #8b5cf6, #3b82f6, #10b981, #f59e0b)',
-      backgroundOrigin: 'border-box',
-      backgroundClip: 'padding-box, border-box',
-      boxShadow: '0 0 18px rgba(139,92,246,0.85)',
-      animation: 'hue-rotation 6s infinite linear'
-    }
-  },
-  emerald: {
-    name: 'Emerald Glow Border',
-    style: { border: '4px solid #10b981', boxShadow: '0 0 18px rgba(16,185,129,0.85)' }
-  },
-  starry: {
-    name: 'Starry Sparkle Border',
-    style: {
-      border: '4px solid transparent',
-      backgroundImage: 'linear-gradient(#0a0813, #0a0813), linear-gradient(135deg, #fbbf24, #3b82f6, #fbbf24)',
-      backgroundOrigin: 'border-box',
-      backgroundClip: 'padding-box, border-box',
-      boxShadow: '0 0 20px rgba(251,191,36,0.7), 0 0 8px rgba(59,130,246,0.5), inset 0 0 10px rgba(255,255,255,0.3)',
-      animation: 'pulse-glow 2s infinite alternate'
-    }
-  },
-  'cyber-neon': {
-    name: '⚡ Cyberpunk Neon Border',
-    style: {
-      border: '4px solid transparent',
-      backgroundImage: 'linear-gradient(#0a0813, #0a0813), linear-gradient(135deg, #06b6d4, #d946ef)',
-      backgroundOrigin: 'border-box',
-      backgroundClip: 'padding-box, border-box',
-      boxShadow: '0 0 0 2px rgba(6,182,212,0.3), 0 0 20px rgba(6,182,212,0.85), inset 0 0 8px rgba(217,70,239,0.5)',
-      animation: 'pulse-glow 2.5s infinite alternate'
-    }
-  },
-  'fire-glow': {
-    name: '🔥 Solar Flare Border',
-    style: {
-      border: '4px solid transparent',
-      backgroundImage: 'linear-gradient(#0a0813, #0a0813), linear-gradient(135deg, #f97316, #ef4444, #f59e0b)',
-      backgroundOrigin: 'border-box',
-      backgroundClip: 'padding-box, border-box',
-      boxShadow: '0 0 18px rgba(249,115,22,0.95), 0 0 30px rgba(239,68,68,0.5), inset 0 0 12px rgba(245,158,11,0.6)',
-      animation: 'pulse-glow 1.8s infinite alternate'
-    }
+    name: '🥇 Gold Border',
+    category: 'achievement',
+    style: { border: '3px solid #fbbf24', boxShadow: '0 0 15px rgba(251,191,36,0.75)' }
   },
   'crystal-diamond': {
     name: '💎 Crystal Diamond Border',
+    category: 'achievement',
     style: {
       border: '4px solid transparent',
-      backgroundImage: 'linear-gradient(#0a0813, #0a0813), linear-gradient(135deg, #e0f2fe, #38bdf8, #fff, #7dd3fc)',
+      backgroundImage: 'linear-gradient(#0a0813, #0a0813), linear-gradient(135deg, #38bdf8, #fff, #818cf8)',
       backgroundOrigin: 'border-box',
       backgroundClip: 'padding-box, border-box',
-      boxShadow: '0 0 0 2px rgba(56,189,248,0.4), 0 0 24px rgba(56,189,248,0.95), inset 0 0 8px rgba(255,255,255,0.8)',
-      animation: 'pulse-glow 3s infinite alternate'
-    }
-  },
-  'sapphire-glow': {
-    name: '💙 Sapphire Glow Border',
-    style: { border: '4px solid #3b82f6', boxShadow: '0 0 18px rgba(59,130,246,0.95)', animation: 'pulse-glow 2.5s infinite alternate' }
-  },
-  'rose-quartz': {
-    name: '🌸 Rose Quartz Border',
-    style: { border: '4px solid #f472b6', boxShadow: '0 0 16px rgba(244,114,182,0.9)' }
-  },
-  'gold-neon': {
-    name: '✨ Gold Neon Border',
-    style: {
-      border: '4px solid transparent',
-      backgroundImage: 'linear-gradient(#0a0813, #0a0813), linear-gradient(135deg, #fbbf24, #f59e0b, #fff, #fbbf24)',
-      backgroundOrigin: 'border-box',
-      backgroundClip: 'padding-box, border-box',
-      boxShadow: '0 0 0 2px rgba(251,191,36,0.35), 0 0 22px rgba(251,191,36,0.95), inset 0 0 6px rgba(255,255,255,0.4)',
-      animation: 'hue-rotation 8s infinite linear'
-    }
-  },
-  creator: {
-    name: '👑 Creator Border',
-    style: {
-      border: '4px solid transparent',
-      backgroundImage: 'linear-gradient(#0a0813, #0a0813), linear-gradient(to right, #7c6ff7, #fbbf24, #ec4899, #7c6ff7)',
-      backgroundOrigin: 'border-box',
-      backgroundClip: 'padding-box, border-box',
-      boxShadow: '0 0 0 2px rgba(124,111,247,0.3), 0 0 25px rgba(124,111,247,0.95), 0 0 10px rgba(251,191,36,0.5), inset 0 0 8px rgba(236,72,153,0.5)',
-      animation: 'hue-rotation 4s infinite linear'
-    }
-  },
-  'cyber-violet': {
-    name: '🌌 Cyber Violet Aura',
-    style: {
-      border: '4px solid #8b5cf6',
-      boxShadow: '0 0 18px rgba(139,92,246,0.95), 0 0 30px rgba(168,85,247,0.5)',
-      animation: 'pulse-glow 2s infinite alternate'
-    }
-  },
-  'plasma-red': {
-    name: '⚡ Plasma Crimson Pulse',
-    style: {
-      border: '4px solid #ef4444',
-      boxShadow: '0 0 20px rgba(239,68,68,0.95), inset 0 0 8px rgba(248,113,113,0.6)',
-      animation: 'pulse-glow 1.5s infinite alternate'
-    }
-  },
-  'matrix-code': {
-    name: '📟 Matrix Code Shift',
-    style: {
-      border: '4px solid #10b981',
-      boxShadow: '0 0 18px rgba(16,185,129,0.95), inset 0 0 6px rgba(52,211,153,0.5)',
+      boxShadow: '0 0 20px rgba(56,189,248,0.9)',
       animation: 'pulse-glow 2.5s infinite alternate'
     }
   },
-  'hyper-drive': {
-    name: '🚀 Hyperdrive Speed',
+  'cinema-overlord': {
+    name: '👑 Cinema Overlord Border',
+    category: 'achievement',
     style: {
       border: '4px solid transparent',
-      backgroundImage: 'linear-gradient(#0a0813, #0a0813), linear-gradient(135deg, #06b6d4, #3b82f6, #60a5fa)',
+      backgroundImage: 'linear-gradient(#0a0813, #0a0813), linear-gradient(135deg, #f59e0b, #ec4899, #8b5cf6, #f59e0b)',
       backgroundOrigin: 'border-box',
       backgroundClip: 'padding-box, border-box',
-      boxShadow: '0 0 22px rgba(6,182,212,0.95), inset 0 0 8px rgba(59,130,246,0.6)',
+      boxShadow: '0 0 24px rgba(245,158,11,0.9), inset 0 0 8px rgba(236,72,153,0.5)',
+      animation: 'hue-rotation 5s infinite linear'
+    }
+  },
+  'emerald-glow': {
+    name: '🌿 Emerald Glow Border',
+    category: 'achievement',
+    style: { border: '3.5px solid #10b981', boxShadow: '0 0 16px rgba(16,185,129,0.85)' }
+  },
+  'sapphire-glow': {
+    name: '💙 Sapphire Glow Border',
+    category: 'achievement',
+    style: { border: '3.5px solid #3b82f6', boxShadow: '0 0 16px rgba(59,130,246,0.85)' }
+  },
+  'rose-quartz': {
+    name: '🌸 Rose Quartz Border',
+    category: 'achievement',
+    style: { border: '3.5px solid #f472b6', boxShadow: '0 0 16px rgba(244,114,182,0.85)' }
+  },
+  'scifi-nebula': {
+    name: '🚀 Sci-Fi Nebula Border',
+    category: 'achievement',
+    style: {
+      border: '4px solid transparent',
+      backgroundImage: 'linear-gradient(#0a0813, #0a0813), linear-gradient(135deg, #06b6d4, #3b82f6, #8b5cf6)',
+      backgroundOrigin: 'border-box',
+      backgroundClip: 'padding-box, border-box',
+      boxShadow: '0 0 18px rgba(6,182,212,0.85)',
+      animation: 'pulse-glow 2s infinite alternate'
+    }
+  },
+  'nightmare-blood': {
+    name: '🩸 Nightmare Crimson Border',
+    category: 'achievement',
+    style: { border: '3.5px solid #dc2626', boxShadow: '0 0 18px rgba(220,38,38,0.9), inset 0 0 6px rgba(220,38,38,0.5)' }
+  },
+  'anime-sakura': {
+    name: '🌸 Anime Sakura Border',
+    category: 'achievement',
+    style: { border: '3.5px solid #ec4899', boxShadow: '0 0 18px rgba(236,72,153,0.85)' }
+  },
+  'genre-prismatic': {
+    name: '🌈 Prismatic Genre Border',
+    category: 'achievement',
+    style: {
+      border: '4px solid transparent',
+      backgroundImage: 'linear-gradient(#0a0813, #0a0813), linear-gradient(135deg, #ef4444, #f59e0b, #10b981, #3b82f6, #8b5cf6)',
+      backgroundOrigin: 'border-box',
+      backgroundClip: 'padding-box, border-box',
+      boxShadow: '0 0 20px rgba(139,92,246,0.85)',
+      animation: 'hue-rotation 6s infinite linear'
+    }
+  },
+  'curator-heart': {
+    name: '💖 Curator Passion Border',
+    category: 'achievement',
+    style: { border: '3.5px solid #f43f5e', boxShadow: '0 0 18px rgba(244,63,94,0.9)' }
+  },
+  'chrono-rewind': {
+    name: '⏳ Chrono Rewind Border',
+    category: 'achievement',
+    style: { border: '3.5px solid #06b6d4', boxShadow: '0 0 16px rgba(6,182,212,0.85)', animation: 'pulse-glow 2s infinite alternate' }
+  },
+  'fire-glow': {
+    name: '🔥 Solar Flare Border',
+    category: 'achievement',
+    style: { border: '3.5px solid #f97316', boxShadow: '0 0 18px rgba(249,115,22,0.9)', animation: 'pulse-glow 1.5s infinite alternate' }
+  },
+
+  // ── EXCLUSIVE CINEPOINTS SHOP BORDERS (Purchased with Points Only) ──
+  'cyber-violet': {
+    name: '🌌 Cyber Violet Aura',
+    category: 'shop',
+    cost: 150,
+    desc: 'Glowing animated violet cyber border',
+    style: { border: '4px solid #8b5cf6', boxShadow: '0 0 20px rgba(139,92,246,0.95), 0 0 30px rgba(168,85,247,0.5)', animation: 'pulse-glow 2s infinite alternate' }
+  },
+  'plasma-red': {
+    name: '⚡ Plasma Crimson Pulse',
+    category: 'shop',
+    cost: 250,
+    desc: 'Animated fiery red plasma surges',
+    style: { border: '4px solid #ef4444', boxShadow: '0 0 22px rgba(239,68,68,0.95), inset 0 0 8px rgba(248,113,113,0.6)', animation: 'pulse-glow 1.5s infinite alternate' }
+  },
+  'matrix-code': {
+    name: '💻 Matrix Code Shift',
+    category: 'shop',
+    cost: 350,
+    desc: 'Cascading digital cyber cipher ring',
+    style: { border: '4px solid #22c55e', boxShadow: '0 0 22px rgba(34,197,94,0.95), inset 0 0 8px rgba(34,197,94,0.6)' }
+  },
+  'hyperdrive': {
+    name: '🚀 Hyperdrive Warp Speed',
+    category: 'shop',
+    cost: 500,
+    desc: 'Chrono light-speed warp streak animation',
+    style: {
+      border: '4px solid transparent',
+      backgroundImage: 'linear-gradient(#0a0813, #0a0813), linear-gradient(135deg, #06b6d4, #3b82f6, #fff)',
+      backgroundOrigin: 'border-box',
+      backgroundClip: 'padding-box, border-box',
+      boxShadow: '0 0 24px rgba(6,182,212,0.95), inset 0 0 8px rgba(59,130,246,0.6)',
       animation: 'pulse-glow 1.8s infinite alternate'
     }
   },
   'royal-amethyst': {
     name: '💎 Royal Amethyst Crown',
+    category: 'shop',
+    cost: 750,
+    desc: 'Imperial royal gemstone aura with hue rotation',
     style: {
       border: '4px solid transparent',
       backgroundImage: 'linear-gradient(#0a0813, #0a0813), linear-gradient(135deg, #c084fc, #fbbf24, #a855f7)',
@@ -458,40 +379,88 @@ export const BORDER_STYLES = {
       boxShadow: '0 0 25px rgba(192,132,252,0.95), 0 0 10px rgba(251,191,36,0.6)',
       animation: 'hue-rotation 6s infinite linear'
     }
+  },
+  'supernova-gold': {
+    name: '🌟 Supernova Stellar Blast',
+    category: 'shop',
+    cost: 1000,
+    desc: 'Ultra-radiant celestial cosmic explosion',
+    style: {
+      border: '4px solid transparent',
+      backgroundImage: 'linear-gradient(#0a0813, #0a0813), linear-gradient(135deg, #fbbf24, #f59e0b, #fff, #fbbf24)',
+      backgroundOrigin: 'border-box',
+      backgroundClip: 'padding-box, border-box',
+      boxShadow: '0 0 0 2px rgba(251,191,36,0.4), 0 0 28px rgba(251,191,36,0.95), inset 0 0 10px rgba(255,255,255,0.7)',
+      animation: 'hue-rotation 8s infinite linear'
+    }
+  },
+  'frostbite-ice': {
+    name: '❄️ Cryo Frostbite Ring',
+    category: 'shop',
+    cost: 600,
+    desc: 'Glacial cryo-freeze frost ring',
+    style: {
+      border: '4px solid #67e8f9',
+      boxShadow: '0 0 22px rgba(103,232,249,0.95), inset 0 0 8px rgba(255,255,255,0.8)',
+      animation: 'pulse-glow 2s infinite alternate'
+    }
+  },
+  'void-shadow': {
+    name: '🌑 Abyssal Void Horizon',
+    category: 'shop',
+    cost: 850,
+    desc: 'Dark matter event horizon vortex',
+    style: {
+      border: '4px solid #6366f1',
+      boxShadow: '0 0 26px rgba(99,102,241,0.95), 0 0 40px rgba(15,23,42,0.9)',
+      animation: 'pulse-glow 3s infinite alternate'
+    }
+  },
+
+  // ── EXCLUSIVE CREATOR BORDER ──
+  creator: {
+    name: '👑 Creator Border',
+    category: 'creator',
+    style: {
+      border: '4px solid transparent',
+      backgroundImage: 'linear-gradient(#0a0813, #0a0813), linear-gradient(to right, #7c6ff7, #fbbf24, #ec4899, #7c6ff7)',
+      backgroundOrigin: 'border-box',
+      backgroundClip: 'padding-box, border-box',
+      boxShadow: '0 0 0 2px rgba(124,111,247,0.3), 0 0 25px rgba(124,111,247,0.95), 0 0 10px rgba(251,191,36,0.5), inset 0 0 8px rgba(236,72,153,0.5)',
+      animation: 'hue-rotation 4s infinite linear'
+    }
   }
 };
 
+// ── BADGE COLORS CATALOG ────────────────────────────────────────────────────
 export const BADGE_COLORS = {
+  // Achievement Badges
   'Bronze Watcher': { border: '1px solid #cd7f32', color: '#cd7f32', bg: 'rgba(205,127,50,0.1)' },
   'Silver Watcher': { border: '1px solid #c0c0c0', color: '#c0c0c0', bg: 'rgba(192,192,192,0.1)' },
   'Gold Watcher': { border: '1px solid #fbbf24', color: '#fbbf24', bg: 'rgba(251,191,36,0.1)' },
-  'Critic': { border: '1px solid #a855f7', color: '#c084fc', bg: 'rgba(168,85,247,0.1)' },
-  'Elite Critic': { border: '1px solid #ec4899', color: '#f472b6', bg: 'rgba(236,72,153,0.1)' },
-  'Genre Master': { border: '1px solid #10b981', color: '#34d399', bg: 'rgba(16,185,129,0.1)' },
-  'Completionist': { border: '1px solid #fbbf24', color: '#fbbf24', bg: 'rgba(251,191,36,0.15)' },
-  'Master Curator': { border: '1px solid #06b6d4', color: '#67e8f9', bg: 'rgba(6,182,212,0.1)' },
-  'Film Legend': { border: '1px solid #fbbf24', color: '#fde047', bg: 'rgba(251,191,36,0.15)' },
-  'Absolute Critic': { border: '1px solid #ec4899', color: '#f472b6', bg: 'rgba(236,72,153,0.1)' },
-  'Sci-Fi Explorer': { border: '1px solid #3b82f6', color: '#60a5fa', bg: 'rgba(59,130,246,0.1)' },
-  'Nostalgia Trip': { border: '1px solid #f59e0b', color: '#fbbf24', bg: 'rgba(245,158,11,0.1)' },
-  'Night Owl': { border: '1px solid #8b5cf6', color: '#c084fc', bg: 'rgba(139,92,246,0.1)' },
-  'Triple Threat': { border: '1px solid #ef4444', color: '#f87171', bg: 'rgba(239,68,68,0.1)' },
-  'Cinephile Extraordinaire': { border: '1px solid #ec4899', color: '#f472b6', bg: 'rgba(236,72,153,0.1)' },
-  'TV Marathoner': { border: '1px solid #3b82f6', color: '#60a5fa', bg: 'rgba(59,130,246,0.1)' },
-  'Active Watcher': { border: '1px solid #10b981', color: '#34d399', bg: 'rgba(16,185,129,0.1)' },
-  'Blockbuster Buff': { border: '1px solid #f97316', color: '#ff9d5c', bg: 'rgba(249,115,22,0.1)' },
-  'Emotional Rollercoaster': { border: '1px solid #ec4899', color: '#f472b6', bg: 'rgba(236,72,153,0.1)' },
+  'Diamond Legend': { border: '1px solid #38bdf8', color: '#38bdf8', bg: 'rgba(56,189,248,0.15)' },
+  'Cinema Overlord': { border: '1px solid #f59e0b', color: '#fbbf24', bg: 'rgba(245,158,11,0.2)' },
+  'Critic': { border: '1px solid #10b981', color: '#34d399', bg: 'rgba(16,185,129,0.1)' },
+  'Elite Critic': { border: '1px solid #3b82f6', color: '#60a5fa', bg: 'rgba(59,130,246,0.1)' },
+  'Master Essayist': { border: '1px solid #f472b6', color: '#f472b6', bg: 'rgba(244,114,182,0.1)' },
+  'Genre Master': { border: '1px solid #a855f7', color: '#c084fc', bg: 'rgba(168,85,247,0.1)' },
+  'Sci-Fi Explorer': { border: '1px solid #06b6d4', color: '#67e8f9', bg: 'rgba(6,182,212,0.1)' },
   'Nightmare Survivor': { border: '1px solid #ef4444', color: '#f87171', bg: 'rgba(239,68,68,0.1)' },
-  'Anime Otaku': { border: '1px solid #a855f7', color: '#c084fc', bg: 'rgba(168,85,247,0.1)' },
-  'Tastemaker': { border: '1px solid #f472b6', color: '#f472b6', bg: 'rgba(244,114,182,0.1)' },
-  'Grand Collector': { border: '1px solid #fbbf24', color: '#fbbf24', bg: 'rgba(251,191,36,0.15)' },
+  'Anime Otaku': { border: '1px solid #ec4899', color: '#f472b6', bg: 'rgba(236,72,153,0.1)' },
+  'Master Curator': { border: '1px solid #f43f5e', color: '#fb7185', bg: 'rgba(244,63,94,0.1)' },
+  'Rewatch King': { border: '1px solid #0ea5e9', color: '#38bdf8', bg: 'rgba(14,165,233,0.1)' },
+  'Streak Master': { border: '1px solid #f97316', color: '#fb923c', bg: 'rgba(249,115,22,0.1)' },
   'Creator': { border: '1px solid #fbbf24', color: '#fbbf24', bg: 'linear-gradient(135deg, rgba(251,191,36,0.2) 0%, rgba(184,124,248,0.2) 100%)' },
-  'VIP Cinephile': { border: '1px solid #a855f7', color: '#c084fc', bg: 'rgba(168,85,247,0.15)' },
+
+  // Exclusive Shop Badges (Purchased with CinePoints)
+  'VIP Cinephile': { border: '1px solid #8b5cf6', color: '#a78bfa', bg: 'rgba(139,92,246,0.15)' },
   'Popcorn Overlord': { border: '1px solid #f59e0b', color: '#fbbf24', bg: 'rgba(245,158,11,0.15)' },
   'Midnight Binger': { border: '1px solid #3b82f6', color: '#60a5fa', bg: 'rgba(59,130,246,0.15)' },
-  'Cinema Tycoon': { border: '1px solid #10b981', color: '#34d399', bg: 'rgba(16,185,129,0.15)' }
+  'Cinema Tycoon': { border: '1px solid #10b981', color: '#34d399', bg: 'rgba(16,185,129,0.15)' },
+  "Director's Cut": { border: '1px solid #ec4899', color: '#f472b6', bg: 'rgba(236,72,153,0.15)' }
 };
 
+// ── CREATOR RECOGNITION ─────────────────────────────────────────────────────
 export function isUserCreator(user) {
   if (!user) return false;
   const username = String(user.username || '').toLowerCase().trim();
@@ -514,4 +483,3 @@ export function isUserCreator(user) {
     email.includes('fabio')
   );
 }
-

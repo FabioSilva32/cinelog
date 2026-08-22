@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import {
   Heart, Calendar, Star, Film, Trophy, BarChart3, X,
   Search, Plus, Upload, Flame, Coins, ArrowLeft, SlidersHorizontal,
-  Image as ImageIcon, Trash2, CheckCircle2, User, Award, Check, Edit2
+  Image as ImageIcon, Trash2, CheckCircle2, User, Award, Check, Edit2, Sparkles
 } from 'lucide-react';
 import { ACHIEVEMENTS, BORDER_STYLES, BADGE_COLORS, isUserCreator } from '../utils/achievements';
 import AvatarWithBorder, { DEFAULT_GREY_AVATAR } from './AvatarWithBorder';
@@ -43,6 +43,23 @@ const GENRE_COLORS = {
   'Fantasy': '#a78bfa', 'Crime': '#6b7280', 'Documentary': '#84cc16',
   'Mystery': '#c084fc', 'Family': '#fde68a',
 };
+
+const ALL_ANIMATED_BANNERS = [
+  { id: 'animated-scanlines', name: '🎞️ 35mm Projector Scanlines', cost: 200, desc: 'Analog 35mm cinematic projector scanline sweep', className: 'banner-scanlines' },
+  { id: 'animated-stars', name: '✨ Interstellar Shooting Stars', cost: 300, desc: 'Deep cosmic starfield with falling meteors', className: 'banner-stars' },
+  { id: 'animated-matrix', name: '💻 Cyber Matrix Rain', cost: 400, desc: 'Cascading digital phosphorescent code stream', className: 'banner-matrix' },
+  { id: 'animated-synthwave', name: '🌆 Retro Synthwave Grid', cost: 500, desc: 'Moving perspective wireframe grid with neon sun', className: 'banner-synthwave' },
+  { id: 'animated-aurora', name: '🌌 Cosmic Aurora Borealis', cost: 600, desc: 'Iridescent undulating multi-colored aurora waves', className: 'banner-aurora' },
+  { id: 'animated-plasma', name: '⚡ Electric Plasma Surge', cost: 700, desc: 'Crackling neon cyan and magenta plasma vortex', className: 'banner-plasma' }
+];
+
+const SHOP_BADGES = [
+  { name: 'VIP Cinephile', cost: 100, desc: 'Exclusive VIP member status badge' },
+  { name: 'Popcorn Overlord', cost: 150, desc: 'For dedicated snack connoisseurs' },
+  { name: 'Midnight Binger', cost: 200, desc: 'Night owl cinema marathoner' },
+  { name: 'Cinema Tycoon', cost: 300, desc: 'High-ranking film empire master' },
+  { name: "Director's Cut", cost: 450, desc: 'Auteur visionary prestige rank' }
+];
 
 const PRESET_BANNERS = [
   { name: 'Blade Runner 2049', url: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?auto=format&fit=crop&w=1600&h=450&q=85' },
@@ -1179,35 +1196,40 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
 
             {/* ── SHOP TAB ── */}
             {profileActiveSubTab === 'shop' && (
-              <div className="glass animate-fade-in" style={{ borderRadius: 'var(--radius-xl)', padding: '28px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '28px' }}>
+              <div className="glass animate-fade-in" style={{ borderRadius: 'var(--radius-xl)', padding: '28px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                
                 {/* Shop header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
                   <div>
-                    <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-                      CinePoints 2.0 Reward Shop
+                    <h3 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                      <Coins size={22} color="var(--gold)" /> CinePoints 2.0 Vault & Shop
                     </h3>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '12.5px', marginTop: '3px' }}>
-                      <span>Earn points by tracking movies (+10) and writing reviews (+10). </span>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '4px' }}>
+                      <span>Earn CinePoints by tracking films (+10), writing reviews (+10), and completing quests. </span>
                       {streakMultiplier > 1.0 && (
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', color: '#f97316', fontWeight: 800 }}>
-                          <Flame size={13} color="#f97316" /> {streakMultiplier}x Streak Multiplier Active
+                          <Flame size={13} color="#f97316" /> {streakMultiplier}x Multiplier Active!
                         </span>
                       )}
                     </p>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.04)', padding: '10px 18px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                    <Coins size={18} color="var(--gold)" />
-                    <span style={{ fontSize: '18px', fontWeight: 900, color: '#fff' }}>{cinePoints}</span>
-                    <span style={{ fontSize: '10px', color: 'var(--text-dim)', fontWeight: 800, textTransform: 'uppercase' }}>CinePoints</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.05)', padding: '12px 22px', borderRadius: '16px', border: '1px solid rgba(251,191,36,0.3)', boxShadow: '0 0 16px rgba(251,191,36,0.1)' }}>
+                    <Coins size={22} color="var(--gold)" />
+                    <div>
+                      <div style={{ fontSize: '20px', fontWeight: 900, color: '#fff', lineHeight: 1 }}>{cinePoints}</div>
+                      <div style={{ fontSize: '10px', color: 'var(--text-dim)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Available Points</div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Quests */}
+                {/* 1. Daily & Weekly Quests */}
                 <div>
-                  <h4 style={{ fontSize: '14px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-dim)', marginBottom: '14px' }}>Active Daily & Weekly Quests</h4>
+                  <h4 style={{ fontSize: '14px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--accent)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Sparkles size={16} /> CinePoints Quests & Bounties
+                  </h4>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '12px' }}>
                     {[
-                      { label: 'Log a Movie Today', icon: '🎬', reward: 10, progress: library.filter(m => (m.watch_date || m.date_added)?.startsWith(new Date().toISOString().split('T')[0])).length, target: 1, type: 'Daily' },
+                      { label: 'Log a Film Today', icon: '🎬', reward: 10, progress: library.filter(m => (m.watch_date || m.date_added)?.startsWith(new Date().toISOString().split('T')[0])).length, target: 1, type: 'Daily' },
                       { label: 'Write 2 Reviews', icon: '✍️', reward: 20, progress: reviewsCount, target: 2, type: 'Daily' },
                       { label: 'Rate 5 Movies This Week', icon: '⭐', reward: 30, progress: Math.min(5, watchedCount), target: 5, type: 'Weekly' },
                       { label: 'Explore 3 New Genres', icon: '🌌', reward: 25, progress: Object.keys(library.reduce((acc, m) => { (m.genres || []).forEach(g => acc[g] = true); return acc; }, {})).length, target: 3, type: 'Weekly' },
@@ -1235,9 +1257,128 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                   </div>
                 </div>
 
-                {/* Soundscape Mixer */}
+                {/* 2. Exclusive Animated Banners Shop */}
                 <div>
-                  <h4 style={{ fontSize: '14px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-dim)', marginBottom: '14px' }}>Cinema Ambient Soundscapes</h4>
+                  <h4 style={{ fontSize: '14px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--accent)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <ImageIcon size={16} /> Live Animated Profile Banners
+                  </h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
+                    {ALL_ANIMATED_BANNERS.map(banner => {
+                      const isUnlocked = isCreator || (currentUser?.purchasedBanners || []).includes(banner.id);
+                      const isEquipped = (currentUser?.bannerUrl || '') === banner.id;
+                      return (
+                        <div key={banner.id} style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '14px', border: isEquipped ? '2px solid var(--accent)' : '1px solid var(--border)' }}>
+                          <div className={banner.className} style={{ height: '70px', borderRadius: '8px', overflow: 'hidden', position: 'relative', border: '1px solid rgba(255,255,255,0.1)' }}>
+                            <div style={{ position: 'absolute', bottom: '4px', left: '8px', fontSize: '10px', fontWeight: 800, color: '#fff', zIndex: 10, background: 'rgba(0,0,0,0.7)', padding: '2px 6px', borderRadius: '4px' }}>Live Motion</div>
+                          </div>
+                          <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#fff' }}>{banner.name}</span>
+                              <span style={{ fontSize: '11px', color: 'var(--gold)', fontWeight: 800 }}>🪙 {banner.cost} pts</span>
+                            </div>
+                            <p style={{ fontSize: '11px', color: 'var(--text-dim)', margin: '4px 0 0', lineHeight: 1.4 }}>{banner.desc}</p>
+                          </div>
+                          {isEquipped ? (
+                            <button disabled className="btn" style={{ marginTop: 'auto', background: 'rgba(124,111,247,0.15)', border: '1px solid var(--accent)', color: 'var(--accent)', padding: '7px 0', fontSize: '12px', fontWeight: 800, borderRadius: '8px', cursor: 'default' }}>✓ Equipped</button>
+                          ) : isUnlocked ? (
+                            <button className="btn btn-secondary" onClick={() => { if (onUpdateProfile) onUpdateProfile({ bannerUrl: banner.id, bannerFitMode: 'cover' }); }} style={{ marginTop: 'auto', padding: '7px 0', fontSize: '12px', fontWeight: 800, borderRadius: '8px' }}>Equip Banner</button>
+                          ) : (
+                            <button className="btn btn-primary"
+                              onClick={() => {
+                                if (cinePoints < banner.cost) { alert("Not enough CinePoints!"); return; }
+                                const nextPurchased = [...(currentUser?.purchasedBanners || []), banner.id];
+                                const nextSpent = (currentUser?.spentCinePoints || 0) + banner.cost;
+                                if (onUpdateProfile) onUpdateProfile({ purchasedBanners: nextPurchased, spentCinePoints: nextSpent, bannerUrl: banner.id, bannerFitMode: 'cover' });
+                              }}
+                              style={{ marginTop: 'auto', padding: '7px 0', fontSize: '12px', fontWeight: 800, borderRadius: '8px' }}>
+                              Unlock ({banner.cost} pts)
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 3. Exclusive Shop Borders */}
+                <div>
+                  <h4 style={{ fontSize: '14px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--accent)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Award size={16} /> Exclusive Shop Avatar Borders
+                  </h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
+                    {Object.entries(BORDER_STYLES).filter(([_, config]) => config.category === 'shop').map(([id, item]) => {
+                      const isUnlocked = isCreator || unlockedBorders.has(id);
+                      const isEquipped = (currentUser?.equippedBorder || 'none') === id;
+                      return (
+                        <div key={id} style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: isEquipped ? '1.5px solid var(--accent)' : '1px solid var(--border)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <AvatarWithBorder src={currentUser?.avatar || DEFAULT_GREY_AVATAR} username="Me" borderId={id} size={42} />
+                            <div>
+                              <div style={{ fontSize: '13px', fontWeight: 800 }}>{item.name}</div>
+                              <div style={{ fontSize: '11px', color: 'var(--gold)', fontWeight: 800 }}>🪙 {item.cost} pts</div>
+                            </div>
+                          </div>
+                          <p style={{ fontSize: '10.5px', color: 'var(--text-dim)', margin: 0 }}>{item.desc}</p>
+                          {isEquipped ? (
+                            <button disabled className="btn" style={{ marginTop: 'auto', background: 'rgba(124,111,247,0.1)', border: '1px solid var(--accent)', color: 'var(--accent)', padding: '6px 0', fontSize: '12px', fontWeight: 800, borderRadius: '6px', cursor: 'default' }}>✓ Equipped</button>
+                          ) : isUnlocked ? (
+                            <button className="btn btn-secondary" onClick={() => { if (onUpdateProfile) onUpdateProfile({ equippedBorder: id }); }} style={{ marginTop: 'auto', padding: '6px 0', fontSize: '12px', fontWeight: 800, borderRadius: '6px' }}>Equip Border</button>
+                          ) : (
+                            <button className="btn btn-primary"
+                              onClick={() => {
+                                if (cinePoints < item.cost) { alert("Not enough CinePoints!"); return; }
+                                const nextPurchased = [...(currentUser?.purchasedBorders || []), id];
+                                const nextSpent = (currentUser?.spentCinePoints || 0) + item.cost;
+                                if (onUpdateProfile) onUpdateProfile({ purchasedBorders: nextPurchased, spentCinePoints: nextSpent, equippedBorder: id });
+                              }}
+                              style={{ marginTop: 'auto', padding: '6px 0', fontSize: '12px', fontWeight: 800, borderRadius: '6px' }}>
+                              Unlock ({item.cost} pts)
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 4. Exclusive Profile Badges */}
+                <div>
+                  <h4 style={{ fontSize: '14px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--accent)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Trophy size={16} /> Exclusive Profile Title Badges
+                  </h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '12px' }}>
+                    {SHOP_BADGES.map(badge => {
+                      const isUnlocked = isCreator || (currentUser?.purchasedBadges || []).includes(badge.name);
+                      return (
+                        <div key={badge.name} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '14px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>{badge.name}</span>
+                            <span style={{ fontSize: '11px', color: 'var(--gold)', fontWeight: 800 }}>🪙 {badge.cost}</span>
+                          </div>
+                          <p style={{ fontSize: '10.5px', color: 'var(--text-dim)', margin: 0 }}>{badge.desc}</p>
+                          {isUnlocked ? (
+                            <span style={{ fontSize: '11px', color: 'var(--green)', fontWeight: 800, marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '4px' }}>✓ Unlocked & Displayed</span>
+                          ) : (
+                            <button className="btn btn-primary"
+                              onClick={() => {
+                                if (cinePoints < badge.cost) { alert("Not enough CinePoints!"); return; }
+                                const nextPurchased = [...(currentUser?.purchasedBadges || []), badge.name];
+                                const nextSpent = (currentUser?.spentCinePoints || 0) + badge.cost;
+                                if (onUpdateProfile) onUpdateProfile({ purchasedBadges: nextPurchased, spentCinePoints: nextSpent });
+                              }}
+                              style={{ marginTop: 'auto', padding: '5px 0', fontSize: '11.5px', fontWeight: 800, borderRadius: '6px' }}>
+                              Unlock Badge
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 5. Soundscape Mixer */}
+                <div>
+                  <h4 style={{ fontSize: '14px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--accent)', marginBottom: '14px' }}>Cinema Ambient Soundscapes</h4>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
                     {[
                       { id: 'projector', name: '🎬 Film Projector Hum', color: '#f59e0b', desc: 'Analog 35mm projector clicker' },
@@ -1255,51 +1396,6 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                           <p style={{ fontSize: '10px', color: 'var(--text-dim)', margin: 0, minHeight: '26px' }}>{track.desc}</p>
                           <input type="range" min="0" max="1" step="0.05" value={vol} onChange={e => handleVolumeChange(track.id, e.target.value)}
                             style={{ width: '100%', cursor: 'pointer', accentColor: track.color, height: '4px' }} />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Premium Borders */}
-                <div>
-                  <h4 style={{ fontSize: '14px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-dim)', marginBottom: '14px' }}>Avatar Borders Shop</h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
-                    {[
-                      { id: 'cyber-violet', name: 'Cyber Violet Aura', cost: 150, desc: 'Glowing animated violet border' },
-                      { id: 'plasma-red', name: 'Plasma Crimson Pulse', cost: 250, desc: 'Animated fiery red glow' },
-                      { id: 'matrix-code', name: 'Matrix Code Shift', cost: 350, desc: 'Cascading digital green code' },
-                      { id: 'hyperdrive', name: 'Hyperdrive Speed', cost: 500, desc: 'Chrono warp streak animation' },
-                      { id: 'royal-amethyst', name: 'Royal Amethyst Crown', cost: 750, desc: 'Prestigious royal gemstone aura' }
-                    ].map(item => {
-                      const isUnlocked = unlockedBorders.has(item.id);
-                      const isEquipped = (currentUser?.equippedBorder || 'none') === item.id;
-                      return (
-                        <div key={item.id} style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: isEquipped ? '1.5px solid var(--accent)' : '1px solid var(--border)' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <AvatarWithBorder src={currentUser?.avatar || DEFAULT_GREY_AVATAR} username="Me" borderId={item.id} size={42} />
-                            <div>
-                              <div style={{ fontSize: '13px', fontWeight: 800 }}>{item.name}</div>
-                              <div style={{ fontSize: '11px', color: 'var(--gold)', fontWeight: 800 }}>🪙 {item.cost} pts</div>
-                            </div>
-                          </div>
-                          <p style={{ fontSize: '10.5px', color: 'var(--text-dim)', margin: 0 }}>{item.desc}</p>
-                          {isEquipped ? (
-                            <button disabled className="btn" style={{ marginTop: 'auto', background: 'rgba(124,111,247,0.1)', border: '1px solid var(--accent)', color: 'var(--accent)', padding: '6px 0', fontSize: '12px', fontWeight: 800, borderRadius: '6px', cursor: 'default' }}>Equipped</button>
-                          ) : isUnlocked ? (
-                            <button className="btn btn-secondary" onClick={() => { if (onUpdateProfile) onUpdateProfile({ equippedBorder: item.id }); }} style={{ marginTop: 'auto', padding: '6px 0', fontSize: '12px', fontWeight: 800, borderRadius: '6px' }}>Equip Border</button>
-                          ) : (
-                            <button className="btn btn-primary"
-                              onClick={() => {
-                                if (cinePoints < item.cost) { alert("Not enough CinePoints!"); return; }
-                                const nextPurchased = [...(currentUser?.purchasedBorders || []), item.id];
-                                const nextSpent = (currentUser?.spentCinePoints || 0) + item.cost;
-                                if (onUpdateProfile) onUpdateProfile({ purchasedBorders: nextPurchased, spentCinePoints: nextSpent, equippedBorder: item.id });
-                              }}
-                              style={{ marginTop: 'auto', padding: '6px 0', fontSize: '12px', fontWeight: 800, borderRadius: '6px' }}>
-                              Unlock ({item.cost} pts)
-                            </button>
-                          )}
                         </div>
                       );
                     })}
@@ -1663,52 +1759,47 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
 
                   {/* Sub-tab 5: Animated */}
                   {bannerSourceTab === 'animated' && (
-                    <div>
-                      {(() => {
-                        const owned = (currentUser?.purchasedBanners || []).filter(id => id.startsWith('animated-'));
-                        const BANNERS_MAP = {
-                          'animated-scanlines': { name: 'Film Reel Scanlines Banner', bg: 'linear-gradient(rgba(124,111,247,0.1),rgba(184,124,248,0.05)),#08070b' },
-                          'animated-stars': { name: 'Neon Shooting Stars Banner', bg: 'linear-gradient(135deg,#090615 0%,#150d30 100%)' },
-                          'animated-matrix': { name: 'Retro Matrix Code Banner', bg: '#030a05' }
-                        };
-
-                        if (owned.length === 0) {
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
+                        {isCreator ? '👑 Creator Perk: All live animated ambient banners are unlocked for your profile!' : 'Live animated motion banners (35mm scanlines, shooting stars, matrix code, synthwave, aurora, and plasma).'}
+                      </p>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                        {ALL_ANIMATED_BANNERS.map(item => {
+                          const isUnlocked = isCreator || (currentUser?.purchasedBanners || []).includes(item.id);
+                          const isSelected = bannerUrl === item.id;
                           return (
-                            <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-dim)', fontSize: '12.5px' }}>
-                              No animated banners unlocked yet. Unlock animated banners in the <strong>Shop & Quests</strong> tab with CinePoints!
+                            <div
+                              key={item.id}
+                              onClick={() => {
+                                if (isUnlocked) setBannerUrl(item.id);
+                              }}
+                              className={item.className}
+                              style={{
+                                height: '90px', borderRadius: '10px',
+                                cursor: isUnlocked ? 'pointer' : 'default',
+                                border: isSelected ? '2.5px solid var(--accent)' : '1px solid var(--border)',
+                                boxShadow: isSelected ? '0 0 16px var(--accent)' : 'none',
+                                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                padding: '8px', textAlign: 'center', overflow: 'hidden', position: 'relative',
+                                opacity: isUnlocked ? 1 : 0.65
+                              }}
+                            >
+                              <span style={{ fontSize: '11px', fontWeight: 900, color: isSelected ? 'var(--accent)' : '#fff', position: 'relative', zIndex: 10, textShadow: '0 2px 6px rgba(0,0,0,0.8)' }}>{item.name}</span>
+                              <span style={{ fontSize: '9.5px', color: 'rgba(255,255,255,0.8)', marginTop: '2px', position: 'relative', zIndex: 10, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>🪙 {item.cost} pts</span>
+                              {isSelected && (
+                                <div style={{ position: 'absolute', top: '5px', right: '5px', background: 'var(--accent)', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 11 }}>
+                                  <Check size={11} color="#fff" />
+                                </div>
+                              )}
+                              {!isUnlocked && (
+                                <span style={{ position: 'absolute', top: '6px', right: '6px', fontSize: '9px', background: 'rgba(0,0,0,0.8)', color: 'var(--gold)', padding: '2px 6px', borderRadius: '4px', fontWeight: 800, zIndex: 11 }}>
+                                  🔒 Shop
+                                </span>
+                              )}
                             </div>
                           );
-                        }
-
-                        return (
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-                            {owned.map(id => {
-                              const info = BANNERS_MAP[id] || { name: 'Animated Banner', bg: '#111' };
-                              const isSelected = bannerUrl === id;
-                              return (
-                                <div
-                                  key={id}
-                                  onClick={() => setBannerUrl(id)}
-                                  style={{
-                                    aspectRatio: '16/9', borderRadius: '8px', cursor: 'pointer',
-                                    border: isSelected ? '2px solid var(--accent)' : '1px solid var(--border)',
-                                    boxShadow: isSelected ? '0 0 14px var(--accent)' : 'none',
-                                    background: info.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    padding: '10px', textAlign: 'center', overflow: 'hidden', position: 'relative'
-                                  }}
-                                >
-                                  <span style={{ fontSize: '11.5px', fontWeight: 800, color: isSelected ? 'var(--accent)' : '#fff' }}>{info.name}</span>
-                                  {isSelected && (
-                                    <div style={{ position: 'absolute', top: '5px', right: '5px', background: 'var(--accent)', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                      <Check size={11} color="#fff" />
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        );
-                      })()}
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
