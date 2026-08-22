@@ -5,19 +5,25 @@ import {
   Search, Plus, Upload, Flame, Coins, ArrowLeft, SlidersHorizontal,
   Image as ImageIcon, Trash2, CheckCircle2, User, Award, Check, Edit2
 } from 'lucide-react';
-import { ACHIEVEMENTS, BORDER_STYLES, BADGE_COLORS } from '../utils/achievements';
+import { ACHIEVEMENTS, BORDER_STYLES, BADGE_COLORS, isUserCreator } from '../utils/achievements';
 import AvatarWithBorder, { DEFAULT_GREY_AVATAR } from './AvatarWithBorder';
 import { supabase } from '../supabaseClient';
 
 const TMDB_KEY = '6a2fd6b9b1bb3befbb9f14c203732225';
 
 const DEFAULT_AVATARS = [
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
-  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150',
-  'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150',
-  'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
+  { name: 'Spider-Hero', url: 'https://images.unsplash.com/photo-1635805737707-575885ab0820?w=200&fit=crop&q=80' },
+  { name: 'Dark Knight', url: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=200&fit=crop&q=80' },
+  { name: 'Cyber Armor', url: 'https://images.unsplash.com/photo-1626278664285-f796b9ee7806?w=200&fit=crop&q=80' },
+  { name: 'Galactic Trooper', url: 'https://images.unsplash.com/photo-1579566346927-c68383817a25?w=200&fit=crop&q=80' },
+  { name: 'Cyberpunk Anime', url: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=200&fit=crop&q=80' },
+  { name: 'Midnight Mask', url: 'https://images.unsplash.com/photo-1509248961158-e54f6934749c?w=200&fit=crop&q=80' },
+  { name: 'Space Voyager', url: 'https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?w=200&fit=crop&q=80' },
+  { name: 'Matrix Hacker', url: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=200&fit=crop&q=80' },
+  { name: 'Anime Spirit', url: 'https://images.unsplash.com/photo-1563089145-599997674d42?w=200&fit=crop&q=80' },
+  { name: 'Vintage 35mm', url: 'https://images.unsplash.com/photo-1594909122845-11baa439b7bf?w=200&fit=crop&q=80' },
+  { name: 'Cinephile Mascot', url: '/avatar_cinephile.png' },
+  { name: 'Critic Mascot', url: '/avatar_critic.png' },
 ];
 
 const GENRE_COLORS = {
@@ -472,8 +478,13 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
     return Math.max(0, basePoints + streakBonus + triviaPoints - spent);
   }, [watchedCount, reviewsCount, favoritesCount, currentStreak, streakMultiplier, currentUser]);
 
+  const isCreator = useMemo(() => isUserCreator(currentUser), [currentUser]);
+
   const unlockedBadges = useMemo(() => {
     const earned = [];
+    if (isCreator) {
+      earned.push('Creator');
+    }
     ACHIEVEMENTS.forEach(ach => {
       if (ach.check(library) >= ach.target) {
         if (ach.reward.badgeName) earned.push(ach.reward.badgeName);
@@ -481,10 +492,13 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
     });
     const purchased = currentUser?.purchasedBadges || [];
     return Array.from(new Set([...earned, ...purchased]));
-  }, [library, currentUser?.purchasedBadges]);
+  }, [library, currentUser, isCreator]);
 
   const unlockedBorders = useMemo(() => {
     const unlocked = new Set(['none', 'bronze', 'silver', 'gold']);
+    if (isCreator) {
+      unlocked.add('creator');
+    }
     ACHIEVEMENTS.forEach(ach => {
       if (ach.check(library) >= ach.target) {
         if (ach.reward.borderId) unlocked.add(ach.reward.borderId);
@@ -492,7 +506,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
     });
     (currentUser?.purchasedBorders || []).forEach(b => unlocked.add(b));
     return unlocked;
-  }, [library, currentUser?.purchasedBorders]);
+  }, [library, currentUser, isCreator]);
 
   // Save profile from unified customizer
   const handleSaveAll = () => {
@@ -1698,25 +1712,66 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
 
                   {/* Preset Avatars & Upload */}
                   <div>
-                    <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Choose Avatar Image</label>
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                      {DEFAULT_AVATARS.map((url, i) => (
-                        <img
-                          key={i}
-                          src={url}
-                          alt=""
-                          onClick={() => setAvatar(url)}
-                          style={{
-                            width: '44px', height: '44px', borderRadius: '50%', cursor: 'pointer',
-                            border: avatar === url ? '2.5px solid var(--accent)' : '1px solid var(--border)',
-                            objectFit: 'cover', transition: 'transform 0.15s'
-                          }}
-                          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
-                          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-                        />
-                      ))}
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', background: 'rgba(124,111,247,0.12)', border: '1px dashed var(--accent)', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: '#fff' }}>
-                        <Upload size={14} color="var(--accent)" /> Upload Custom Photo
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 800, textTransform: 'uppercase', margin: 0 }}>
+                        Choose Movie Character Avatar
+                      </label>
+                      <span style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 700 }}>
+                        {DEFAULT_AVATARS.find(a => a.url === avatar)?.name || 'Custom Avatar'}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(68px, 1fr))', gap: '10px', alignItems: 'center' }}>
+                      {DEFAULT_AVATARS.map((item, i) => {
+                        const isSelected = avatar === item.url;
+                        return (
+                          <div
+                            key={i}
+                            onClick={() => setAvatar(item.url)}
+                            title={item.name}
+                            style={{
+                              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
+                              cursor: 'pointer', padding: '6px', borderRadius: '12px',
+                              background: isSelected ? 'rgba(124,111,247,0.14)' : 'rgba(255,255,255,0.02)',
+                              border: isSelected ? '1.5px solid var(--accent)' : '1px solid var(--border)',
+                              transition: 'all 0.18s ease'
+                            }}
+                          >
+                            <div style={{ position: 'relative', width: '46px', height: '46px' }}>
+                              <img
+                                src={item.url}
+                                alt={item.name}
+                                style={{
+                                  width: '100%', height: '100%', borderRadius: '50%',
+                                  border: isSelected ? '2px solid var(--accent)' : '1px solid rgba(255,255,255,0.15)',
+                                  objectFit: 'cover'
+                                }}
+                              />
+                              {isSelected && (
+                                <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '16px', height: '16px', borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px solid #0c0a18' }}>
+                                  <Check size={10} color="#fff" />
+                                </div>
+                              )}
+                            </div>
+                            <span style={{ fontSize: '9.5px', fontWeight: 800, color: isSelected ? '#fff' : 'var(--text-dim)', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '60px' }}>
+                              {item.name}
+                            </span>
+                          </div>
+                        );
+                      })}
+
+                      <label
+                        style={{
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                          gap: '4px', padding: '10px 6px', background: 'rgba(124,111,247,0.08)',
+                          border: '1px dashed var(--accent)', borderRadius: '12px', cursor: 'pointer',
+                          minHeight: '68px', transition: 'all 0.18s ease'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(124,111,247,0.16)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(124,111,247,0.08)'}
+                      >
+                        <Upload size={16} color="var(--accent)" />
+                        <span style={{ fontSize: '9px', fontWeight: 800, color: '#fff', textAlign: 'center' }}>Upload Custom</span>
                         <input type="file" accept="image/*" onChange={handleFileUpload} style={{ display: 'none' }} />
                       </label>
                     </div>

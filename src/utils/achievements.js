@@ -491,3 +491,27 @@ export const BADGE_COLORS = {
   'Midnight Binger': { border: '1px solid #3b82f6', color: '#60a5fa', bg: 'rgba(59,130,246,0.15)' },
   'Cinema Tycoon': { border: '1px solid #10b981', color: '#34d399', bg: 'rgba(16,185,129,0.15)' }
 };
+
+export function isUserCreator(user) {
+  if (!user) return false;
+  const username = String(user.username || '').toLowerCase().trim();
+  const displayName = String(user.displayName || user.display_name || '').toLowerCase().trim();
+  const id = String(user.id || '').toLowerCase().trim();
+  const email = String(user.email || '').toLowerCase().trim();
+
+  const creatorUsernames = ['lynnx', 'itzfabiopt2006', 'fabiosilva', 'fabiosilva32', 'creator', 'the maker.'];
+  const creatorIds = [
+    '2436dd73-13e2-45a9-b2af-664a221250d8',
+    '754ce8a9-e74a-4277-ab9c-847408153029',
+    '2bf89559-f45b-48c1-9b44-1c79bc951a80'
+  ];
+
+  return (
+    creatorUsernames.includes(username) ||
+    creatorUsernames.includes(displayName) ||
+    creatorIds.includes(id) ||
+    email.includes('itzfa') ||
+    email.includes('fabio')
+  );
+}
+

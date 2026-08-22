@@ -1,6 +1,6 @@
 import React from 'react';
 import { Trophy, CheckCircle2, Lock, Sparkles, Award } from 'lucide-react';
-import { ACHIEVEMENTS, BORDER_STYLES, BADGE_COLORS } from '../utils/achievements';
+import { ACHIEVEMENTS, BORDER_STYLES, BADGE_COLORS, isUserCreator } from '../utils/achievements';
 import AvatarWithBorder from './AvatarWithBorder';
 
 export default function AchievementsTab({ library, currentUser, onUpdateProfile }) {
@@ -16,6 +16,9 @@ export default function AchievementsTab({ library, currentUser, onUpdateProfile 
   });
 
   const unlockedBorders = new Set(['none']);
+  if (isUserCreator(currentUser)) {
+    unlockedBorders.add('creator');
+  }
   achievementsStatus.forEach(ach => {
     if (ach.isUnlocked && ach.reward.borderId) {
       unlockedBorders.add(ach.reward.borderId);
