@@ -797,11 +797,11 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
           <div style={{ background: '#0a0813', padding: '0 28px 24px', border: '1px solid var(--border)', borderTop: 'none', borderLeft: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
             
             {/* Top Bar: Avatar + Name/Bio on Left, Stats on Right */}
-            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '24px', marginTop: '-55px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '24px', flexWrap: 'wrap' }}>
               
-              {/* Left: Avatar + Name & Bio */}
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '20px', flex: 1, minWidth: '300px' }}>
-                <div style={{ position: 'relative', flexShrink: 0 }}>
+              {/* Left: Avatar (overlapping banner) + Name & Bio (clean padding) */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '22px', flex: 1, minWidth: '300px' }}>
+                <div style={{ marginTop: '-55px', position: 'relative', flexShrink: 0, zIndex: 10 }}>
                   <AvatarWithBorder
                     src={currentUser?.avatar || DEFAULT_GREY_AVATAR}
                     username={currentUser?.username || 'Profile'}
@@ -810,23 +810,21 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                   />
                 </div>
 
-                <div style={{ paddingBottom: '4px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '2px', flexWrap: 'wrap' }}>
-                    <h2 style={{ fontSize: '24px', fontWeight: 900, color: '#fff', letterSpacing: '-0.3px', margin: 0 }}>
-                      {currentUser?.displayName || 'CineLog Fan'}
-                    </h2>
-                  </div>
-                  <div style={{ color: 'var(--accent)', fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>
+                <div style={{ paddingTop: '14px', minWidth: 0, flex: 1 }}>
+                  <h2 style={{ fontSize: '26px', fontWeight: 900, color: '#fff', letterSpacing: '-0.4px', margin: '0 0 3px 0', lineHeight: 1.2 }}>
+                    {currentUser?.displayName || 'CineLog Fan'}
+                  </h2>
+                  <div style={{ color: 'var(--accent)', fontSize: '13.5px', fontWeight: 700, marginBottom: '6px' }}>
                     @{currentUser?.username || 'cinelog_user'}
                   </div>
-                  <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', lineHeight: 1.5, maxWidth: '520px', margin: 0 }}>
+                  <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', lineHeight: 1.5, maxWidth: '540px', margin: 0 }}>
                     {currentUser?.bio || 'No bio written yet. Click Customize to personalize your profile.'}
                   </p>
                 </div>
               </div>
 
               {/* Right: Stats Counters */}
-              <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'flex-end', paddingBottom: '6px' }}>
+              <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'flex-end', paddingTop: '16px' }}>
                 {[
                   { label: 'Films', val: watchedCount, color: 'var(--green)' },
                   { label: 'Reviews', val: reviewsCount, color: 'var(--accent)' },
