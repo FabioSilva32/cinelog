@@ -23,14 +23,14 @@ const DEFAULT_AVATARS = [
   'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=200&fit=crop&q=80', // Matrix Hacker
   'https://images.unsplash.com/photo-1563089145-599997674d42?w=200&fit=crop&q=80', // Anime Spirit
   'https://images.unsplash.com/photo-1594909122845-11baa439b7bf?w=200&fit=crop&q=80', // Vintage 35mm
-  '/avatar_cinephile.png', // Cinephile Mascot
-  '/avatar_critic.png', // Critic Mascot
-  '/avatar_reviewer.png', // Reviewer Mascot
-  '/avatar_watcher.png', // Watcher Mascot
+  'https://images.unsplash.com/photo-1518709414768-a88981a4515d?w=200&fit=crop&q=80', // Alien Horizon
+  'https://images.unsplash.com/photo-1534696933823-9732e5e5c8a8?w=200&fit=crop&q=80', // Crystal Skull
+  'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=200&fit=crop&q=80', // Kaiju Beast
+  'https://images.unsplash.com/photo-1468817814611-b7edf94b5d60?w=200&fit=crop&q=80', // Dragon Eye
   'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=200&fit=crop&q=80', // Merc Hero
   'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=200&fit=crop&q=80', // Dune Nomad
   'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=200&fit=crop&q=80', // Cyber Samurai
-  'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=200&fit=crop&q=80', // Kaiju Beast
+  'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=200&fit=crop&q=80', // Alpine Voyager
   'https://images.unsplash.com/photo-1568832359672-e36cf5d74f54?w=200&fit=crop&q=80', // Joker Smile
   'https://images.unsplash.com/photo-1514565131-fce0801e5785?w=200&fit=crop&q=80', // Noir Detective
   'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=200&fit=crop&q=80', // Cosmic Vortex

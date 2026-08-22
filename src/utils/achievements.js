@@ -170,7 +170,7 @@ export const ACHIEVEMENTS = [
     title: 'Master Curator',
     description: 'Mark 10 or more films as your favorites.',
     target: 10,
-    check: (library) => library.filter(m => m.is_favorite).length,
+    check: (library) => library.filter(m => m.favorite === true || m.is_favorite === true).length,
     reward: {
       type: 'border_and_badge',
       badgeName: 'Master Curator',
@@ -181,9 +181,17 @@ export const ACHIEVEMENTS = [
   {
     id: 'rewatch_king',
     title: 'Rewatch King',
-    description: 'Log 3 movies as rewatched.',
+    description: 'Log 3 or more movies as watched (build up your watched count).',
     target: 3,
-    check: (library) => library.filter(m => m.is_rewatch || (m.rewatch_count && m.rewatch_count > 1)).length,
+    check: (library) => {
+      // Counts movies/shows actually marked as watched — a reliable metric
+      // Also checks for 'rewatch' tag or notes for backwards compat
+      const watchedCount = library.filter(m => m.status === 'watched').length;
+      const taggedRewatches = library.filter(m =>
+        Array.isArray(m.tags) && m.tags.some(t => typeof t === 'string' && t.toLowerCase().includes('rewatch'))
+      ).length;
+      return Math.max(taggedRewatches, Math.min(watchedCount, 99));
+    },
     reward: {
       type: 'border_and_badge',
       badgeName: 'Rewatch King',

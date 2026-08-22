@@ -242,7 +242,7 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
                 const profile = item.profiles;
                 const name = profile?.display_name || profile?.username || "Someone";
                 const avatar = profile?.avatar_url;
-                const hasReview = item.review && item.review.trim().length > 20;
+                const hasReview = item.review && item.review.trim().length > 4;
                 return (
                   <div key={i} style={{
                     display: "flex", gap: "14px", padding: "16px",
@@ -288,8 +288,24 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
                         )}
                       </div>
                       {hasReview && (
-                        <div style={{ fontSize: "12px", color: "var(--text-dim)", fontStyle: "italic", lineHeight: 1.5, marginBottom: "4px" }}>
-                          "{item.review.slice(0, 120)}{item.review.length > 120 ? "…" : ""}"
+                        <div style={{
+                          margin: '6px 0 4px',
+                          padding: '8px 12px',
+                          background: 'rgba(124,111,247,0.06)',
+                          borderLeft: '3px solid rgba(124,111,247,0.5)',
+                          borderRadius: '0 8px 8px 0',
+                        }}>
+                          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.75)', fontStyle: 'italic', lineHeight: 1.55 }}>
+                            "{item.review.slice(0, 200)}{item.review.length > 200 ? '…' : ''}"
+                          </div>
+                          {item.review.length > 200 && (
+                            <div
+                              onClick={() => onMovieClick && onMovieClick(item.tmdb_id, item.media_type)}
+                              style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 700, marginTop: '4px', cursor: 'pointer' }}
+                            >
+                              Read full review →
+                            </div>
+                          )}
                         </div>
                       )}
                       <div style={{ fontSize: "11px", color: "var(--text-dim)" }}>{timeAgo(item.date_added)}</div>
