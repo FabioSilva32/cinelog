@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { ACHIEVEMENTS, BORDER_STYLES, BADGE_COLORS, isUserCreator } from '../utils/achievements';
 import AvatarWithBorder, { DEFAULT_GREY_AVATAR } from './AvatarWithBorder';
-import AnimatedBannerBackground from './AnimatedBannerBackground';
+import AnimatedBannerBackground, { ALL_ANIMATED_BANNERS } from './AnimatedBannerBackground';
 import { supabase } from '../supabaseClient';
 
 const TMDB_KEY = '6a2fd6b9b1bb3befbb9f14c203732225';
@@ -44,15 +44,6 @@ const GENRE_COLORS = {
   'Fantasy': '#a78bfa', 'Crime': '#6b7280', 'Documentary': '#84cc16',
   'Mystery': '#c084fc', 'Family': '#fde68a',
 };
-
-const ALL_ANIMATED_BANNERS = [
-  { id: 'animated-scanlines', name: '🎞️ 35mm Projector Scanlines', cost: 200, desc: 'Analog 35mm cinematic projector scanline sweep', className: 'banner-scanlines' },
-  { id: 'animated-stars', name: '✨ Interstellar Shooting Stars', cost: 300, desc: 'Deep cosmic starfield with falling meteors', className: 'banner-stars' },
-  { id: 'animated-matrix', name: '💻 Cyber Matrix Rain', cost: 400, desc: 'Cascading digital phosphorescent code stream', className: 'banner-matrix' },
-  { id: 'animated-synthwave', name: '🌆 Retro Synthwave Grid', cost: 500, desc: 'Moving perspective wireframe grid with neon sun', className: 'banner-synthwave' },
-  { id: 'animated-aurora', name: '🌌 Cosmic Aurora Borealis', cost: 600, desc: 'Iridescent undulating multi-colored aurora waves', className: 'banner-aurora' },
-  { id: 'animated-plasma', name: '⚡ Electric Plasma Surge', cost: 700, desc: 'Crackling neon cyan and magenta plasma vortex', className: 'banner-plasma' }
-];
 
 const SHOP_BADGES = [
   { name: 'VIP Cinephile', cost: 100, desc: 'Exclusive VIP member status badge' },

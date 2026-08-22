@@ -1,215 +1,525 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
+
+export const ALL_ANIMATED_BANNERS = [
+  { id: 'animated-stars', name: '✨ Interstellar Cosmic Starfield', cost: 250, desc: 'Deep space with 150+ twinkling stars, nebulae & realistic shooting meteors', theme: 'stars' },
+  { id: 'animated-plasma', name: '⚡ Electric Plasma Vortex', cost: 350, desc: 'Crackling neon lightning bolts, surging plasma cores & energy sparks', theme: 'plasma' },
+  { id: 'animated-synthwave', name: '🌆 Retro Synthwave Highway', cost: 450, desc: 'Neon grid highway, wireframe mountains & glowing striped sunset', theme: 'synthwave' },
+  { id: 'animated-matrix', name: '💻 Cyber Matrix Rain', cost: 300, desc: 'Continuous phosphorescent green cascading cyber cipher rain', theme: 'matrix' },
+  { id: 'animated-aurora', name: '🌌 Celestial Aurora Borealis', cost: 400, desc: 'Fluid undulating ribbons of emerald, cyan & magenta across starlight', theme: 'aurora' },
+  { id: 'animated-neonrain', name: '🌧️ Cyberpunk Neon Rain', cost: 350, desc: 'Moody rainy neon city night with glowing streaks & puddles', theme: 'neonrain' },
+  { id: 'animated-hyperdrive', name: '🚀 Hyperdrive Warp Tunnel', cost: 500, desc: 'Light-speed hyperspace warp with relativistic star streaks', theme: 'hyperdrive' },
+  { id: 'animated-firestorm', name: '🔥 Infernal Firestorm Abyss', cost: 400, desc: 'Swirling volcanic magma embers, rising sparks & heat ripples', theme: 'firestorm' },
+  { id: 'animated-blizzard', name: '❄️ Glacial Cryo Blizzard', cost: 350, desc: 'Falling crystalline glowing snowflakes & shimmering frost mist', theme: 'blizzard' },
+  { id: 'animated-scanlines', name: '🎞️ 35mm Vintage Film Reel', cost: 200, desc: 'Analog 35mm projector light beam, frame jitter & dust motes', theme: 'scanlines' }
+];
 
 export default function AnimatedBannerBackground({ bannerId, style = {} }) {
-  if (!bannerId || !bannerId.startsWith('animated-')) return null;
+  const canvasRef = useRef(null);
+  const theme = bannerId && bannerId.startsWith('animated-') ? bannerId.replace('animated-', '') : null;
 
-  const type = bannerId.replace('animated-', '');
+  useEffect(() => {
+    if (!theme) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-  if (type === 'stars') {
-    return (
-      <div
-        style={{
-          position: 'absolute', inset: 0, overflow: 'hidden',
-          background: 'radial-gradient(ellipse at center, #150e28 0%, #080614 70%, #030208 100%)',
-          ...style
-        }}
-      >
-        {/* Deep cosmic nebulae clouds */}
-        <div style={{ position: 'absolute', top: '-20%', left: '10%', width: '400px', height: '300px', background: 'radial-gradient(circle, rgba(124,111,247,0.2) 0%, transparent 70%)', filter: 'blur(50px)', animation: 'auroraFlow 12s infinite alternate' }} />
-        <div style={{ position: 'absolute', bottom: '0%', right: '15%', width: '450px', height: '300px', background: 'radial-gradient(circle, rgba(59,130,246,0.18) 0%, transparent 70%)', filter: 'blur(50px)', animation: 'auroraFlow 10s infinite alternate-reverse' }} />
+    let animId;
+    let width = (canvas.width = canvas.offsetWidth || 800);
+    let height = (canvas.height = canvas.offsetHeight || 320);
 
-        {/* 60+ Twinkling Stars generated via SVG for crisp render */}
-        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
-          {[
-            { cx: '5%', cy: '15%', r: 1.5, d: '0s', o: 0.8 },
-            { cx: '12%', cy: '45%', r: 2.2, d: '1.2s', o: 0.9 },
-            { cx: '18%', cy: '25%', r: 1.2, d: '0.4s', o: 0.7 },
-            { cx: '25%', cy: '80%', r: 1.8, d: '2s', o: 0.85 },
-            { cx: '32%', cy: '35%', r: 2.5, d: '1.5s', o: 1 },
-            { cx: '40%', cy: '15%', r: 1.2, d: '0.8s', o: 0.7 },
-            { cx: '48%', cy: '65%', r: 2.0, d: '2.5s', o: 0.9 },
-            { cx: '55%', cy: '20%', r: 1.5, d: '0.2s', o: 0.75 },
-            { cx: '62%', cy: '50%', r: 2.4, d: '1.8s', o: 1 },
-            { cx: '70%', cy: '85%', r: 1.2, d: '0.9s', o: 0.6 },
-            { cx: '78%', cy: '30%', r: 2.0, d: '2.2s', o: 0.85 },
-            { cx: '85%', cy: '70%', r: 1.5, d: '1.1s', o: 0.8 },
-            { cx: '92%', cy: '25%', r: 2.2, d: '0.5s', o: 0.95 },
-            { cx: '8%', cy: '75%', r: 1.0, d: '1.7s', o: 0.65 },
-            { cx: '22%', cy: '55%', r: 1.5, d: '2.8s', o: 0.8 },
-            { cx: '37%', cy: '90%', r: 1.2, d: '0.3s', o: 0.7 },
-            { cx: '66%', cy: '10%', r: 1.8, d: '1.4s', o: 0.85 },
-            { cx: '82%', cy: '45%', r: 1.2, d: '2.1s', o: 0.7 },
-            { cx: '95%', cy: '80%', r: 1.6, d: '0.7s', o: 0.8 },
-            { cx: '15%', cy: '10%', r: 2.8, d: '1.9s', o: 1 },
-            { cx: '50%', cy: '30%', r: 1.5, d: '0.6s', o: 0.75 },
-            { cx: '88%', cy: '12%', r: 2.4, d: '2.4s', o: 0.9 }
-          ].map((s, idx) => (
-            <circle
-              key={idx}
-              cx={s.cx}
-              cy={s.cy}
-              r={s.r}
-              fill="#fff"
-              opacity={s.o}
-              style={{
-                filter: s.r > 2 ? 'drop-shadow(0 0 4px #93c5fd)' : 'none',
-                animation: `starsTwinkle 2.5s infinite alternate ease-in-out ${s.d}`
-              }}
-            />
-          ))}
-        </svg>
+    const handleResize = () => {
+      if (!canvas) return;
+      width = canvas.width = canvas.offsetWidth || 800;
+      height = canvas.height = canvas.offsetHeight || 320;
+    };
+    window.addEventListener('resize', handleResize);
 
-        {/* 3 Continuous Shooting Stars / Meteors */}
-        <div className="meteor-1" />
-        <div className="meteor-2" />
-        <div className="meteor-3" />
-      </div>
-    );
-  }
+    let time = 0;
 
-  if (type === 'matrix') {
-    const cols = [
-      '101100101100101', '010011010011010', '110101010110101', '001011010010110',
-      '101010101010101', '011001100110011', '111000111000111', '000111000111000',
-      '100100100100100', '011011011011011', '110011001100110', '001100110011001',
-      '101001010010100', '010110101101011', '111100001111000', '000011110000111',
-      '101110111011101', '010001000100010', '110110110110110', '001001001001001',
-      '101011010110101', '010100101001010', '111011101110111', '000100010001000'
-    ];
+    // ── 1. THEME: STARS (Interstellar Starfield) ──
+    const stars = Array.from({ length: 140 }, () => ({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      r: Math.random() * 1.8 + 0.6,
+      baseAlpha: Math.random() * 0.7 + 0.3,
+      speed: Math.random() * 0.05 + 0.02,
+      phase: Math.random() * Math.PI * 2,
+      color: ['#ffffff', '#bae6fd', '#e0e7ff', '#fed7aa', '#fbcfe8'][Math.floor(Math.random() * 5)]
+    }));
 
-    return (
-      <div
-        style={{
-          position: 'absolute', inset: 0, overflow: 'hidden',
-          background: '#020904',
-          display: 'flex', justifyContent: 'space-between', padding: '0 8px',
-          ...style
-        }}
-      >
-        {cols.map((chars, i) => (
-          <div
-            key={i}
-            style={{
-              writingMode: 'vertical-rl',
-              textOrientation: 'upright',
-              fontFamily: 'monospace',
-              fontSize: '12px',
-              fontWeight: 900,
-              color: '#22c55e',
-              letterSpacing: '3px',
-              textShadow: '0 0 8px #22c55e, 0 0 16px rgba(34,197,94,0.6)',
-              animation: `matrixStream ${2.5 + (i % 5) * 0.5}s linear infinite`,
-              animationDelay: `${(i * 0.18)}s`,
-              opacity: 0.85
-            }}
-          >
-            {chars}
-          </div>
-        ))}
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 0%, rgba(2,9,4,0.4) 60%, #020904 100%)', pointerEvents: 'none' }} />
-      </div>
-    );
-  }
+    let meteors = [];
+    let nextMeteorTime = 40;
 
-  if (type === 'synthwave') {
-    return (
-      <div
-        style={{
-          position: 'absolute', inset: 0, overflow: 'hidden',
-          background: 'linear-gradient(180deg, #090217 0%, #1f053a 45%, #4a0e4e 75%, #0d0118 100%)',
-          ...style
-        }}
-      >
-        {/* Glowing Horizon Sun */}
-        <div
-          style={{
-            position: 'absolute',
-            top: '18px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: '110px',
-            height: '110px',
-            borderRadius: '50%',
-            background: 'linear-gradient(to bottom, #fde047 0%, #f97316 50%, #ec4899 100%)',
-            boxShadow: '0 0 50px rgba(251,191,36,0.9), 0 0 90px rgba(236,72,153,0.7)',
-            overflow: 'hidden'
-          }}
-        >
-          {/* Laser Cut horizontal lines across sun */}
-          <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(to bottom, transparent 0px, transparent 10px, #1f053a 10px, #1f053a 14px)' }} />
-        </div>
+    // ── 2. THEME: PLASMA ──
+    const plasmaNodes = Array.from({ length: 7 }, (_, i) => ({
+      angle: (i / 7) * Math.PI * 2,
+      radius: 60 + Math.random() * 50,
+      speed: (Math.random() * 0.02 + 0.01) * (i % 2 === 0 ? 1 : -1),
+      color: ['#ec4899', '#8b5cf6', '#3b82f6', '#06b6d4', '#f43f5e'][i % 5]
+    }));
 
-        {/* 3D Moving Perspective Wireframe Grid */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 0, left: '-50%', right: '-50%', height: '62%',
-            backgroundImage: `
-              linear-gradient(rgba(236,72,153,0.85) 2px, transparent 2px),
-              linear-gradient(90deg, rgba(6,182,212,0.85) 2px, transparent 2px)
-            `,
-            backgroundSize: '48px 24px',
-            transform: 'perspective(160px) rotateX(65deg)',
-            transformOrigin: 'bottom center',
-            animation: 'synthwaveRoad 1.4s linear infinite',
-            boxShadow: 'inset 0 10px 40px rgba(236,72,153,0.5)'
-          }}
-        />
+    // ── 3. THEME: MATRIX ──
+    const fontSize = 13;
+    const columns = Math.floor(width / fontSize) + 1;
+    const drops = Array.from({ length: columns }, () => Math.floor(Math.random() * -50));
+    const chars = '0123456789ABCDEFｦｱｳｴｵｶｷｹｺｻｼｽｾｿﾀﾂﾃﾅﾆﾇﾈﾊﾋﾎﾏﾐﾑﾒﾓﾔﾕﾗﾘﾜ'.split('');
 
-        {/* Horizon Neon Laser Line */}
-        <div style={{ position: 'absolute', top: '48%', left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, #ec4899, #06b6d4, #ec4899, transparent)', boxShadow: '0 0 12px #ec4899' }} />
-      </div>
-    );
-  }
+    // ── 4. THEME: NEON RAIN ──
+    const raindrops = Array.from({ length: 85 }, () => ({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      length: Math.random() * 25 + 15,
+      speed: Math.random() * 14 + 10,
+      color: ['#38bdf8', '#818cf8', '#c084fc', '#f472b6'][Math.floor(Math.random() * 4)],
+      alpha: Math.random() * 0.6 + 0.3
+    }));
 
-  if (type === 'aurora') {
-    return (
-      <div
-        style={{
-          position: 'absolute', inset: 0, overflow: 'hidden',
-          background: 'linear-gradient(135deg, #030712 0%, #061826 40%, #090a1a 100%)',
-          ...style
-        }}
-      >
-        <div style={{ position: 'absolute', inset: '-30%', background: 'radial-gradient(circle at 30% 40%, rgba(6,182,212,0.6) 0%, transparent 50%), radial-gradient(circle at 70% 60%, rgba(168,85,247,0.6) 0%, transparent 50%), radial-gradient(circle at 50% 30%, rgba(16,185,129,0.5) 0%, transparent 50%)', filter: 'blur(45px)', animation: 'auroraFlow 9s ease-in-out infinite alternate' }} />
-        <div style={{ position: 'absolute', inset: '-20%', background: 'radial-gradient(circle at 60% 70%, rgba(236,72,153,0.4) 0%, transparent 55%), radial-gradient(circle at 40% 20%, rgba(56,189,248,0.5) 0%, transparent 50%)', filter: 'blur(55px)', animation: 'auroraFlow 13s ease-in-out infinite alternate-reverse' }} />
-      </div>
-    );
-  }
+    // ── 5. THEME: FIRESTORM EMBERS ──
+    const embers = Array.from({ length: 75 }, () => ({
+      x: Math.random() * width,
+      y: height + Math.random() * 40,
+      r: Math.random() * 2.8 + 1,
+      speedY: Math.random() * 1.8 + 0.8,
+      speedX: (Math.random() - 0.5) * 1.2,
+      alpha: Math.random() * 0.8 + 0.2,
+      color: ['#ff4500', '#ff7700', '#ffaa00', '#ff0055'][Math.floor(Math.random() * 4)]
+    }));
 
-  if (type === 'scanlines') {
-    return (
-      <div
-        style={{
-          position: 'absolute', inset: 0, overflow: 'hidden',
-          background: 'radial-gradient(circle at 50% 50%, rgba(245,158,11,0.2) 0%, rgba(20,12,6,0.95) 75%, #0a0604 100%)',
-          ...style
-        }}
-      >
-        {/* Projector Flicker Light Beam */}
-        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at top center, rgba(251,191,36,0.3) 0%, transparent 70%)', animation: 'projectorFlicker 0.15s infinite' }} />
-        {/* Moving Horizontal 35mm Scanlines */}
-        <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(to bottom, transparent 0px, transparent 3px, rgba(0,0,0,0.5) 3px, rgba(0,0,0,0.5) 5px)', opacity: 0.85 }} />
-        <div style={{ position: 'absolute', top: '-100%', left: 0, right: 0, height: '100%', background: 'linear-gradient(to bottom, transparent, rgba(251,191,36,0.25), transparent)', animation: 'scanlineSweep 3.5s linear infinite' }} />
-      </div>
-    );
-  }
+    // ── 6. THEME: BLIZZARD SNOW ──
+    const snowflakes = Array.from({ length: 90 }, () => ({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      r: Math.random() * 2.2 + 0.8,
+      speedY: Math.random() * 1.2 + 0.6,
+      speedX: Math.sin(Math.random() * Math.PI) * 0.8,
+      alpha: Math.random() * 0.7 + 0.3
+    }));
 
-  if (type === 'plasma') {
-    return (
-      <div
-        style={{
-          position: 'absolute', inset: 0, overflow: 'hidden',
-          background: '#04010a',
-          ...style
-        }}
-      >
-        <div style={{ position: 'absolute', inset: '-40%', background: 'conic-gradient(from 0deg, #ec4899, #8b5cf6, #3b82f6, #06b6d4, #ec4899)', filter: 'blur(50px)', opacity: 0.6, animation: 'plasmaSpin 5s linear infinite' }} />
-        <div style={{ position: 'absolute', inset: '-20%', background: 'radial-gradient(circle at center, rgba(236,72,153,0.4) 0%, transparent 60%)', filter: 'blur(30px)', animation: 'pulse-glow 2s infinite alternate' }} />
-        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 50%, transparent 20%, rgba(4,1,10,0.85) 85%)' }} />
-      </div>
-    );
-  }
+    // ── 7. THEME: HYPERDRIVE ──
+    const warpStars = Array.from({ length: 120 }, () => ({
+      x: (Math.random() - 0.5) * width,
+      y: (Math.random() - 0.5) * height,
+      z: Math.random() * width,
+      pz: 0
+    }));
 
-  return null;
+    // ── ANIMATION LOOP ──
+    const render = () => {
+      time++;
+      ctx.clearRect(0, 0, width, height);
+
+      if (theme === 'stars') {
+        // Deep Nebula Gradient
+        const grad = ctx.createRadialGradient(width * 0.3, height * 0.4, 10, width * 0.5, height * 0.5, width * 0.8);
+        grad.addColorStop(0, '#130d2e');
+        grad.addColorStop(0.5, '#0a0818');
+        grad.addColorStop(1, '#030208');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, width, height);
+
+        // Soft glowing cosmic clouds
+        ctx.save();
+        ctx.fillStyle = 'rgba(124, 111, 247, 0.12)';
+        ctx.filter = 'blur(40px)';
+        ctx.beginPath();
+        ctx.arc(width * 0.3 + Math.sin(time * 0.01) * 30, height * 0.4, 120, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.1)';
+        ctx.beginPath();
+        ctx.arc(width * 0.75 + Math.cos(time * 0.012) * 30, height * 0.6, 140, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // Draw Twinkling Stars
+        stars.forEach(s => {
+          const alpha = s.baseAlpha + Math.sin(time * s.speed + s.phase) * 0.35;
+          ctx.fillStyle = s.color;
+          ctx.globalAlpha = Math.max(0.1, Math.min(1, alpha));
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Star sparkle cross on larger stars
+          if (s.r > 1.8 && alpha > 0.6) {
+            ctx.strokeStyle = s.color;
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+            ctx.moveTo(s.x - s.r * 2.2, s.y);
+            ctx.lineTo(s.x + s.r * 2.2, s.y);
+            ctx.moveTo(s.x, s.y - s.r * 2.2);
+            ctx.lineTo(s.x, s.y + s.r * 2.2);
+            ctx.stroke();
+          }
+        });
+        ctx.globalAlpha = 1;
+
+        // Spawn Shooting Meteors
+        if (time >= nextMeteorTime) {
+          meteors.push({
+            x: Math.random() * width * 0.7,
+            y: Math.random() * height * 0.3,
+            len: Math.random() * 120 + 80,
+            speed: Math.random() * 12 + 10,
+            angle: Math.PI / 4 + (Math.random() - 0.5) * 0.2,
+            life: 1.0,
+            color: Math.random() > 0.5 ? '#93c5fd' : '#fef08a'
+          });
+          nextMeteorTime = time + Math.floor(Math.random() * 120 + 80);
+        }
+
+        // Draw Meteors
+        meteors.forEach((m, idx) => {
+          m.x += Math.cos(m.angle) * m.speed;
+          m.y += Math.sin(m.angle) * m.speed;
+          m.life -= 0.025;
+
+          if (m.life <= 0) {
+            meteors.splice(idx, 1);
+            return;
+          }
+
+          const tailX = m.x - Math.cos(m.angle) * m.len;
+          const tailY = m.y - Math.sin(m.angle) * m.len;
+
+          const mGrad = ctx.createLinearGradient(m.x, m.y, tailX, tailY);
+          mGrad.addColorStop(0, '#ffffff');
+          mGrad.addColorStop(0.2, m.color);
+          mGrad.addColorStop(1, 'transparent');
+
+          ctx.strokeStyle = mGrad;
+          ctx.lineWidth = 2.2;
+          ctx.lineCap = 'round';
+          ctx.globalAlpha = m.life;
+          ctx.beginPath();
+          ctx.moveTo(m.x, m.y);
+          ctx.lineTo(tailX, tailY);
+          ctx.stroke();
+
+          // Glowing head
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(m.x, m.y, 2, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+
+      } else if (theme === 'plasma') {
+        // Deep Electric Plasma Core
+        ctx.fillStyle = '#05020c';
+        ctx.fillRect(0, 0, width, height);
+
+        const cx = width * 0.5;
+        const cy = height * 0.5;
+
+        // Rotating colorful plasma nodes
+        plasmaNodes.forEach(node => {
+          node.angle += node.speed;
+          const nx = cx + Math.cos(node.angle) * (node.radius + Math.sin(time * 0.05) * 20);
+          const ny = cy + Math.sin(node.angle) * (node.radius * 0.6 + Math.cos(time * 0.05) * 15);
+
+          const grad = ctx.createRadialGradient(nx, ny, 5, nx, ny, 160);
+          grad.addColorStop(0, node.color);
+          grad.addColorStop(0.4, 'rgba(139, 92, 246, 0.25)');
+          grad.addColorStop(1, 'transparent');
+
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(nx, ny, 160, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // Dynamic electric lightning arcs
+        ctx.strokeStyle = 'rgba(103, 232, 249, 0.8)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        let lx = cx - 180;
+        let ly = cy + Math.sin(time * 0.1) * 20;
+        ctx.moveTo(lx, ly);
+        for (let i = 0; i < 7; i++) {
+          lx += 60;
+          ly += (Math.random() - 0.5) * 45;
+          ctx.lineTo(lx, ly);
+        }
+        ctx.stroke();
+
+      } else if (theme === 'synthwave') {
+        // Sunset sky gradient
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, height);
+        skyGrad.addColorStop(0, '#090217');
+        skyGrad.addColorStop(0.45, '#1e053a');
+        skyGrad.addColorStop(0.7, '#4a0e4e');
+        skyGrad.addColorStop(1, '#0a0118');
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, width, height);
+
+        // Glowing Sun on horizon
+        const sunY = height * 0.42;
+        const sunR = 52;
+        const sunX = width * 0.5;
+
+        const sunGrad = ctx.createLinearGradient(0, sunY - sunR, 0, sunY + sunR);
+        sunGrad.addColorStop(0, '#fef08a');
+        sunGrad.addColorStop(0.5, '#f97316');
+        sunGrad.addColorStop(1, '#ec4899');
+
+        ctx.fillStyle = sunGrad;
+        ctx.beginPath();
+        ctx.arc(sunX, sunY, sunR, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Laser slice lines in Sun
+        for (let y = sunY - 20; y < sunY + sunR; y += 7) {
+          ctx.fillStyle = '#1e053a';
+          ctx.fillRect(sunX - sunR, y, sunR * 2, 3);
+        }
+
+        // Horizon line
+        const horizonY = height * 0.58;
+        ctx.strokeStyle = '#ec4899';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, horizonY);
+        ctx.lineTo(width, horizonY);
+        ctx.stroke();
+
+        // 3D Grid floor
+        const speed = (time * 1.5) % 30;
+        ctx.strokeStyle = 'rgba(236, 72, 153, 0.6)';
+        ctx.lineWidth = 1.2;
+
+        // Horizontal perspective lines
+        for (let y = horizonY; y < height; y += (y - horizonY) * 0.35 + 6) {
+          const actualY = y + (speed * (y - horizonY)) / height;
+          if (actualY > horizonY && actualY < height) {
+            ctx.beginPath();
+            ctx.moveTo(0, actualY);
+            ctx.lineTo(width, actualY);
+            ctx.stroke();
+          }
+        }
+
+        // Vertical converging lines
+        const vanishingX = width * 0.5;
+        for (let x = -width * 0.5; x <= width * 1.5; x += 45) {
+          ctx.beginPath();
+          ctx.moveTo(vanishingX, horizonY);
+          ctx.lineTo(x, height);
+          ctx.stroke();
+        }
+
+      } else if (theme === 'matrix') {
+        ctx.fillStyle = 'rgba(2, 9, 4, 0.2)';
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.font = `${fontSize}px monospace`;
+        for (let i = 0; i < drops.length; i++) {
+          const char = chars[Math.floor(Math.random() * chars.length)];
+          const x = i * fontSize;
+          const y = drops[i] * fontSize;
+
+          // Leading head character is bright white
+          ctx.fillStyle = '#ffffff';
+          ctx.fillText(char, x, y);
+
+          // Trail character
+          ctx.fillStyle = '#22c55e';
+          ctx.fillText(char, x, y - fontSize);
+
+          if (y > height && Math.random() > 0.975) {
+            drops[i] = 0;
+          }
+          drops[i]++;
+        }
+
+      } else if (theme === 'aurora') {
+        ctx.fillStyle = '#030712';
+        ctx.fillRect(0, 0, width, height);
+
+        // Fluid undulating aurora ribbons
+        for (let layer = 0; layer < 3; layer++) {
+          const color = layer === 0 ? 'rgba(6, 182, 212, 0.35)' : layer === 1 ? 'rgba(16, 185, 129, 0.35)' : 'rgba(168, 85, 247, 0.3)';
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.moveTo(0, height);
+
+          for (let x = 0; x <= width; x += 20) {
+            const waveY = height * 0.3 + Math.sin(x * 0.008 + time * 0.02 + layer) * 50 + Math.cos(x * 0.015 - time * 0.015) * 30;
+            ctx.lineTo(x, waveY);
+          }
+
+          ctx.lineTo(width, height);
+          ctx.closePath();
+          ctx.filter = 'blur(25px)';
+          ctx.fill();
+          ctx.filter = 'none';
+        }
+
+      } else if (theme === 'neonrain') {
+        ctx.fillStyle = '#060713';
+        ctx.fillRect(0, 0, width, height);
+
+        // Neon City Backlight
+        const cityGrad = ctx.createLinearGradient(0, height, 0, height * 0.4);
+        cityGrad.addColorStop(0, 'rgba(168, 85, 247, 0.25)');
+        cityGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = cityGrad;
+        ctx.fillRect(0, 0, width, height);
+
+        // Raindrops
+        raindrops.forEach(drop => {
+          drop.y += drop.speed;
+          if (drop.y > height) {
+            drop.y = -drop.length;
+            drop.x = Math.random() * width;
+          }
+
+          ctx.strokeStyle = drop.color;
+          ctx.lineWidth = 1.2;
+          ctx.globalAlpha = drop.alpha;
+          ctx.beginPath();
+          ctx.moveTo(drop.x, drop.y);
+          ctx.lineTo(drop.x - 2, drop.y + drop.length);
+          ctx.stroke();
+        });
+        ctx.globalAlpha = 1;
+
+      } else if (theme === 'firestorm') {
+        ctx.fillStyle = '#0a0202';
+        ctx.fillRect(0, 0, width, height);
+
+        // Volcanic base glow
+        const fireGrad = ctx.createRadialGradient(width * 0.5, height, 10, width * 0.5, height, width * 0.6);
+        fireGrad.addColorStop(0, 'rgba(239, 68, 68, 0.4)');
+        fireGrad.addColorStop(0.5, 'rgba(249, 115, 22, 0.2)');
+        fireGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = fireGrad;
+        ctx.fillRect(0, 0, width, height);
+
+        // Rising embers
+        embers.forEach(e => {
+          e.y -= e.speedY;
+          e.x += e.speedX + Math.sin(time * 0.05 + e.y * 0.02) * 0.8;
+          if (e.y < -10) {
+            e.y = height + Math.random() * 20;
+            e.x = Math.random() * width;
+          }
+
+          ctx.fillStyle = e.color;
+          ctx.globalAlpha = e.alpha;
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+
+      } else if (theme === 'blizzard') {
+        ctx.fillStyle = '#030814';
+        ctx.fillRect(0, 0, width, height);
+
+        // Ice mist
+        const iceGrad = ctx.createRadialGradient(width * 0.5, height * 0.5, 20, width * 0.5, height * 0.5, width * 0.7);
+        iceGrad.addColorStop(0, 'rgba(56, 189, 248, 0.2)');
+        iceGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = iceGrad;
+        ctx.fillRect(0, 0, width, height);
+
+        // Falling Snowflakes
+        snowflakes.forEach(s => {
+          s.y += s.speedY;
+          s.x += s.speedX + Math.sin(time * 0.03 + s.y * 0.01) * 0.5;
+          if (s.y > height) {
+            s.y = -5;
+            s.x = Math.random() * width;
+          }
+
+          ctx.fillStyle = '#bae6fd';
+          ctx.globalAlpha = s.alpha;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+
+      } else if (theme === 'hyperdrive') {
+        ctx.fillStyle = '#020208';
+        ctx.fillRect(0, 0, width, height);
+
+        const cx = width * 0.5;
+        const cy = height * 0.5;
+
+        warpStars.forEach(s => {
+          s.pz = s.z;
+          s.z -= 18;
+          if (s.z <= 0) {
+            s.z = width;
+            s.pz = width;
+            s.x = (Math.random() - 0.5) * width;
+            s.y = (Math.random() - 0.5) * height;
+          }
+
+          const k = 250 / s.z;
+          const px = s.x * k + cx;
+          const py = s.y * k + cy;
+
+          const pk = 250 / s.pz;
+          const prevX = s.x * pk + cx;
+          const prevY = s.y * pk + cy;
+
+          if (px >= 0 && px <= width && py >= 0 && py <= height) {
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = Math.min(3, (1 - s.z / width) * 3.5 + 0.5);
+            ctx.beginPath();
+            ctx.moveTo(prevX, prevY);
+            ctx.lineTo(px, py);
+            ctx.stroke();
+          }
+        });
+
+      } else if (theme === 'scanlines') {
+        ctx.fillStyle = '#0c0704';
+        ctx.fillRect(0, 0, width, height);
+
+        // Projector glow
+        const pGrad = ctx.createRadialGradient(width * 0.5, height * 0.5, 20, width * 0.5, height * 0.5, width * 0.6);
+        pGrad.addColorStop(0, 'rgba(251, 191, 36, 0.25)');
+        pGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = pGrad;
+        ctx.fillRect(0, 0, width, height);
+
+        // Scanlines
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+        for (let y = (time * 1.5) % 6; y < height; y += 5) {
+          ctx.fillRect(0, y, width, 2);
+        }
+      }
+
+      animId = requestAnimationFrame(render);
+    };
+
+    render();
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [theme]);
+
+  if (!theme) return null;
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{
+        position: 'absolute',
+        inset: 0,
+        width: '100%',
+        height: '100%',
+        display: 'block',
+        pointerEvents: 'none',
+        ...style
+      }}
+    />
+  );
 }
