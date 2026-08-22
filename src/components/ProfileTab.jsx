@@ -12,18 +12,28 @@ import { supabase } from '../supabaseClient';
 const TMDB_KEY = '6a2fd6b9b1bb3befbb9f14c203732225';
 
 const DEFAULT_AVATARS = [
-  { name: 'Spider-Hero', url: 'https://images.unsplash.com/photo-1635805737707-575885ab0820?w=200&fit=crop&q=80' },
-  { name: 'Dark Knight', url: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=200&fit=crop&q=80' },
-  { name: 'Cyber Armor', url: 'https://images.unsplash.com/photo-1626278664285-f796b9ee7806?w=200&fit=crop&q=80' },
-  { name: 'Galactic Trooper', url: 'https://images.unsplash.com/photo-1579566346927-c68383817a25?w=200&fit=crop&q=80' },
-  { name: 'Cyberpunk Anime', url: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=200&fit=crop&q=80' },
-  { name: 'Midnight Mask', url: 'https://images.unsplash.com/photo-1509248961158-e54f6934749c?w=200&fit=crop&q=80' },
-  { name: 'Space Voyager', url: 'https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?w=200&fit=crop&q=80' },
-  { name: 'Matrix Hacker', url: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=200&fit=crop&q=80' },
-  { name: 'Anime Spirit', url: 'https://images.unsplash.com/photo-1563089145-599997674d42?w=200&fit=crop&q=80' },
-  { name: 'Vintage 35mm', url: 'https://images.unsplash.com/photo-1594909122845-11baa439b7bf?w=200&fit=crop&q=80' },
-  { name: 'Cinephile Mascot', url: '/avatar_cinephile.png' },
-  { name: 'Critic Mascot', url: '/avatar_critic.png' },
+  'https://images.unsplash.com/photo-1635805737707-575885ab0820?w=200&fit=crop&q=80', // Spider-Hero
+  'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=200&fit=crop&q=80', // Dark Knight
+  'https://images.unsplash.com/photo-1626278664285-f796b9ee7806?w=200&fit=crop&q=80', // Cyber Armor
+  'https://images.unsplash.com/photo-1579566346927-c68383817a25?w=200&fit=crop&q=80', // Galactic Trooper
+  'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=200&fit=crop&q=80', // Cyberpunk Anime
+  'https://images.unsplash.com/photo-1509248961158-e54f6934749c?w=200&fit=crop&q=80', // Midnight Mask
+  'https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?w=200&fit=crop&q=80', // Space Voyager
+  'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=200&fit=crop&q=80', // Matrix Hacker
+  'https://images.unsplash.com/photo-1563089145-599997674d42?w=200&fit=crop&q=80', // Anime Spirit
+  'https://images.unsplash.com/photo-1594909122845-11baa439b7bf?w=200&fit=crop&q=80', // Vintage 35mm
+  '/avatar_cinephile.png', // Cinephile Mascot
+  '/avatar_critic.png', // Critic Mascot
+  '/avatar_reviewer.png', // Reviewer Mascot
+  '/avatar_watcher.png', // Watcher Mascot
+  'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=200&fit=crop&q=80', // Merc Hero
+  'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=200&fit=crop&q=80', // Dune Nomad
+  'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=200&fit=crop&q=80', // Cyber Samurai
+  'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=200&fit=crop&q=80', // Kaiju Beast
+  'https://images.unsplash.com/photo-1568832359672-e36cf5d74f54?w=200&fit=crop&q=80', // Joker Smile
+  'https://images.unsplash.com/photo-1514565131-fce0801e5785?w=200&fit=crop&q=80', // Noir Detective
+  'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=200&fit=crop&q=80', // Cosmic Vortex
+  'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=200&fit=crop&q=80'  // Retro Arcade
 ];
 
 const GENRE_COLORS = {
@@ -1570,24 +1580,26 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                   {bannerSourceTab === 'library' && (
                     <div>
                       {(() => {
-                        const validItems = library.filter(m => m.backdrop_path || m.details?.backdrop_path);
+                        // Gather all items from watched library with backdrops or posters
+                        const validItems = library.filter(m => m.backdrop_path || m.details?.backdrop_path || m.poster_path);
                         if (validItems.length === 0) {
                           return (
-                            <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-dim)', fontSize: '12px' }}>
-                              No widescreen backdrops found in your watched library yet.
+                            <div style={{ textAlign: 'center', padding: '30px 20px', color: 'var(--text-dim)', fontSize: '12.5px' }}>
+                              <p style={{ margin: 0, fontWeight: 700, color: '#fff', fontSize: '14px' }}>🎬 Your Watched Films Backdrops</p>
+                              <p style={{ marginTop: '6px' }}>When you log movies to your watched library, CineLog automatically extracts their widescreen cinema backdrops here so you can equip your favorite film as your profile banner.</p>
                             </div>
                           );
                         }
                         return (
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-                            {validItems.slice(0, 24).map(m => {
-                              const path = m.backdrop_path || m.details?.backdrop_path;
-                              const highRes = `https://image.tmdb.org/t/p/w1280${path}`;
-                              const isSelected = bannerUrl === highRes;
+                            {validItems.slice(0, 30).map(m => {
+                              const backdropPath = m.backdrop_path || m.details?.backdrop_path;
+                              const imageSrc = backdropPath ? `https://image.tmdb.org/t/p/w1280${backdropPath}` : `https://image.tmdb.org/t/p/w780${m.poster_path}`;
+                              const isSelected = bannerUrl === imageSrc;
                               return (
                                 <div
                                   key={m.id || m.tmdb_id}
-                                  onClick={() => { setBannerUrl(highRes); setBannerFitMode('cover'); }}
+                                  onClick={() => { setBannerUrl(imageSrc); setBannerFitMode('cover'); }}
                                   style={{
                                     aspectRatio: '16/9', borderRadius: '8px', overflow: 'hidden',
                                     border: isSelected ? '2px solid var(--accent)' : '1px solid var(--border)',
@@ -1595,7 +1607,12 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                                     cursor: 'pointer', position: 'relative', background: '#110e1f'
                                   }}
                                 >
-                                  <img src={`https://image.tmdb.org/t/p/w500${path}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+                                  <img
+                                    src={backdropPath ? `https://image.tmdb.org/t/p/w500${backdropPath}` : `https://image.tmdb.org/t/p/w342${m.poster_path}`}
+                                    alt=""
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                    loading="lazy"
+                                  />
                                   <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(180deg,transparent 0%,rgba(0,0,0,0.85) 100%)', padding: '4px 6px', fontSize: '10.5px', fontWeight: 800, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                     {m.title}
                                   </div>
@@ -1712,66 +1729,54 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
 
                   {/* Preset Avatars & Upload */}
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 800, textTransform: 'uppercase', margin: 0 }}>
-                        Choose Movie Character Avatar
-                      </label>
-                      <span style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 700 }}>
-                        {DEFAULT_AVATARS.find(a => a.url === avatar)?.name || 'Custom Avatar'}
-                      </span>
-                    </div>
+                    <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '10px', display: 'block' }}>
+                      Choose Avatar Image ({DEFAULT_AVATARS.length} Movie Character Avatars)
+                    </label>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(68px, 1fr))', gap: '10px', alignItems: 'center' }}>
-                      {DEFAULT_AVATARS.map((item, i) => {
-                        const isSelected = avatar === item.url;
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
+                      {DEFAULT_AVATARS.map((url, i) => {
+                        const isSelected = avatar === url;
                         return (
                           <div
                             key={i}
-                            onClick={() => setAvatar(item.url)}
-                            title={item.name}
+                            onClick={() => setAvatar(url)}
                             style={{
-                              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
-                              cursor: 'pointer', padding: '6px', borderRadius: '12px',
-                              background: isSelected ? 'rgba(124,111,247,0.14)' : 'rgba(255,255,255,0.02)',
-                              border: isSelected ? '1.5px solid var(--accent)' : '1px solid var(--border)',
-                              transition: 'all 0.18s ease'
+                              position: 'relative', width: '48px', height: '48px', cursor: 'pointer',
+                              borderRadius: '50%', padding: '2px',
+                              border: isSelected ? '2.5px solid var(--accent)' : '1.5px solid rgba(255,255,255,0.12)',
+                              background: isSelected ? 'rgba(124,111,247,0.2)' : 'rgba(255,255,255,0.02)',
+                              boxShadow: isSelected ? '0 0 12px var(--accent)' : 'none',
+                              transition: 'transform 0.15s ease, border 0.15s ease',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center'
                             }}
+                            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.12)'}
+                            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
                           >
-                            <div style={{ position: 'relative', width: '46px', height: '46px' }}>
-                              <img
-                                src={item.url}
-                                alt={item.name}
-                                style={{
-                                  width: '100%', height: '100%', borderRadius: '50%',
-                                  border: isSelected ? '2px solid var(--accent)' : '1px solid rgba(255,255,255,0.15)',
-                                  objectFit: 'cover'
-                                }}
-                              />
-                              {isSelected && (
-                                <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '16px', height: '16px', borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px solid #0c0a18' }}>
-                                  <Check size={10} color="#fff" />
-                                </div>
-                              )}
-                            </div>
-                            <span style={{ fontSize: '9.5px', fontWeight: 800, color: isSelected ? '#fff' : 'var(--text-dim)', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '60px' }}>
-                              {item.name}
-                            </span>
+                            <img
+                              src={url}
+                              alt=""
+                              style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                            />
+                            {isSelected && (
+                              <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '16px', height: '16px', borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px solid #0c0a18' }}>
+                                <Check size={10} color="#fff" />
+                              </div>
+                            )}
                           </div>
                         );
                       })}
 
                       <label
                         style={{
-                          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                          gap: '4px', padding: '10px 6px', background: 'rgba(124,111,247,0.08)',
-                          border: '1px dashed var(--accent)', borderRadius: '12px', cursor: 'pointer',
-                          minHeight: '68px', transition: 'all 0.18s ease'
+                          display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px',
+                          background: 'rgba(124,111,247,0.12)', border: '1px dashed var(--accent)',
+                          borderRadius: '24px', cursor: 'pointer', fontSize: '12px', fontWeight: 800, color: '#fff',
+                          transition: 'all 0.18s ease'
                         }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(124,111,247,0.16)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(124,111,247,0.08)'}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(124,111,247,0.22)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(124,111,247,0.12)'}
                       >
-                        <Upload size={16} color="var(--accent)" />
-                        <span style={{ fontSize: '9px', fontWeight: 800, color: '#fff', textAlign: 'center' }}>Upload Custom</span>
+                        <Upload size={14} color="var(--accent)" /> Upload Custom Photo
                         <input type="file" accept="image/*" onChange={handleFileUpload} style={{ display: 'none' }} />
                       </label>
                     </div>
