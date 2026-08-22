@@ -793,44 +793,40 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
             </button>
           </div>
 
-          {/* PROFILE HEADER ROW (Always clean, no inline messy forms) */}
-          <div style={{ background: '#0a0813', padding: '0 28px 20px', border: '1px solid var(--border)', borderTop: 'none', borderLeft: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '20px', marginTop: '-55px', flexWrap: 'wrap' }}>
-              {/* Avatar without messy buttons on it */}
-              <div style={{ position: 'relative', flexShrink: 0 }}>
-                <AvatarWithBorder
-                  src={currentUser?.avatar || DEFAULT_GREY_AVATAR}
-                  username={currentUser?.username || 'Profile'}
-                  borderId={currentUser?.equippedBorder || 'none'}
-                  size={110}
-                />
-              </div>
+          {/* PROFILE HEADER ROW (Wide clean layout with full-width badges ribbon) */}
+          <div style={{ background: '#0a0813', padding: '0 28px 24px', border: '1px solid var(--border)', borderTop: 'none', borderLeft: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
+            
+            {/* Top Bar: Avatar + Name/Bio on Left, Stats on Right */}
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '24px', marginTop: '-55px', flexWrap: 'wrap' }}>
+              
+              {/* Left: Avatar + Name & Bio */}
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '20px', flex: 1, minWidth: '300px' }}>
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                  <AvatarWithBorder
+                    src={currentUser?.avatar || DEFAULT_GREY_AVATAR}
+                    username={currentUser?.username || 'Profile'}
+                    borderId={currentUser?.equippedBorder || 'none'}
+                    size={110}
+                  />
+                </div>
 
-              {/* Name / handle / badges / bio */}
-              <div style={{ flex: 1, minWidth: '260px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '3px', flexWrap: 'wrap' }}>
-                  <h2 style={{ fontSize: '24px', fontWeight: 900, color: '#fff', letterSpacing: '-0.3px', margin: 0 }}>
-                    {currentUser?.displayName || 'CineLog Fan'}
-                  </h2>
-                </div>
-                <div style={{ color: 'var(--accent)', fontSize: '13px', fontWeight: 700, marginBottom: '8px' }}>
-                  @{currentUser?.username || 'cinelog_user'}
-                </div>
-                {unlockedBadges.length > 0 && (
-                  <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '9px' }}>
-                    {unlockedBadges.map(badgeName => {
-                      const colors = BADGE_COLORS[badgeName] || { border: '1px solid var(--border)', color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.03)' };
-                      return <span key={badgeName} style={{ fontSize: '10px', fontWeight: 800, padding: '2.5px 8.5px', borderRadius: '12px', textTransform: 'uppercase', letterSpacing: '0.04em', ...colors }}>{badgeName}</span>;
-                    })}
+                <div style={{ paddingBottom: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '2px', flexWrap: 'wrap' }}>
+                    <h2 style={{ fontSize: '24px', fontWeight: 900, color: '#fff', letterSpacing: '-0.3px', margin: 0 }}>
+                      {currentUser?.displayName || 'CineLog Fan'}
+                    </h2>
                   </div>
-                )}
-                <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: '460px', margin: 0 }}>
-                  {currentUser?.bio || 'No bio written yet. Click the Customize button above to personalize your profile.'}
-                </p>
+                  <div style={{ color: 'var(--accent)', fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>
+                    @{currentUser?.username || 'cinelog_user'}
+                  </div>
+                  <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', lineHeight: 1.5, maxWidth: '520px', margin: 0 }}>
+                    {currentUser?.bio || 'No bio written yet. Click Customize to personalize your profile.'}
+                  </p>
+                </div>
               </div>
 
-              {/* Stats counters */}
-              <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'flex-end', paddingBottom: '4px' }}>
+              {/* Right: Stats Counters */}
+              <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'flex-end', paddingBottom: '6px' }}>
                 {[
                   { label: 'Films', val: watchedCount, color: 'var(--green)' },
                   { label: 'Reviews', val: reviewsCount, color: 'var(--accent)' },
@@ -839,13 +835,48 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                   { label: 'CinePoints', val: `🪙 ${cinePoints}`, color: 'var(--accent)' },
                   ...(avgRating ? [{ label: 'Avg Rating', val: `★ ${avgRating}`, color: 'var(--gold)' }] : []),
                 ].map(s => (
-                  <div key={s.label} style={{ textAlign: 'center' }}>
+                  <div key={s.label} style={{ textAlign: 'center', minWidth: '55px' }}>
                     <div style={{ fontSize: '20px', fontWeight: 900, color: s.color, fontFamily: 'var(--font-heading)' }}>{s.val}</div>
                     <div style={{ fontSize: '10px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>{s.label}</div>
                   </div>
                 ))}
               </div>
             </div>
+
+            {/* FULL-WIDTH EXTENDED BADGES RIBBON (Extends fully across the entire container) */}
+            {unlockedBadges.length > 0 && (
+              <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-dim)' }}>
+                    🎖️ Unlocked Titles & Badges ({unlockedBadges.length})
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', width: '100%', alignItems: 'center' }}>
+                  {unlockedBadges.map(badgeName => {
+                    const colors = BADGE_COLORS[badgeName] || { border: '1px solid var(--border)', color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.03)' };
+                    return (
+                      <span
+                        key={badgeName}
+                        style={{
+                          fontSize: '10.5px',
+                          fontWeight: 800,
+                          padding: '3px 10px',
+                          borderRadius: '12px',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.04em',
+                          whiteSpace: 'nowrap',
+                          transition: 'transform 0.15s ease',
+                          ...colors
+                        }}
+                      >
+                        {badgeName}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
           </div>
 
           {/* 5-TAB SUB-NAV */}
