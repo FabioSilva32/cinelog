@@ -812,7 +812,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
 
                 <div style={{ paddingTop: '14px', minWidth: 0, flex: 1 }}>
                   <h2 style={{ fontSize: '26px', fontWeight: 900, color: '#fff', letterSpacing: '-0.4px', margin: '0 0 3px 0', lineHeight: 1.2 }}>
-                    {currentUser?.displayName || 'CineLog Fan'}
+                    {(currentUser?.displayName && !currentUser.displayName.includes('-----') && currentUser.displayName.trim() !== '—') ? currentUser.displayName : (currentUser?.username || 'CineLog Fan')}
                   </h2>
                   <div style={{ color: 'var(--accent)', fontSize: '13.5px', fontWeight: 700, marginBottom: '6px' }}>
                     @{currentUser?.username || 'cinelog_user'}

@@ -206,92 +206,138 @@ export default function AnimatedBannerBackground({ bannerId, style = {} }) {
         ctx.globalAlpha = 1;
 
       } else if (theme === 'plasma') {
-        // Deep Electric Plasma Core
-        ctx.fillStyle = '#05020c';
+        // Deep Electric Plasma Storm (Full-Bleed 100% Width & Height)
+        ctx.fillStyle = '#06020f';
         ctx.fillRect(0, 0, width, height);
 
-        const cx = width * 0.5;
-        const cy = height * 0.5;
+        // Multiple giant full-width swirling plasma nodes
+        const nodes = [
+          { x: width * 0.2 + Math.cos(time * 0.02) * (width * 0.1), y: height * 0.4 + Math.sin(time * 0.025) * (height * 0.2), r: width * 0.35, color: 'rgba(236, 72, 153, 0.45)' },
+          { x: width * 0.5 + Math.sin(time * 0.018) * (width * 0.15), y: height * 0.5 + Math.cos(time * 0.02) * (height * 0.25), r: width * 0.4, color: 'rgba(139, 92, 246, 0.5)' },
+          { x: width * 0.8 + Math.cos(time * 0.022) * (width * 0.1), y: height * 0.4 + Math.sin(time * 0.015) * (height * 0.2), r: width * 0.35, color: 'rgba(6, 182, 212, 0.45)' },
+          { x: width * 0.35 + Math.sin(time * 0.025) * (width * 0.08), y: height * 0.7 + Math.cos(time * 0.03) * (height * 0.15), r: width * 0.3, color: 'rgba(59, 130, 246, 0.4)' },
+          { x: width * 0.65 + Math.cos(time * 0.02) * (width * 0.08), y: height * 0.3 + Math.sin(time * 0.028) * (height * 0.15), r: width * 0.3, color: 'rgba(244, 63, 94, 0.4)' }
+        ];
 
-        // Rotating colorful plasma nodes
-        plasmaNodes.forEach(node => {
-          node.angle += node.speed;
-          const nx = cx + Math.cos(node.angle) * (node.radius + Math.sin(time * 0.05) * 20);
-          const ny = cy + Math.sin(node.angle) * (node.radius * 0.6 + Math.cos(time * 0.05) * 15);
-
-          const grad = ctx.createRadialGradient(nx, ny, 5, nx, ny, 160);
-          grad.addColorStop(0, node.color);
-          grad.addColorStop(0.4, 'rgba(139, 92, 246, 0.25)');
+        nodes.forEach(n => {
+          const grad = ctx.createRadialGradient(n.x, n.y, 10, n.x, n.y, n.r);
+          grad.addColorStop(0, n.color);
+          grad.addColorStop(0.5, 'rgba(124, 111, 247, 0.15)');
           grad.addColorStop(1, 'transparent');
-
           ctx.fillStyle = grad;
           ctx.beginPath();
-          ctx.arc(nx, ny, 160, 0, Math.PI * 2);
+          ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
           ctx.fill();
         });
 
-        // Dynamic electric lightning arcs
-        ctx.strokeStyle = 'rgba(103, 232, 249, 0.8)';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        let lx = cx - 180;
-        let ly = cy + Math.sin(time * 0.1) * 20;
-        ctx.moveTo(lx, ly);
-        for (let i = 0; i < 7; i++) {
-          lx += 60;
-          ly += (Math.random() - 0.5) * 45;
-          ctx.lineTo(lx, ly);
+        // 3 Full-Width Dynamic Electric Lightning Bolts
+        for (let b = 0; b < 2; b++) {
+          ctx.strokeStyle = b === 0 ? 'rgba(103, 232, 249, 0.9)' : 'rgba(244, 114, 182, 0.8)';
+          ctx.lineWidth = b === 0 ? 2 : 1.5;
+          ctx.beginPath();
+          let lx = 0;
+          let ly = height * (0.35 + b * 0.25) + Math.sin(time * 0.08 + b) * 20;
+          ctx.moveTo(lx, ly);
+
+          const segments = 16;
+          const segWidth = width / segments;
+          for (let i = 1; i <= segments; i++) {
+            lx += segWidth;
+            ly += (Math.sin(i + time * 0.1) * 35) + (Math.random() - 0.5) * 30;
+            ctx.lineTo(lx, ly);
+          }
+          ctx.stroke();
         }
-        ctx.stroke();
+
+        // Electric Spark Motes
+        ctx.fillStyle = '#67e8f9';
+        for (let i = 0; i < 18; i++) {
+          const sx = (Math.sin(time * 0.02 + i) * 0.5 + 0.5) * width;
+          const sy = (Math.cos(time * 0.03 + i * 2) * 0.5 + 0.5) * height;
+          ctx.globalAlpha = Math.sin(time * 0.1 + i) * 0.5 + 0.5;
+          ctx.beginPath();
+          ctx.arc(sx, sy, Math.random() * 2 + 1, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
 
       } else if (theme === 'synthwave') {
         // Sunset sky gradient
         const skyGrad = ctx.createLinearGradient(0, 0, 0, height);
-        skyGrad.addColorStop(0, '#090217');
-        skyGrad.addColorStop(0.45, '#1e053a');
-        skyGrad.addColorStop(0.7, '#4a0e4e');
-        skyGrad.addColorStop(1, '#0a0118');
+        skyGrad.addColorStop(0, '#0a0218');
+        skyGrad.addColorStop(0.35, '#1e053a');
+        skyGrad.addColorStop(0.55, '#4a0e4e');
+        skyGrad.addColorStop(1, '#0c0118');
         ctx.fillStyle = skyGrad;
         ctx.fillRect(0, 0, width, height);
 
-        // Glowing Sun on horizon
-        const sunY = height * 0.42;
-        const sunR = 52;
+        // Big Cinematic Sun seated on Horizon
+        const horizonY = height * 0.52;
+        const sunR = Math.min(85, height * 0.38);
         const sunX = width * 0.5;
+        const sunY = horizonY - sunR * 0.35;
 
+        // Glowing Sun Sunburst Glow
+        const glowGrad = ctx.createRadialGradient(sunX, sunY, sunR * 0.5, sunX, sunY, sunR * 2.2);
+        glowGrad.addColorStop(0, 'rgba(251, 191, 36, 0.45)');
+        glowGrad.addColorStop(0.5, 'rgba(236, 72, 153, 0.25)');
+        glowGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = glowGrad;
+        ctx.beginPath();
+        ctx.arc(sunX, sunY, sunR * 2.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Glowing Sun
         const sunGrad = ctx.createLinearGradient(0, sunY - sunR, 0, sunY + sunR);
         sunGrad.addColorStop(0, '#fef08a');
-        sunGrad.addColorStop(0.5, '#f97316');
+        sunGrad.addColorStop(0.4, '#f97316');
         sunGrad.addColorStop(1, '#ec4899');
-
         ctx.fillStyle = sunGrad;
         ctx.beginPath();
         ctx.arc(sunX, sunY, sunR, 0, Math.PI * 2);
         ctx.fill();
 
-        // Laser slice lines in Sun
-        for (let y = sunY - 20; y < sunY + sunR; y += 7) {
+        // Laser horizontal cutouts in Sun
+        const cuts = [0.1, 0.25, 0.4, 0.55, 0.7, 0.82, 0.92];
+        cuts.forEach((pct, idx) => {
+          const cutY = sunY - sunR + (sunR * 2 * pct);
+          const cutH = 3 + idx * 1.5;
           ctx.fillStyle = '#1e053a';
-          ctx.fillRect(sunX - sunR, y, sunR * 2, 3);
-        }
+          ctx.fillRect(sunX - sunR - 10, cutY, (sunR + 10) * 2, cutH);
+        });
 
-        // Horizon line
-        const horizonY = height * 0.58;
+        // Wireframe Mountains on horizon
+        ctx.strokeStyle = '#a855f7';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(0, horizonY);
+        ctx.lineTo(width * 0.15, horizonY - 35);
+        ctx.lineTo(width * 0.3, horizonY);
+        ctx.lineTo(width * 0.4, horizonY - 20);
+        ctx.lineTo(sunX - sunR * 0.8, horizonY);
+        ctx.moveTo(sunX + sunR * 0.8, horizonY);
+        ctx.lineTo(width * 0.65, horizonY - 30);
+        ctx.lineTo(width * 0.8, horizonY);
+        ctx.lineTo(width * 0.9, horizonY - 40);
+        ctx.lineTo(width, horizonY);
+        ctx.stroke();
+
+        // Glowing Horizon Laser Line
         ctx.strokeStyle = '#ec4899';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2.5;
         ctx.beginPath();
         ctx.moveTo(0, horizonY);
         ctx.lineTo(width, horizonY);
         ctx.stroke();
 
-        // 3D Grid floor
-        const speed = (time * 1.5) % 30;
-        ctx.strokeStyle = 'rgba(236, 72, 153, 0.6)';
-        ctx.lineWidth = 1.2;
+        // 3D Moving Perspective Wireframe Highway Grid
+        const gridSpeed = (time * 1.2) % 24;
+        ctx.strokeStyle = 'rgba(236, 72, 153, 0.8)';
+        ctx.lineWidth = 1.5;
 
-        // Horizontal perspective lines
-        for (let y = horizonY; y < height; y += (y - horizonY) * 0.35 + 6) {
-          const actualY = y + (speed * (y - horizonY)) / height;
+        // Horizontal moving perspective lines
+        for (let y = horizonY + 2; y < height; y += (y - horizonY) * 0.32 + 5) {
+          const actualY = y + (gridSpeed * (y - horizonY)) / (height - horizonY);
           if (actualY > horizonY && actualY < height) {
             ctx.beginPath();
             ctx.moveTo(0, actualY);
@@ -300,9 +346,10 @@ export default function AnimatedBannerBackground({ bannerId, style = {} }) {
           }
         }
 
-        // Vertical converging lines
+        // Converging perspective rails
         const vanishingX = width * 0.5;
-        for (let x = -width * 0.5; x <= width * 1.5; x += 45) {
+        for (let x = -width * 0.6; x <= width * 1.6; x += 48) {
+          ctx.strokeStyle = 'rgba(6, 182, 212, 0.6)';
           ctx.beginPath();
           ctx.moveTo(vanishingX, horizonY);
           ctx.lineTo(x, height);
