@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  Camera, Edit2, Check, Heart, Calendar, Star, Film, Trophy, BarChart3, X,
-  Search, Plus, Upload, Flame, Sparkles, Coins, ArrowLeft, SlidersHorizontal,
-  Image as ImageIcon, Trash2, CheckCircle2
+  Heart, Calendar, Star, Film, Trophy, BarChart3, X,
+  Search, Plus, Upload, Flame, Coins, ArrowLeft, SlidersHorizontal,
+  Image as ImageIcon, Trash2, CheckCircle2, User, Award, Check, Edit2
 } from 'lucide-react';
 import { ACHIEVEMENTS, BORDER_STYLES, BADGE_COLORS } from '../utils/achievements';
 import AvatarWithBorder, { DEFAULT_GREY_AVATAR } from './AvatarWithBorder';
@@ -137,7 +137,11 @@ function RatingDistributionChart({ library = [] }) {
 }
 
 export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, library = [], onOpenUserProfile, onMovieClick }) {
-  const [isEditing, setIsEditing] = useState(false);
+  // Single All-in-One Customizer Modal state
+  const [showCustomizer, setShowCustomizer] = useState(false);
+  const [customizerTab, setCustomizerTab] = useState('banner'); // 'banner' | 'avatar' | 'info' | 'showcase'
+
+  // Editable Profile Draft State
   const [displayName, setDisplayName] = useState(currentUser?.displayName || '');
   const [username, setUsername] = useState(currentUser?.username || '');
   const [bio, setBio] = useState(currentUser?.bio || '');
@@ -146,13 +150,15 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
   const [bannerUrl, setBannerUrl] = useState(currentUser?.bannerUrl || '');
   const [bannerFitMode, setBannerFitMode] = useState(currentUser?.bannerFitMode || 'cover');
   const [bannerPosPercent, setBannerPosPercent] = useState(currentUser?.bannerPosPercent ?? 20);
-  const [showBannerSelector, setShowBannerSelector] = useState(false);
-  const [bannerStudioTab, setBannerStudioTab] = useState('upload'); // 'upload' | 'tmdb' | 'library' | 'presets' | 'animated'
+
+  // Banner Studio internal state
+  const [bannerSourceTab, setBannerSourceTab] = useState('upload'); // 'upload' | 'tmdb' | 'library' | 'presets' | 'animated'
   const [tmdbSearchQuery, setTmdbSearchQuery] = useState('');
   const [tmdbSearchResults, setTmdbSearchResults] = useState([]);
   const [tmdbSearching, setTmdbSearching] = useState(false);
   const [customUrlInput, setCustomUrlInput] = useState('');
 
+  // Page sub-tab navigation
   const [profileActiveSubTab, setProfileActiveSubTab] = useState('overview');
   const [activeShareCard, setActiveShareCard] = useState(null);
 
@@ -181,9 +187,9 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
     };
   }, []);
 
-  // Re-sync banner and profile state from currentUser whenever it changes
+  // Sync draft states from currentUser whenever currentUser updates
   useEffect(() => {
-    if (!isEditing) {
+    if (!showCustomizer) {
       setBannerUrl(currentUser?.bannerUrl || '');
       setBannerFitMode(currentUser?.bannerFitMode || 'cover');
       setBannerPosPercent(currentUser?.bannerPosPercent ?? 20);
@@ -193,7 +199,22 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
       setBio(currentUser?.bio || '');
       setAvatar(currentUser?.avatar || '');
     }
-  }, [currentUser?.bannerUrl, currentUser?.bannerFitMode, currentUser?.bannerPosPercent, currentUser?.equippedBorder, currentUser?.displayName, currentUser?.username, currentUser?.bio, currentUser?.avatar, isEditing]);
+  }, [currentUser?.bannerUrl, currentUser?.bannerFitMode, currentUser?.bannerPosPercent, currentUser?.equippedBorder, currentUser?.displayName, currentUser?.username, currentUser?.bio, currentUser?.avatar, showCustomizer]);
+
+  // Open customizer and seed with current user values
+  const handleOpenCustomizer = (initialTab = 'banner') => {
+    setDisplayName(currentUser?.displayName || '');
+    setUsername(currentUser?.username || '');
+    setBio(currentUser?.bio || '');
+    setAvatar(currentUser?.avatar || '');
+    setEquippedBorder(currentUser?.equippedBorder || 'none');
+    setBannerUrl(currentUser?.bannerUrl || '');
+    setBannerFitMode(currentUser?.bannerFitMode || 'cover');
+    setBannerPosPercent(currentUser?.bannerPosPercent ?? 20);
+    setFavorites(Array.from({ length: 6 }, (_, i) => (currentUser?.favorites || [])[i] || null));
+    setCustomizerTab(initialTab);
+    setShowCustomizer(true);
+  };
 
   // Fetch other-user profile + library when targetUser is set and is not the logged-in user
   const isViewingOther = targetUser && targetUser.id !== currentUser?.id;
@@ -473,8 +494,8 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
     return unlocked;
   }, [library, currentUser?.purchasedBorders]);
 
-  // Save profile edit handler
-  const handleSave = () => {
+  // Save profile from unified customizer
+  const handleSaveAll = () => {
     const savedFavorites = favorites.filter(fav => fav !== null);
     if (onUpdateProfile) {
       onUpdateProfile({
@@ -489,21 +510,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
         bannerPosPercent
       });
     }
-    setIsEditing(false);
-  };
-
-  const handleApplyBanner = (newUrl, newFitMode = bannerFitMode, newPos = bannerPosPercent) => {
-    setBannerUrl(newUrl);
-    setBannerFitMode(newFitMode);
-    setBannerPosPercent(newPos);
-    if (onUpdateProfile) {
-      onUpdateProfile({
-        bannerUrl: newUrl,
-        bannerFitMode: newFitMode,
-        bannerPosPercent: newPos
-      });
-    }
-    setShowBannerSelector(false);
+    setShowCustomizer(false);
   };
 
   // Avatar file upload handler
@@ -703,25 +710,25 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
 
           {/* BANNER (320px immersive) */}
           <div
-            className={bannerUrl && bannerUrl.startsWith('animated-') ? `banner-${bannerUrl.replace('animated-', '')}` : ''}
+            className={currentUser?.bannerUrl && currentUser.bannerUrl.startsWith('animated-') ? `banner-${currentUser.bannerUrl.replace('animated-', '')}` : ''}
             style={{
               height: '320px',
               width: '100%',
               borderRadius: '20px 20px 0 0',
               overflow: 'hidden',
               position: 'relative',
-              background: (bannerUrl && !bannerUrl.startsWith('animated-'))
-                ? `url("${bannerUrl}") center ${bannerPosPercent ?? 20}% / ${bannerFitMode === 'contain' ? 'contain' : 'cover'} no-repeat`
-                : (!bannerUrl ? 'linear-gradient(135deg, #1a1040 0%, #2d1b69 50%, #0f172a 100%)' : '#08070e')
+              background: (currentUser?.bannerUrl && !currentUser.bannerUrl.startsWith('animated-'))
+                ? `url("${currentUser.bannerUrl}") center ${currentUser.bannerPosPercent ?? 20}% / ${currentUser.bannerFitMode === 'contain' ? 'contain' : 'cover'} no-repeat`
+                : (!currentUser?.bannerUrl ? 'linear-gradient(135deg, #1a1040 0%, #2d1b69 50%, #0f172a 100%)' : '#08070e')
             }}
           >
             {/* Cinematic gradient fade at bottom */}
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0) 30%, rgba(10,8,19,0.65) 70%, #0a0813 100%)' }} />
 
-            {/* Deluxe Customize Banner Button */}
+            {/* SINGLE UNIFIED CUSTOMIZE BUTTON */}
             <button
               type="button"
-              onClick={() => setShowBannerSelector(true)}
+              onClick={() => handleOpenCustomizer('banner')}
               style={{
                 position: 'absolute',
                 top: '18px',
@@ -732,8 +739,8 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                 border: '1px solid rgba(255,255,255,0.22)',
                 color: '#fff',
                 borderRadius: '30px',
-                padding: '8px 18px',
-                fontSize: '12.5px',
+                padding: '8px 20px',
+                fontSize: '13px',
                 fontWeight: 800,
                 cursor: 'pointer',
                 display: 'flex',
@@ -745,207 +752,62 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
               onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = 'var(--accent)'; }}
               onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.22)'; }}
             >
-              <Sparkles size={15} color="var(--accent)" /> Customize Banner
+              <SlidersHorizontal size={14} color="var(--accent)" /> Customize
             </button>
           </div>
 
-          {/* PROFILE HEADER ROW */}
+          {/* PROFILE HEADER ROW (Always clean, no inline messy forms) */}
           <div style={{ background: '#0a0813', padding: '0 28px 20px', border: '1px solid var(--border)', borderTop: 'none', borderLeft: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: '20px', marginTop: '-55px', flexWrap: 'wrap' }}>
-              {/* Avatar with edit camera */}
+              {/* Avatar without messy buttons on it */}
               <div style={{ position: 'relative', flexShrink: 0 }}>
                 <AvatarWithBorder
-                  src={avatar || DEFAULT_GREY_AVATAR}
+                  src={currentUser?.avatar || DEFAULT_GREY_AVATAR}
                   username={currentUser?.username || 'Profile'}
-                  borderId={isEditing ? equippedBorder : (currentUser?.equippedBorder || 'none')}
+                  borderId={currentUser?.equippedBorder || 'none'}
                   size={110}
                 />
-                {!isEditing && (
-                  <button
-                    onClick={() => {
-                      setDisplayName(currentUser?.displayName || '');
-                      setUsername(currentUser?.username || '');
-                      setBio(currentUser?.bio || '');
-                      setAvatar(currentUser?.avatar || '');
-                      setFavorites(Array.from({ length: 6 }, (_, i) => (currentUser?.favorites || [])[i] || null));
-                      setEquippedBorder(currentUser?.equippedBorder || 'none');
-                      setBannerUrl(currentUser?.bannerUrl || '');
-                      setBannerFitMode(currentUser?.bannerFitMode || 'cover');
-                      setBannerPosPercent(currentUser?.bannerPosPercent ?? 20);
-                      setIsEditing(true);
-                    }}
-                    style={{ position: 'absolute', bottom: '3px', right: '3px', width: '32px', height: '32px', borderRadius: '50%', background: 'var(--accent)', border: '2px solid #0a0813', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 4px 10px rgba(0,0,0,0.5)' }}
-                    title="Edit Profile Details"
-                  >
-                    <Camera size={15} color="#fff" />
-                  </button>
-                )}
               </div>
 
-              {/* Name / handle / badges / bio OR Edit form */}
+              {/* Name / handle / badges / bio */}
               <div style={{ flex: 1, minWidth: '260px' }}>
-                {isEditing ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', background: 'rgba(255,255,255,0.02)', padding: '18px', borderRadius: '14px', border: '1px solid var(--border)' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                      <div>
-                        <label style={{ fontSize: '10px', color: 'var(--text-dim)', fontWeight: 700 }}>DISPLAY NAME</label>
-                        <input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} className="form-input" style={{ fontSize: '13px' }} />
-                      </div>
-                      <div>
-                        <label style={{ fontSize: '10px', color: 'var(--text-dim)', fontWeight: 700 }}>USERNAME</label>
-                        <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="form-input" style={{ fontSize: '13px' }} />
-                      </div>
-                    </div>
-
-                    {/* Avatar selection & upload */}
-                    <div>
-                      <label style={{ fontSize: '10px', color: 'var(--text-dim)', fontWeight: 700, marginBottom: '6px', display: 'block' }}>CHOOSE AVATAR OR UPLOAD</label>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                        {DEFAULT_AVATARS.map((url, i) => (
-                          <img key={i} src={url} alt="" onClick={() => setAvatar(url)}
-                            style={{ width: '38px', height: '38px', borderRadius: '50%', cursor: 'pointer', border: avatar === url ? '2px solid var(--accent)' : '1px solid var(--border)', objectFit: 'cover' }} />
-                        ))}
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', background: 'rgba(124,111,247,0.1)', border: '1px dashed var(--accent)', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 600, color: '#fff' }}>
-                          <Upload size={13} color="var(--accent)" /> Upload Avatar
-                          <input type="file" accept="image/*" onChange={handleFileUpload} style={{ display: 'none' }} />
-                        </label>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label style={{ fontSize: '10px', color: 'var(--text-dim)', fontWeight: 700 }}>BIO</label>
-                      <textarea value={bio} onChange={e => setBio(e.target.value)} placeholder="Tell your cinema story..."
-                        className="form-input" style={{ minHeight: '54px', fontSize: '13px', lineHeight: 1.5 }} />
-                    </div>
-
-                    {/* Clean Border Selector */}
-                    <div>
-                      <label style={{ fontSize: '10px', color: 'var(--text-dim)', fontWeight: 700, marginBottom: '6px', display: 'block' }}>EQUIPPED AVATAR BORDER</label>
-                      <select value={equippedBorder} onChange={e => setEquippedBorder(e.target.value)} className="form-input"
-                        style={{ fontSize: '13px', background: 'rgba(13,11,24,0.95)', color: '#fff', border: '1px solid var(--border)' }}>
-                        {Object.entries(BORDER_STYLES).map(([id, config]) => {
-                          const isUnlocked = unlockedBorders.has(id);
-                          return (
-                            <option key={id} value={id} disabled={!isUnlocked} style={{ background: '#0d0b18', color: isUnlocked ? '#fff' : 'var(--text-dim)' }}>
-                              {config.name} — {isUnlocked ? '✓ Unlocked' : '🔒 Locked'}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    </div>
-
-                    {/* Quick Banner Button */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'rgba(124,111,247,0.06)', borderRadius: '8px', border: '1px solid rgba(124,111,247,0.2)' }}>
-                      <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#fff' }}>Profile Banner & Backdrop</span>
-                      <button type="button" onClick={() => setShowBannerSelector(true)} className="btn btn-secondary" style={{ padding: '6px 14px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Sparkles size={13} color="var(--accent)" /> Studio / Change Banner
-                      </button>
-                    </div>
-
-                    {/* Showcase slots */}
-                    <div>
-                      <label style={{ fontSize: '10px', color: 'var(--text-dim)', fontWeight: 700, marginBottom: '6px', display: 'block' }}>SHOWCASE SLOTS (FAVORITE 6 FILMS)</label>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '7px' }}>
-                        {favorites.map((fav, idx) => (
-                          <div key={idx} onClick={() => setSelectingSlotIdx(idx)}
-                            style={{ aspectRatio: '2/3', borderRadius: '6px', border: '1px dashed var(--border)', background: 'rgba(255,255,255,0.01)', position: 'relative', overflow: 'hidden', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
-                            onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
-                            onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
-                          >
-                            {fav ? (
-                              <>
-                                <img src={`https://image.tmdb.org/t/p/w200${fav.poster_path}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                <button type="button" onClick={(e) => removeMovieFromSlot(idx, e)}
-                                  style={{ position: 'absolute', top: '3px', right: '3px', width: '16px', height: '16px', borderRadius: '50%', background: 'rgba(0,0,0,0.8)', border: 'none', color: 'var(--red)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}>
-                                  <X size={10} />
-                                </button>
-                              </>
-                            ) : (
-                              <Plus size={13} color="var(--text-muted)" />
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                      <button className="btn btn-primary" onClick={handleSave} style={{ padding: '8px 22px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Check size={14} /> Save Profile
-                      </button>
-                      <button className="btn btn-ghost" onClick={() => setIsEditing(false)} style={{ padding: '8px 16px', fontSize: '13px' }}>Cancel</button>
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '3px', flexWrap: 'wrap' }}>
-                      <h2 style={{ fontSize: '24px', fontWeight: 900, color: '#fff', letterSpacing: '-0.3px' }}>{currentUser?.displayName || 'CineLog Fan'}</h2>
-                      <button
-                        onClick={() => {
-                          setDisplayName(currentUser?.displayName || '');
-                          setUsername(currentUser?.username || '');
-                          setBio(currentUser?.bio || '');
-                          setAvatar(currentUser?.avatar || '');
-                          setFavorites(Array.from({ length: 6 }, (_, i) => (currentUser?.favorites || [])[i] || null));
-                          setEquippedBorder(currentUser?.equippedBorder || 'none');
-                          setBannerUrl(currentUser?.bannerUrl || '');
-                          setBannerFitMode(currentUser?.bannerFitMode || 'cover');
-                          setBannerPosPercent(currentUser?.bannerPosPercent ?? 20);
-                          setIsEditing(true);
-                        }}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          background: 'rgba(124,111,247,0.12)',
-                          border: '1px solid rgba(124,111,247,0.3)',
-                          color: '#fff',
-                          padding: '5px 13px',
-                          borderRadius: '16px',
-                          fontSize: '12px',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          transition: 'all 0.2s'
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,111,247,0.25)'; e.currentTarget.style.borderColor = 'var(--accent)'; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(124,111,247,0.12)'; e.currentTarget.style.borderColor = 'rgba(124,111,247,0.3)'; }}
-                      >
-                        <SlidersHorizontal size={13} color="var(--accent)" /> Customize Profile
-                      </button>
-                    </div>
-                    <div style={{ color: 'var(--accent)', fontSize: '13px', fontWeight: 700, marginBottom: '8px' }}>@{currentUser?.username || 'cinelog_user'}</div>
-                    {unlockedBadges.length > 0 && (
-                      <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '9px' }}>
-                        {unlockedBadges.map(badgeName => {
-                          const colors = BADGE_COLORS[badgeName] || { border: '1px solid var(--border)', color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.03)' };
-                          return <span key={badgeName} style={{ fontSize: '10px', fontWeight: 800, padding: '2.5px 8.5px', borderRadius: '12px', textTransform: 'uppercase', letterSpacing: '0.04em', ...colors }}>{badgeName}</span>;
-                        })}
-                      </div>
-                    )}
-                    <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: '440px', margin: 0 }}>
-                      {currentUser?.bio || 'No bio yet. Click Customize Profile to tell your cinema story.'}
-                    </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '3px', flexWrap: 'wrap' }}>
+                  <h2 style={{ fontSize: '24px', fontWeight: 900, color: '#fff', letterSpacing: '-0.3px', margin: 0 }}>
+                    {currentUser?.displayName || 'CineLog Fan'}
+                  </h2>
+                </div>
+                <div style={{ color: 'var(--accent)', fontSize: '13px', fontWeight: 700, marginBottom: '8px' }}>
+                  @{currentUser?.username || 'cinelog_user'}
+                </div>
+                {unlockedBadges.length > 0 && (
+                  <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '9px' }}>
+                    {unlockedBadges.map(badgeName => {
+                      const colors = BADGE_COLORS[badgeName] || { border: '1px solid var(--border)', color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.03)' };
+                      return <span key={badgeName} style={{ fontSize: '10px', fontWeight: 800, padding: '2.5px 8.5px', borderRadius: '12px', textTransform: 'uppercase', letterSpacing: '0.04em', ...colors }}>{badgeName}</span>;
+                    })}
                   </div>
                 )}
+                <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: '460px', margin: 0 }}>
+                  {currentUser?.bio || 'No bio written yet. Click the Customize button above to personalize your profile.'}
+                </p>
               </div>
 
-              {/* Stats pills */}
-              {!isEditing && (
-                <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'flex-end', paddingBottom: '4px' }}>
-                  {[
-                    { label: 'Films', val: watchedCount, color: 'var(--green)' },
-                    { label: 'Reviews', val: reviewsCount, color: 'var(--accent)' },
-                    { label: 'Favorites', val: favoritesCount, color: 'var(--red)' },
-                    { label: 'Watchlist', val: watchlistCount, color: '#60a5fa' },
-                    { label: 'CinePoints', val: `🪙 ${cinePoints}`, color: 'var(--accent)' },
-                    ...(avgRating ? [{ label: 'Avg Rating', val: `★ ${avgRating}`, color: 'var(--gold)' }] : []),
-                  ].map(s => (
-                    <div key={s.label} style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '20px', fontWeight: 900, color: s.color, fontFamily: 'var(--font-heading)' }}>{s.val}</div>
-                      <div style={{ fontSize: '10px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>{s.label}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              {/* Stats counters */}
+              <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'flex-end', paddingBottom: '4px' }}>
+                {[
+                  { label: 'Films', val: watchedCount, color: 'var(--green)' },
+                  { label: 'Reviews', val: reviewsCount, color: 'var(--accent)' },
+                  { label: 'Favorites', val: favoritesCount, color: 'var(--red)' },
+                  { label: 'Watchlist', val: watchlistCount, color: '#60a5fa' },
+                  { label: 'CinePoints', val: `🪙 ${cinePoints}`, color: 'var(--accent)' },
+                  ...(avgRating ? [{ label: 'Avg Rating', val: `★ ${avgRating}`, color: 'var(--gold)' }] : []),
+                ].map(s => (
+                  <div key={s.label} style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '20px', fontWeight: 900, color: s.color, fontFamily: 'var(--font-heading)' }}>{s.val}</div>
+                    <div style={{ fontSize: '10px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -985,9 +847,17 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
 
                   {/* Favorites Showcase */}
                   <div className="glass" style={{ borderRadius: 'var(--radius-xl)', padding: '20px', border: '1px solid var(--border)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                      <Heart size={16} color="var(--red)" fill="var(--red)" />
-                      <h3 style={{ fontSize: '15px', fontWeight: 800 }}>Favorites Showcase</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Heart size={16} color="var(--red)" fill="var(--red)" />
+                        <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0 }}>Favorites Showcase</h3>
+                      </div>
+                      <button
+                        onClick={() => handleOpenCustomizer('showcase')}
+                        style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        Edit Slots →
+                      </button>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '10px' }}>
                       {Array.from({ length: 6 }).map((_, i) => {
@@ -1013,7 +883,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                     </div>
                     {(currentUser?.favorites || []).length === 0 && (
                       <div style={{ textAlign: 'center', color: 'var(--text-dim)', fontSize: '12px', marginTop: '10px' }}>
-                        Click Customize Profile to assign films to your showcase slots
+                        Click Customize at the top of the page to assign films to your showcase slots.
                       </div>
                     )}
                   </div>
@@ -1024,7 +894,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <Calendar size={16} color="var(--accent)" />
-                          <h3 style={{ fontSize: '15px', fontWeight: 800 }}>Recent Diary</h3>
+                          <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0 }}>Recent Diary</h3>
                         </div>
                         <button onClick={() => setProfileActiveSubTab('diary')}
                           style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
@@ -1056,7 +926,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                   <div className="glass" style={{ borderRadius: 'var(--radius-xl)', padding: '20px', border: '1px solid var(--border)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
                       <BarChart3 size={16} color="var(--accent)" />
-                      <h3 style={{ fontSize: '15px', fontWeight: 800 }}>Genre Breakdown</h3>
+                      <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0 }}>Genre Breakdown</h3>
                     </div>
                     {library.length > 0 ? <MiniGenreChart library={library} /> : (
                       <div style={{ color: 'var(--text-muted)', fontSize: '12.5px', textAlign: 'center', padding: '20px' }}>Add movies to see genre breakdown</div>
@@ -1087,7 +957,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
                   <Calendar size={18} color="var(--accent)" />
-                  <h3 style={{ fontSize: '18px', fontWeight: 800 }}>Watch Diary & History</h3>
+                  <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>Watch Diary & History</h3>
                   <span style={{ fontSize: '12px', color: 'var(--text-dim)', fontWeight: 700 }}>{recentDiary.length} entries</span>
                 </div>
 
@@ -1189,7 +1059,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
                   <Film size={18} color="#60a5fa" />
-                  <h3 style={{ fontSize: '18px', fontWeight: 800 }}>Your Watchlist</h3>
+                  <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>Your Watchlist</h3>
                   <span style={{ fontSize: '12px', color: 'var(--text-dim)', fontWeight: 700 }}>{watchlistCount} titles</span>
                 </div>
                 {watchlistCount === 0 ? (
@@ -1251,7 +1121,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                     <div className="glass" style={{ borderRadius: 'var(--radius-xl)', padding: '20px', border: '1px solid var(--border)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
                         <Trophy size={16} color="var(--gold)" />
-                        <h3 style={{ fontSize: '15px', fontWeight: 800 }}>Your Top Rated Films</h3>
+                        <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0 }}>Your Top Rated Films</h3>
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: '10px' }}>
                         {topRated.map((m, i) => (
@@ -1274,7 +1144,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                   <div className="glass" style={{ borderRadius: 'var(--radius-xl)', padding: '20px', border: '1px solid var(--border)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
                       <BarChart3 size={16} color="var(--accent)" />
-                      <h3 style={{ fontSize: '15px', fontWeight: 800 }}>Genre Breakdown</h3>
+                      <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0 }}>Genre Breakdown</h3>
                     </div>
                     {library.length > 0 ? <MiniGenreChart library={library} /> : <div style={{ color: 'var(--text-muted)', fontSize: '12.5px', textAlign: 'center', padding: '16px' }}>Add movies to see breakdown</div>}
                   </div>
@@ -1289,7 +1159,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                 {/* Shop header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
                   <div>
-                    <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
                       CinePoints 2.0 Reward Shop
                     </h3>
                     <p style={{ color: 'var(--text-muted)', fontSize: '12.5px', marginTop: '3px' }}>
@@ -1379,11 +1249,11 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                       { id: 'royal-amethyst', name: 'Royal Amethyst Crown', cost: 750, desc: 'Prestigious royal gemstone aura' }
                     ].map(item => {
                       const isUnlocked = unlockedBorders.has(item.id);
-                      const isEquipped = equippedBorder === item.id;
+                      const isEquipped = (currentUser?.equippedBorder || 'none') === item.id;
                       return (
                         <div key={item.id} style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: isEquipped ? '1.5px solid var(--accent)' : '1px solid var(--border)' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <AvatarWithBorder src={avatar || DEFAULT_GREY_AVATAR} username="Me" borderId={item.id} size={42} />
+                            <AvatarWithBorder src={currentUser?.avatar || DEFAULT_GREY_AVATAR} username="Me" borderId={item.id} size={42} />
                             <div>
                               <div style={{ fontSize: '13px', fontWeight: 800 }}>{item.name}</div>
                               <div style={{ fontSize: '11px', color: 'var(--gold)', fontWeight: 800 }}>🪙 {item.cost} pts</div>
@@ -1393,7 +1263,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                           {isEquipped ? (
                             <button disabled className="btn" style={{ marginTop: 'auto', background: 'rgba(124,111,247,0.1)', border: '1px solid var(--accent)', color: 'var(--accent)', padding: '6px 0', fontSize: '12px', fontWeight: 800, borderRadius: '6px', cursor: 'default' }}>Equipped</button>
                           ) : isUnlocked ? (
-                            <button className="btn btn-secondary" onClick={() => { setEquippedBorder(item.id); if (onUpdateProfile) onUpdateProfile({ equippedBorder: item.id }); }} style={{ marginTop: 'auto', padding: '6px 0', fontSize: '12px', fontWeight: 800, borderRadius: '6px' }}>Equip Border</button>
+                            <button className="btn btn-secondary" onClick={() => { if (onUpdateProfile) onUpdateProfile({ equippedBorder: item.id }); }} style={{ marginTop: 'auto', padding: '6px 0', fontSize: '12px', fontWeight: 800, borderRadius: '6px' }}>Equip Border</button>
                           ) : (
                             <button className="btn btn-primary"
                               onClick={() => {
@@ -1401,7 +1271,6 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                                 const nextPurchased = [...(currentUser?.purchasedBorders || []), item.id];
                                 const nextSpent = (currentUser?.spentCinePoints || 0) + item.cost;
                                 if (onUpdateProfile) onUpdateProfile({ purchasedBorders: nextPurchased, spentCinePoints: nextSpent, equippedBorder: item.id });
-                                setEquippedBorder(item.id);
                               }}
                               style={{ marginTop: 'auto', padding: '6px 0', fontSize: '12px', fontWeight: 800, borderRadius: '6px' }}>
                               Unlock ({item.cost} pts)
@@ -1420,10 +1289,599 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
       )}
 
       {/* ─────────────────────────────────────────────────────────────
+          UNIFIED DELUXE PROFILE CUSTOMIZER MODAL
+          ───────────────────────────────────────────────────────────── */}
+      {showCustomizer && createPortal(
+        <div
+          style={{
+            position: 'fixed', inset: 0, width: '100vw', height: '100vh',
+            background: 'rgba(4,3,10,0.92)', backdropFilter: 'blur(20px)',
+            zIndex: 999999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
+          }}
+          onClick={() => setShowCustomizer(false)}
+        >
+          <div
+            className="glass animate-fade-in-scale"
+            style={{
+              width: '92vw', maxWidth: '860px', maxHeight: '92vh',
+              borderRadius: '24px', border: '1px solid rgba(255,255,255,0.18)',
+              background: '#0c0a18', padding: '26px', display: 'flex', flexDirection: 'column',
+              boxShadow: '0 30px 80px rgba(0,0,0,0.95)', position: 'relative'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Customizer Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '38px', height: '38px', borderRadius: '12px', background: 'rgba(124,111,247,0.15)', border: '1px solid var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <SlidersHorizontal size={18} color="var(--accent)" />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '19px', fontWeight: 900, color: '#fff', margin: 0 }}>Customize Profile</h3>
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0' }}>Personalize your banner, avatar, border, bio, and favorite film showcase.</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowCustomizer(false)}
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)', cursor: 'pointer', transition: 'all 0.2s' }}
+                onMouseEnter={e => e.currentTarget.style.color = '#fff'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-dim)'}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Customizer Main Tabs */}
+            <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', gap: '4px', marginBottom: '16px' }}>
+              {[
+                { id: 'banner', label: '🎨 Banner & Framing', icon: <ImageIcon size={14} /> },
+                { id: 'avatar', label: '👤 Avatar & Borders', icon: <User size={14} /> },
+                { id: 'info', label: '📝 Name & Bio', icon: <Award size={14} /> },
+                { id: 'showcase', label: '⭐ Favorites Showcase (6)', icon: <Heart size={14} /> },
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setCustomizerTab(tab.id)}
+                  style={{
+                    background: customizerTab === tab.id ? 'rgba(124,111,247,0.12)' : 'none',
+                    border: 'none', padding: '10px 16px', fontSize: '12.5px', fontWeight: 800,
+                    color: customizerTab === tab.id ? 'var(--accent)' : 'var(--text-dim)',
+                    borderBottom: customizerTab === tab.id ? '2px solid var(--accent)' : '2px solid transparent',
+                    borderRadius: '8px 8px 0 0', cursor: 'pointer', transition: 'all 0.15s',
+                    display: 'flex', alignItems: 'center', gap: '6px'
+                  }}
+                >
+                  {tab.icon} {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* TAB CONTENTS CONTAINER */}
+            <div style={{ flex: 1, overflowY: 'auto', maxHeight: '55vh', paddingRight: '8px' }}>
+
+              {/* ── TAB 1: BANNER & FRAMING ── */}
+              {customizerTab === 'banner' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {/* Live Banner Preview Box */}
+                  <div style={{ borderRadius: '14px', overflow: 'hidden', height: '140px', position: 'relative', border: '1px solid var(--border)', background: '#08070e' }}>
+                    <div
+                      className={bannerUrl && bannerUrl.startsWith('animated-') ? `banner-${bannerUrl.replace('animated-', '')}` : ''}
+                      style={{
+                        width: '100%', height: '100%',
+                        background: (bannerUrl && !bannerUrl.startsWith('animated-'))
+                          ? `url("${bannerUrl}") center ${bannerPosPercent ?? 20}% / ${bannerFitMode === 'contain' ? 'contain' : 'cover'} no-repeat`
+                          : (!bannerUrl ? 'linear-gradient(135deg, #1a1040 0%, #2d1b69 50%, #0f172a 100%)' : '#08070e')
+                      }}
+                    />
+                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.7) 100%)' }} />
+                    <div style={{ position: 'absolute', bottom: '10px', left: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '10.5px', background: 'rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '12px', color: '#fff', fontWeight: 800 }}>
+                        Live Framing: {bannerFitMode.toUpperCase()} ({bannerPosPercent}%)
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Framing & Position Adjustment Toolbar */}
+                  {bannerUrl && !bannerUrl.startsWith('animated-') && (
+                    <div style={{ display: 'flex', gap: '14px', alignItems: 'center', padding: '12px 16px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--border)', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        {[
+                          { id: 'cover', label: 'Full-Bleed (Cover)' },
+                          { id: 'contain', label: 'Letterbox (Contain)' },
+                        ].map(opt => (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => setBannerFitMode(opt.id)}
+                            style={{
+                              padding: '6px 12px', borderRadius: '8px', fontSize: '11.5px', fontWeight: 800,
+                              border: bannerFitMode === opt.id ? '1.5px solid var(--accent)' : '1px solid var(--border)',
+                              background: bannerFitMode === opt.id ? 'rgba(124,111,247,0.2)' : 'rgba(0,0,0,0.3)',
+                              color: bannerFitMode === opt.id ? '#fff' : 'var(--text-muted)', cursor: 'pointer'
+                            }}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div style={{ flex: 1, minWidth: '180px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: 'var(--text-dim)', fontWeight: 700 }}>
+                          <span>▲ Top Focus</span>
+                          <span>Vertical Position: {bannerPosPercent}%</span>
+                          <span>▼ Bottom Focus</span>
+                        </div>
+                        <input
+                          type="range" min="0" max="100" step="5"
+                          value={bannerPosPercent}
+                          onChange={e => setBannerPosPercent(Number(e.target.value))}
+                          style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer', height: '5px' }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Banner Sub-Sources Tabs */}
+                  <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', gap: '4px' }}>
+                    {[
+                      { id: 'upload', label: '📁 Upload & URL' },
+                      { id: 'tmdb', label: '🎬 Movie Backdrops' },
+                      { id: 'library', label: '🎞️ From Library' },
+                      { id: 'presets', label: '✨ Presets' },
+                      { id: 'animated', label: '🔥 Animated' },
+                    ].map(st => (
+                      <button
+                        key={st.id}
+                        onClick={() => setBannerSourceTab(st.id)}
+                        style={{
+                          background: 'none', border: 'none', padding: '6px 12px', fontSize: '11.5px', fontWeight: 800,
+                          color: bannerSourceTab === st.id ? 'var(--accent)' : 'var(--text-dim)',
+                          borderBottom: bannerSourceTab === st.id ? '2px solid var(--accent)' : '2px solid transparent',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {st.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Sub-tab 1: Upload & URL */}
+                  {bannerSourceTab === 'upload' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                      <label
+                        style={{
+                          border: '2px dashed rgba(124,111,247,0.35)', borderRadius: '14px', padding: '24px 16px',
+                          textAlign: 'center', background: 'rgba(124,111,247,0.04)', cursor: 'pointer',
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.background = 'rgba(124,111,247,0.08)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(124,111,247,0.35)'; e.currentTarget.style.background = 'rgba(124,111,247,0.04)'; }}
+                      >
+                        <Upload size={20} color="var(--accent)" />
+                        <div>
+                          <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#fff' }}>Click to Upload Banner Image</span>
+                          <p style={{ fontSize: '11px', color: 'var(--text-dim)', margin: '2px 0 0' }}>Supports PNG, JPG, WEBP, and Animated GIFs up to 5MB.</p>
+                        </div>
+                        <input type="file" accept="image/*" onChange={handleBannerFileUpload} style={{ display: 'none' }} />
+                      </label>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <label style={{ fontSize: '10.5px', color: 'var(--text-dim)', fontWeight: 800 }}>OR PASTE DIRECT IMAGE / GIF URL</label>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <input
+                            type="text"
+                            placeholder="https://images.unsplash.com/... or https://i.imgur.com/...gif"
+                            value={customUrlInput}
+                            onChange={e => setCustomUrlInput(e.target.value)}
+                            className="form-input"
+                            style={{ flex: 1, fontSize: '12px' }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (customUrlInput.trim()) {
+                                setBannerUrl(customUrlInput.trim());
+                                setBannerFitMode('cover');
+                              }
+                            }}
+                            className="btn btn-secondary"
+                            style={{ padding: '0 14px', fontSize: '11.5px', fontWeight: 800 }}
+                          >
+                            Apply URL
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Sub-tab 2: TMDB Backdrops */}
+                  {bannerSourceTab === 'tmdb' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <form onSubmit={handleTmdbSearch} style={{ display: 'flex', gap: '8px' }}>
+                        <div style={{ position: 'relative', flex: 1 }}>
+                          <Search size={14} style={{ position: 'absolute', left: '10px', top: '10px', color: 'var(--text-dim)' }} />
+                          <input
+                            type="text"
+                            placeholder="Search movie/show (e.g. Dune, Blade Runner, Interstellar)..."
+                            value={tmdbSearchQuery}
+                            onChange={e => setTmdbSearchQuery(e.target.value)}
+                            className="form-input"
+                            style={{ paddingLeft: '32px', fontSize: '12.5px' }}
+                          />
+                        </div>
+                        <button type="submit" disabled={tmdbSearching} className="btn btn-primary" style={{ padding: '0 16px', fontSize: '12px', fontWeight: 800 }}>
+                          {tmdbSearching ? 'Searching…' : 'Search'}
+                        </button>
+                      </form>
+
+                      {tmdbSearchResults.length > 0 ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                          {tmdbSearchResults.map(item => {
+                            const highRes = `https://image.tmdb.org/t/p/w1280${item.backdrop_path}`;
+                            const isSelected = bannerUrl === highRes;
+                            return (
+                              <div
+                                key={item.id}
+                                onClick={() => { setBannerUrl(highRes); setBannerFitMode('cover'); }}
+                                style={{
+                                  aspectRatio: '16/9', borderRadius: '8px', overflow: 'hidden',
+                                  border: isSelected ? '2px solid var(--accent)' : '1px solid var(--border)',
+                                  boxShadow: isSelected ? '0 0 14px var(--accent)' : 'none',
+                                  cursor: 'pointer', position: 'relative', background: '#110e1f'
+                                }}
+                              >
+                                <img src={`https://image.tmdb.org/t/p/w500${item.backdrop_path}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+                                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(180deg,transparent 0%,rgba(0,0,0,0.85) 100%)', padding: '4px 6px', fontSize: '10.5px', fontWeight: 800, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {item.title || item.name}
+                                </div>
+                                {isSelected && (
+                                  <div style={{ position: 'absolute', top: '5px', right: '5px', background: 'var(--accent)', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Check size={11} color="#fff" />
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-dim)', fontSize: '12px' }}>
+                          Search any title above to select its official high-res widescreen backdrop.
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Sub-tab 3: Library */}
+                  {bannerSourceTab === 'library' && (
+                    <div>
+                      {(() => {
+                        const validItems = library.filter(m => m.backdrop_path || m.details?.backdrop_path);
+                        if (validItems.length === 0) {
+                          return (
+                            <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-dim)', fontSize: '12px' }}>
+                              No widescreen backdrops found in your watched library yet.
+                            </div>
+                          );
+                        }
+                        return (
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                            {validItems.slice(0, 24).map(m => {
+                              const path = m.backdrop_path || m.details?.backdrop_path;
+                              const highRes = `https://image.tmdb.org/t/p/w1280${path}`;
+                              const isSelected = bannerUrl === highRes;
+                              return (
+                                <div
+                                  key={m.id || m.tmdb_id}
+                                  onClick={() => { setBannerUrl(highRes); setBannerFitMode('cover'); }}
+                                  style={{
+                                    aspectRatio: '16/9', borderRadius: '8px', overflow: 'hidden',
+                                    border: isSelected ? '2px solid var(--accent)' : '1px solid var(--border)',
+                                    boxShadow: isSelected ? '0 0 14px var(--accent)' : 'none',
+                                    cursor: 'pointer', position: 'relative', background: '#110e1f'
+                                  }}
+                                >
+                                  <img src={`https://image.tmdb.org/t/p/w500${path}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+                                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(180deg,transparent 0%,rgba(0,0,0,0.85) 100%)', padding: '4px 6px', fontSize: '10.5px', fontWeight: 800, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {m.title}
+                                  </div>
+                                  {isSelected && (
+                                    <div style={{ position: 'absolute', top: '5px', right: '5px', background: 'var(--accent)', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                      <Check size={11} color="#fff" />
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+
+                  {/* Sub-tab 4: Presets */}
+                  {bannerSourceTab === 'presets' && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                      {PRESET_BANNERS.map(b => {
+                        const isSelected = bannerUrl === b.url;
+                        return (
+                          <div
+                            key={b.name}
+                            onClick={() => { setBannerUrl(b.url); setBannerFitMode('cover'); }}
+                            style={{
+                              aspectRatio: '16/9', borderRadius: '8px', overflow: 'hidden',
+                              border: isSelected ? '2px solid var(--accent)' : '1px solid var(--border)',
+                              boxShadow: isSelected ? '0 0 14px var(--accent)' : 'none',
+                              cursor: 'pointer', position: 'relative', background: '#110e1f'
+                            }}
+                          >
+                            <img src={b.url} alt={b.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(180deg,transparent 0%,rgba(0,0,0,0.85) 100%)', padding: '4px 6px', fontSize: '10.5px', fontWeight: 800, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {b.name}
+                            </div>
+                            {isSelected && (
+                              <div style={{ position: 'absolute', top: '5px', right: '5px', background: 'var(--accent)', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Check size={11} color="#fff" />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Sub-tab 5: Animated */}
+                  {bannerSourceTab === 'animated' && (
+                    <div>
+                      {(() => {
+                        const owned = (currentUser?.purchasedBanners || []).filter(id => id.startsWith('animated-'));
+                        const BANNERS_MAP = {
+                          'animated-scanlines': { name: 'Film Reel Scanlines Banner', bg: 'linear-gradient(rgba(124,111,247,0.1),rgba(184,124,248,0.05)),#08070b' },
+                          'animated-stars': { name: 'Neon Shooting Stars Banner', bg: 'linear-gradient(135deg,#090615 0%,#150d30 100%)' },
+                          'animated-matrix': { name: 'Retro Matrix Code Banner', bg: '#030a05' }
+                        };
+
+                        if (owned.length === 0) {
+                          return (
+                            <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-dim)', fontSize: '12.5px' }}>
+                              No animated banners unlocked yet. Unlock animated banners in the <strong>Shop & Quests</strong> tab with CinePoints!
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                            {owned.map(id => {
+                              const info = BANNERS_MAP[id] || { name: 'Animated Banner', bg: '#111' };
+                              const isSelected = bannerUrl === id;
+                              return (
+                                <div
+                                  key={id}
+                                  onClick={() => setBannerUrl(id)}
+                                  style={{
+                                    aspectRatio: '16/9', borderRadius: '8px', cursor: 'pointer',
+                                    border: isSelected ? '2px solid var(--accent)' : '1px solid var(--border)',
+                                    boxShadow: isSelected ? '0 0 14px var(--accent)' : 'none',
+                                    background: info.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    padding: '10px', textAlign: 'center', overflow: 'hidden', position: 'relative'
+                                  }}
+                                >
+                                  <span style={{ fontSize: '11.5px', fontWeight: 800, color: isSelected ? 'var(--accent)' : '#fff' }}>{info.name}</span>
+                                  {isSelected && (
+                                    <div style={{ position: 'absolute', top: '5px', right: '5px', background: 'var(--accent)', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                      <Check size={11} color="#fff" />
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── TAB 2: AVATAR & BORDERS ── */}
+              {customizerTab === 'avatar' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  {/* Live Avatar Preview */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '18px', padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '14px', border: '1px solid var(--border)' }}>
+                    <AvatarWithBorder src={avatar || DEFAULT_GREY_AVATAR} username={displayName || 'User'} borderId={equippedBorder} size={80} />
+                    <div>
+                      <div style={{ fontSize: '15px', fontWeight: 800, color: '#fff' }}>{displayName || 'Preview'}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: 700 }}>Border: {BORDER_STYLES[equippedBorder]?.name || 'Default Border'}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginTop: '4px' }}>Pick an avatar below or upload your own custom photo.</div>
+                    </div>
+                  </div>
+
+                  {/* Preset Avatars & Upload */}
+                  <div>
+                    <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Choose Avatar Image</label>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      {DEFAULT_AVATARS.map((url, i) => (
+                        <img
+                          key={i}
+                          src={url}
+                          alt=""
+                          onClick={() => setAvatar(url)}
+                          style={{
+                            width: '44px', height: '44px', borderRadius: '50%', cursor: 'pointer',
+                            border: avatar === url ? '2.5px solid var(--accent)' : '1px solid var(--border)',
+                            objectFit: 'cover', transition: 'transform 0.15s'
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
+                          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                        />
+                      ))}
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', background: 'rgba(124,111,247,0.12)', border: '1px dashed var(--accent)', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: '#fff' }}>
+                        <Upload size={14} color="var(--accent)" /> Upload Custom Photo
+                        <input type="file" accept="image/*" onChange={handleFileUpload} style={{ display: 'none' }} />
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Visual Border Picker */}
+                  <div>
+                    <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Equipped Avatar Border</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
+                      {Object.entries(BORDER_STYLES).map(([id, config]) => {
+                        const isUnlocked = unlockedBorders.has(id);
+                        const isEquipped = equippedBorder === id;
+                        return (
+                          <div
+                            key={id}
+                            onClick={() => { if (isUnlocked) setEquippedBorder(id); }}
+                            style={{
+                              padding: '10px 12px', borderRadius: '10px',
+                              border: isEquipped ? '2px solid var(--accent)' : '1px solid var(--border)',
+                              background: isEquipped ? 'rgba(124,111,247,0.12)' : isUnlocked ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.3)',
+                              opacity: isUnlocked ? 1 : 0.45,
+                              cursor: isUnlocked ? 'pointer' : 'not-allowed',
+                              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                              transition: 'all 0.15s'
+                            }}
+                          >
+                            <span style={{ fontSize: '12px', fontWeight: 700, color: isEquipped ? 'var(--accent)' : '#fff' }}>
+                              {config.name}
+                            </span>
+                            <span style={{ fontSize: '10px', color: isUnlocked ? 'var(--green)' : 'var(--text-dim)', fontWeight: 800 }}>
+                              {isEquipped ? '✓ Active' : isUnlocked ? 'Unlocked' : '🔒'}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── TAB 3: NAME & BIO ── */}
+              {customizerTab === 'info' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 800 }}>DISPLAY NAME</label>
+                      <input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} className="form-input" style={{ fontSize: '13px' }} placeholder="e.g. Cinema Enthusiast" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 800 }}>USERNAME (HANDLE)</label>
+                      <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="form-input" style={{ fontSize: '13px' }} placeholder="e.g. cinephile" />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 800 }}>BIO & CINEMA STORY</label>
+                    <textarea
+                      value={bio}
+                      onChange={e => setBio(e.target.value)}
+                      placeholder="Write a brief bio about your favorite genres, directors, and cinematic taste..."
+                      className="form-input"
+                      style={{ minHeight: '90px', fontSize: '13px', lineHeight: 1.5 }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* ── TAB 4: FAVORITES SHOWCASE ── */}
+              {customizerTab === 'showcase' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', margin: 0 }}>
+                    Click on any of the 6 showcase slots to select a movie or series from your watched library.
+                  </p>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '10px' }}>
+                    {favorites.map((fav, idx) => (
+                      <div
+                        key={idx}
+                        onClick={() => setSelectingSlotIdx(idx)}
+                        style={{
+                          aspectRatio: '2/3', borderRadius: '8px', border: '1px dashed var(--border)',
+                          background: 'rgba(255,255,255,0.01)', position: 'relative', overflow: 'hidden',
+                          cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
+                        onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+                      >
+                        {fav ? (
+                          <>
+                            <img src={`https://image.tmdb.org/t/p/w200${fav.poster_path}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <button
+                              type="button"
+                              onClick={(e) => removeMovieFromSlot(idx, e)}
+                              style={{
+                                position: 'absolute', top: '4px', right: '4px', width: '18px', height: '18px',
+                                borderRadius: '50%', background: 'rgba(0,0,0,0.85)', border: 'none',
+                                color: 'var(--red)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', padding: 0
+                              }}
+                            >
+                              <X size={11} />
+                            </button>
+                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%)', padding: '8px 4px 3px' }}>
+                              <div style={{ fontSize: '8.5px', fontWeight: 800, color: '#fff', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {fav.title}
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                            <Plus size={16} color="var(--text-muted)" />
+                            <span style={{ fontSize: '9px', color: 'var(--text-dim)', fontWeight: 700 }}>Slot {idx + 1}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+            {/* MODAL FOOTER */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '16px', borderTop: '1px solid var(--border)', marginTop: '14px' }}>
+              <button
+                className="btn btn-ghost"
+                onClick={() => {
+                  setBannerUrl('');
+                  setBannerFitMode('cover');
+                  setBannerPosPercent(20);
+                }}
+                style={{ fontSize: '12px', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Trash2 size={13} /> Reset Banner
+              </button>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setShowCustomizer(false)}
+                  style={{ padding: '8px 18px', fontSize: '12.5px' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleSaveAll}
+                  style={{ padding: '8px 24px', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800 }}
+                >
+                  <CheckCircle2 size={15} /> Save Changes
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
           SHOWCASE SEARCH MODAL
           ───────────────────────────────────────────────────────────── */}
       {selectingSlotIdx !== null && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(4,3,8,0.85)', backdropFilter: 'blur(12px)', zIndex: 1100, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px', paddingTop: '10vh' }}
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(4,3,8,0.85)', backdropFilter: 'blur(12px)', zIndex: 1000000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px', paddingTop: '10vh' }}
           onClick={() => { setSelectingSlotIdx(null); setSearchQuery(''); }}>
           <div className="glass" style={{ width: '100%', maxWidth: '440px', maxHeight: '80vh', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', background: '#0d0b18', display: 'flex', flexDirection: 'column', padding: '20px', gap: '16px' }}
             onClick={e => e.stopPropagation()}>
@@ -1467,417 +1925,6 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
             </div>
           </div>
         </div>
-      )}
-
-      {/* ─────────────────────────────────────────────────────────────
-          DELUXE BANNER & BACKDROP STUDIO MODAL
-          ───────────────────────────────────────────────────────────── */}
-      {showBannerSelector && createPortal(
-        <div
-          style={{
-            position: 'fixed', inset: 0, width: '100vw', height: '100vh',
-            background: 'rgba(4,3,10,0.9)', backdropFilter: 'blur(20px)',
-            zIndex: 999999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px'
-          }}
-          onClick={() => setShowBannerSelector(false)}
-        >
-          <div
-            className="glass animate-fade-in-scale"
-            style={{
-              width: '92vw', maxWidth: '820px', maxHeight: '92vh',
-              borderRadius: '24px', border: '1px solid rgba(255,255,255,0.15)',
-              background: '#0c0a18', padding: '26px', display: 'flex', flexDirection: 'column',
-              boxShadow: '0 30px 80px rgba(0,0,0,0.9)', position: 'relative'
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(124,111,247,0.15)', border: '1px solid var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <ImageIcon size={18} color="var(--accent)" />
-                </div>
-                <div>
-                  <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#fff', margin: 0 }}>Banner & Backdrop Studio</h3>
-                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0' }}>Upload custom images, search high-res movie backdrops, or pick animated banners.</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowBannerSelector(false)}
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)', cursor: 'pointer', transition: 'all 0.2s' }}
-                onMouseEnter={e => e.currentTarget.style.color = '#fff'}
-                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-dim)'}
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            {/* LIVE BANNER PREVIEW */}
-            <div style={{ marginBottom: '16px', borderRadius: '14px', overflow: 'hidden', height: '140px', position: 'relative', border: '1px solid var(--border)', background: '#08070e' }}>
-              <div
-                className={bannerUrl && bannerUrl.startsWith('animated-') ? `banner-${bannerUrl.replace('animated-', '')}` : ''}
-                style={{
-                  width: '100%', height: '100%',
-                  background: (bannerUrl && !bannerUrl.startsWith('animated-'))
-                    ? `url("${bannerUrl}") center ${bannerPosPercent ?? 20}% / ${bannerFitMode === 'contain' ? 'contain' : 'cover'} no-repeat`
-                    : (!bannerUrl ? 'linear-gradient(135deg, #1a1040 0%, #2d1b69 50%, #0f172a 100%)' : '#08070e')
-                }}
-              />
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.7) 100%)' }} />
-              <div style={{ position: 'absolute', bottom: '10px', left: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '10.5px', background: 'rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '12px', color: '#fff', fontWeight: 800 }}>
-                  Live Preview: {bannerFitMode.toUpperCase()} ({bannerPosPercent}%)
-                </span>
-              </div>
-            </div>
-
-            {/* FRAMING & FOCAL ADJUSTMENT TOOLBAR */}
-            {bannerUrl && !bannerUrl.startsWith('animated-') && (
-              <div style={{ display: 'flex', gap: '14px', alignItems: 'center', padding: '12px 16px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '16px', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  {[
-                    { id: 'cover', label: 'Full-Bleed (Cover)' },
-                    { id: 'contain', label: 'Letterbox (Contain)' },
-                  ].map(opt => (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => setBannerFitMode(opt.id)}
-                      style={{
-                        padding: '6px 12px', borderRadius: '8px', fontSize: '11.5px', fontWeight: 800,
-                        border: bannerFitMode === opt.id ? '1.5px solid var(--accent)' : '1px solid var(--border)',
-                        background: bannerFitMode === opt.id ? 'rgba(124,111,247,0.2)' : 'rgba(0,0,0,0.3)',
-                        color: bannerFitMode === opt.id ? '#fff' : 'var(--text-muted)', cursor: 'pointer'
-                      }}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-
-                <div style={{ flex: 1, minWidth: '180px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: 'var(--text-dim)', fontWeight: 700 }}>
-                    <span>▲ Top focus</span>
-                    <span>Vertical position: {bannerPosPercent}%</span>
-                    <span>▼ Bottom focus</span>
-                  </div>
-                  <input
-                    type="range" min="0" max="100" step="5"
-                    value={bannerPosPercent}
-                    onChange={e => setBannerPosPercent(Number(e.target.value))}
-                    style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer', height: '5px' }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* STUDIO TABS */}
-            <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', gap: '4px', marginBottom: '14px' }}>
-              {[
-                { id: 'upload', label: '📁 Upload & Custom URL' },
-                { id: 'tmdb', label: '🎬 Movie & Show Backdrops' },
-                { id: 'library', label: '🎞️ From Your Library' },
-                { id: 'presets', label: '✨ Cinematic Presets' },
-                { id: 'animated', label: '🔥 Animated Shop Banners' },
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setBannerStudioTab(tab.id)}
-                  style={{
-                    background: 'none', border: 'none', padding: '8px 14px', fontSize: '12px', fontWeight: 800,
-                    color: bannerStudioTab === tab.id ? 'var(--accent)' : 'var(--text-dim)',
-                    borderBottom: bannerStudioTab === tab.id ? '2px solid var(--accent)' : '2px solid transparent',
-                    cursor: 'pointer', transition: 'all 0.15s'
-                  }}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {/* TAB PANELS CONTAINER */}
-            <div style={{ flex: 1, overflowY: 'auto', maxHeight: '40vh', paddingRight: '6px' }}>
-
-              {/* TAB 1: UPLOAD & CUSTOM URL */}
-              {bannerStudioTab === 'upload' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  {/* File Upload Box */}
-                  <label
-                    style={{
-                      border: '2px dashed rgba(124,111,247,0.35)', borderRadius: '16px', padding: '32px 20px',
-                      textAlign: 'center', background: 'rgba(124,111,247,0.04)', cursor: 'pointer',
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.background = 'rgba(124,111,247,0.08)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(124,111,247,0.35)'; e.currentTarget.style.background = 'rgba(124,111,247,0.04)'; }}
-                  >
-                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(124,111,247,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Upload size={22} color="var(--accent)" />
-                    </div>
-                    <div>
-                      <span style={{ fontSize: '14px', fontWeight: 800, color: '#fff' }}>Click to Browse or Drag & Drop Banner File</span>
-                      <p style={{ fontSize: '11.5px', color: 'var(--text-dim)', margin: '4px 0 0' }}>Supports PNG, JPG, WEBP, and Animated GIFs up to 5MB.</p>
-                    </div>
-                    <input type="file" accept="image/*" onChange={handleBannerFileUpload} style={{ display: 'none' }} />
-                  </label>
-
-                  {/* Direct URL Input */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 800, textTransform: 'uppercase' }}>Or Enter Direct Image / GIF URL</label>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <input
-                        type="text"
-                        placeholder="https://images.unsplash.com/... or https://i.imgur.com/...gif"
-                        value={customUrlInput}
-                        onChange={e => setCustomUrlInput(e.target.value)}
-                        className="form-input"
-                        style={{ flex: 1, fontSize: '12.5px' }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (customUrlInput.trim()) {
-                            setBannerUrl(customUrlInput.trim());
-                            setBannerFitMode('cover');
-                          }
-                        }}
-                        className="btn btn-secondary"
-                        style={{ padding: '0 16px', fontSize: '12px', fontWeight: 800 }}
-                      >
-                        Apply URL
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 2: TMDB MOVIE BACKDROPS */}
-              {bannerStudioTab === 'tmdb' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  <form onSubmit={handleTmdbSearch} style={{ display: 'flex', gap: '8px' }}>
-                    <div style={{ position: 'relative', flex: 1 }}>
-                      <Search size={15} style={{ position: 'absolute', left: '12px', top: '11px', color: 'var(--text-dim)' }} />
-                      <input
-                        type="text"
-                        placeholder="Search any movie or show (e.g. Dune, Blade Runner, Interstellar)..."
-                        value={tmdbSearchQuery}
-                        onChange={e => setTmdbSearchQuery(e.target.value)}
-                        className="form-input"
-                        style={{ paddingLeft: '36px', fontSize: '13px' }}
-                      />
-                    </div>
-                    <button type="submit" disabled={tmdbSearching} className="btn btn-primary" style={{ padding: '0 20px', fontSize: '12.5px', fontWeight: 800 }}>
-                      {tmdbSearching ? 'Searching…' : 'Search Backdrops'}
-                    </button>
-                  </form>
-
-                  {tmdbSearchResults.length > 0 ? (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                      {tmdbSearchResults.map(item => {
-                        const highRes = `https://image.tmdb.org/t/p/w1280${item.backdrop_path}`;
-                        const isSelected = bannerUrl === highRes;
-                        return (
-                          <div
-                            key={item.id}
-                            onClick={() => { setBannerUrl(highRes); setBannerFitMode('cover'); }}
-                            style={{
-                              aspectRatio: '16/9', borderRadius: '10px', overflow: 'hidden',
-                              border: isSelected ? '2px solid var(--accent)' : '1px solid var(--border)',
-                              boxShadow: isSelected ? '0 0 16px var(--accent)' : 'none',
-                              cursor: 'pointer', position: 'relative', background: '#110e1f',
-                              transition: 'all 0.2s'
-                            }}
-                          >
-                            <img src={`https://image.tmdb.org/t/p/w500${item.backdrop_path}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
-                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(180deg,transparent 0%,rgba(0,0,0,0.85) 100%)', padding: '6px 8px', fontSize: '11px', fontWeight: 800, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {item.title || item.name}
-                            </div>
-                            {isSelected && (
-                              <div style={{ position: 'absolute', top: '6px', right: '6px', background: 'var(--accent)', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Check size={12} color="#fff" />
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-dim)', fontSize: '13px' }}>
-                      Type any movie or TV series title above to explore high-res widescreen cinematic backdrops.
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* TAB 3: FROM LIBRARY */}
-              {bannerStudioTab === 'library' && (
-                <div>
-                  {(() => {
-                    const validItems = library.filter(m => m.backdrop_path || m.details?.backdrop_path);
-                    if (validItems.length === 0) {
-                      return (
-                        <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-dim)', fontSize: '13px' }}>
-                          No widescreen movie backdrops found in your watched library yet. Log movies to unlock their official backdrops here!
-                        </div>
-                      );
-                    }
-                    return (
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                        {validItems.slice(0, 24).map(m => {
-                          const path = m.backdrop_path || m.details?.backdrop_path;
-                          const highRes = `https://image.tmdb.org/t/p/w1280${path}`;
-                          const isSelected = bannerUrl === highRes;
-                          return (
-                            <div
-                              key={m.id || m.tmdb_id}
-                              onClick={() => { setBannerUrl(highRes); setBannerFitMode('cover'); }}
-                              style={{
-                                aspectRatio: '16/9', borderRadius: '10px', overflow: 'hidden',
-                                border: isSelected ? '2px solid var(--accent)' : '1px solid var(--border)',
-                                boxShadow: isSelected ? '0 0 16px var(--accent)' : 'none',
-                                cursor: 'pointer', position: 'relative', background: '#110e1f',
-                                transition: 'all 0.2s'
-                              }}
-                            >
-                              <img src={`https://image.tmdb.org/t/p/w500${path}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
-                              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(180deg,transparent 0%,rgba(0,0,0,0.85) 100%)', padding: '6px 8px', fontSize: '11px', fontWeight: 800, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                {m.title}
-                              </div>
-                              {isSelected && (
-                                <div style={{ position: 'absolute', top: '6px', right: '6px', background: 'var(--accent)', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                  <Check size={12} color="#fff" />
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })()}
-                </div>
-              )}
-
-              {/* TAB 4: CINEMATIC PRESETS */}
-              {bannerStudioTab === 'presets' && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                  {PRESET_BANNERS.map(b => {
-                    const isSelected = bannerUrl === b.url;
-                    return (
-                      <div
-                        key={b.name}
-                        onClick={() => { setBannerUrl(b.url); setBannerFitMode('cover'); }}
-                        style={{
-                          aspectRatio: '16/9', borderRadius: '10px', overflow: 'hidden',
-                          border: isSelected ? '2px solid var(--accent)' : '1px solid var(--border)',
-                          boxShadow: isSelected ? '0 0 16px var(--accent)' : 'none',
-                          cursor: 'pointer', position: 'relative', background: '#110e1f',
-                          transition: 'all 0.2s'
-                        }}
-                      >
-                        <img src={b.url} alt={b.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
-                        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(180deg,transparent 0%,rgba(0,0,0,0.85) 100%)', padding: '6px 8px', fontSize: '11px', fontWeight: 800, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {b.name}
-                        </div>
-                        {isSelected && (
-                          <div style={{ position: 'absolute', top: '6px', right: '6px', background: 'var(--accent)', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <Check size={12} color="#fff" />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* TAB 5: ANIMATED SHOP BANNERS */}
-              {bannerStudioTab === 'animated' && (
-                <div>
-                  {(() => {
-                    const owned = (currentUser?.purchasedBanners || []).filter(id => id.startsWith('animated-'));
-                    const BANNERS_MAP = {
-                      'animated-scanlines': { name: 'Film Reel Scanlines Banner', bg: 'linear-gradient(rgba(124,111,247,0.1),rgba(184,124,248,0.05)),#08070b' },
-                      'animated-stars': { name: 'Neon Shooting Stars Banner', bg: 'linear-gradient(135deg,#090615 0%,#150d30 100%)' },
-                      'animated-matrix': { name: 'Retro Matrix Code Banner', bg: '#030a05' }
-                    };
-
-                    if (owned.length === 0) {
-                      return (
-                        <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-dim)', fontSize: '13px' }}>
-                          You have not unlocked any animated banners yet. Visit the <strong>Shop & Quests</strong> tab to unlock animated banners using CinePoints!
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                        {owned.map(id => {
-                          const info = BANNERS_MAP[id] || { name: 'Animated Banner', bg: '#111' };
-                          const isSelected = bannerUrl === id;
-                          return (
-                            <div
-                              key={id}
-                              onClick={() => setBannerUrl(id)}
-                              style={{
-                                aspectRatio: '16/9', borderRadius: '10px', cursor: 'pointer',
-                                border: isSelected ? '2px solid var(--accent)' : '1px solid var(--border)',
-                                boxShadow: isSelected ? '0 0 16px var(--accent)' : 'none',
-                                background: info.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                padding: '12px', textAlign: 'center', overflow: 'hidden', position: 'relative'
-                              }}
-                            >
-                              <span style={{ fontSize: '12px', fontWeight: 800, color: isSelected ? 'var(--accent)' : '#fff' }}>{info.name}</span>
-                              {isSelected && (
-                                <div style={{ position: 'absolute', top: '6px', right: '6px', background: 'var(--accent)', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                  <Check size={12} color="#fff" />
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })()}
-                </div>
-              )}
-
-            </div>
-
-            {/* MODAL FOOTER */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '16px', borderTop: '1px solid var(--border)', marginTop: '14px' }}>
-              <button
-                className="btn btn-ghost"
-                onClick={() => {
-                  setBannerUrl('');
-                  setBannerFitMode('cover');
-                  setBannerPosPercent(20);
-                }}
-                style={{ fontSize: '12px', color: 'var(--red)', display: 'flex', alignItems: 'center', gap: '6px' }}
-              >
-                <Trash2 size={14} /> Remove Banner
-              </button>
-
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setShowBannerSelector(false)}
-                  style={{ padding: '8px 18px', fontSize: '12.5px' }}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="btn btn-primary"
-                  onClick={() => handleApplyBanner(bannerUrl, bannerFitMode, bannerPosPercent)}
-                  style={{ padding: '8px 24px', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800 }}
-                >
-                  <CheckCircle2 size={15} /> Save & Apply Banner
-                </button>
-              </div>
-            </div>
-
-          </div>
-        </div>,
-        document.body
       )}
 
       {/* ─────────────────────────────────────────────────────────────
