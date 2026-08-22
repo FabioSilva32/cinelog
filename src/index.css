@@ -1184,3 +1184,71 @@ input[type='range']::-moz-range-thumb {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+/* ── Continuous Shooting Meteors ── */
+.meteor-1 {
+  position: absolute;
+  width: 140px;
+  height: 2px;
+  background: linear-gradient(90deg, #fff, #60a5fa, transparent);
+  transform: rotate(-35deg);
+  opacity: 0;
+  animation: shootingStar1 5s infinite cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 4;
+}
+.meteor-2 {
+  position: absolute;
+  width: 100px;
+  height: 1.5px;
+  background: linear-gradient(90deg, #fff, #c084fc, transparent);
+  transform: rotate(-40deg);
+  opacity: 0;
+  animation: shootingStar2 7s infinite cubic-bezier(0.4, 0, 0.2, 1) 2.5s;
+  z-index: 4;
+}
+.meteor-3 {
+  position: absolute;
+  width: 160px;
+  height: 2.5px;
+  background: linear-gradient(90deg, #fff, #fbbf24, transparent);
+  transform: rotate(-30deg);
+  opacity: 0;
+  animation: shootingStar3 9s infinite cubic-bezier(0.4, 0, 0.2, 1) 4.8s;
+  z-index: 4;
+}
+
+@keyframes shootingStar1 {
+  0% { top: -10%; left: 15%; opacity: 0; }
+  8% { opacity: 1; }
+  22% { top: 85%; left: 80%; opacity: 0; }
+  100% { top: 85%; left: 80%; opacity: 0; }
+}
+@keyframes shootingStar2 {
+  0% { top: -10%; left: 45%; opacity: 0; }
+  8% { opacity: 1; }
+  20% { top: 80%; left: 100%; opacity: 0; }
+  100% { top: 80%; left: 100%; opacity: 0; }
+}
+@keyframes shootingStar3 {
+  0% { top: 10%; left: -10%; opacity: 0; }
+  6% { opacity: 1; }
+  18% { top: 90%; left: 65%; opacity: 0; }
+  100% { top: 90%; left: 65%; opacity: 0; }
+}
+
+@keyframes matrixStream {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+@keyframes synthwaveRoad {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 24px; }
+}
+
+@keyframes projectorFlicker {
+  0% { opacity: 0.95; }
+  50% { opacity: 0.85; }
+  100% { opacity: 1; }
+}
+

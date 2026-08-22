@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { ACHIEVEMENTS, BORDER_STYLES, BADGE_COLORS, isUserCreator } from '../utils/achievements';
 import AvatarWithBorder, { DEFAULT_GREY_AVATAR } from './AvatarWithBorder';
+import AnimatedBannerBackground from './AnimatedBannerBackground';
 import { supabase } from '../supabaseClient';
 
 const TMDB_KEY = '6a2fd6b9b1bb3befbb9f14c203732225';
@@ -751,7 +752,6 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
 
           {/* BANNER (320px immersive) */}
           <div
-            className={currentUser?.bannerUrl && currentUser.bannerUrl.startsWith('animated-') ? `banner-${currentUser.bannerUrl.replace('animated-', '')}` : ''}
             style={{
               height: '320px',
               width: '100%',
@@ -763,8 +763,10 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                 : (!currentUser?.bannerUrl ? 'linear-gradient(135deg, #1a1040 0%, #2d1b69 50%, #0f172a 100%)' : '#08070e')
             }}
           >
-            {/* Cinematic gradient fade at bottom */}
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0) 30%, rgba(10,8,19,0.65) 70%, #0a0813 100%)' }} />
+            {currentUser?.bannerUrl && currentUser.bannerUrl.startsWith('animated-') && (
+              <AnimatedBannerBackground bannerId={currentUser.bannerUrl} />
+            )}
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 80%, rgba(10,8,19,0.9) 100%)', pointerEvents: 'none' }} />
 
             {/* SINGLE UNIFIED CUSTOMIZE BUTTON */}
             <button
@@ -1268,7 +1270,8 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                       const isEquipped = (currentUser?.bannerUrl || '') === banner.id;
                       return (
                         <div key={banner.id} style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '14px', border: isEquipped ? '2px solid var(--accent)' : '1px solid var(--border)' }}>
-                          <div className={banner.className} style={{ height: '70px', borderRadius: '8px', overflow: 'hidden', position: 'relative', border: '1px solid rgba(255,255,255,0.1)' }}>
+                          <div style={{ height: '75px', borderRadius: '8px', overflow: 'hidden', position: 'relative', border: '1px solid rgba(255,255,255,0.1)' }}>
+                            <AnimatedBannerBackground bannerId={banner.id} />
                             <div style={{ position: 'absolute', bottom: '4px', left: '8px', fontSize: '10px', fontWeight: 800, color: '#fff', zIndex: 10, background: 'rgba(0,0,0,0.7)', padding: '2px 6px', borderRadius: '4px' }}>Live Motion</div>
                           </div>
                           <div>
@@ -1484,19 +1487,22 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   {/* Live Banner Preview Box */}
                   <div style={{ borderRadius: '14px', overflow: 'hidden', height: '140px', position: 'relative', border: '1px solid var(--border)', background: '#08070e' }}>
-                    <div
-                      className={bannerUrl && bannerUrl.startsWith('animated-') ? `banner-${bannerUrl.replace('animated-', '')}` : ''}
-                      style={{
-                        width: '100%', height: '100%',
-                        background: (bannerUrl && !bannerUrl.startsWith('animated-'))
-                          ? `url("${bannerUrl}") center ${bannerPosPercent ?? 20}% / ${bannerFitMode === 'contain' ? 'contain' : 'cover'} no-repeat`
-                          : (!bannerUrl ? 'linear-gradient(135deg, #1a1040 0%, #2d1b69 50%, #0f172a 100%)' : '#08070e')
-                      }}
-                    />
-                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.7) 100%)' }} />
-                    <div style={{ position: 'absolute', bottom: '10px', left: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '10.5px', background: 'rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '12px', color: '#fff', fontWeight: 800 }}>
-                        Live Framing: {bannerFitMode.toUpperCase()} ({bannerPosPercent}%)
+                    {bannerUrl && bannerUrl.startsWith('animated-') ? (
+                      <AnimatedBannerBackground bannerId={bannerUrl} />
+                    ) : (
+                      <div
+                        style={{
+                          width: '100%', height: '100%',
+                          background: bannerUrl
+                            ? `url("${bannerUrl}") center ${bannerPosPercent ?? 20}% / ${bannerFitMode === 'contain' ? 'contain' : 'cover'} no-repeat`
+                            : 'linear-gradient(135deg, #1a1040 0%, #2d1b69 50%, #0f172a 100%)'
+                        }}
+                      />
+                    )}
+                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 70%, rgba(0,0,0,0.8) 100%)', pointerEvents: 'none' }} />
+                    <div style={{ position: 'absolute', bottom: '10px', left: '14px', display: 'flex', alignItems: 'center', gap: '8px', zIndex: 10 }}>
+                      <span style={{ fontSize: '10.5px', background: 'rgba(0,0,0,0.85)', border: '1px solid rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '12px', color: '#fff', fontWeight: 800 }}>
+                        {bannerUrl && bannerUrl.startsWith('animated-') ? 'LIVE ANIMATED MOTION' : `Live Framing: ${bannerFitMode.toUpperCase()} (${bannerPosPercent}%)`}
                       </span>
                     </div>
                   </div>
