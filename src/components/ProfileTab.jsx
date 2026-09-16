@@ -253,11 +253,11 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
     setViewedLoading(true);
 
     if (supabase) {
+      // Load profile and library in parallel; follow check is separate so it never blocks
       Promise.all([
         supabase.from('profiles').select('*').eq('id', targetUser.id).single(),
         supabase.from('library').select('*').eq('user_id', targetUser.id),
-        currentUser?.id ? supabase.from('followers').select('*').match({ follower_id: currentUser.id, following_id: targetUser.id }).maybeSingle() : Promise.resolve({ data: null })
-      ]).then(([{ data: prof }, { data: lib }, { data: followRel }]) => {
+      ]).then(([{ data: prof, error: profErr }, { data: lib }]) => {
         if (prof) {
           setViewedProfile({
             id: prof.id,
@@ -271,13 +271,18 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
             equippedBorder: prof.equipped_border || 'none',
             bannerUrl: prof.banner_url || '',
             bannerFitMode: prof.banner_fit_mode || 'cover',
-            bannerPosPercent: prof.banner_pos_percent ?? 20
+            bannerPosPercent: prof.banner_pos_percent ?? 20,
+            purchasedBadges: prof.purchased_badges || [],
           });
         } else {
           setViewedProfile(targetUser);
         }
-        setViewedLibrary(lib || []);
-        setIsFollowing(!!followRel);
+        // Strip episode data blob from reviews before storing
+        const cleanLib = (lib || []).map(row => ({
+          ...row,
+          review: (row.review || '').replace(/__EPISODE_DATA__:.+$/s, '').replace(/__EPISODE_RATINGS__:.+$/s, '').trim()
+        }));
+        setViewedLibrary(cleanLib);
         setViewedLoading(false);
       }).catch(err => {
         console.error('Error fetching viewed profile:', err);
@@ -285,6 +290,13 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
         setViewedLibrary([]);
         setViewedLoading(false);
       });
+
+      // Follow status checked independently so a missing 'follows' table doesn't crash profile load
+      if (currentUser?.id) {
+        supabase.from('follows').select('*').match({ follower_id: currentUser.id, following_id: targetUser.id }).maybeSingle()
+          .then(({ data: followRel }) => setIsFollowing(!!followRel))
+          .catch(() => setIsFollowing(false));
+      }
     } else {
       setViewedProfile(targetUser);
       setViewedLibrary([]);
@@ -314,11 +326,11 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
     setFollowLoading(true);
     try {
       if (isFollowing) {
-        await supabase.from('followers').delete().match({ follower_id: currentUser.id, following_id: viewedProfile.id });
+        await supabase.from('follows').delete().match({ follower_id: currentUser.id, following_id: viewedProfile.id });
         setIsFollowing(false);
         setViewedProfile(prev => prev ? { ...prev, followersCount: Math.max(0, (prev.followersCount || 1) - 1) } : prev);
       } else {
-        await supabase.from('followers').insert({ follower_id: currentUser.id, following_id: viewedProfile.id });
+        await supabase.from('follows').upsert({ follower_id: currentUser.id, following_id: viewedProfile.id }, { onConflict: 'follower_id,following_id' });
         setIsFollowing(true);
         setViewedProfile(prev => prev ? { ...prev, followersCount: (prev.followersCount || 0) + 1 } : prev);
       }
@@ -651,7 +663,6 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
               {/* BANNER */}
               <div
-                className={viewedProfile?.bannerUrl?.startsWith('animated-') ? `banner-${viewedProfile.bannerUrl.replace('animated-', '')}` : ''}
                 style={{
                   height: '320px',
                   width: '100%',
@@ -663,49 +674,80 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                     : (!viewedProfile?.bannerUrl ? 'linear-gradient(135deg, #1a1040 0%, #2d1b69 50%, #0f172a 100%)' : '#08070e')
                 }}
               >
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0) 30%, rgba(10,8,19,0.65) 70%, #0a0813 100%)' }} />
+                {viewedProfile?.bannerUrl?.startsWith('animated-') && (
+                  <AnimatedBannerBackground bannerId={viewedProfile.bannerUrl} />
+                )}
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 80%, rgba(10,8,19,0.9) 100%)', pointerEvents: 'none' }} />
               </div>
 
               {/* PROFILE HEADER ROW */}
               <div style={{ background: '#0a0813', padding: '0 28px 20px', border: '1px solid var(--border)', borderTop: 'none' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '20px', marginTop: '-55px', flexWrap: 'wrap' }}>
-                  <div style={{ position: 'relative', flexShrink: 0 }}>
-                    <AvatarWithBorder
-                      src={viewedProfile?.avatar || DEFAULT_GREY_AVATAR}
-                      username={viewedProfile?.username || 'User'}
-                      borderId={viewedProfile?.equippedBorder || 'none'}
-                      size={110}
-                    />
-                  </div>
+                {/* Avatar overlapping banner, then text & stats side by side */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '20px', flexWrap: 'wrap' }}>
 
-                  <div style={{ flex: 1, minWidth: '220px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                      <h2 style={{ fontSize: '24px', fontWeight: 900, color: '#fff' }}>{viewedProfile?.displayName || viewedProfile?.username}</h2>
-                      {currentUser?.id && (
-                        <button
-                          onClick={handleToggleFollow}
-                          disabled={followLoading}
-                          className={`btn ${isFollowing ? 'btn-secondary' : 'btn-primary'}`}
-                          style={{ padding: '6px 18px', fontSize: '12px', fontWeight: 800, borderRadius: '20px' }}
-                        >
-                          {isFollowing ? 'Following' : '+ Follow'}
-                        </button>
-                      )}
+                  {/* Left: avatar + name/bio */}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '20px', flex: 1, minWidth: '260px' }}>
+                    <div style={{ marginTop: '-55px', flexShrink: 0, zIndex: 10, position: 'relative' }}>
+                      <AvatarWithBorder
+                        src={viewedProfile?.avatar || DEFAULT_GREY_AVATAR}
+                        username={viewedProfile?.username || 'User'}
+                        borderId={viewedProfile?.equippedBorder || 'none'}
+                        size={110}
+                      />
                     </div>
-                    <div style={{ color: 'var(--accent)', fontSize: '13px', fontWeight: 700, marginTop: '2px' }}>@{viewedProfile?.username}</div>
-                    {viewedProfile?.bio && <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px', maxWidth: '500px', lineHeight: 1.5 }}>{viewedProfile.bio}</p>}
+
+                    <div style={{ paddingTop: '14px', minWidth: 0, flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                        <h2 style={{ fontSize: '24px', fontWeight: 900, color: '#fff', margin: 0, lineHeight: 1.2 }}>
+                          {viewedProfile?.displayName || viewedProfile?.username || 'CineLog User'}
+                        </h2>
+                        {currentUser?.id && (
+                          <button
+                            onClick={handleToggleFollow}
+                            disabled={followLoading}
+                            className={`btn ${isFollowing ? 'btn-secondary' : 'btn-primary'}`}
+                            style={{ padding: '6px 18px', fontSize: '12px', fontWeight: 800, borderRadius: '20px', flexShrink: 0 }}
+                          >
+                            {followLoading ? '…' : isFollowing ? 'Following' : '+ Follow'}
+                          </button>
+                        )}
+                      </div>
+                      <div style={{ color: 'var(--accent)', fontSize: '13px', fontWeight: 700, marginTop: '4px' }}>@{viewedProfile?.username}</div>
+                      {viewedProfile?.bio && <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '6px', maxWidth: '500px', lineHeight: 1.5, margin: '6px 0 0' }}>{viewedProfile.bio}</p>}
+                      {/* Badges */}
+                      {(() => {
+                        const vBadges = (viewedProfile?.purchasedBadges || []);
+                        if (vBadges.length === 0) return null;
+                        return (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '10px' }}>
+                            {vBadges.map(b => {
+                              const style = (window.__BADGE_COLORS__ || {})[b] || {};
+                              return (
+                                <span key={b} style={{
+                                  fontSize: '11px', fontWeight: 800, padding: '3px 10px',
+                                  borderRadius: '20px',
+                                  border: style.border || '1px solid rgba(255,255,255,0.2)',
+                                  color: style.color || 'var(--text-muted)',
+                                  background: style.bg || 'rgba(255,255,255,0.05)',
+                                }}>{b}</span>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
+                    </div>
                   </div>
 
-                  {/* Stats pills */}
-                  <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  {/* Right: Stats pills */}
+                  <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'flex-end', paddingTop: '16px' }}>
                     {[
                       { label: 'Films', val: viewedLibrary.filter(m => m.status === 'watched').length, color: 'var(--green)' },
-                      { label: 'Reviews', val: viewedLibrary.filter(m => m.review).length, color: 'var(--accent)' },
+                      { label: 'Reviews', val: viewedLibrary.filter(m => m.review && m.review.trim().length > 0).length, color: 'var(--accent)' },
                       { label: 'Watchlist', val: viewedLibrary.filter(m => m.status === 'plan_to_watch').length, color: '#60a5fa' },
                       {
                         label: 'Avg Rating',
                         val: (() => {
-                          const r = viewedLibrary.filter(m => m.rating);
+                          const r = viewedLibrary.filter(m => m.rating && Number(m.rating) > 0);
                           return r.length ? '★ ' + (r.reduce((s, m) => s + Number(m.rating), 0) / r.length).toFixed(1) : '—';
                         })(),
                         color: 'var(--gold)'
@@ -722,18 +764,77 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
 
               {/* Sub tabs & Content */}
               <div style={{ padding: '24px 0' }}>
-                <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '14px' }}>Watched Films</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '14px' }}>
-                  {viewedLibrary.filter(m => m.status === 'watched').map(m => (
-                    <div key={m.id} onClick={() => onMovieClick && onMovieClick(m.tmdb_id, m.media_type)}
-                      style={{ borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--surface-solid)', cursor: 'pointer' }}>
-                      <div style={{ aspectRatio: '2/3', position: 'relative' }}>
-                        {m.poster_path ? <img src={`https://image.tmdb.org/t/p/w300${m.poster_path}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" /> : <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🎬</div>}
-                        {m.rating && <div style={{ position: 'absolute', bottom: '4px', right: '4px', background: 'rgba(0,0,0,0.85)', color: 'var(--gold)', fontSize: '10px', fontWeight: 900, padding: '1px 5px', borderRadius: '4px' }}>★ {Number(m.rating).toFixed(1)}</div>}
-                      </div>
+                {viewedLibrary.filter(m => m.status === 'watched').length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-dim)', fontSize: '14px' }}>
+                    <div style={{ fontSize: '40px', marginBottom: '12px' }}>🎬</div>
+                    <div style={{ fontWeight: 700, marginBottom: '6px' }}>No watched films yet</div>
+                    <div style={{ fontSize: '13px', opacity: 0.7 }}>This user hasn't logged any films yet.</div>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                      <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>Watched Films</h3>
+                      <span style={{ fontSize: '12px', color: 'var(--text-dim)', fontWeight: 700 }}>{viewedLibrary.filter(m => m.status === 'watched').length} films</span>
                     </div>
-                  ))}
-                </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px' }}>
+                      {viewedLibrary.filter(m => m.status === 'watched').map(m => (
+                        <div key={m.id || m.tmdb_id} onClick={() => onMovieClick && onMovieClick(m.tmdb_id, m.media_type)}
+                          style={{ borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--surface-solid)', cursor: 'pointer', transition: 'transform 0.15s, border-color 0.15s' }}
+                          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.borderColor = 'rgba(124,111,247,0.5)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.borderColor = 'var(--border)'; }}
+                        >
+                          <div style={{ aspectRatio: '2/3', position: 'relative', background: '#1a1030' }}>
+                            {m.poster_path
+                              ? <img src={`https://image.tmdb.org/t/p/w300${m.poster_path}`} alt={m.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+                              : <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>🎬</div>
+                            }
+                            {m.rating > 0 && <div style={{ position: 'absolute', bottom: '4px', right: '4px', background: 'rgba(0,0,0,0.85)', color: 'var(--gold)', fontSize: '10px', fontWeight: 900, padding: '2px 6px', borderRadius: '4px' }}>★ {Number(m.rating).toFixed(1)}</div>}
+                          </div>
+                          <div style={{ padding: '6px 8px' }}>
+                            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.title}</div>
+                            {m.release_year && <div style={{ fontSize: '10px', color: 'var(--text-dim)' }}>{m.release_year}</div>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* Reviews section */}
+                {viewedLibrary.filter(m => m.review && m.review.trim().length > 0).length > 0 && (
+                  <div style={{ marginTop: '32px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                      <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>Recent Reviews</h3>
+                      <span style={{ fontSize: '12px', color: 'var(--text-dim)', fontWeight: 700 }}>{viewedLibrary.filter(m => m.review && m.review.trim().length > 0).length} reviews</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {viewedLibrary
+                        .filter(m => m.review && m.review.trim().length > 0)
+                        .sort((a, b) => new Date(b.date_added || 0) - new Date(a.date_added || 0))
+                        .slice(0, 5)
+                        .map(m => (
+                          <div key={m.id || m.tmdb_id}
+                            onClick={() => onMovieClick && onMovieClick(m.tmdb_id, m.media_type)}
+                            style={{ display: 'flex', gap: '12px', padding: '14px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '14px', cursor: 'pointer', transition: 'border-color 0.15s' }}
+                            onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(124,111,247,0.35)'}
+                            onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+                          >
+                            {m.poster_path && (
+                              <img src={`https://image.tmdb.org/t/p/w92${m.poster_path}`} alt={m.title} style={{ width: '44px', height: '64px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 }} />
+                            )}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontWeight: 800, fontSize: '13px', marginBottom: '3px' }}>{m.title}</div>
+                              {m.rating > 0 && <div style={{ color: 'var(--gold)', fontSize: '12px', fontWeight: 700, marginBottom: '4px' }}>★ {Number(m.rating).toFixed(1)}</div>}
+                              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', fontStyle: 'italic', lineHeight: 1.5, padding: '6px 10px', background: 'rgba(124,111,247,0.06)', borderLeft: '3px solid rgba(124,111,247,0.5)', borderRadius: '0 6px 6px 0' }}>
+                                "{m.review.slice(0, 160)}{m.review.length > 160 ? '…' : ''}"
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      }
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
