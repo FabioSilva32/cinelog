@@ -1,179 +1,235 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Search, Flame, TrendingUp, Star, Clock, Compass, User, Plus, Check, Film, Tv, Zap, X, BarChart3, Award, Shuffle } from 'lucide-react';
+import { Star, Plus, Check, Shuffle, ChevronLeft, ChevronRight, Film, Sparkles } from 'lucide-react';
 import { triggerBackdropHover } from '../utils/backdrop';
 
 const TMDB_KEY = '6a2fd6b9b1bb3befbb9f14c203732225';
 
 const GENRE_MAP = {
-  28:'Action', 12:'Adventure', 16:'Animation', 35:'Comedy', 80:'Crime',
-  99:'Documentary', 18:'Drama', 10751:'Family', 14:'Fantasy', 36:'History',
-  27:'Horror', 10402:'Music', 9648:'Mystery', 10749:'Romance', 878:'Sci-Fi',
-  53:'Thriller', 10752:'War', 37:'Western', 10759:'Action & Adventure',
-  10765:'Sci-Fi & Fantasy', 10764:'Reality',
+  28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy', 80: 'Crime',
+  99: 'Documentary', 18: 'Drama', 10751: 'Family', 14: 'Fantasy', 36: 'History',
+  27: 'Horror', 10402: 'Music', 9648: 'Mystery', 10749: 'Romance', 878: 'Sci-Fi',
+  53: 'Thriller', 10752: 'War', 37: 'Western', 10759: 'Action & Adventure',
+  10765: 'Sci-Fi & Fantasy', 10764: 'Reality',
 };
 
-function getRatingColor(r) {
-  const n = Number(r);
-  if (n >= 8) return '#10b981';
-  if (n >= 6.5) return '#fbbf24';
-  return '#f97316';
-}
+function SharpPosterRow({ title, items = [], onCardClick, inLib, onAdd, actionButton }) {
+  const scrollRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
 
-function ExploreCard({ item, type, saved, onAdd, onClick }) {
-  const [hover, setHover] = useState(false);
-  const mediaType = type === 'tv' ? 'Series' : type === 'anime' ? 'Anime' : 'Movie';
-  const badge = {
-    movie: { bg: 'rgba(124,111,247,0.85)', label: 'Movie' },
-    tv: { bg: 'rgba(59,130,246,0.85)', label: 'Series' },
-    anime: { bg: 'rgba(249,115,22,0.85)', label: 'Anime' },
-  }[type] || { bg: 'rgba(124,111,247,0.85)', label: 'Movie' };
+  const checkScroll = () => {
+    if (!scrollRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+    setCanScrollLeft(scrollLeft > 10);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+  };
 
-  return (
-    <div
-      onClick={onClick}
-      style={{
-        position: 'relative', borderRadius: 'var(--radius)', overflow: 'hidden', cursor: 'pointer',
-        background: 'var(--surface-solid)', border: `1px solid ${hover ? 'rgba(124,111,247,0.35)' : 'var(--border)'}`,
-        transition: 'transform 0.22s cubic-bezier(0.4,0,0.2,1), box-shadow 0.22s, border-color 0.2s',
-        transform: hover ? 'translateY(-5px) scale(1.01)' : 'none',
-        boxShadow: hover ? '0 16px 40px rgba(0,0,0,0.55)' : 'none',
-      }}
-      onMouseEnter={() => { setHover(true); triggerBackdropHover(item.backdrop_path); }}
-      onMouseLeave={() => { setHover(false); triggerBackdropHover(null); }}
-    >
-      <div style={{ aspectRatio: '2/3', position: 'relative', overflow: 'hidden' }}>
-        {item.poster_path ? (
-          <img
-            src={`https://image.tmdb.org/t/p/w300${item.poster_path}`}
-            alt={item.title || item.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s', transform: hover ? 'scale(1.06)' : 'scale(1)' }}
-            loading="lazy"
-          />
-        ) : (
-          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', background: 'var(--surface)' }}>🎬</div>
-        )}
+  const scroll = (direction) => {
+    if (!scrollRef.current) return;
+    const amount = direction === 'left' ? -760 : 760;
+    scrollRef.current.scrollBy({ left: amount, behavior: 'smooth' });
+    setTimeout(checkScroll, 250);
+  };
 
-        {/* Rating badge */}
-        <div style={{ position: 'absolute', top: '7px', right: '7px', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(6px)', padding: '3px 7px', borderRadius: '6px', fontSize: '11px', fontWeight: 900, color: item.vote_average ? getRatingColor(item.vote_average) : 'var(--text-dim)' }}>
-          ★ {item.vote_average ? item.vote_average.toFixed(1) : '—'}
-        </div>
-
-        {/* Type badge */}
-        <div style={{ position: 'absolute', top: '7px', left: '7px', background: badge.bg, backdropFilter: 'blur(4px)', padding: '2px 7px', borderRadius: '4px', fontSize: '9px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-          {badge.label}
-        </div>
-
-        {/* Hover overlay */}
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 55%, transparent 100%)', opacity: hover ? 1 : 0, transition: 'opacity 0.22s', display: 'flex', alignItems: 'flex-end', padding: '10px' }}>
-          <div style={{ width: '100%' }}>
-            <div style={{ fontSize: '10.5px', color: 'rgba(255,255,255,0.75)', marginBottom: '7px', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', lineHeight: 1.5 }}>
-              {item.overview}
-            </div>
-            <button
-              onClick={e => { e.stopPropagation(); !saved && onAdd(item, type); }}
-              style={{
-                width: '100%', background: saved ? 'rgba(16,185,129,0.9)' : 'var(--accent)', border: 'none', color: '#fff',
-                borderRadius: '7px', padding: '7px', fontSize: '11px', fontWeight: 800, cursor: saved ? 'default' : 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', backdropFilter: 'blur(4px)',
-                transition: 'transform 0.15s',
-              }}
-              onMouseEnter={e => !saved && (e.currentTarget.style.transform = 'scale(1.02)')}
-              onMouseLeave={e => (e.currentTarget.style.transform = '')}
-            >
-              {saved ? <><Check size={11} /> In Library</> : <><Plus size={11} /> Add to Library</>}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div style={{ padding: '9px 10px' }}>
-        <div style={{ fontSize: '12px', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title || item.name}</div>
-        <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
-          {(item.release_date || item.first_air_date || '').slice(0, 4)}
-          {(item.genre_ids || []).length > 0 && ` · ${GENRE_MAP[item.genre_ids[0]] || ''}`}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function HorizontalRow({ title, icon: Icon, iconColor, items, type, inLib, onAdd, onViewAll, onCardClick }) {
-  const filteredItems = (items || []).filter(item => !inLib(item.id)).slice(0, 8);
-
-  if (filteredItems.length === 0) return null;
+  const displayItems = (items || []).slice(0, 15);
+  if (displayItems.length === 0) return null;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <Icon size={18} color={iconColor || 'var(--accent)'} />
-        <h3 style={{ fontSize: '17px', fontWeight: 800 }}>{title}</h3>
-        {onViewAll && (
-          <button onClick={onViewAll} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--accent)', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
-            View all →
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', position: 'relative' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h3 style={{
+          fontSize: '14px',
+          fontWeight: 900,
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase',
+          color: '#FFFFFF',
+          margin: 0
+        }}>
+          {title}
+        </h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {actionButton}
+          <button
+            onClick={() => scroll('left')}
+            disabled={!canScrollLeft}
+            style={{
+              width: '28px',
+              height: '28px',
+              borderRadius: '6px',
+              background: '#141414',
+              border: '1px solid #242424',
+              color: canScrollLeft ? '#FFFFFF' : '#444444',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: canScrollLeft ? 'pointer' : 'default',
+              transition: 'all 0.15s',
+              fontSize: '16px',
+              lineHeight: 1
+            }}
+          >
+            ‹
           </button>
-        )}
+          <button
+            onClick={() => scroll('right')}
+            disabled={!canScrollRight}
+            style={{
+              width: '28px',
+              height: '28px',
+              borderRadius: '6px',
+              background: '#141414',
+              border: '1px solid #242424',
+              color: canScrollRight ? '#FFFFFF' : '#444444',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: canScrollRight ? 'pointer' : 'default',
+              transition: 'all 0.15s',
+              fontSize: '16px',
+              lineHeight: 1
+            }}
+          >
+            ›
+          </button>
+        </div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '12px' }}>
-        {filteredItems.map(item => (
-          <ExploreCard key={item.id} item={item} type={type || item.media_type || 'movie'} saved={inLib(item.id)} onAdd={onAdd} onClick={() => onCardClick(item, type || item.media_type || 'movie')} />
-        ))}
+
+      <div
+        ref={scrollRef}
+        onScroll={checkScroll}
+        style={{
+          display: 'flex',
+          gap: '16px',
+          overflowX: 'auto',
+          paddingBottom: '8px',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none'
+        }}
+      >
+        {displayItems.map((movie) => {
+          const year = (movie.release_date || movie.first_air_date || '').slice(0, 4);
+          const isSaved = inLib ? inLib(movie.id) : false;
+
+          return (
+            <div
+              key={movie.id}
+              onClick={() => onCardClick(movie, movie.media_type || 'movie')}
+              style={{
+                width: '180px',
+                flexShrink: 0,
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                transition: 'transform 0.15s ease'
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                triggerBackdropHover(movie.backdrop_path);
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = 'none';
+                triggerBackdropHover(null);
+              }}
+            >
+              {/* Poster Container - 100% Clean Cinema Artwork */}
+              <div style={{
+                width: '180px',
+                aspectRatio: '2/3',
+                borderRadius: '8px',
+                overflow: 'hidden',
+                background: '#141414',
+                border: '1px solid #242424',
+                position: 'relative'
+              }}>
+                {movie.poster_path ? (
+                  <img
+                    src={`https://image.tmdb.org/t/p/w342${movie.poster_path}`}
+                    alt={movie.title || movie.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    loading="lazy"
+                  />
+                ) : (
+                  <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', background: '#181818' }}>🎬</div>
+                )}
+
+                {/* Subtle Add Quick Button on hover corner */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!isSaved && onAdd) {
+                      onAdd(movie, movie.media_type || 'movie');
+                    }
+                  }}
+                  title={isSaved ? 'In Library' : 'Add to Library'}
+                  style={{
+                    position: 'absolute',
+                    bottom: '8px',
+                    right: '8px',
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '6px',
+                    background: isSaved ? '#10b981' : 'rgba(0,0,0,0.75)',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    color: '#FFFFFF',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: isSaved ? 'default' : 'pointer',
+                    transition: 'all 0.15s'
+                  }}
+                  onMouseEnter={e => {
+                    if (!isSaved) e.currentTarget.style.background = 'var(--accent)';
+                  }}
+                  onMouseLeave={e => {
+                    if (!isSaved) e.currentTarget.style.background = 'rgba(0,0,0,0.75)';
+                  }}
+                >
+                  {isSaved ? <Check size={13} strokeWidth={3} /> : <Plus size={13} strokeWidth={3} />}
+                </button>
+              </div>
+
+              {/* Title & Release Year / Rating */}
+              <div>
+                <div style={{
+                  fontSize: '13px',
+                  fontWeight: 800,
+                  color: '#FFFFFF',
+                  textTransform: 'uppercase',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  lineHeight: 1.3
+                }}>
+                  {movie.title || movie.name}
+                </div>
+                <div style={{
+                  fontSize: '12px',
+                  color: '#777777',
+                  marginTop: '2px',
+                  fontWeight: 500,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  <span>{year || '2024'}</span>
+                  {movie.vote_average > 0 && (
+                    <span style={{ color: '#888888', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                      · ★ {movie.vote_average.toFixed(1)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
-
-const NAV_TABS = [
-  { id: 'discover', label: 'Discover', icon: Flame },
-  { id: 'smart', label: 'Smart Finder', icon: Zap },
-  { id: 'people', label: 'By Person', icon: User },
-  { id: 'search', label: 'Search', icon: Search },
-];
 
 export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
-  const [activeTab, setActiveTab] = useState('discover');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchType, setSearchType] = useState('movie');
-  const [searchResults, setSearchResults] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
   const [addedNotif, setAddedNotif] = useState(null);
-
-  // Search History stored in localStorage
-  const [searchHistory, setSearchHistory] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('cinelog_search_history') || '[]');
-    } catch { return []; }
-  });
-
-  const saveSearchHistory = (term) => {
-    if (!term || !term.trim()) return;
-    const clean = term.trim();
-    setSearchHistory(prev => {
-      const filtered = prev.filter(t => t.toLowerCase() !== clean.toLowerCase());
-      const next = [clean, ...filtered].slice(0, 6);
-      localStorage.setItem('cinelog_search_history', JSON.stringify(next));
-      return next;
-    });
-  };
-
-  // Smart Finder
-  const [recType, setRecType] = useState('movie');
-  const [recGenre, setRecGenre] = useState('');
-  const [recMood, setRecMood] = useState('');
-  const [recDecade, setRecDecade] = useState('');
-  const [recResults, setRecResults] = useState([]);
-  const [isRecsLoading, setIsRecsLoading] = useState(false);
-
-  // People
-  const [peopleQuery, setPeopleQuery] = useState('');
-
-  const handleExploreCardClick = (item, type) => {
-    if (!onMovieClick) return;
-    const mediaType = type || item.media_type || 'movie';
-    onMovieClick(item.id || item.tmdb_id, mediaType);
-  };
-  const [peopleInfo, setPeopleInfo] = useState(null);
-  const [peopleResults, setPeopleResults] = useState([]);
-  const [isPeopleLoading, setIsPeopleLoading] = useState(false);
 
   // Discover rows
   const [trending, setTrending] = useState([]);
@@ -181,115 +237,101 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
   const [upcoming, setUpcoming] = useState([]);
   const [trendingTV, setTrendingTV] = useState([]);
   const [nowPlaying, setNowPlaying] = useState([]);
+  const [hiddenGems, setHiddenGems] = useState([]);
+  const [roulettePicks, setRoulettePicks] = useState([]);
+  const [isShufflingRoulette, setIsShufflingRoulette] = useState(false);
   const [isDiscoverLoading, setIsDiscoverLoading] = useState(true);
-
-  const searchRef = useRef(null);
 
   const inLib = (tmdbId) => library.some(x => String(x.tmdb_id) === String(tmdbId));
 
-  const filteredRecs = useMemo(() => {
-    return recResults.filter(item => !inLib(item.id)).slice(0, 12);
-  }, [recResults, library]);
+  const handleExploreCardClick = (item, type) => {
+    if (!onMovieClick) return;
+    const mediaType = type || item.media_type || 'movie';
+    onMovieClick(item.id || item.tmdb_id, mediaType);
+  };
 
   useEffect(() => {
     const p = new URLSearchParams({ api_key: TMDB_KEY, language: 'en-US' });
+    const randomPage = Math.floor(Math.random() * 6) + 1;
     Promise.all([
       fetch(`https://api.themoviedb.org/3/trending/movie/week?${p}`).then(r => r.json()),
       fetch(`https://api.themoviedb.org/3/movie/top_rated?${p}`).then(r => r.json()),
       fetch(`https://api.themoviedb.org/3/movie/upcoming?${p}`).then(r => r.json()),
       fetch(`https://api.themoviedb.org/3/trending/tv/week?${p}`).then(r => r.json()),
       fetch(`https://api.themoviedb.org/3/movie/now_playing?${p}`).then(r => r.json()),
-    ]).then(([t, tr, u, tv, np]) => {
+      fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&language=en-US&sort_by=vote_average.desc&vote_count.gte=350&vote_count.lte=3500&vote_average.gte=7.8&page=1`).then(r => r.json()),
+      fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&language=en-US&sort_by=popularity.desc&vote_average.gte=7.3&vote_count.gte=200&page=${randomPage}`).then(r => r.json()),
+    ]).then(([t, tr, u, tv, np, hg, rp]) => {
       setTrending(t.results || []);
       setTopRated(tr.results || []);
       setUpcoming(u.results || []);
       setTrendingTV(tv.results || []);
       setNowPlaying(np.results || []);
+      setHiddenGems(hg.results || []);
+      setRoulettePicks(rp.results || []);
       setIsDiscoverLoading(false);
     }).catch(() => setIsDiscoverLoading(false));
   }, []);
 
-  const handleSearch = (queryOverride, typeOverride) => {
-    const q = queryOverride ?? searchQuery;
-    const t = typeOverride ?? searchType;
-    if (!q.trim()) return;
-    saveSearchHistory(q);
-    setIsSearching(true);
-    const p = new URLSearchParams({ api_key: TMDB_KEY, language: 'en-US', query: q, include_adult: 'false' });
-    const endpoint = t === 'movie' ? 'search/movie' : t === 'tv' ? 'search/tv' : 'search/multi';
-    fetch(`https://api.themoviedb.org/3/${endpoint}?${p}`)
-      .then(r => r.json())
-      .then(d => {
-        const results = (d.results || []).filter(x => !x.media_type || x.media_type === 'movie' || x.media_type === 'tv');
-        setSearchResults(results);
-        setIsSearching(false);
-        setActiveTab('search');
-      })
-      .catch(() => setIsSearching(false));
-  };
+  // Genre filtering state
+  const [activeGenreFilter, setActiveGenreFilter] = useState('all');
+  const [genreMovies, setGenreMovies] = useState([]);
+  const [isGenreLoading, setIsGenreLoading] = useState(false);
 
-  // View All: use discover endpoint for a category and show results
-  const viewAllCategory = (endpoint, type, label) => {
-    setIsSearching(true);
-    setActiveTab('search');
-    setSearchQuery(label);
-    const p = new URLSearchParams({ api_key: TMDB_KEY, language: 'en-US', page: 1 });
-    fetch(`https://api.themoviedb.org/3/${endpoint}?${p}`)
-      .then(r => r.json())
-      .then(d => {
-        setSearchResults((d.results || []).map(x => ({ ...x, media_type: x.media_type || type })));
-        setIsSearching(false);
-      })
-      .catch(() => setIsSearching(false));
-  };
+  const GENRE_BAR = [
+    { id: 'all', label: 'All Cinema' },
+    { id: 878, label: 'Sci-Fi' },
+    { id: 28, label: 'Action' },
+    { id: 53, label: 'Thriller' },
+    { id: 27, label: 'Horror' },
+    { id: 18, label: 'Drama' },
+    { id: 16, label: 'Animation' },
+    { id: 35, label: 'Comedy' },
+    { id: 80, label: 'Crime' },
+    { id: 14, label: 'Fantasy' },
+  ];
 
-  const handleSmartRecs = () => {
-    setIsRecsLoading(true);
-    const endpoint = recType === 'movie' ? 'discover/movie' : 'discover/tv';
-    const params = new URLSearchParams({ api_key: TMDB_KEY, language: 'en-US', include_adult: 'false' });
-    if (recGenre) params.set('with_genres', recGenre);
-    if (recMood === 'popular') params.set('sort_by', 'popularity.desc');
-    else if (recMood === 'top_rated') { params.set('sort_by', 'vote_average.desc'); params.set('vote_count.gte', '500'); }
-    else if (recMood === 'hidden') { params.set('sort_by', 'vote_average.desc'); params.set('vote_count.gte', '50'); params.set('vote_count.lte', '800'); params.set('vote_average.gte', '7'); }
-    else if (recMood === 'new') params.set('sort_by', 'release_date.desc');
-    if (recDecade) {
-      const end = String(parseInt(recDecade) + 9);
-      if (recType === 'movie') { params.set('primary_release_date.gte', `${recDecade}-01-01`); params.set('primary_release_date.lte', `${end}-12-31`); }
-      else { params.set('first_air_date.gte', `${recDecade}-01-01`); params.set('first_air_date.lte', `${end}-12-31`); }
+  const handleSelectGenre = (genreId) => {
+    setActiveGenreFilter(genreId);
+    if (genreId === 'all') {
+      setGenreMovies([]);
+      return;
     }
-    params.set('page', Math.floor(Math.random() * 5) + 1);
-    fetch(`https://api.themoviedb.org/3/${endpoint}?${params}`)
-      .then(r => r.json())
-      .then(d => { setRecResults(d.results || []); setIsRecsLoading(false); })
-      .catch(() => setIsRecsLoading(false));
-  };
-
-  const handlePeopleSearch = () => {
-    if (!peopleQuery.trim()) return;
-    setIsPeopleLoading(true);
-    const p = new URLSearchParams({ api_key: TMDB_KEY, language: 'en-US', query: peopleQuery });
-    fetch(`https://api.themoviedb.org/3/search/person?${p}`)
+    setIsGenreLoading(true);
+    fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&language=en-US&sort_by=popularity.desc&with_genres=${genreId}&vote_count.gte=150&page=1`)
       .then(r => r.json())
       .then(d => {
-        const person = d.results?.[0];
-        if (person) {
-          setPeopleInfo(person);
-          fetch(`https://api.themoviedb.org/3/person/${person.id}/combined_credits?api_key=${TMDB_KEY}`)
-            .then(r => r.json())
-            .then(c => {
-              setPeopleResults(c.cast?.sort((a, b) => (b.popularity || 0) - (a.popularity || 0)).slice(0, 16) || []);
-              setIsPeopleLoading(false);
-            });
-        } else { setPeopleResults([]); setIsPeopleLoading(false); }
+        setGenreMovies(d.results || []);
+        setIsGenreLoading(false);
       })
-      .catch(() => setIsPeopleLoading(false));
+      .catch(() => setIsGenreLoading(false));
+  };
+
+  const handleShuffleRoulette = () => {
+    setIsShufflingRoulette(true);
+    const randomPage = Math.floor(Math.random() * 8) + 1;
+    fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&language=en-US&sort_by=popularity.desc&vote_average.gte=7.2&vote_count.gte=150&page=${randomPage}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.results && d.results.length > 0) {
+          const shuffled = [...d.results].sort(() => 0.5 - Math.random());
+          setRoulettePicks(shuffled);
+        }
+        setIsShufflingRoulette(false);
+      })
+      .catch(() => setIsShufflingRoulette(false));
   };
 
   const quickAdd = (item, type = 'movie') => {
+    const isTv = type === 'tv' ||
+                 item.media_type === 'tv' ||
+                 item.number_of_seasons !== undefined ||
+                 item.first_air_date !== undefined;
+    const finalType = isTv ? 'tv' : (item.media_type || type || 'movie');
     const entry = {
       id: crypto.randomUUID(),
       tmdb_id: item.id,
-      media_type: type,
+      media_type: finalType,
       title: item.title || item.name || 'Unknown',
       poster_path: item.poster_path || null,
       backdrop_path: item.backdrop_path || null,
@@ -306,16 +348,45 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
     setTimeout(() => setAddedNotif(''), 3000);
   };
 
-  const LoadingSkeleton = () => (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '12px' }}>
-      {[...Array(8)].map((_, i) => (
-        <div key={i}>
-          <div className="skeleton" style={{ aspectRatio: '2/3', borderRadius: 'var(--radius)' }} />
-          <div className="skeleton" style={{ height: '12px', marginTop: '8px', borderRadius: '4px', width: '80%' }} />
-        </div>
-      ))}
-    </div>
-  );
+  // Dynamic Hero Carousel of New In-Cinema & Trending Releases
+  const heroMovies = useMemo(() => {
+    const pool = [...(nowPlaying || []), ...(trending || [])];
+    const seen = new Set();
+    const list = [];
+    for (const m of pool) {
+      if (m && m.id && m.backdrop_path && m.title && m.overview && !seen.has(m.id)) {
+        seen.add(m.id);
+        list.push(m);
+        if (list.length >= 7) break;
+      }
+    }
+    if (list.length === 0) {
+      list.push({
+        id: 693134,
+        title: 'Dune: Part Two',
+        backdrop_path: '/xOMo8BRK7PfcJv9JCnx7s520bvw.jpg',
+        poster_path: '/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg',
+        overview: 'Follow the mythic journey of Paul Atreides as he unites with Chani and the Fremen while seeking vengeance against the conspirators who destroyed his family, facing a choice between the love of his life and the fate of the known universe.',
+        release_date: '2024-03-01',
+        vote_average: 8.2,
+        genre_ids: [878, 12]
+      });
+    }
+    return list;
+  }, [nowPlaying, trending]);
+
+  const [heroIndex, setHeroIndex] = useState(0);
+  const [isHeroPaused, setIsHeroPaused] = useState(false);
+
+  useEffect(() => {
+    if (heroMovies.length <= 1 || isHeroPaused) return;
+    const timer = setInterval(() => {
+      setHeroIndex(prev => (prev + 1) % heroMovies.length);
+    }, 5500);
+    return () => clearInterval(timer);
+  }, [heroMovies.length, isHeroPaused]);
+
+  const currentHero = heroMovies[heroIndex % heroMovies.length] || heroMovies[0];
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
@@ -328,263 +399,459 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
         </div>
       )}
 
-      {/* ── TOP SEARCH BAR ── */}
-      <div className="glass" style={{ borderRadius: 'var(--radius-lg)', padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <div style={{ position: 'relative', flex: 1 }}>
-            <Search size={16} color="var(--text-dim)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
-            <input
-              type="text"
-              placeholder="Search movies, TV series, actors, directors…"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSearch()}
-              className="form-input"
-              style={{ width: '100%', paddingLeft: '40px', height: '44px', fontSize: '14px' }}
-            />
-            {searchQuery && (
-              <button onClick={() => setSearchQuery('')} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}>
-                <X size={14} />
-              </button>
-            )}
-          </div>
-          <select
-            value={searchType}
-            onChange={e => setSearchType(e.target.value)}
-            className="form-input"
-            style={{ height: '44px', padding: '0 12px', fontSize: '13px', background: 'var(--surface-solid)', color: 'var(--text)' }}
-          >
-            <option value="multi">All Types</option>
-            <option value="movie">Movies</option>
-            <option value="tv">Series</option>
-          </select>
-          <button className="btn btn-primary" onClick={() => handleSearch()} style={{ height: '44px', padding: '0 20px', whiteSpace: 'nowrap', flexShrink: 0 }}>
-            {isSearching ? (
-              <div style={{ width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
-            ) : <><Search size={14} /> Search</>}
-          </button>
+      {/* ── DYNAMIC NEW RELEASES HERO CAROUSEL ── */}
+      <div
+        onMouseEnter={() => setIsHeroPaused(true)}
+        onMouseLeave={() => setIsHeroPaused(false)}
+        style={{
+          background: '#121212',
+          border: '1px solid #242424',
+          borderRadius: '12px',
+          overflow: 'hidden',
+          position: 'relative',
+          display: 'flex',
+          minHeight: '360px',
+          boxShadow: '0 16px 40px rgba(0,0,0,0.7)'
+        }}
+      >
+        {/* Left: High-Res Movie Backdrop with cinematic gradient overlay */}
+        <div style={{
+          width: '52%',
+          position: 'relative',
+          overflow: 'hidden',
+          flexShrink: 0
+        }}>
+          <img
+            key={currentHero.id}
+            src={`https://image.tmdb.org/t/p/w1280${currentHero.backdrop_path}`}
+            alt={currentHero.title}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: 'center',
+              transition: 'opacity 0.4s ease'
+            }}
+            onError={(e) => { e.currentTarget.src = '/dune_artwork_sharp.jpg'; }}
+          />
+          {/* Smooth fade overlay into right side */}
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(to right, rgba(18,18,18,0.15) 0%, transparent 45%, rgba(18,18,18,0.75) 80%, #121212 100%)'
+          }} />
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 25%, transparent 75%, rgba(0,0,0,0.6) 100%)'
+          }} />
         </div>
 
-        {/* Search history chips */}
-        {searchHistory.length > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', flexWrap: 'wrap' }}>
-            <span style={{ color: 'var(--text-dim)', fontWeight: 700 }}>Recent:</span>
-            {searchHistory.map(term => (
+        {/* Right: Movie Info, Controls & Actions */}
+        <div style={{
+          flex: 1,
+          padding: '32px 36px 24px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          background: '#121212',
+          zIndex: 2,
+          position: 'relative'
+        }}>
+          {/* Badge & Carousel Controls Header */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <span style={{
+              background: 'var(--accent)',
+              color: '#FFFFFF',
+              fontSize: '10px',
+              fontWeight: 900,
+              letterSpacing: '0.08em',
+              padding: '3px 9px',
+              borderRadius: '4px',
+              textTransform: 'uppercase'
+            }}>
+              NEW IN CINEMAS & TRENDING
+            </span>
+
+            {/* Prev / Next arrows */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <button
-                key={term}
-                onClick={() => { setSearchQuery(term); handleSearch(term); }}
+                onClick={() => setHeroIndex(prev => (prev - 1 + heroMovies.length) % heroMovies.length)}
                 style={{
-                  background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)',
-                  borderRadius: '12px', padding: '2px 10px', fontSize: '11px', color: 'var(--text-muted)',
-                  cursor: 'pointer', transition: 'all 0.15s'
+                  background: '#1a1a1a',
+                  border: '1px solid #303030',
+                  color: '#FFFFFF',
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s'
                 }}
-                onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'var(--accent)'; }}
-                onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
+                title="Previous film"
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.background = '#252525'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#303030'; e.currentTarget.style.background = '#1a1a1a'; }}
               >
-                {term}
+                <ChevronLeft size={16} />
               </button>
-            ))}
+              <span style={{ fontSize: '11px', color: '#888888', fontWeight: 800, padding: '0 4px', fontFamily: 'monospace' }}>
+                {heroIndex + 1}/{heroMovies.length}
+              </span>
+              <button
+                onClick={() => setHeroIndex(prev => (prev + 1) % heroMovies.length)}
+                style={{
+                  background: '#1a1a1a',
+                  border: '1px solid #303030',
+                  color: '#FFFFFF',
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s'
+                }}
+                title="Next film"
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.background = '#252525'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#303030'; e.currentTarget.style.background = '#1a1a1a'; }}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+
+          {/* Movie Title */}
+          <h1 style={{
+            fontSize: '28px',
+            fontWeight: 900,
+            letterSpacing: '-0.5px',
+            color: '#FFFFFF',
+            margin: '0 0 8px 0',
+            textTransform: 'uppercase',
+            lineHeight: 1.15
+          }}>
+            {currentHero.title}
+          </h1>
+
+          {/* Rating & Metadata */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            fontSize: '13px',
+            color: '#9E9E9E',
+            marginBottom: '12px',
+            fontWeight: 600
+          }}>
+            {currentHero.vote_average > 0 && (
+              <span style={{ color: '#FFB800', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                ★ {(currentHero.vote_average).toFixed(1)}
+              </span>
+            )}
+            <span>
+              {(currentHero.release_date || '').slice(0, 4)}
+              {(currentHero.genre_ids || []).length > 0 && ` · ${(currentHero.genre_ids || []).map(g => GENRE_MAP[g]).filter(Boolean).slice(0, 2).join(' · ')}`}
+            </span>
+          </div>
+
+          {/* Overview text */}
+          <p style={{
+            fontSize: '13px',
+            color: '#A0A0A0',
+            lineHeight: 1.6,
+            margin: '0 0 20px 0',
+            maxWidth: '520px',
+            display: '-webkit-box',
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden'
+          }}>
+            {currentHero.overview}
+          </p>
+
+          {/* Action buttons */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}>
             <button
-              onClick={() => { setSearchHistory([]); localStorage.removeItem('cinelog_search_history'); }}
-              style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: '10px', marginLeft: 'auto' }}
+              onClick={() => quickAdd(currentHero, 'movie')}
+              style={{
+                background: inLib(currentHero.id) ? '#10b981' : 'var(--accent)',
+                border: 'none',
+                color: '#FFFFFF',
+                padding: '10px 20px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 800,
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'transform 0.15s, opacity 0.15s',
+                boxShadow: '0 4px 14px rgba(229,9,20,0.35)'
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'none'}
             >
-              Clear history
+              {inLib(currentHero.id) ? <Check size={15} strokeWidth={3} /> : <Plus size={15} strokeWidth={3} />}
+              {inLib(currentHero.id) ? 'In Library' : 'Add to Library'}
             </button>
-          </div>
-        )}
-      </div>
 
-      {/* ── SUB-NAV TABS ── */}
-      <div style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '4px', width: 'fit-content' }}>
-        {NAV_TABS.map(t => {
-          const Icon = t.icon;
-          return (
-            <button key={t.id} onClick={() => setActiveTab(t.id)}
-              style={{ background: activeTab === t.id ? 'var(--accent)' : 'transparent', color: activeTab === t.id ? '#fff' : 'var(--text-muted)', border: 'none', borderRadius: '8px', padding: '7px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap', boxShadow: activeTab === t.id ? '0 4px 12px var(--accent-glow)' : 'none' }}>
-              <Icon size={14} /> {t.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* ── DISCOVER ── */}
-      {activeTab === 'discover' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '36px' }}>
-          {isDiscoverLoading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '36px' }}>
-              {[...Array(3)].map((_, i) => (
-                <div key={i}>
-                  <div className="skeleton" style={{ height: '22px', width: '200px', borderRadius: '6px', marginBottom: '14px' }} />
-                  <LoadingSkeleton />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <>
-              <HorizontalRow title="Trending This Week" icon={Flame} iconColor="var(--red)" items={trending} type="movie" inLib={inLib} onAdd={quickAdd} onCardClick={handleExploreCardClick} onViewAll={() => viewAllCategory('trending/movie/week', 'movie', 'Trending Movies')} />
-              <HorizontalRow title="In Cinemas Now" icon={Film} iconColor="var(--accent)" items={nowPlaying} type="movie" inLib={inLib} onAdd={quickAdd} onCardClick={handleExploreCardClick} onViewAll={() => viewAllCategory('movie/now_playing', 'movie', 'Now Playing')} />
-              <HorizontalRow title="All-Time Classics" icon={Star} iconColor="var(--gold)" items={topRated} type="movie" inLib={inLib} onAdd={quickAdd} onCardClick={handleExploreCardClick} onViewAll={() => viewAllCategory('movie/top_rated', 'movie', 'Top Rated Movies')} />
-              <HorizontalRow title="Coming Soon" icon={Clock} iconColor="var(--blue)" items={upcoming} type="movie" inLib={inLib} onAdd={quickAdd} onCardClick={handleExploreCardClick} onViewAll={() => viewAllCategory('movie/upcoming', 'movie', 'Coming Soon')} />
-              <HorizontalRow title="Trending Series" icon={Tv} iconColor="var(--blue)" items={trendingTV} type="tv" inLib={inLib} onAdd={quickAdd} onCardClick={handleExploreCardClick} onViewAll={() => viewAllCategory('trending/tv/week', 'tv', 'Trending Series')} />
-            </>
-          )}
-        </div>
-      )}
-
-      {/* ── SEARCH RESULTS ── */}
-      {activeTab === 'search' && (
-        <div>
-          {searchResults.length > 0 ? (
-            <>
-              <div style={{ fontSize: '13.5px', color: 'var(--text-muted)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Search size={14} />
-                Found <strong style={{ color: 'var(--text)' }}>{searchResults.length}</strong> results for
-                <span style={{ color: 'var(--accent)', fontWeight: 700 }}>"{searchQuery}"</span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '14px' }}>
-                {searchResults.map(item => (
-                  <ExploreCard key={item.id} item={item} type={item.media_type || 'movie'} saved={inLib(item.id)} onAdd={quickAdd} onClick={() => handleExploreCardClick(item, item.media_type || 'movie')} />
-                ))}
-              </div>
-            </>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '80px 24px', color: 'var(--text-muted)' }}>
-              <div style={{ fontSize: '52px', marginBottom: '14px', opacity: 0.4 }}>🔍</div>
-              <div style={{ fontSize: '17px', fontWeight: 700, marginBottom: '6px', color: 'var(--text)' }}>Start Searching</div>
-              <div style={{ fontSize: '14px' }}>Use the search bar above to find movies, series or anime</div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── SMART FINDER ── */}
-      {activeTab === 'smart' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          <div className="glass" style={{ borderRadius: 'var(--radius-lg)', padding: '28px', background: 'rgba(124,111,247,0.04)', border: '1px solid rgba(124,111,247,0.15)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--accent-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Zap size={18} color="#fff" />
-              </div>
-              <div>
-                <h3 style={{ fontSize: '17px', fontWeight: 800 }}>Smart Movie Finder</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '1px' }}>Mix filters to discover your perfect next watch</p>
-              </div>
-            </div>
-
-            <div style={{ height: '1px', background: 'var(--border)', margin: '20px 0' }} />
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '12px', marginBottom: '20px' }}>
-              {[
-                { label: 'Content Type', val: recType, setter: setRecType, opts: [['movie','🎬 Movie'],['tv','📺 TV Series']] },
-                { label: 'Genre', val: recGenre, setter: setRecGenre, opts: [['','Any Genre'],['28','Action'],['35','Comedy'],['18','Drama'],['27','Horror'],['878','Sci-Fi'],['10749','Romance'],['53','Thriller'],['16','Animation'],['99','Documentary'],['80','Crime'],['14','Fantasy'],['9648','Mystery']] },
-                { label: 'Mood', val: recMood, setter: setRecMood, opts: [['','Any'],['popular','🔥 Trending'],['top_rated','⭐ Acclaimed'],['hidden','💎 Hidden Gems'],['new','🆕 Latest Releases']] },
-                { label: 'Era / Decade', val: recDecade, setter: setRecDecade, opts: [['','Any Era'],['2020','2020s'],['2010','2010s'],['2000','2000s'],['1990','1990s'],['1980','1980s'],['1970','1970s'],['1960','1960s']] },
-              ].map(f => (
-                <div key={f.label}>
-                  <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '6px' }}>{f.label}</div>
-                  <select value={f.val} onChange={e => f.setter(e.target.value)} className="form-input"
-                    style={{ width: '100%', background: 'var(--surface-solid)', color: 'var(--text)', fontSize: '12.5px' }}>
-                    {f.opts.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                  </select>
-                </div>
-              ))}
-            </div>
-
-            <button className="btn btn-primary" onClick={handleSmartRecs} style={{ width: '100%', height: '46px', fontSize: '14.5px', gap: '8px' }}>
-              {isRecsLoading ? (
-                <>
-                  <div style={{ width: '16px', height: '16px', border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
-                  Finding Matches…
-                </>
-              ) : (
-                <><Shuffle size={16} /> Generate Recommendations</>
-              )}
+            <button
+              onClick={() => onMovieClick(currentHero.id, 'movie')}
+              style={{
+                background: '#1A1A1A',
+                border: '1px solid #333333',
+                color: '#FFFFFF',
+                padding: '10px 20px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 800,
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.15s'
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#555555'; e.currentTarget.style.background = '#222222'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#333333'; e.currentTarget.style.background = '#1A1A1A'; }}
+            >
+              <Star size={14} color="#FFB800" />
+              Log / Rate
             </button>
           </div>
 
-          {filteredRecs.length > 0 && (
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-                <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
-                  Showing <strong style={{ color: 'var(--text)' }}>{filteredRecs.length}</strong> matches
-                </div>
-                <button className="btn btn-ghost" onClick={handleSmartRecs} style={{ fontSize: '12px', padding: '5px 12px' }}>
-                  <Shuffle size={13} /> Refresh
-                </button>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '12px' }}>
-                {filteredRecs.map(item => (
-                  <ExploreCard key={item.id} item={item} type={recType} saved={inLib(item.id)} onAdd={quickAdd} onClick={() => handleExploreCardClick(item, recType)} />
-                ))}
-              </div>
-            </div>
+          {/* Slide Indicator Pills */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {heroMovies.map((m, idx) => (
+              <button
+                key={m.id || idx}
+                onClick={() => setHeroIndex(idx)}
+                style={{
+                  height: '4px',
+                  width: idx === heroIndex ? '28px' : '8px',
+                  borderRadius: '2px',
+                  background: idx === heroIndex ? 'var(--accent)' : '#2e2e2e',
+                  border: 'none',
+                  padding: 0,
+                  cursor: 'pointer',
+                  transition: 'all 0.25s ease'
+                }}
+                title={m.title}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── TRENDING THIS WEEK SHELF ── */}
+      <SharpPosterRow
+        title="Trending This Week"
+        items={trending}
+        onCardClick={handleExploreCardClick}
+        inLib={inLib}
+        onAdd={quickAdd}
+      />
+
+      {/* ── IN CINEMAS NOW SHELF ── */}
+      <SharpPosterRow
+        title="In Cinemas Now"
+        items={nowPlaying}
+        onCardClick={handleExploreCardClick}
+        inLib={inLib}
+        onAdd={quickAdd}
+      />
+
+      {/* ── GENRE DISCOVERY PILLS ── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#777777' }}>
+            Filter by Genre
+          </span>
+          {activeGenreFilter !== 'all' && (
+            <button
+              onClick={() => handleSelectGenre('all')}
+              style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+            >
+              Reset to all
+            </button>
           )}
         </div>
-      )}
-
-      {/* ── PEOPLE ── */}
-      {activeTab === 'people' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          <div className="glass" style={{ borderRadius: 'var(--radius-lg)', padding: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'linear-gradient(135deg, #3b82f6, #06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <User size={18} color="#fff" />
-              </div>
-              <div>
-                <h3 style={{ fontSize: '17px', fontWeight: 800 }}>Filmmaker Deep Dive</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '1px' }}>Explore any actor or director's complete filmography</p>
-              </div>
-            </div>
-
-            <div style={{ height: '1px', background: 'var(--border)', margin: '18px 0' }} />
-
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <div style={{ position: 'relative', flex: 1 }}>
-                <User size={15} color="var(--text-dim)" style={{ position: 'absolute', left: '13px', top: '50%', transform: 'translateY(-50%)' }} />
-                <input type="text" placeholder="e.g. Christopher Nolan, Scarlett Johansson…"
-                  value={peopleQuery} onChange={e => setPeopleQuery(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handlePeopleSearch()}
-                  className="form-input" style={{ width: '100%', height: '44px', paddingLeft: '40px', fontSize: '13.5px' }} />
-              </div>
-              <button className="btn btn-primary" onClick={handlePeopleSearch} style={{ height: '44px', padding: '0 20px', flexShrink: 0 }}>
-                {isPeopleLoading ? (
-                  <div style={{ width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
-                ) : 'Search'}
+        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none' }}>
+          {GENRE_BAR.map(g => {
+            const isSelected = activeGenreFilter === g.id;
+            return (
+              <button
+                key={g.id}
+                onClick={() => handleSelectGenre(g.id)}
+                style={{
+                  background: isSelected ? 'var(--accent)' : '#141414',
+                  border: `1px solid ${isSelected ? 'var(--accent)' : '#242424'}`,
+                  color: isSelected ? '#FFFFFF' : '#AAAAAA',
+                  padding: '7px 16px',
+                  borderRadius: '20px',
+                  fontSize: '12.5px',
+                  fontWeight: isSelected ? 800 : 600,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={e => {
+                  if (!isSelected) {
+                    e.currentTarget.style.borderColor = '#444444';
+                    e.currentTarget.style.color = '#FFFFFF';
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (!isSelected) {
+                    e.currentTarget.style.borderColor = '#242424';
+                    e.currentTarget.style.color = '#AAAAAA';
+                  }
+                }}
+              >
+                {g.label}
               </button>
-            </div>
-          </div>
-
-          {peopleInfo && (
-            <div className="glass" style={{ borderRadius: 'var(--radius-lg)', padding: '18px', display: 'flex', alignItems: 'center', gap: '18px' }}>
-              <div style={{ width: '72px', height: '72px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '2px solid var(--accent)', boxShadow: '0 0 16px var(--accent-glow)' }}>
-                {peopleInfo.profile_path ? (
-                  <img src={`https://image.tmdb.org/t/p/w185${peopleInfo.profile_path}`} alt={peopleInfo.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>👤</div>
-                )}
-              </div>
-              <div>
-                <div style={{ fontWeight: 900, fontSize: '18px', letterSpacing: '-0.3px' }}>{peopleInfo.name}</div>
-                <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '3px' }}>
-                  {peopleInfo.known_for_department}
-                  {peopleInfo.birthday && ` · Born ${peopleInfo.birthday}`}
-                </div>
-                <div style={{ fontSize: '11.5px', color: 'var(--text-dim)', marginTop: '2px' }}>
-                  {peopleResults.length} credits shown
-                </div>
-              </div>
-            </div>
-          )}
-
-          {peopleResults.length > 0 && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '12px' }}>
-              {peopleResults.map(item => (
-                <ExploreCard key={item.id} item={item} type={item.media_type || 'movie'} saved={inLib(item.id)} onAdd={quickAdd} onClick={() => handleExploreCardClick(item, item.media_type || 'movie')} />
-              ))}
-            </div>
-          )}
+            );
+          })}
         </div>
+      </div>
+
+      {/* ── SELECTED GENRE SPOTLIGHT ── */}
+      {activeGenreFilter !== 'all' && genreMovies.length > 0 && (
+        <SharpPosterRow
+          title={`${GENRE_MAP[activeGenreFilter] || 'Genre'} Masterpieces`}
+          items={genreMovies}
+          onCardClick={handleExploreCardClick}
+          inLib={inLib}
+          onAdd={quickAdd}
+        />
       )}
+
+      {/* ── TOP RATED CLASSICS SHELF ── */}
+      <SharpPosterRow
+        title="Top Rated Classics"
+        items={topRated}
+        onCardClick={handleExploreCardClick}
+        inLib={inLib}
+        onAdd={quickAdd}
+      />
+
+      {/* ── COMING SOON TO THEATERS SHELF ── */}
+      <SharpPosterRow
+        title="Coming Soon to Theaters"
+        items={upcoming}
+        onCardClick={handleExploreCardClick}
+        inLib={inLib}
+        onAdd={quickAdd}
+      />
+
+      {/* ── TRENDING SERIES & SHOWS SHELF ── */}
+      <SharpPosterRow
+        title="Trending Series & Shows"
+        items={trendingTV}
+        onCardClick={handleExploreCardClick}
+        inLib={inLib}
+        onAdd={quickAdd}
+      />
+
+      {/* ── HIDDEN GEMS & CULT FAVORITES SHELF ── */}
+      <SharpPosterRow
+        title="Hidden Gems & Cult Favorites"
+        items={hiddenGems}
+        onCardClick={handleExploreCardClick}
+        inLib={inLib}
+        onAdd={quickAdd}
+      />
+
+      {/* ── CINEROULETTE RANDOM SURPRISE PICKS SHELF ── */}
+      <SharpPosterRow
+        title="CineRoulette Surprise Vault"
+        items={roulettePicks}
+        onCardClick={handleExploreCardClick}
+        inLib={inLib}
+        onAdd={quickAdd}
+        actionButton={
+          <button
+            onClick={handleShuffleRoulette}
+            disabled={isShufflingRoulette}
+            style={{
+              background: '#181818',
+              border: '1px solid #303030',
+              color: '#FFFFFF',
+              padding: '6px 14px',
+              borderRadius: '6px',
+              fontSize: '11px',
+              fontWeight: 800,
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+              cursor: isShufflingRoulette ? 'default' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.15s ease'
+            }}
+            onMouseEnter={e => {
+              if (!isShufflingRoulette) {
+                e.currentTarget.style.borderColor = 'var(--accent)';
+                e.currentTarget.style.background = '#222222';
+              }
+            }}
+            onMouseLeave={e => {
+              if (!isShufflingRoulette) {
+                e.currentTarget.style.borderColor = '#303030';
+                e.currentTarget.style.background = '#181818';
+              }
+            }}
+          >
+            <Shuffle size={12} className={isShufflingRoulette ? 'animate-spin' : ''} />
+            {isShufflingRoulette ? 'Shuffling...' : 'Reshuffle'}
+          </button>
+        }
+      />
+
+      {/* ── CLEAN CINEMA FOOTER ── */}
+      <div style={{
+        marginTop: '20px',
+        padding: '32px 0 24px',
+        borderTop: '1px solid #1c1c1c',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '12px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{
+            width: '18px',
+            height: '18px',
+            background: 'var(--accent)',
+            borderRadius: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 900,
+            fontSize: '11px',
+            color: '#FFFFFF'
+          }}>
+            C
+          </div>
+          <span style={{ fontSize: '13px', fontWeight: 800, letterSpacing: '-0.2px', color: '#FFFFFF' }}>
+            CINELOG
+          </span>
+          <span style={{ fontSize: '12px', color: '#555555' }}>
+            · Continuous Cinema Discovery & Archiving
+          </span>
+        </div>
+        <div style={{ fontSize: '11px', color: '#555555', fontWeight: 600 }}>
+          Powered by live TMDb cinema catalog · All posters rendered in razor-sharp 180px format
+        </div>
+      </div>
+
     </div>
   );
 }

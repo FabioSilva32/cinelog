@@ -250,7 +250,7 @@ export default function TriviaTab({ currentUser, onUpdateProfile }) {
 
         {gameState === 'start' && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, textAlign: 'center', gap: '20px' }}>
-            <div style={{ width: '70px', height: '70px', borderRadius: '50%', background: 'rgba(124,111,247,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(124,111,247,0.3)', marginBottom: '8px', boxShadow: '0 0 20px rgba(124,111,247,0.2)' }}>
+            <div style={{ width: '70px', height: '70px', borderRadius: '50%', background: 'rgba(136,8,8,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(136,8,8,0.3)', marginBottom: '8px', boxShadow: '0 0 20px rgba(136,8,8,0.2)' }}>
               <Trophy size={32} color="var(--accent)" />
             </div>
             <h2 style={{ fontSize: '24px', fontWeight: 900, fontFamily: 'var(--font-heading)' }}>Daily Movie Trivia Challenge</h2>
@@ -281,7 +281,7 @@ export default function TriviaTab({ currentUser, onUpdateProfile }) {
 
             {/* Timer bar */}
             <div style={{ height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden', marginBottom: '32px', position: 'relative' }}>
-              <div style={{ height: '100%', width: `${(timer / 15) * 100}%`, background: timer > 5 ? 'linear-gradient(to right, var(--accent), #b87cf8)' : 'linear-gradient(to right, var(--red), #ef4444)', transition: 'width 1s linear', borderRadius: '3px' }} />
+              <div style={{ height: '100%', width: `${(timer / 15) * 100}%`, background: timer > 5 ? 'linear-gradient(to right, var(--accent), #c0392b)' : 'linear-gradient(to right, var(--red), #ef4444)', transition: 'width 1s linear', borderRadius: '3px' }} />
             </div>
 
             {/* Question title */}
@@ -338,7 +338,7 @@ export default function TriviaTab({ currentUser, onUpdateProfile }) {
                     onMouseEnter={e => {
                       if (!showResults) {
                         e.currentTarget.style.borderColor = 'var(--accent)';
-                        e.currentTarget.style.background = 'rgba(124,111,247,0.04)';
+                        e.currentTarget.style.background = 'rgba(136,8,8,0.04)';
                       }
                     }}
                     onMouseLeave={e => {
@@ -404,8 +404,8 @@ export default function TriviaTab({ currentUser, onUpdateProfile }) {
                 alignItems: 'center',
                 gap: '10px',
                 padding: '10px 12px',
-                background: item.isUser ? 'rgba(124,111,247,0.08)' : 'rgba(255,255,255,0.02)',
-                border: `1px solid ${item.isUser ? 'rgba(124,111,247,0.2)' : 'var(--border)'}`,
+                background: item.isUser ? 'rgba(136,8,8,0.08)' : 'rgba(255,255,255,0.02)',
+                border: `1px solid ${item.isUser ? 'rgba(136,8,8,0.2)' : 'var(--border)'}`,
                 borderRadius: '8px'
               }}
             >
@@ -434,3 +434,4 @@ export default function TriviaTab({ currentUser, onUpdateProfile }) {
     </div>
   );
 }
+

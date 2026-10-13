@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Heart, Film, Tag, Star, Clock, Users, ExternalLink, Play } from 'lucide-react';
+import { X, Heart, Film, Tag, Star, Clock, Users, ExternalLink, Play, FolderHeart, Plus, Check } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
 import { MOCK_REVIEWS } from '../mockData';
+import { getMovieCollections, getSuggestedTags } from '../utils/collections';
 
 const TMDB_KEY = '6a2fd6b9b1bb3befbb9f14c203732225';
 
@@ -126,6 +127,19 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
   const [accentColor, setAccentColor] = useState('var(--accent)');
   const [newTag, setNewTag] = useState('');
   const [tags, setTags] = useState(movie.tags || []);
+  const [customCollections, setCustomCollections] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('cinelog_collections_v1')) || {}; }
+    catch { return {}; }
+  });
+
+  const matchedCollections = React.useMemo(() => {
+    return getMovieCollections(movie, customCollections);
+  }, [movie, customCollections]);
+
+  const suggestedFranchiseTags = React.useMemo(() => {
+    return getSuggestedTags(movie);
+  }, [movie]);
+
   const [details, setDetails] = useState(() => movie.details || null);
   const [cast, setCast] = useState([]);
   const [similar, setSimilar] = useState([]);
@@ -433,10 +447,16 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
   };
 
   const handleSave = () => {
+    const isTv = movie.media_type === 'tv' ||
+                 movie.number_of_seasons !== undefined ||
+                 movie.first_air_date !== undefined ||
+                 Boolean(details && (details.number_of_seasons !== undefined || details.first_air_date));
+    const resolvedType = isTv ? 'tv' : (movie.media_type || 'movie');
     const genres = movie.genres || details?.genres?.map(g => g.name) || [];
     const directorName = movie.director || details?.credits?.crew?.find(c => c.job === 'Director')?.name || null;
     onSave({
       ...movie,
+      media_type: resolvedType,
       status,
       rating: status === 'watched' ? rating : null,
       review,
@@ -475,40 +495,40 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
     (cast.length === 0 ? null : null);
 
   const SECTIONS = [
-    { id: 'log', label: '📋 Log' },
-    { id: 'episodes', label: '⭐ Episodes', hidden: movie.media_type !== 'tv' },
-    { id: 'streaming', label: '📺 Streaming' },
-    { id: 'details', label: '🎬 Details' },
-    { id: 'cast', label: '👥 Cast' },
-    { id: 'reviews', label: '💬 Reviews' },
-    { id: 'trailer', label: '▶ Trailer', hidden: !trailerKey },
-    { id: 'similar', label: '🔍 Similar', hidden: similar.length === 0 },
+    { id: 'log', label: 'Log' },
+    { id: 'episodes', label: 'Episodes', hidden: movie.media_type !== 'tv' },
+    { id: 'streaming', label: 'Streaming' },
+    { id: 'details', label: 'Details' },
+    { id: 'cast', label: 'Cast' },
+    { id: 'reviews', label: 'Reviews' },
+    { id: 'trailer', label: 'Trailer', hidden: !trailerKey },
+    { id: 'similar', label: 'Similar', hidden: similar.length === 0 },
   ].filter(s => !s.hidden);
 
   return (
     <div
-      style={{ position: 'fixed', inset: 0, background: 'rgba(4,3,8,0.92)', backdropFilter: 'blur(16px)', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px', paddingTop: '3vh' }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px', paddingTop: '3vh' }}
       onClick={e => e.target === e.currentTarget && onClose()}
     >
       <div
         className="animate-fade-in-scale"
-        style={{ width: '100%', maxWidth: '940px', maxHeight: '94vh', borderRadius: 'var(--radius-xl)', overflow: 'hidden', border: '1px solid var(--border)', position: 'relative', display: 'flex', flexDirection: 'column', background: '#0a0813' }}
+        style={{ width: '100%', maxWidth: '940px', maxHeight: '94vh', borderRadius: 'var(--radius-xl)', overflow: 'hidden', border: '1px solid var(--border)', position: 'relative', display: 'flex', flexDirection: 'column', background: '#121212' }}
       >
         {/* ── BACKDROP HERO ── */}
         <div style={{ position: 'relative', height: '220px', flexShrink: 0, overflow: 'hidden' }}>
           {backdropUrl ? (
             <img src={backdropUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.45 }} />
           ) : (
-            <div style={{ height: '100%', background: 'linear-gradient(135deg, rgba(124,111,247,0.2) 0%, rgba(184,124,248,0.1) 100%)' }} />
+            <div style={{ height: '100%', background: '#181818' }} />
           )}
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(10,8,19,0.2) 0%, rgba(10,8,19,0.7) 60%, #0a0813 100%)' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.7) 60%, #121212 100%)' }} />
 
           {/* Close button */}
           <button
             onClick={onClose}
-            style={{ position: 'absolute', top: '14px', right: '14px', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.12)', color: 'var(--text-muted)', cursor: 'pointer', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s', zIndex: 10 }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.3)'; e.currentTarget.style.color = '#fff'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.6)'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+            style={{ position: 'absolute', top: '14px', right: '14px', background: '#181818', border: '1px solid #333333', color: 'var(--text)', cursor: 'pointer', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', zIndex: 10 }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = '#fff'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#181818'; e.currentTarget.style.borderColor = '#333333'; e.currentTarget.style.color = 'var(--text)'; }}
           >
             <X size={18} />
           </button>
@@ -516,7 +536,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
           {/* Favorite button */}
           <button
             onClick={() => onToggleFavorite(movie.id)}
-            style={{ position: 'absolute', top: '14px', right: '58px', background: isFavorite ? 'rgba(239,68,68,0.4)' : 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)', border: `1px solid ${isFavorite ? 'rgba(239,68,68,0.6)' : 'rgba(255,255,255,0.12)'}`, color: isFavorite ? 'var(--red)' : 'var(--text-muted)', cursor: 'pointer', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s', zIndex: 10 }}
+            style={{ position: 'absolute', top: '14px', right: '58px', background: isFavorite ? 'var(--accent)' : '#181818', border: `1px solid ${isFavorite ? 'var(--accent)' : '#333333'}`, color: isFavorite ? '#fff' : 'var(--text)', cursor: 'pointer', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', zIndex: 10 }}
           >
             <Heart size={17} fill={isFavorite ? 'currentColor' : 'none'} />
           </button>
@@ -684,7 +704,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                     {tags.length > 0 && (
                       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '10px' }}>
                         {tags.map(tag => (
-                          <span key={tag} style={{ background: 'rgba(124,111,247,0.1)', border: '1px solid rgba(124,111,247,0.25)', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', color: '#a78bfa', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span key={tag} style={{ background: 'rgba(136,8,8,0.1)', border: '1px solid rgba(136,8,8,0.25)', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', color: '#c0392b', display: 'flex', alignItems: 'center', gap: '6px' }}>
                             {tag}
                             <button onClick={() => setTags(tags.filter(t => t !== tag))} style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: '12px', padding: 0, lineHeight: 1, transition: 'color 0.15s' }}
                               onMouseEnter={e => e.currentTarget.style.color = 'var(--red)'}
@@ -695,15 +715,126 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                       </div>
                     )}
                   </div>
+
+                  {/* Collections & Franchise Tagging */}
+                  <div style={{ marginTop: '14px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px 12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <FolderHeart size={12} color="var(--accent)" /> Franchises & Collections
+                      </div>
+                    </div>
+
+                    {/* Matched Collections Badges */}
+                    {matchedCollections.length > 0 ? (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                        {matchedCollections.map(col => (
+                          <span key={col.id} style={{
+                            fontSize: '11px',
+                            fontWeight: 650,
+                            background: 'rgba(136,8,8,0.12)',
+                            border: '1px solid rgba(136,8,8,0.3)',
+                            color: '#FFCDD2',
+                            borderRadius: '12px',
+                            padding: '2.5px 8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}>
+                            {col.emoji} {col.shortTitle || col.title}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginBottom: '8px' }}>
+                        No predefined franchise detected.
+                      </div>
+                    )}
+
+                    {/* Suggested Franchise Tags (click to tag) */}
+                    {suggestedFranchiseTags.filter(t => !tags.includes(t)).length > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: '4px' }}>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Tag with:</span>
+                        {suggestedFranchiseTags.filter(t => !tags.includes(t)).map(st => (
+                          <button
+                            key={st}
+                            type="button"
+                            onClick={() => setTags(prev => [...prev, st])}
+                            style={{
+                              background: 'rgba(136,8,8,0.15)',
+                              border: '1px dashed var(--accent)',
+                              color: 'var(--accent)',
+                              borderRadius: '14px',
+                              padding: '2px 8px',
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              transition: 'all 0.15s'
+                            }}
+                            title={`Click to add #${st} tag to this movie`}
+                          >
+                            + Tag "{st}"
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Add to Custom Collection Picker */}
+                    {Object.keys(customCollections).length > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                        <span style={{ fontSize: '11px', color: 'var(--text-dim)' }}>Custom list:</span>
+                        <select
+                          onChange={e => {
+                            const collName = e.target.value;
+                            if (!collName) return;
+                            const mId = String(movie.id || movie.tmdb_id);
+                            const colData = customCollections[collName] || { movieIds: [] };
+                            const curIds = colData.movieIds || [];
+                            const updatedIds = curIds.includes(mId)
+                              ? curIds.filter(id => id !== mId)
+                              : [...curIds, mId];
+                            const updated = {
+                              ...customCollections,
+                              [collName]: { ...colData, movieIds: updatedIds }
+                            };
+                            setCustomCollections(updated);
+                            localStorage.setItem('cinelog_collections_v1', JSON.stringify(updated));
+                            window.dispatchEvent(new Event('cinelog_collections_updated'));
+                            e.target.value = '';
+                          }}
+                          defaultValue=""
+                          style={{
+                            background: 'rgba(0,0,0,0.3)',
+                            border: '1px solid var(--border)',
+                            borderRadius: '6px',
+                            color: '#fff',
+                            fontSize: '11px',
+                            padding: '3px 8px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <option value="" disabled>Add/Remove from list…</option>
+                          {Object.entries(customCollections).map(([name, data]) => {
+                            const mId = String(movie.id || movie.tmdb_id);
+                            const inList = (data.movieIds || []).includes(mId);
+                            return (
+                              <option key={name} value={name} style={{ background: '#0a0813' }}>
+                                {inList ? '✓ ' : '+ '} {data.emoji || '🎬'} {name}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Right Column: Notes & Review */}
                 <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minWidth: 0, flex: 1, alignSelf: 'stretch' }}>
                   {/* Rewatch control */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12.5px', fontWeight: 700, color: isRewatch ? '#ec4899' : 'var(--text-muted)' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12.5px', fontWeight: 700, color: isRewatch ? '#c0392b' : 'var(--text-muted)' }}>
                       <input type="checkbox" checked={isRewatch} onChange={e => setIsRewatch(e.target.checked)}
-                        style={{ accentColor: '#ec4899', cursor: 'pointer', width: '14px', height: '14px' }} />
+                        style={{ accentColor: '#c0392b', cursor: 'pointer', width: '14px', height: '14px' }} />
                       🔁 Rewatch
                     </label>
                     {isRewatch && (
@@ -732,7 +863,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                     <div style={{ flex: 1 }} />
                     {['write','preview'].map(t => (
                       <button key={t} type="button" onClick={() => setReviewTab(t)}
-                        style={{ background: reviewTab === t ? 'rgba(124,111,247,0.2)' : 'none', border: `1px solid ${reviewTab === t ? 'var(--accent)' : 'var(--border)'}`, borderRadius: '4px', color: reviewTab === t ? 'var(--accent)' : 'var(--text-dim)', fontSize: '10px', fontWeight: 700, padding: '2px 8px', cursor: 'pointer', textTransform: 'capitalize' }}>
+                        style={{ background: reviewTab === t ? 'rgba(136,8,8,0.2)' : 'none', border: `1px solid ${reviewTab === t ? 'var(--accent)' : 'var(--border)'}`, borderRadius: '4px', color: reviewTab === t ? 'var(--accent)' : 'var(--text-dim)', fontSize: '10px', fontWeight: 700, padding: '2px 8px', cursor: 'pointer', textTransform: 'capitalize' }}>
                         {t === 'write' ? '✏️ Write' : '👁 Preview'}
                       </button>
                     ))}
@@ -860,7 +991,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                               </span>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 {hasLog && (
-                                  <span style={{ background: 'rgba(167,139,250,0.15)', border: '1px solid rgba(167,139,250,0.3)', color: '#c084fc', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 800 }}>
+                                  <span style={{ background: 'rgba(136,8,8,0.15)', border: '1px solid rgba(136,8,8,0.3)', color: '#c0392b', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 800 }}>
                                     📝 Logged
                                   </span>
                                 )}
@@ -1313,3 +1444,5 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
     </div>
   );
 }
+
+

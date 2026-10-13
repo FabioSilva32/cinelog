@@ -226,7 +226,7 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
               <div style={{ fontSize: "48px", marginBottom: "16px" }}>🌐</div>
               <div style={{ fontWeight: 800, fontSize: "17px", marginBottom: "8px" }}>Your feed is empty</div>
               <div style={{ fontSize: "14px", color: "var(--text-dim)" }}>Follow other CineLog users to see what they are watching</div>
-              <button onClick={() => setActiveTab("discover")} style={{ marginTop: "16px", background: "linear-gradient(135deg,#7c6ff7,#a855f7)", border: "none", borderRadius: "50px", padding: "10px 24px", color: "#fff", fontWeight: 800, fontSize: "14px", cursor: "pointer" }}>
+              <button onClick={() => setActiveTab("discover")} style={{ marginTop: "16px", background: "linear-gradient(135deg,#880808,#880808)", border: "none", borderRadius: "50px", padding: "10px 24px", color: "#fff", fontWeight: 800, fontSize: "14px", cursor: "pointer" }}>
                 Discover People
               </button>
             </div>
@@ -249,13 +249,13 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
                     background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)",
                     borderRadius: "16px", transition: "all 0.15s",
                   }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(124,111,247,0.05)"; e.currentTarget.style.borderColor = "rgba(124,111,247,0.25)"; }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(136,8,8,0.05)"; e.currentTarget.style.borderColor = "rgba(136,8,8,0.25)"; }}
                     onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.02)"; e.currentTarget.style.borderColor = "var(--border)"; }}
                   >
                     {/* Avatar */}
                     <div
                       onClick={() => onOpenUserProfile && onOpenUserProfile({ id: item.user_id, ...profile })}
-                      style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(124,111,247,0.15)", border: "1px solid var(--border)", cursor: "pointer" }}
+                      style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(136,8,8,0.15)", border: "1px solid var(--border)", cursor: "pointer" }}
                     >
                       {avatar ? <img src={avatar} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> :
                         <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px" }}>👤</div>}
@@ -274,7 +274,7 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
                       <div style={{ fontSize: "13.5px", fontWeight: 600, lineHeight: 1.4, marginBottom: "4px" }}>
                         <span
                           onClick={() => onOpenUserProfile && onOpenUserProfile({ id: item.user_id, ...profile })}
-                          style={{ fontWeight: 800, color: "#a78bfa", cursor: "pointer" }}
+                          style={{ fontWeight: 800, color: "#c0392b", cursor: "pointer" }}
                         >
                           {name}
                         </span>{" "}
@@ -291,8 +291,8 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
                         <div style={{
                           margin: '6px 0 4px',
                           padding: '8px 12px',
-                          background: 'rgba(124,111,247,0.06)',
-                          borderLeft: '3px solid rgba(124,111,247,0.5)',
+                          background: 'rgba(136,8,8,0.06)',
+                          borderLeft: '3px solid rgba(136,8,8,0.5)',
                           borderRadius: '0 8px 8px 0',
                         }}>
                           <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.75)', fontStyle: 'italic', lineHeight: 1.55 }}>
@@ -335,7 +335,7 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
               <div style={{ fontSize: "48px", marginBottom: "16px" }}>👥</div>
               <div style={{ fontWeight: 800, fontSize: "17px", marginBottom: "8px" }}>You aren't following anyone yet</div>
               <div style={{ fontSize: "14px", color: "var(--text-dim)" }}>Explore Discover People to find and follow film lovers on CineLog</div>
-              <button onClick={() => setActiveTab("discover")} style={{ marginTop: "16px", background: "linear-gradient(135deg,#7c6ff7,#a855f7)", border: "none", borderRadius: "50px", padding: "10px 24px", color: "#fff", fontWeight: 800, fontSize: "14px", cursor: "pointer" }}>
+              <button onClick={() => setActiveTab("discover")} style={{ marginTop: "16px", background: "linear-gradient(135deg,#880808,#880808)", border: "none", borderRadius: "50px", padding: "10px 24px", color: "#fff", fontWeight: 800, fontSize: "14px", cursor: "pointer" }}>
                 Discover People
               </button>
             </div>
@@ -350,12 +350,12 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
                     border: "1px solid var(--border)", borderRadius: "14px",
                     transition: "all 0.15s"
                   }}
-                  onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(124,111,247,0.3)"}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(136,8,8,0.3)"}
                   onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
                 >
                   <div
                     onClick={() => onOpenUserProfile && onOpenUserProfile(user)}
-                    style={{ width: "44px", height: "44px", borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(124,111,247,0.15)", border: "1px solid var(--border)", cursor: "pointer" }}
+                    style={{ width: "44px", height: "44px", borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(136,8,8,0.15)", border: "1px solid var(--border)", cursor: "pointer" }}
                   >
                     {user.avatar_url ? <img src={user.avatar_url} alt={user.username} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> :
                       <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>👤</div>}
@@ -404,7 +404,7 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
                 color: "#fff", fontSize: "14px", outline: "none",
                 fontFamily: "var(--font-heading)", fontWeight: 600,
               }}
-              onFocus={e => e.target.style.borderColor = "rgba(124,111,247,0.5)"}
+              onFocus={e => e.target.style.borderColor = "rgba(136,8,8,0.5)"}
               onBlur={e => e.target.style.borderColor = "var(--border)"}
             />
             {searching && <div style={{ position: "absolute", right: "14px", top: "50%", transform: "translateY(-50%)", fontSize: "14px", animation: "spin 0.8s linear infinite", display: "inline-block" }}>⟳</div>}
@@ -424,12 +424,12 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
                   border: "1px solid var(--border)", borderRadius: "14px",
                   transition: "all 0.15s",
                 }}
-                  onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(124,111,247,0.3)"}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(136,8,8,0.3)"}
                   onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
                 >
                   <div
                     onClick={() => onOpenUserProfile && onOpenUserProfile(user)}
-                    style={{ width: "44px", height: "44px", borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(124,111,247,0.15)", border: "1px solid var(--border)", cursor: "pointer" }}
+                    style={{ width: "44px", height: "44px", borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(136,8,8,0.15)", border: "1px solid var(--border)", cursor: "pointer" }}
                   >
                     {user.avatar_url ? <img src={user.avatar_url} alt={user.username} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> :
                       <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>👤</div>}
@@ -443,7 +443,7 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
                     {user.bio && <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.bio}</div>}
                   </div>
                   <button onClick={() => handleFollow(user.id)} style={{
-                    background: isFollowed ? "rgba(239,68,68,0.1)" : "linear-gradient(135deg,#7c6ff7,#a855f7)",
+                    background: isFollowed ? "rgba(239,68,68,0.1)" : "linear-gradient(135deg,#880808,#880808)",
                     border: isFollowed ? "1px solid rgba(239,68,68,0.3)" : "none",
                     borderRadius: "50px", padding: "8px 16px",
                     color: isFollowed ? "#f87171" : "#fff",
@@ -462,7 +462,7 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
           {/* Following count */}
           {following.size > 0 && (
             <div style={{ textAlign: "center", marginTop: "8px", fontSize: "13px", color: "var(--text-muted)" }}>
-              Following <strong style={{ color: "#a78bfa" }}>{following.size}</strong> {following.size === 1 ? "person" : "people"}
+              Following <strong style={{ color: "#c0392b" }}>{following.size}</strong> {following.size === 1 ? "person" : "people"}
             </div>
           )}
         </div>
@@ -470,3 +470,4 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
     </div>
   );
 }
+

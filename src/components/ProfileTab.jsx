@@ -9,6 +9,11 @@ import { ACHIEVEMENTS, BORDER_STYLES, BADGE_COLORS, isUserCreator } from '../uti
 import AvatarWithBorder, { DEFAULT_GREY_AVATAR } from './AvatarWithBorder';
 import AnimatedBannerBackground, { ALL_ANIMATED_BANNERS } from './AnimatedBannerBackground';
 import { supabase } from '../supabaseClient';
+import StatsTab from './StatsTab';
+import WatchCalendarTab from './WatchCalendarTab';
+import WrappedTab from './WrappedTab';
+import AchievementsTab from './AchievementsTab';
+import ConstellationTab from './ConstellationTab';
 
 const TMDB_KEY = '6a2fd6b9b1bb3befbb9f14c203732225';
 
@@ -39,10 +44,10 @@ const DEFAULT_AVATARS = [
 
 const GENRE_COLORS = {
   'Action': '#ef4444', 'Adventure': '#f97316', 'Comedy': '#eab308',
-  'Drama': '#10b981', 'Sci-Fi': '#3b82f6', 'Horror': '#8b5cf6',
-  'Romance': '#ec4899', 'Thriller': '#f59e0b', 'Animation': '#06b6d4',
-  'Fantasy': '#a78bfa', 'Crime': '#6b7280', 'Documentary': '#84cc16',
-  'Mystery': '#c084fc', 'Family': '#fde68a',
+  'Drama': '#10b981', 'Sci-Fi': '#3b82f6', 'Horror': '#880808',
+  'Romance': '#c0392b', 'Thriller': '#f59e0b', 'Animation': '#06b6d4',
+  'Fantasy': '#c0392b', 'Crime': '#6b7280', 'Documentary': '#84cc16',
+  'Mystery': '#c0392b', 'Family': '#fde68a',
 };
 
 const SHOP_BADGES = [
@@ -143,7 +148,7 @@ function RatingDistributionChart({ library = [] }) {
                 style={{
                   width: '100%',
                   height: `${Math.max(4, heightPct)}%`,
-                  background: count > 0 ? 'linear-gradient(to top, var(--accent), #b87cf8)' : 'rgba(255,255,255,0.05)',
+                  background: count > 0 ? 'linear-gradient(to top, var(--accent), #c0392b)' : 'rgba(255,255,255,0.05)',
                   borderRadius: '3px 3px 0 0',
                   transition: 'height 0.3s ease',
                   border: count > 0 ? '1px solid rgba(255,255,255,0.1)' : 'none'
@@ -161,7 +166,16 @@ function RatingDistributionChart({ library = [] }) {
   );
 }
 
-export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, library = [], onOpenUserProfile, onMovieClick }) {
+export default function ProfileTab({
+  targetUser,
+  currentUser,
+  onUpdateProfile,
+  library = [],
+  onOpenUserProfile,
+  onMovieClick,
+  initialSubTab = 'overview',
+  onSubTabChange
+}) {
   // Single All-in-One Customizer Modal state
   const [showCustomizer, setShowCustomizer] = useState(false);
   const [customizerTab, setCustomizerTab] = useState('banner'); // 'banner' | 'avatar' | 'info' | 'showcase'
@@ -184,7 +198,18 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
   const [customUrlInput, setCustomUrlInput] = useState('');
 
   // Page sub-tab navigation
-  const [profileActiveSubTab, setProfileActiveSubTab] = useState('overview');
+  const [profileActiveSubTab, setProfileActiveSubTab] = useState(initialSubTab || 'overview');
+
+  useEffect(() => {
+    if (initialSubTab) {
+      setProfileActiveSubTab(initialSubTab);
+    }
+  }, [initialSubTab]);
+
+  const handleSubTabChange = (tabId) => {
+    setProfileActiveSubTab(tabId);
+    if (onSubTabChange) onSubTabChange(tabId);
+  };
   const [activeShareCard, setActiveShareCard] = useState(null);
 
   // Other-user profile state (Letterboxd-style full-page view)
@@ -671,7 +696,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                   position: 'relative',
                   background: (viewedProfile?.bannerUrl && !viewedProfile.bannerUrl.startsWith('animated-'))
                     ? `url("${viewedProfile.bannerUrl}") center ${viewedProfile.bannerPosPercent ?? 20}% / ${viewedProfile.bannerFitMode === 'contain' ? 'contain' : 'cover'} no-repeat`
-                    : (!viewedProfile?.bannerUrl ? 'linear-gradient(135deg, #1a1040 0%, #2d1b69 50%, #0f172a 100%)' : '#08070e')
+                    : (!viewedProfile?.bannerUrl ? 'linear-gradient(135deg, #181818 0%, #101010 50%, #000000 100%)' : '#08070e')
                 }}
               >
                 {viewedProfile?.bannerUrl?.startsWith('animated-') && (
@@ -681,7 +706,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
               </div>
 
               {/* PROFILE HEADER ROW */}
-              <div style={{ background: '#0a0813', padding: '0 28px 20px', border: '1px solid var(--border)', borderTop: 'none' }}>
+              <div style={{ background: '#121212', padding: '0 28px 20px', border: '1px solid var(--border)', borderTop: 'none' }}>
                 {/* Avatar overlapping banner, then text & stats side by side */}
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '20px', flexWrap: 'wrap' }}>
 
@@ -780,7 +805,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                       {viewedLibrary.filter(m => m.status === 'watched').map(m => (
                         <div key={m.id || m.tmdb_id} onClick={() => onMovieClick && onMovieClick(m.tmdb_id, m.media_type)}
                           style={{ borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--surface-solid)', cursor: 'pointer', transition: 'transform 0.15s, border-color 0.15s' }}
-                          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.borderColor = 'rgba(124,111,247,0.5)'; }}
+                          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.borderColor = 'rgba(136,8,8,0.5)'; }}
                           onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.borderColor = 'var(--border)'; }}
                         >
                           <div style={{ aspectRatio: '2/3', position: 'relative', background: '#1a1030' }}>
@@ -816,7 +841,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                           <div key={m.id || m.tmdb_id}
                             onClick={() => onMovieClick && onMovieClick(m.tmdb_id, m.media_type)}
                             style={{ display: 'flex', gap: '12px', padding: '14px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '14px', cursor: 'pointer', transition: 'border-color 0.15s' }}
-                            onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(124,111,247,0.35)'}
+                            onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(136,8,8,0.35)'}
                             onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
                           >
                             {m.poster_path && (
@@ -825,7 +850,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ fontWeight: 800, fontSize: '13px', marginBottom: '3px' }}>{m.title}</div>
                               {m.rating > 0 && <div style={{ color: 'var(--gold)', fontSize: '12px', fontWeight: 700, marginBottom: '4px' }}>★ {Number(m.rating).toFixed(1)}</div>}
-                              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', fontStyle: 'italic', lineHeight: 1.5, padding: '6px 10px', background: 'rgba(124,111,247,0.06)', borderLeft: '3px solid rgba(124,111,247,0.5)', borderRadius: '0 6px 6px 0' }}>
+                              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', fontStyle: 'italic', lineHeight: 1.5, padding: '6px 10px', background: 'rgba(136,8,8,0.06)', borderLeft: '3px solid rgba(136,8,8,0.5)', borderRadius: '0 6px 6px 0' }}>
                                 "{m.review.slice(0, 160)}{m.review.length > 160 ? '…' : ''}"
                               </div>
                             </div>
@@ -855,7 +880,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
               position: 'relative',
               background: (currentUser?.bannerUrl && !currentUser.bannerUrl.startsWith('animated-'))
                 ? `url("${currentUser.bannerUrl}") center ${currentUser.bannerPosPercent ?? 20}% / ${currentUser.bannerFitMode === 'contain' ? 'contain' : 'cover'} no-repeat`
-                : (!currentUser?.bannerUrl ? 'linear-gradient(135deg, #1a1040 0%, #2d1b69 50%, #0f172a 100%)' : '#08070e')
+                : (!currentUser?.bannerUrl ? 'linear-gradient(135deg, #181818 0%, #101010 50%, #000000 100%)' : '#08070e')
             }}
           >
             {currentUser?.bannerUrl && currentUser.bannerUrl.startsWith('animated-') && (
@@ -895,7 +920,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
           </div>
 
           {/* PROFILE HEADER ROW (Wide clean layout with full-width badges ribbon) */}
-          <div style={{ background: '#0a0813', padding: '0 28px 24px', border: '1px solid var(--border)', borderTop: 'none', borderLeft: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
+          <div style={{ background: '#121212', padding: '0 28px 24px', border: '1px solid var(--border)', borderTop: 'none', borderLeft: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
             
             {/* Top Bar: Avatar + Name/Bio on Left, Stats on Right */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '24px', flexWrap: 'wrap' }}>
@@ -978,28 +1003,57 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
 
           </div>
 
-          {/* 5-TAB SUB-NAV */}
-          <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', gap: '0', marginBottom: '0', background: '#0a0813', borderLeft: '1px solid var(--border)', borderRight: '1px solid var(--border)', overflowX: 'auto' }}>
+          {/* FULL CINEMATIC SUB-NAV (LETTERBOXD PRO STYLE) */}
+          <div style={{
+            display: 'flex',
+            borderBottom: '1px solid var(--border)',
+            gap: '0',
+            marginBottom: '0',
+            background: '#101010',
+            border: '1px solid var(--border)',
+            borderRadius: '12px 12px 0 0',
+            overflowX: 'auto'
+          }}>
             {[
-              { id: 'overview', label: 'Overview' },
-              { id: 'diary', label: `Diary (${recentDiary.length})` },
-              { id: 'watchlist', label: `Watchlist (${watchlistCount})` },
-              { id: 'stats', label: 'Stats & Charts' },
-              { id: 'shop', label: 'Shop & Quests' },
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setProfileActiveSubTab(tab.id)}
-                style={{
-                  background: 'none', border: 'none', padding: '13px 20px', fontSize: '13.5px', fontWeight: 800, whiteSpace: 'nowrap',
-                  color: profileActiveSubTab === tab.id ? 'var(--accent)' : 'var(--text-dim)',
-                  borderBottom: profileActiveSubTab === tab.id ? '2.5px solid var(--accent)' : '2.5px solid transparent',
-                  cursor: 'pointer', transition: 'all 0.2s'
-                }}
-              >
-                {tab.label}
-              </button>
-            ))}
+              { id: 'overview', label: 'Overview', icon: Film },
+              { id: 'stats', label: 'Statistics', icon: BarChart3 },
+              { id: 'calendar', label: 'Watch Calendar', icon: Calendar },
+              { id: 'wrapped', label: 'Yearly Wrapped', icon: Award },
+              { id: 'achievements', label: 'Badges & XP', icon: Trophy },
+              { id: 'constellation', label: 'Stars Map', icon: Sparkles },
+              { id: 'diary', label: `Diary (${recentDiary.length})`, icon: Calendar },
+              { id: 'watchlist', label: `Watchlist (${watchlistCount})`, icon: Film },
+              { id: 'shop', label: 'Shop & Quests', icon: Coins },
+            ].map(tab => {
+              const isActive = profileActiveSubTab === tab.id;
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => handleSubTabChange(tab.id)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: '14px 18px',
+                    fontSize: '13px',
+                    fontWeight: isActive ? 800 : 600,
+                    whiteSpace: 'nowrap',
+                    color: isActive ? '#FFFFFF' : 'var(--text-muted)',
+                    borderBottom: isActive ? '3px solid var(--accent)' : '3px solid transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  onMouseEnter={e => { if (!isActive) e.currentTarget.style.color = '#fff'; }}
+                  onMouseLeave={e => { if (!isActive) e.currentTarget.style.color = 'var(--text-muted)'; }}
+                >
+                  <Icon size={14} color={isActive ? 'var(--accent)' : 'currentColor'} />
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
 
           {/* TAB CONTENT */}
@@ -1129,7 +1183,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                 </div>
 
                 {recentDiary.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0px', position: 'relative', paddingLeft: '14px', borderLeft: '2px solid rgba(124,111,247,0.12)' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0px', position: 'relative', paddingLeft: '14px', borderLeft: '2px solid rgba(136,8,8,0.12)' }}>
                     {recentDiary.map((item, idx) => {
                       const relDate = formatRelativeDate(item.watch_date || item.date_added);
                       return (
@@ -1159,7 +1213,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                                   {item.title}
                                 </span>
                                 <span style={{ fontSize: '11px', color: 'var(--text-dim)', marginLeft: '8px' }}>({item.release_year})</span>
-                                <span style={{ fontSize: '10px', background: 'rgba(124,111,247,0.1)', color: 'var(--accent)', borderRadius: '4px', padding: '2px 6px', marginLeft: '8px', fontWeight: 700 }}>
+                                <span style={{ fontSize: '10px', background: 'rgba(136,8,8,0.1)', color: 'var(--accent)', borderRadius: '4px', padding: '2px 6px', marginLeft: '8px', fontWeight: 700 }}>
                                   {item.media_type === 'tv' ? 'Series' : item.media_type === 'anime' ? 'Anime' : 'Film'}
                                 </span>
                               </div>
@@ -1173,7 +1227,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                                 </div>
                               ) : <span style={{ fontSize: '11px', color: 'var(--text-dim)' }}>No rating</span>}
                               {item.is_rewatch && (
-                                <span style={{ fontSize: '10px', background: 'rgba(236,72,153,0.1)', color: '#ec4899', borderRadius: '12px', padding: '1px 8px', fontWeight: 700 }}>
+                                <span style={{ fontSize: '10px', background: 'rgba(192,57,43,0.1)', color: '#c0392b', borderRadius: '12px', padding: '1px 8px', fontWeight: 700 }}>
                                   🔄 {item.rewatch_count ? `${item.rewatch_count}x` : 'Rewatch'}
                                 </span>
                               )}
@@ -1189,7 +1243,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                                 Trailer
                               </a>
                               <button onClick={() => setActiveShareCard(item)}
-                                style={{ fontSize: '10.5px', color: 'var(--accent)', background: 'rgba(124,111,247,0.06)', border: '1px solid rgba(124,111,247,0.18)', borderRadius: '4px', padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 700, cursor: 'pointer' }}>
+                                style={{ fontSize: '10.5px', color: 'var(--accent)', background: 'rgba(136,8,8,0.06)', border: '1px solid rgba(136,8,8,0.18)', borderRadius: '4px', padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 700, cursor: 'pointer' }}>
                                 Share Card
                               </button>
                             </div>
@@ -1263,60 +1317,36 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
 
             {/* ── STATS TAB ── */}
             {profileActiveSubTab === 'stats' && (
-              <div style={{ display: 'flex', gap: '24px', alignItems: 'start', flexWrap: 'wrap' }}>
-                <div style={{ flex: 1, minWidth: '280px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className="animate-fade-in" style={{ width: '100%' }}>
+                <StatsTab library={library} onMovieClick={onMovieClick} />
+              </div>
+            )}
 
-                  {/* Overview stat cards */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
-                    {[
-                      { label: 'Films Watched', val: watchedCount, color: 'var(--green)', icon: <Film size={20} color="var(--green)" /> },
-                      { label: 'Reviews Written', val: reviewsCount, color: 'var(--accent)', icon: <Edit2 size={20} color="var(--accent)" /> },
-                      { label: 'Favorites', val: favoritesCount, color: 'var(--red)', icon: <Heart size={20} color="var(--red)" fill="var(--red)" /> },
-                      { label: 'Watchlist', val: watchlistCount, color: '#60a5fa', icon: <Calendar size={20} color="#60a5fa" /> },
-                      { label: 'Avg Rating', val: avgRating ? `★ ${avgRating}` : 'N/A', color: 'var(--gold)', icon: <Star size={20} color="var(--gold)" fill="var(--gold)" /> },
-                      { label: 'Current Streak', val: currentStreak > 0 ? `${currentStreak}d` : '—', color: '#f97316', icon: <Flame size={20} color="#f97316" /> },
-                    ].map(s => (
-                      <div key={s.label} className="glass" style={{ borderRadius: '14px', padding: '16px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center' }}>{s.icon}</div>
-                        <div style={{ fontSize: '22px', fontWeight: 900, color: s.color }}>{s.val}</div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</div>
-                      </div>
-                    ))}
-                  </div>
+            {/* ── WATCH CALENDAR TAB ── */}
+            {profileActiveSubTab === 'calendar' && (
+              <div className="animate-fade-in" style={{ width: '100%' }}>
+                <WatchCalendarTab library={library} onMovieClick={onMovieClick} />
+              </div>
+            )}
 
-                  {topRated.length > 0 && (
-                    <div className="glass" style={{ borderRadius: 'var(--radius-xl)', padding: '20px', border: '1px solid var(--border)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                        <Trophy size={16} color="var(--gold)" />
-                        <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0 }}>Your Top Rated Films</h3>
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: '10px' }}>
-                        {topRated.map((m, i) => (
-                          <div key={m.id} onClick={() => onMovieClick && onMovieClick(m.tmdb_id, m.media_type)}
-                            style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--surface-solid)', cursor: onMovieClick ? 'pointer' : 'default' }}>
-                            <div style={{ aspectRatio: '2/3', overflow: 'hidden', position: 'relative' }}>
-                              {m.poster_path ? <img src={`https://image.tmdb.org/t/p/w300${m.poster_path}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" /> : <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>🎬</div>}
-                              <div style={{ position: 'absolute', top: '4px', left: '4px', background: i < 3 ? 'rgba(251,191,36,0.9)' : 'rgba(0,0,0,0.8)', color: i < 3 ? '#000' : '#fff', fontSize: '9px', fontWeight: 900, padding: '1px 5px', borderRadius: '4px' }}>#{i + 1}</div>
-                              <div style={{ position: 'absolute', bottom: '4px', right: '4px', background: 'rgba(0,0,0,0.9)', color: 'var(--gold)', fontSize: '10px', fontWeight: 900, padding: '1px 5px', borderRadius: '4px' }}>★{Number(m.rating).toFixed(1)}</div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+            {/* ── YEARLY WRAPPED TAB ── */}
+            {profileActiveSubTab === 'wrapped' && (
+              <div className="animate-fade-in" style={{ width: '100%' }}>
+                <WrappedTab library={library} />
+              </div>
+            )}
 
-                {/* Right: genre + rating distribution */}
-                <div style={{ width: '300px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <div className="glass" style={{ borderRadius: 'var(--radius-xl)', padding: '20px', border: '1px solid var(--border)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                      <BarChart3 size={16} color="var(--accent)" />
-                      <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0 }}>Genre Breakdown</h3>
-                    </div>
-                    {library.length > 0 ? <MiniGenreChart library={library} /> : <div style={{ color: 'var(--text-muted)', fontSize: '12.5px', textAlign: 'center', padding: '16px' }}>Add movies to see breakdown</div>}
-                  </div>
-                  <RatingDistributionChart library={library} />
-                </div>
+            {/* ── ACHIEVEMENTS & XP TAB ── */}
+            {profileActiveSubTab === 'achievements' && (
+              <div className="animate-fade-in" style={{ width: '100%' }}>
+                <AchievementsTab library={library} currentUser={currentUser} onUpdateProfile={onUpdateProfile} />
+              </div>
+            )}
+
+            {/* ── STARS MAP / CONSTELLATION TAB ── */}
+            {profileActiveSubTab === 'constellation' && (
+              <div className="animate-fade-in" style={{ width: '100%' }}>
+                <ConstellationTab library={library} onMovieClick={onMovieClick} />
               </div>
             )}
 
@@ -1368,7 +1398,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                         <div key={quest.label} style={{ background: done ? 'rgba(16,185,129,0.05)' : 'rgba(255,255,255,0.02)', border: done ? '1px solid rgba(16,185,129,0.3)' : '1px solid var(--border)', borderRadius: '12px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <span style={{ fontSize: '13px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>{quest.icon} {quest.label}</span>
-                            <span style={{ fontSize: '10px', background: quest.type === 'Daily' ? 'rgba(124,111,247,0.1)' : quest.type === 'Weekly' ? 'rgba(236,72,153,0.1)' : 'rgba(245,158,11,0.1)', color: quest.type === 'Daily' ? 'var(--accent)' : quest.type === 'Weekly' ? '#ec4899' : 'var(--gold)', padding: '1px 6px', borderRadius: '4px', fontWeight: 800 }}>{quest.type}</span>
+                            <span style={{ fontSize: '10px', background: quest.type === 'Daily' ? 'rgba(136,8,8,0.1)' : quest.type === 'Weekly' ? 'rgba(192,57,43,0.1)' : 'rgba(245,158,11,0.1)', color: quest.type === 'Daily' ? 'var(--accent)' : quest.type === 'Weekly' ? '#c0392b' : 'var(--gold)', padding: '1px 6px', borderRadius: '4px', fontWeight: 800 }}>{quest.type}</span>
                           </div>
                           <div style={{ height: '5px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
                             <div style={{ height: '100%', width: `${pct}%`, background: done ? 'var(--green)' : 'var(--accent)', borderRadius: '3px' }} />
@@ -1406,7 +1436,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                             <p style={{ fontSize: '11px', color: 'var(--text-dim)', margin: '4px 0 0', lineHeight: 1.4 }}>{banner.desc}</p>
                           </div>
                           {isEquipped ? (
-                            <button disabled className="btn" style={{ marginTop: 'auto', background: 'rgba(124,111,247,0.15)', border: '1px solid var(--accent)', color: 'var(--accent)', padding: '7px 0', fontSize: '12px', fontWeight: 800, borderRadius: '8px', cursor: 'default' }}>✓ Equipped</button>
+                            <button disabled className="btn" style={{ marginTop: 'auto', background: 'rgba(136,8,8,0.15)', border: '1px solid var(--accent)', color: 'var(--accent)', padding: '7px 0', fontSize: '12px', fontWeight: 800, borderRadius: '8px', cursor: 'default' }}>✓ Equipped</button>
                           ) : isUnlocked ? (
                             <button className="btn btn-secondary" onClick={() => { if (onUpdateProfile) onUpdateProfile({ bannerUrl: banner.id, bannerFitMode: 'cover' }); }} style={{ marginTop: 'auto', padding: '7px 0', fontSize: '12px', fontWeight: 800, borderRadius: '8px' }}>Equip Banner</button>
                           ) : (
@@ -1447,7 +1477,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                           </div>
                           <p style={{ fontSize: '10.5px', color: 'var(--text-dim)', margin: 0 }}>{item.desc}</p>
                           {isEquipped ? (
-                            <button disabled className="btn" style={{ marginTop: 'auto', background: 'rgba(124,111,247,0.1)', border: '1px solid var(--accent)', color: 'var(--accent)', padding: '6px 0', fontSize: '12px', fontWeight: 800, borderRadius: '6px', cursor: 'default' }}>✓ Equipped</button>
+                            <button disabled className="btn" style={{ marginTop: 'auto', background: 'rgba(136,8,8,0.1)', border: '1px solid var(--accent)', color: 'var(--accent)', padding: '6px 0', fontSize: '12px', fontWeight: 800, borderRadius: '6px', cursor: 'default' }}>✓ Equipped</button>
                           ) : isUnlocked ? (
                             <button className="btn btn-secondary" onClick={() => { if (onUpdateProfile) onUpdateProfile({ equippedBorder: id }); }} style={{ marginTop: 'auto', padding: '6px 0', fontSize: '12px', fontWeight: 800, borderRadius: '6px' }}>Equip Border</button>
                           ) : (
@@ -1510,8 +1540,8 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                     {[
                       { id: 'projector', name: '🎬 Film Projector Hum', color: '#f59e0b', desc: 'Analog 35mm projector clicker' },
                       { id: 'scifi', name: '🚀 Sci-Fi Ambience', color: '#3b82f6', desc: 'Deep interstellar synth drone' },
-                      { id: 'orchestral', name: '🎻 Epic Orchestral Chords', color: '#ec4899', desc: 'Swell tones from film score' },
-                      { id: 'lofi', name: '🌧️ Lo-Fi Midnight Rain', color: '#a78bfa', desc: 'Warm vinyl rainfall texture' }
+                      { id: 'orchestral', name: '🎻 Epic Orchestral Chords', color: '#c0392b', desc: 'Swell tones from film score' },
+                      { id: 'lofi', name: '🌧️ Lo-Fi Midnight Rain', color: '#c0392b', desc: 'Warm vinyl rainfall texture' }
                     ].map(track => {
                       const vol = soundVolumes[track.id] || 0;
                       return (
@@ -1552,7 +1582,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
             style={{
               width: '92vw', maxWidth: '860px', maxHeight: '92vh',
               borderRadius: '24px', border: '1px solid rgba(255,255,255,0.18)',
-              background: '#0c0a18', padding: '26px', display: 'flex', flexDirection: 'column',
+              background: '#141414', padding: '26px', display: 'flex', flexDirection: 'column',
               boxShadow: '0 30px 80px rgba(0,0,0,0.95)', position: 'relative'
             }}
             onClick={e => e.stopPropagation()}
@@ -1560,7 +1590,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
             {/* Customizer Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '38px', height: '38px', borderRadius: '12px', background: 'rgba(124,111,247,0.15)', border: '1px solid var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '38px', height: '38px', borderRadius: '12px', background: 'rgba(136,8,8,0.15)', border: '1px solid var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <SlidersHorizontal size={18} color="var(--accent)" />
                 </div>
                 <div>
@@ -1590,7 +1620,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                   key={tab.id}
                   onClick={() => setCustomizerTab(tab.id)}
                   style={{
-                    background: customizerTab === tab.id ? 'rgba(124,111,247,0.12)' : 'none',
+                    background: customizerTab === tab.id ? 'rgba(136,8,8,0.12)' : 'none',
                     border: 'none', padding: '10px 16px', fontSize: '12.5px', fontWeight: 800,
                     color: customizerTab === tab.id ? 'var(--accent)' : 'var(--text-dim)',
                     borderBottom: customizerTab === tab.id ? '2px solid var(--accent)' : '2px solid transparent',
@@ -1619,7 +1649,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                           width: '100%', height: '100%',
                           background: bannerUrl
                             ? `url("${bannerUrl}") center ${bannerPosPercent ?? 20}% / ${bannerFitMode === 'contain' ? 'contain' : 'cover'} no-repeat`
-                            : 'linear-gradient(135deg, #1a1040 0%, #2d1b69 50%, #0f172a 100%)'
+                            : 'linear-gradient(135deg, #181818 0%, #101010 50%, #000000 100%)'
                         }}
                       />
                     )}
@@ -1646,7 +1676,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                             style={{
                               padding: '6px 12px', borderRadius: '8px', fontSize: '11.5px', fontWeight: 800,
                               border: bannerFitMode === opt.id ? '1.5px solid var(--accent)' : '1px solid var(--border)',
-                              background: bannerFitMode === opt.id ? 'rgba(124,111,247,0.2)' : 'rgba(0,0,0,0.3)',
+                              background: bannerFitMode === opt.id ? 'rgba(136,8,8,0.2)' : 'rgba(0,0,0,0.3)',
                               color: bannerFitMode === opt.id ? '#fff' : 'var(--text-muted)', cursor: 'pointer'
                             }}
                           >
@@ -1700,13 +1730,13 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                       <label
                         style={{
-                          border: '2px dashed rgba(124,111,247,0.35)', borderRadius: '14px', padding: '24px 16px',
-                          textAlign: 'center', background: 'rgba(124,111,247,0.04)', cursor: 'pointer',
+                          border: '2px dashed rgba(136,8,8,0.35)', borderRadius: '14px', padding: '24px 16px',
+                          textAlign: 'center', background: 'rgba(136,8,8,0.04)', cursor: 'pointer',
                           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
                           transition: 'all 0.2s'
                         }}
-                        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.background = 'rgba(124,111,247,0.08)'; }}
-                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(124,111,247,0.35)'; e.currentTarget.style.background = 'rgba(124,111,247,0.04)'; }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.background = 'rgba(136,8,8,0.08)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(136,8,8,0.35)'; e.currentTarget.style.background = 'rgba(136,8,8,0.04)'; }}
                       >
                         <Upload size={20} color="var(--accent)" />
                         <div>
@@ -1965,7 +1995,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                               position: 'relative', width: '48px', height: '48px', cursor: 'pointer',
                               borderRadius: '50%', padding: '2px',
                               border: isSelected ? '2.5px solid var(--accent)' : '1.5px solid rgba(255,255,255,0.12)',
-                              background: isSelected ? 'rgba(124,111,247,0.2)' : 'rgba(255,255,255,0.02)',
+                              background: isSelected ? 'rgba(136,8,8,0.2)' : 'rgba(255,255,255,0.02)',
                               boxShadow: isSelected ? '0 0 12px var(--accent)' : 'none',
                               transition: 'transform 0.15s ease, border 0.15s ease',
                               display: 'flex', alignItems: 'center', justifyContent: 'center'
@@ -1990,12 +2020,12 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                       <label
                         style={{
                           display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px',
-                          background: 'rgba(124,111,247,0.12)', border: '1px dashed var(--accent)',
+                          background: 'rgba(136,8,8,0.12)', border: '1px dashed var(--accent)',
                           borderRadius: '24px', cursor: 'pointer', fontSize: '12px', fontWeight: 800, color: '#fff',
                           transition: 'all 0.18s ease'
                         }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(124,111,247,0.22)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(124,111,247,0.12)'}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(136,8,8,0.22)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(136,8,8,0.12)'}
                       >
                         <Upload size={14} color="var(--accent)" /> Upload Custom Photo
                         <input type="file" accept="image/*" onChange={handleFileUpload} style={{ display: 'none' }} />
@@ -2017,7 +2047,7 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
                             style={{
                               padding: '10px 12px', borderRadius: '10px',
                               border: isEquipped ? '2px solid var(--accent)' : '1px solid var(--border)',
-                              background: isEquipped ? 'rgba(124,111,247,0.12)' : isUnlocked ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.3)',
+                              background: isEquipped ? 'rgba(136,8,8,0.12)' : isUnlocked ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.3)',
                               opacity: isUnlocked ? 1 : 0.45,
                               cursor: isUnlocked ? 'pointer' : 'not-allowed',
                               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -2220,14 +2250,14 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
               <span style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>CineLog Chronicles</span>
               <button onClick={() => setActiveShareCard(null)} style={{ background: 'none', border: 'none', color: 'var(--text-dim)', fontSize: '18px', cursor: 'pointer' }}>✕</button>
             </div>
-            <div id="share-card-content" style={{ background: 'linear-gradient(135deg, rgba(124,111,247,0.12) 0%, rgba(236,72,153,0.06) 100%)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--radius-lg)', padding: '20px', display: 'flex', gap: '16px', position: 'relative' }}>
+            <div id="share-card-content" style={{ background: 'linear-gradient(135deg, rgba(136,8,8,0.12) 0%, rgba(192,57,43,0.06) 100%)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--radius-lg)', padding: '20px', display: 'flex', gap: '16px', position: 'relative' }}>
               {activeShareCard.poster_path && <img src={`https://image.tmdb.org/t/p/w92${activeShareCard.poster_path}`} alt="" style={{ width: '70px', height: '105px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)', flexShrink: 0 }} />}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <h3 style={{ fontSize: '17px', fontWeight: 900, color: '#fff', lineHeight: 1.2 }}>{activeShareCard.title}</h3>
                 <div style={{ fontSize: '11.5px', color: 'var(--text-dim)', marginTop: '2px' }}>{activeShareCard.release_year}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
                   {activeShareCard.rating && <span style={{ color: 'var(--gold)', fontWeight: 900, fontSize: '13px' }}>★ {activeShareCard.rating}</span>}
-                  {activeShareCard.is_rewatch && <span style={{ fontSize: '9px', background: 'rgba(236,72,153,0.1)', color: '#ec4899', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}> Rewatched</span>}
+                  {activeShareCard.is_rewatch && <span style={{ fontSize: '9px', background: 'rgba(192,57,43,0.1)', color: '#c0392b', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}> Rewatched</span>}
                 </div>
                 <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '10px', lineHeight: 1.4, borderLeft: '2px solid var(--accent)', paddingLeft: '8px' }}>"{activeShareCard.review || 'No review notes written yet.'}"</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '14px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '10px' }}>
@@ -2244,3 +2274,4 @@ export default function ProfileTab({ targetUser, currentUser, onUpdateProfile, l
     </div>
   );
 }
+

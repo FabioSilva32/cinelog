@@ -132,7 +132,7 @@ function ForYouCard({ rec, saved, onAdd, onClick }) {
       onClick={onClick}
       style={{
         background: "rgba(255,255,255,0.02)",
-        border: `1px solid ${hover ? "rgba(124,111,247,0.4)" : "var(--border)"}`,
+        border: `1px solid ${hover ? "rgba(136,8,8,0.4)" : "var(--border)"}`,
         borderRadius: "16px",
         overflow: "hidden",
         position: "relative",
@@ -166,7 +166,7 @@ function ForYouCard({ rec, saved, onAdd, onClick }) {
             alignItems: "center",
             justifyContent: "center",
             fontSize: "48px",
-            background: "linear-gradient(135deg,rgba(124,111,247,0.1),rgba(168,85,247,0.05))"
+            background: "linear-gradient(135deg,rgba(136,8,8,0.1),rgba(136,8,8,0.05))"
           }}>🎬</div>
         )}
 
@@ -174,7 +174,7 @@ function ForYouCard({ rec, saved, onAdd, onClick }) {
         <div style={{
           position: "absolute",
           inset: 0,
-          background: "linear-gradient(to top, rgba(10,8,19,0.95) 0%, rgba(10,8,19,0.5) 75%, transparent 100%)",
+          background: "linear-gradient(to top, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.6) 75%, transparent 100%)",
           opacity: hover ? 1 : 0,
           transition: "opacity 0.22s",
           display: "flex",
@@ -365,8 +365,10 @@ Rules:
     <div style={{ display: "flex", flexDirection: "column", gap: "28px", paddingBottom: "40px" }}>
       {/* Header */}
       <div style={{ textAlign: "center", padding: "8px 0" }}>
-        <div style={{ fontSize: "48px", marginBottom: "12px" }}>🤖</div>
-        <h2 style={{ fontSize: "26px", fontWeight: 900, marginBottom: "8px", background: "linear-gradient(135deg,#a78bfa,#e879f9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+        <div style={{ display: "inline-flex", padding: "12px", background: "#161616", border: "1px solid #262626", borderRadius: "50%", marginBottom: "14px" }}>
+          <Sparkles size={24} color="var(--accent)" />
+        </div>
+        <h2 style={{ fontSize: "26px", fontWeight: 900, marginBottom: "8px", color: "#FFFFFF" }}>
           For You
         </h2>
         <p style={{ fontSize: "14px", color: "var(--text-muted)", maxWidth: "420px", margin: "0 auto", lineHeight: 1.6 }}>
@@ -378,8 +380,8 @@ Rules:
 
       {/* Taste Profile Card */}
       {tasteProfile && (
-        <div style={{ background: "rgba(124,111,247,0.08)", border: "1px solid rgba(124,111,247,0.2)", borderRadius: "16px", padding: "18px 22px" }}>
-          <div style={{ fontSize: "12px", fontWeight: 800, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
+        <div style={{ background: "#141414", border: "1px solid #262626", borderRadius: "12px", padding: "18px 22px" }}>
+          <div style={{ fontSize: "12px", fontWeight: 800, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
             <Sparkles size={13} /> Your Taste Profile
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: "10px" }}>
@@ -388,7 +390,7 @@ Rules:
                 <div style={{ fontSize: "10px", color: "var(--text-dim)", marginBottom: "6px", fontWeight: 700 }}>TOP GENRES</div>
                 <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
                   {tasteProfile.topGenres.slice(0, 3).map(g => (
-                    <span key={g} style={{ fontSize: "11px", padding: "2px 10px", borderRadius: "20px", background: "rgba(124,111,247,0.15)", border: "1px solid rgba(124,111,247,0.25)", color: "#a78bfa" }}>{g}</span>
+                    <span key={g} style={{ fontSize: "11px", padding: "2px 10px", borderRadius: "4px", background: "#1C1C1C", border: "1px solid #282828", color: "#E4E4E7" }}>{g}</span>
                   ))}
                 </div>
               </div>
@@ -412,22 +414,22 @@ Rules:
       {/* Generate button */}
       <div style={{ textAlign: "center" }}>
         <button onClick={generate} disabled={loading} style={{
-          background: loading ? "rgba(124,111,247,0.2)" : "linear-gradient(135deg,#7c6ff7,#a855f7)",
-          border: "none", borderRadius: "50px", padding: "14px 36px",
-          color: "#fff", fontWeight: 800, fontSize: "15px", cursor: loading ? "default" : "pointer",
-          display: "inline-flex", alignItems: "center", gap: "10px",
-          boxShadow: loading ? "none" : "0 8px 24px rgba(124,111,247,0.4)",
-          transition: "all 0.2s",
+          background: loading ? "#222222" : "var(--accent)",
+          border: "none", borderRadius: "8px", padding: "12px 28px",
+          color: "#fff", fontWeight: 800, fontSize: "14px", cursor: loading ? "default" : "pointer",
+          display: "inline-flex", alignItems: "center", gap: "8px",
+          boxShadow: loading ? "none" : "0 4px 12px rgba(229,9,20,0.3)",
+          transition: "all 0.15s",
         }}>
           {loading ? (
-            <><div style={{ width: "18px", height: "18px", border: "2px solid rgba(255,255,255,0.3)", borderTop: "2px solid #fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} /> Analysing your taste…</>
+            <><div style={{ width: "16px", height: "16px", border: "2px solid rgba(255,255,255,0.3)", borderTop: "2px solid #fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} /> Analysing your taste…</>
           ) : generated ? (
-            <><RefreshCw size={16} /> Refresh Picks</>
+            <><RefreshCw size={14} /> Refresh Picks</>
           ) : (
-            <><Sparkles size={16} /> {GEMINI_KEY ? "Generate AI Picks" : "Get Recommendations"}</>
+            <><Sparkles size={14} /> {GEMINI_KEY ? "Generate AI Picks" : "Get Recommendations"}</>
           )}
         </button>
-        {usingAI && <div style={{ fontSize: "11px", color: "#a78bfa", marginTop: "8px", display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Zap size={11} /> Powered by Gemini AI</div>}
+        {usingAI && <div style={{ fontSize: "11px", color: "var(--accent)", marginTop: "8px", display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Zap size={11} /> Powered by Gemini AI</div>}
       </div>
 
       {/* Error notice */}
@@ -472,3 +474,5 @@ Rules:
     </div>
   );
 }
+
+

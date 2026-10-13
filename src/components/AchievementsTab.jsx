@@ -40,9 +40,9 @@ export default function AchievementsTab({ library, currentUser, onUpdateProfile 
       
       {/* ── HEADER INTRO ── */}
       <div className="glass" style={{ borderRadius: 'var(--radius-xl)', padding: '28px', border: '1px solid var(--border)', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 10% 20%, rgba(124,111,247,0.1) 0%, transparent 50%), radial-gradient(circle at 90% 80%, rgba(245,158,11,0.06) 0%, transparent 50%)' }} />
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 10% 20%, rgba(136,8,8,0.1) 0%, transparent 50%), radial-gradient(circle at 90% 80%, rgba(245,158,11,0.06) 0%, transparent 50%)' }} />
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
-          <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'linear-gradient(135deg, rgba(251,191,36,0.15) 0%, rgba(124,111,247,0.15) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(251,191,36,0.3)', boxShadow: '0 0 16px rgba(251,191,36,0.1)' }}>
+          <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'linear-gradient(135deg, rgba(251,191,36,0.15) 0%, rgba(136,8,8,0.15) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(251,191,36,0.3)', boxShadow: '0 0 16px rgba(251,191,36,0.1)' }}>
             <Trophy size={30} color="var(--gold)" />
           </div>
           <div>
@@ -147,7 +147,7 @@ export default function AchievementsTab({ library, currentUser, onUpdateProfile 
               }
 
               return (
-                <div key={borderId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: isEquipped ? 'rgba(124,111,247,0.06)' : 'rgba(255,255,255,0.01)', opacity: isUnlocked ? 1 : 0.7 }}>
+                <div key={borderId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: isEquipped ? 'rgba(136,8,8,0.06)' : 'rgba(255,255,255,0.01)', opacity: isUnlocked ? 1 : 0.7 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <span style={{ fontSize: '12.5px', fontWeight: 700, color: isUnlocked ? '#fff' : 'var(--text-dim)' }}>{config.name}</span>
                     {!isUnlocked && (
@@ -157,7 +157,7 @@ export default function AchievementsTab({ library, currentUser, onUpdateProfile 
 
                   <div>
                     {isEquipped ? (
-                      <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent)', background: 'rgba(124,111,247,0.15)', padding: '4px 10px', borderRadius: '4px' }}>Equipped</span>
+                      <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent)', background: 'rgba(136,8,8,0.15)', padding: '4px 10px', borderRadius: '4px' }}>Equipped</span>
                     ) : isUnlocked ? (
                       <button onClick={() => handleEquipBorder(borderId)} className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: '11.5px', height: 'auto' }}>
                         Equip
@@ -175,3 +175,4 @@ export default function AchievementsTab({ library, currentUser, onUpdateProfile 
     </div>
   );
 }
+

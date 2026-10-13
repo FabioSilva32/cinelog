@@ -62,7 +62,7 @@ export default function ResetPasswordModal({ onClose }) {
         </button>
 
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <div style={{ display: 'inline-flex', padding: '12px', background: 'rgba(124,111,247,0.1)', borderRadius: '50%', color: 'var(--accent)', marginBottom: '12px' }}>
+          <div style={{ display: 'inline-flex', padding: '12px', background: 'rgba(136,8,8,0.1)', borderRadius: '50%', color: 'var(--accent)', marginBottom: '12px' }}>
             <Lock size={24} />
           </div>
           <h2 style={{ fontSize: '20px' }}>Create New Password</h2>
@@ -127,3 +127,4 @@ export default function ResetPasswordModal({ onClose }) {
     </div>
   );
 }
+

@@ -56,7 +56,7 @@ export default function AnimatedBannerBackground({ bannerId, style = {} }) {
       angle: (i / 7) * Math.PI * 2,
       radius: 60 + Math.random() * 50,
       speed: (Math.random() * 0.02 + 0.01) * (i % 2 === 0 ? 1 : -1),
-      color: ['#ec4899', '#8b5cf6', '#3b82f6', '#06b6d4', '#f43f5e'][i % 5]
+      color: ['#c0392b', '#880808', '#3b82f6', '#06b6d4', '#f43f5e'][i % 5]
     }));
 
     // ── 3. THEME: MATRIX ──
@@ -71,7 +71,7 @@ export default function AnimatedBannerBackground({ bannerId, style = {} }) {
       y: Math.random() * height,
       length: Math.random() * 25 + 15,
       speed: Math.random() * 14 + 10,
-      color: ['#38bdf8', '#818cf8', '#c084fc', '#f472b6'][Math.floor(Math.random() * 4)],
+      color: ['#38bdf8', '#c0392b', '#c0392b', '#c0392b'][Math.floor(Math.random() * 4)],
       alpha: Math.random() * 0.6 + 0.3
     }));
 
@@ -120,7 +120,7 @@ export default function AnimatedBannerBackground({ bannerId, style = {} }) {
 
         // Soft glowing cosmic clouds
         ctx.save();
-        ctx.fillStyle = 'rgba(124, 111, 247, 0.12)';
+        ctx.fillStyle = 'rgba(136,8,8, 0.12)';
         ctx.filter = 'blur(40px)';
         ctx.beginPath();
         ctx.arc(width * 0.3 + Math.sin(time * 0.01) * 30, height * 0.4, 120, 0, Math.PI * 2);
@@ -222,7 +222,7 @@ export default function AnimatedBannerBackground({ bannerId, style = {} }) {
         nodes.forEach(n => {
           const grad = ctx.createRadialGradient(n.x, n.y, 10, n.x, n.y, n.r);
           grad.addColorStop(0, n.color);
-          grad.addColorStop(0.5, 'rgba(124, 111, 247, 0.15)');
+          grad.addColorStop(0.5, 'rgba(136,8,8, 0.15)');
           grad.addColorStop(1, 'transparent');
           ctx.fillStyle = grad;
           ctx.beginPath();
@@ -291,7 +291,7 @@ export default function AnimatedBannerBackground({ bannerId, style = {} }) {
         const sunGrad = ctx.createLinearGradient(0, sunY - sunR, 0, sunY + sunR);
         sunGrad.addColorStop(0, '#fef08a');
         sunGrad.addColorStop(0.4, '#f97316');
-        sunGrad.addColorStop(1, '#ec4899');
+        sunGrad.addColorStop(1, '#c0392b');
         ctx.fillStyle = sunGrad;
         ctx.beginPath();
         ctx.arc(sunX, sunY, sunR, 0, Math.PI * 2);
@@ -307,7 +307,7 @@ export default function AnimatedBannerBackground({ bannerId, style = {} }) {
         });
 
         // Wireframe Mountains on horizon
-        ctx.strokeStyle = '#a855f7';
+        ctx.strokeStyle = '#c0392b';
         ctx.lineWidth = 1.2;
         ctx.beginPath();
         ctx.moveTo(0, horizonY);
@@ -323,7 +323,7 @@ export default function AnimatedBannerBackground({ bannerId, style = {} }) {
         ctx.stroke();
 
         // Glowing Horizon Laser Line
-        ctx.strokeStyle = '#ec4899';
+        ctx.strokeStyle = '#c0392b';
         ctx.lineWidth = 2.5;
         ctx.beginPath();
         ctx.moveTo(0, horizonY);
@@ -570,3 +570,5 @@ export default function AnimatedBannerBackground({ bannerId, style = {} }) {
     />
   );
 }
+
+

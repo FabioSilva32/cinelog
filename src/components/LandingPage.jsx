@@ -6,10 +6,50 @@ import { triggerBackdropHover } from '../utils/backdrop';
 const TMDB_KEY = '6a2fd6b9b1bb3befbb9f14c203732225';
 
 const HERO_MOVIES = [
-  { tmdb_id: 27205, title: 'Inception', backdrop_path: '/8ZTVqvKDQ8emSGUEMjsS4yHAwrp.jpg', overview: 'Cobb, a skilled thief who commits corporate espionage by infiltrating the subconscious of his targets, is offered a chance to regain his old life as payment for the impossible: inception.', year: '2010', rating: '8.4', genre: 'Sci-Fi Thriller', media_type: 'movie' },
-  { tmdb_id: 157336, title: 'Interstellar', backdrop_path: '/2ssWTSVklAEc98frZUQhgtGHx7s.jpg', overview: 'A group of explorers make use of a newly discovered wormhole to surpass the limitations on human space travel and conquer the vast distances involved in an interstellar voyage.', year: '2014', rating: '8.4', genre: 'Sci-Fi Drama', media_type: 'movie' },
-  { tmdb_id: 603, title: 'The Matrix', backdrop_path: '/oMsxZEvz9a708d49b6UdZK1KAo5.jpg', overview: 'Set in the 22nd century, The Matrix tells the story of a computer hacker who joins underground insurgents fighting against a vast computer-generated reality.', year: '1999', rating: '8.2', genre: 'Action Sci-Fi', media_type: 'movie' },
-  { tmdb_id: 278, title: 'The Shawshank Redemption', backdrop_path: '/kXfqcdQKsToO0OUXHcrrNCHDBzO.jpg', overview: 'Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency.', year: '1994', rating: '9.3', genre: 'Drama', media_type: 'movie' },
+  {
+    tmdb_id: 693134,
+    title: 'DUNE: PART TWO',
+    backdrop_path: '/eZ239CUp1d6OryZEBPnO2n87gMG.jpg',
+    overview: 'Follow the mythic journey of Paul Atreides as he unites with Chani and the Fremen while seeking vengeance against the conspirators who destroyed his family, facing a choice between the love of his life and the fate of the known universe.',
+    year: '2024',
+    rating: '8.2',
+    genre: 'Sci-Fi',
+    runtime: '2h 47m',
+    media_type: 'movie'
+  },
+  {
+    tmdb_id: 872585,
+    title: 'OPPENHEIMER',
+    backdrop_path: '/neeNHeXjMF5fXoCJRsOmkNGC7q.jpg',
+    overview: 'The story of J. Robert Oppenheimer’s role in the Manhattan Project and the development of the atomic bomb during World War II.',
+    year: '2023',
+    rating: '8.1',
+    genre: 'Biography · Drama',
+    runtime: '3h 01m',
+    media_type: 'movie'
+  },
+  {
+    tmdb_id: 157336,
+    title: 'INTERSTELLAR',
+    backdrop_path: '/2ssWTSVklAEc98frZUQhgtGHx7s.jpg',
+    overview: 'A group of explorers make use of a newly discovered wormhole to surpass the limitations on human space travel and conquer the vast distances involved in an interstellar voyage.',
+    year: '2014',
+    rating: '8.4',
+    genre: 'Sci-Fi · Drama',
+    runtime: '2h 49m',
+    media_type: 'movie'
+  },
+  {
+    tmdb_id: 27205,
+    title: 'INCEPTION',
+    backdrop_path: '/8ZTVqvKDQ8emSGUEMjsS4yHAwrp.jpg',
+    overview: 'Cobb, a skilled thief who commits corporate espionage by infiltrating the subconscious of his targets, is offered a chance to regain his old life as payment for the impossible: inception.',
+    year: '2010',
+    rating: '8.4',
+    genre: 'Sci-Fi · Thriller',
+    runtime: '2h 28m',
+    media_type: 'movie'
+  },
 ];
 
 function StatCounter({ value, suffix = '', duration = 1200 }) {
@@ -102,7 +142,7 @@ export default function LandingPage({ onMovieClick, setActiveTab, library = [] }
     return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 6);
   }, [library]);
 
-  const GENRE_COLORS = ['#7c6ff7', '#10b981', '#ef4444', '#fbbf24', '#3b82f6', '#ec4899'];
+  const GENRE_COLORS = ['#880808', '#10b981', '#ef4444', '#fbbf24', '#3b82f6', '#c0392b'];
 
   const recentActivity = [...library]
     .sort((a, b) => new Date(b.date_added || 0) - new Date(a.date_added || 0))
@@ -126,219 +166,333 @@ export default function LandingPage({ onMovieClick, setActiveTab, library = [] }
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '44px' }}>
 
-      {/* ── HERO CAROUSEL ─────────────────────────────────────────────── */}
+      {/* ── HERO BILLBOARD (MATCHING RED MOCKUP) ── */}
       <div style={{
-        position: 'relative', height: '480px', borderRadius: 'var(--radius-xl)',
-        overflow: 'hidden', border: '1px solid var(--border)',
-        boxShadow: '0 24px 60px rgba(0,0,0,0.7)',
+        position: 'relative',
+        minHeight: '380px',
+        borderRadius: '16px',
+        overflow: 'hidden',
+        border: '1px solid #222222',
+        background: '#0a0a0a',
+        boxShadow: '0 24px 60px rgba(0,0,0,0.85)',
+        display: 'flex',
+        alignItems: 'center'
       }}>
-        {/* Background image */}
+        {/* Background image & horizontal gradient fade */}
         <div style={{
-          position: 'absolute', inset: 0, opacity: heroTransitioning ? 0 : 0.35,
+          position: 'absolute',
+          inset: 0,
+          opacity: heroTransitioning ? 0 : 0.85,
           transition: 'opacity 0.3s ease',
+          zIndex: 1
         }}>
           <img
             key={activeHero.tmdb_id}
             src={`https://image.tmdb.org/t/p/original${activeHero.backdrop_path}`}
             alt=""
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            style={{ width: '65%', height: '100%', objectFit: 'cover' }}
           />
         </div>
 
-        {/* Gradient overlays */}
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(8,7,11,0.95) 0%, rgba(8,7,11,0.5) 60%, transparent 100%)' }} />
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, var(--bg) 0%, transparent 50%)' }} />
-
-        {/* Content */}
+        {/* Gradient overlays to achieve clean fade from image to pitch black on the right */}
         <div style={{
-          position: 'relative', zIndex: 2, padding: '48px 52px',
-          maxWidth: '680px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
-          opacity: heroTransitioning ? 0 : 1, transition: 'opacity 0.3s ease',
-        }}>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: '6px', marginBottom: '14px',
-            background: 'rgba(124,111,247,0.15)', border: '1px solid rgba(124,111,247,0.3)',
-            color: '#a78bfa', borderRadius: '20px', padding: '5px 13px',
-            fontSize: '11px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase',
-            width: 'fit-content',
-          }}>
-            <Flame size={11} /> Spotlight · {activeHero.genre}
-          </div>
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(to right, rgba(10,10,10,0.1) 0%, rgba(10,10,10,0.7) 45%, #0a0a0a 65%, #0a0a0a 100%)',
+          zIndex: 2
+        }} />
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(to top, rgba(10,10,10,0.6) 0%, transparent 60%)',
+          zIndex: 2
+        }} />
 
-          <h1 style={{ fontSize: '48px', fontWeight: 900, lineHeight: 1.05, marginBottom: '10px', letterSpacing: '-1.5px' }}>
+        {/* Right Billboard Content */}
+        <div style={{
+          position: 'relative',
+          zIndex: 3,
+          marginLeft: 'auto',
+          width: '50%',
+          minWidth: '380px',
+          padding: '40px 48px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          opacity: heroTransitioning ? 0 : 1,
+          transition: 'opacity 0.3s ease'
+        }}>
+          <h1 style={{
+            fontSize: '40px',
+            fontWeight: 900,
+            lineHeight: 1.05,
+            marginBottom: '10px',
+            color: '#FFFFFF',
+            textTransform: 'uppercase',
+            letterSpacing: '-0.5px'
+          }}>
             {activeHero.title}
           </h1>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '14px' }}>
-            <span style={{ color: 'var(--gold)', fontWeight: 800, fontSize: '15px' }}>★ {activeHero.rating}</span>
-            <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{activeHero.year}</span>
-            <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>TMDB</span>
+          {/* Stars & Meta line */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', flexWrap: 'wrap' }}>
+            <span style={{ color: '#FFFFFF', fontSize: '14px', letterSpacing: '1px' }}>★★★★★</span>
+            <span style={{ color: '#888888', fontSize: '13px', fontWeight: 600 }}>
+              {activeHero.year} · {activeHero.genre} · {activeHero.runtime || '2h 46m'}
+            </span>
           </div>
 
-          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px', lineHeight: 1.65, marginBottom: '28px', maxWidth: '520px' }}>
+          <p style={{
+            color: '#9E9E9E',
+            fontSize: '13.5px',
+            lineHeight: 1.6,
+            marginBottom: '26px',
+            maxWidth: '460px',
+            display: '-webkit-box',
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden'
+          }}>
             {activeHero.overview}
           </p>
 
-          <div style={{ display: 'flex', gap: '12px' }}>
+          {/* Sharp Solid Buttons matching mockup */}
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <button
-              className="btn btn-primary"
               onClick={() => onMovieClick(activeHero.tmdb_id, activeHero.media_type)}
-              style={{ padding: '10px 24px', fontSize: '14px' }}
+              style={{
+                background: 'var(--accent)',
+                color: '#FFFFFF',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '11px 22px',
+                fontSize: '12.5px',
+                fontWeight: 800,
+                cursor: 'pointer',
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 2px 10px rgba(229,9,20,0.35)',
+                transition: 'opacity 0.15s ease'
+              }}
+              onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
+              onMouseLeave={e => e.currentTarget.style.opacity = '1'}
             >
-              <Play size={15} fill="white" /> Log This Film
+              + ADD TO LIBRARY
             </button>
             <button
-              className="btn btn-secondary"
-              onClick={() => setActiveTab('explore')}
-              style={{ padding: '10px 20px', fontSize: '13px' }}
+              onClick={() => onMovieClick(activeHero.tmdb_id, activeHero.media_type)}
+              style={{
+                background: '#181818',
+                color: '#FFFFFF',
+                border: '1px solid #333333',
+                borderRadius: '6px',
+                padding: '11px 22px',
+                fontSize: '12.5px',
+                fontWeight: 800,
+                cursor: 'pointer',
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'border-color 0.15s ease'
+              }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = '#333333'}
             >
-              <Compass size={14} /> Explore More
+              ☆ LOG / RATE
             </button>
           </div>
         </div>
 
         {/* Dot navigation */}
-        <div style={{ position: 'absolute', right: '40px', bottom: '40px', display: 'flex', gap: '8px', zIndex: 10 }}>
+        <div style={{ position: 'absolute', right: '32px', bottom: '24px', display: 'flex', gap: '6px', zIndex: 10 }}>
           {HERO_MOVIES.map((_, idx) => (
             <button
               key={idx}
               onClick={() => goToHero(idx)}
               style={{
-                width: idx === heroIndex ? '24px' : '8px', height: '8px',
-                borderRadius: '4px',
-                background: heroIndex === idx ? 'var(--accent)' : 'rgba(255,255,255,0.3)',
-                border: 'none', cursor: 'pointer', transition: 'all 0.35s cubic-bezier(0.4,0,0.2,1)',
-                padding: 0,
+                width: idx === heroIndex ? '20px' : '6px',
+                height: '6px',
+                borderRadius: '3px',
+                background: heroIndex === idx ? 'var(--accent)' : '#444444',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.25s ease',
+                padding: 0
               }}
             />
           ))}
         </div>
-
-        {/* Progress bar */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '2px', background: 'rgba(255,255,255,0.08)' }}>
-          <div style={{
-            height: '100%', background: 'var(--accent)',
-            animation: 'heroProgress 7s linear infinite',
-          }} />
-          <style>{`@keyframes heroProgress { from { width: 0% } to { width: 100% } }`}</style>
-        </div>
       </div>
 
-      {/* ── STATS ROW ───────────────────────────────────────────────── */}
+      {/* ── STATS ROW (IF LIBRARY HAS ITEMS) ── */}
       {library.length > 0 && (
         <div className="stagger-children" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px' }}>
           {[
-            { label: 'Total Titles', val: library.length, color: 'var(--accent)', glow: 'rgba(124,111,247,0.25)', icon: Film },
-            { label: 'Watched', val: watchedCount, color: 'var(--green)', glow: 'rgba(16,185,129,0.25)', icon: CheckCircle },
-            { label: 'Watchlist', val: watchlistCount, color: 'var(--blue)', glow: 'rgba(59,130,246,0.25)', icon: Clock },
-            { label: 'Favorites', val: favCount, color: 'var(--red)', glow: 'rgba(239,68,68,0.25)', icon: Heart },
-            { label: 'Avg Rating', val: avgRating > 0 ? avgRating.toFixed(1) : '—', color: 'var(--gold)', glow: 'rgba(251,191,36,0.25)', icon: Star },
+            { label: 'Total Titles', val: library.length, color: 'var(--accent)', icon: Film },
+            { label: 'Watched', val: watchedCount, color: 'var(--green)', icon: CheckCircle },
+            { label: 'Watchlist', val: watchlistCount, color: 'var(--blue)', icon: Clock },
+            { label: 'Favorites', val: favCount, color: 'var(--red)', icon: Heart },
+            { label: 'Avg Rating', val: avgRating > 0 ? avgRating.toFixed(1) : '—', color: 'var(--gold)', icon: Star },
           ].map(s => {
             const Icon = s.icon;
             return (
               <div key={s.label} style={{
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.07)',
-                borderRadius: 'var(--radius)',
+                background: '#121212',
+                border: '1px solid #242424',
+                borderRadius: '10px',
                 padding: '16px 18px',
                 textAlign: 'center',
-                position: 'relative',
-                overflow: 'hidden',
-                transition: 'all 0.25s',
+                transition: 'border-color 0.2s ease',
               }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = s.color.replace('var(', '').replace(')', ''); e.currentTarget.style.boxShadow = `0 0 20px ${s.glow}`; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; e.currentTarget.style.boxShadow = 'none'; }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = '#242424'}
               >
-                {/* Background glow */}
-                <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse at top, ${s.glow.replace('0.25', '0.05')} 0%, transparent 70%)`, pointerEvents: 'none' }} />
-                <Icon size={18} color={s.color} style={{ marginBottom: '8px', opacity: 0.8 }} />
-                <div style={{ fontSize: '28px', fontWeight: 900, color: s.color, fontFamily: 'var(--font-heading)', letterSpacing: '-1px', lineHeight: 1, marginBottom: '4px' }}>
+                <Icon size={18} color={s.color} style={{ marginBottom: '8px', opacity: 0.9 }} />
+                <div style={{ fontSize: '26px', fontWeight: 900, color: s.color, letterSpacing: '-0.5px', lineHeight: 1, marginBottom: '4px' }}>
                   {typeof s.val === 'number' ? <StatCounter value={s.val} /> : s.val}
                 </div>
-                <div style={{ fontSize: '10px', color: 'var(--text-dim)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.07em' }}>{s.label}</div>
+                <div style={{ fontSize: '10px', color: '#777777', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.07em' }}>{s.label}</div>
               </div>
             );
           })}
         </div>
       )}
 
-      {/* ── MAIN GRID ──────────────────────────────────────────────── */}
+      {/* ── MAIN CONTENT: TRENDING THIS WEEK (MATCHING RED MOCKUP) ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '44px' }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
+            <h2 style={{
+              fontSize: '15px',
+              fontWeight: 900,
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              color: '#FFFFFF',
+              margin: 0
+            }}>
+              Trending This Week
+            </h2>
+            <button
+              onClick={() => setActiveTab('explore')}
+              style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+            >
+              See All →
+            </button>
+          </div>
 
-          {/* ── TRENDING ── */}
-          <div>
-            <div className="section-header">
-              <Flame size={20} color="var(--red)" />
-              <h2 className="section-title">Trending This Week</h2>
-              <button
-                onClick={() => setActiveTab('explore')}
-                style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--accent)', fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-              >
-                See All →
-              </button>
+          {isLoading ? (
+            <div style={{ display: 'flex', gap: '16px' }}>
+              {[...Array(6)].map((_, i) => (
+                <div key={i} style={{ width: '180px', flexShrink: 0 }}>
+                  <div className="skeleton" style={{ width: '180px', height: '270px', borderRadius: '8px' }} />
+                  <div className="skeleton" style={{ height: '14px', marginTop: '10px', width: '80%' }} />
+                </div>
+              ))}
             </div>
-
-            {isLoading ? (
-              <div style={{ display: 'flex', gap: '12px' }}>
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} style={{ width: '120px', flexShrink: 0 }}>
-                    <div className="skeleton" style={{ width: '120px', height: '180px', borderRadius: 'var(--radius)' }} />
-                    <div className="skeleton" style={{ height: '12px', marginTop: '8px', width: '80%' }} />
-                  </div>
-                ))}
-              </div>
-            ) : (
-            <div className="shelf-row stagger-children" style={{ display: 'flex', gap: '12px', paddingBottom: '8px' }}>
-              {displayTrending.map((movie, i) => (
-                <div
-                  key={movie.id}
-                  className="movie-card shelf-item animate-hover-scale"
-                  onClick={() => onMovieClick(movie.id, 'movie')}
-                  onMouseEnter={() => triggerBackdropHover(movie.backdrop_path)}
-                  onMouseLeave={() => triggerBackdropHover(null)}
-                  style={{ width: '120px', flexShrink: 0, background: 'var(--surface-solid)', border: '1px solid var(--border)' }}
-                >
-                    <div style={{ position: 'relative', aspectRatio: '2/3', overflow: 'hidden' }}>
+          ) : (
+            <div className="shelf-row stagger-children" style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '12px' }}>
+              {displayTrending.map((movie, i) => {
+                const tag = i === 0 || i === 3 ? 'POPULAR' : i === 1 || i === 2 || i === 4 ? 'NEW RELEASE' : 'TOP RATED';
+                return (
+                  <div
+                    key={movie.id}
+                    onClick={() => onMovieClick(movie.id, 'movie')}
+                    onMouseEnter={() => triggerBackdropHover(movie.backdrop_path)}
+                    onMouseLeave={() => triggerBackdropHover(null)}
+                    style={{
+                      width: '180px',
+                      flexShrink: 0,
+                      cursor: 'pointer',
+                      transition: 'transform 0.18s ease'
+                    }}
+                  >
+                    <div style={{
+                      position: 'relative',
+                      aspectRatio: '2/3',
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      background: '#121212',
+                      border: '1px solid #222222',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.6)'
+                    }}>
                       {movie.poster_path ? (
                         <img
-                          src={`https://image.tmdb.org/t/p/w300${movie.poster_path}`}
+                          src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
                           alt={movie.title}
-                          style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.3s' }}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                           loading="lazy"
                         />
                       ) : (
                         <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>🎬</div>
                       )}
-                      {/* Rank badge */}
+
+                      {/* Solid Red Badge matching Mockup */}
                       <div style={{
-                        position: 'absolute', top: '6px', left: '6px',
-                        background: i < 3 ? 'var(--accent)' : 'rgba(0,0,0,0.8)',
-                        backdropFilter: 'blur(4px)',
-                        color: '#fff', fontSize: '10px', fontWeight: 900,
-                        padding: '2px 6px', borderRadius: '5px',
-                        boxShadow: i < 3 ? '0 0 10px var(--accent-glow)' : 'none',
+                        position: 'absolute',
+                        top: '8px',
+                        left: '8px',
+                        background: 'var(--accent)',
+                        color: '#FFFFFF',
+                        fontSize: '9.5px',
+                        fontWeight: 900,
+                        padding: '3px 8px',
+                        borderRadius: '4px',
+                        letterSpacing: '0.06em',
+                        textTransform: 'uppercase',
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.5)'
                       }}>
-                        #{i + 1}
+                        {tag}
                       </div>
-                      {/* Rating badge */}
-                      <div style={{ position: 'absolute', top: '6px', right: '6px', background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(4px)', padding: '2px 6px', borderRadius: '5px', fontSize: '10px', fontWeight: 800, color: 'var(--gold)' }}>
-                        ★{movie.vote_average?.toFixed(1)}
-                      </div>
-                      <div className="movie-card-overlay">
-                        <div style={{ padding: '8px', width: '100%' }}>
-                          <div style={{ fontSize: '11px', fontWeight: 800, lineHeight: 1.3 }}>{movie.title}</div>
+
+                      {/* Bottom-left badge if rating is high */}
+                      {movie.vote_average >= 7.8 && (
+                        <div style={{
+                          position: 'absolute',
+                          bottom: '8px',
+                          left: '8px',
+                          background: 'var(--accent)',
+                          color: '#FFFFFF',
+                          fontSize: '9px',
+                          fontWeight: 900,
+                          padding: '2px 7px',
+                          borderRadius: '4px',
+                          letterSpacing: '0.06em',
+                          textTransform: 'uppercase'
+                        }}>
+                          TOP RATED
                         </div>
-                      </div>
+                      )}
                     </div>
-                    <div style={{ padding: '8px 9px' }}>
-                      <div style={{ fontSize: '11.5px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{movie.title}</div>
-                      <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>{(movie.release_date || '').slice(0, 4)}</div>
+
+                    {/* Movie info matching red mockup */}
+                    <div style={{ paddingTop: '8px' }}>
+                      <div style={{
+                        fontSize: '12.5px',
+                        fontWeight: 800,
+                        color: '#FFFFFF',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.02em',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}>
+                        {movie.title}
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#888888', marginTop: '2px' }}>
+                        ({(movie.release_date || '').slice(0, 4) || '2024'})
+                      </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
           {/* ── NEW IN CINEMAS ── */}
           {displayNew.length > 0 && (
@@ -413,7 +567,7 @@ export default function LandingPage({ onMovieClick, setActiveTab, library = [] }
                       transition: 'all 0.2s', animationDelay: `${i * 40}ms`,
                       animation: 'fadeIn 0.3s ease backwards',
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface-hover)'; e.currentTarget.style.borderColor = 'rgba(124,111,247,0.25)'; }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface-hover)'; e.currentTarget.style.borderColor = 'rgba(136,8,8,0.25)'; }}
                     onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.borderColor = ''; }}
                   >
                     <div style={{ width: '38px', height: '57px', borderRadius: '5px', overflow: 'hidden', flexShrink: 0, background: 'var(--surface-solid)', border: '1px solid var(--border)' }}>
@@ -467,3 +621,4 @@ export default function LandingPage({ onMovieClick, setActiveTab, library = [] }
 function Compass(props) {
   return <svg xmlns="http://www.w3.org/2000/svg" width={props.size || 24} height={props.size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>;
 }
+

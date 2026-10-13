@@ -111,10 +111,10 @@ export default function WatchCalendarTab({ library = [], onMovieClick }) {
 
   const getCellColor = (count) => {
     if (count === 0) return 'rgba(255,255,255,0.04)';
-    if (count === 1) return 'rgba(124,111,247,0.28)';
-    if (count === 2) return 'rgba(124,111,247,0.52)';
-    if (count === 3) return 'rgba(124,111,247,0.75)';
-    return 'rgba(124,111,247,1)';
+    if (count === 1) return 'rgba(136,8,8,0.28)';
+    if (count === 2) return 'rgba(136,8,8,0.52)';
+    if (count === 3) return 'rgba(136,8,8,0.75)';
+    return 'rgba(136,8,8,1)';
   };
 
   // Month labels for heatmap
@@ -219,7 +219,7 @@ export default function WatchCalendarTab({ library = [], onMovieClick }) {
                           border: day.isToday ? '1px solid var(--accent)' : day.isFuture ? 'none' : `1px solid rgba(255,255,255,${day.movies.length > 0 ? '0.1' : '0.03'})`,
                           cursor: day.movies.length > 0 ? 'pointer' : 'default',
                           transition: 'transform 0.1s, filter 0.1s',
-                          boxShadow: day.movies.length > 3 ? '0 0 6px rgba(124,111,247,0.5)' : 'none',
+                          boxShadow: day.movies.length > 3 ? '0 0 6px rgba(136,8,8,0.5)' : 'none',
                         }}
                         onMouseOver={e => { if (day.movies.length > 0) e.currentTarget.style.transform = 'scale(1.3)'; }}
                         onMouseOut={e => { e.currentTarget.style.transform = ''; }}
@@ -283,16 +283,16 @@ export default function WatchCalendarTab({ library = [], onMovieClick }) {
                 key={day}
                 style={{
                   borderRadius: '8px', padding: '6px 4px', minHeight: '50px', textAlign: 'center', position: 'relative', cursor: hasMovies ? 'pointer' : 'default',
-                  background: isToday ? 'rgba(124,111,247,0.15)' : hasMovies ? 'rgba(124,111,247,0.07)' : 'rgba(255,255,255,0.02)',
-                  border: `1px solid ${isToday ? 'rgba(124,111,247,0.5)' : hasMovies ? 'rgba(124,111,247,0.2)' : 'rgba(255,255,255,0.04)'}`,
+                  background: isToday ? 'rgba(136,8,8,0.15)' : hasMovies ? 'rgba(136,8,8,0.07)' : 'rgba(255,255,255,0.02)',
+                  border: `1px solid ${isToday ? 'rgba(136,8,8,0.5)' : hasMovies ? 'rgba(136,8,8,0.2)' : 'rgba(255,255,255,0.04)'}`,
                   transition: 'all 0.15s',
                 }}
-                onMouseEnter={e => { if (hasMovies) { e.currentTarget.style.background = 'rgba(124,111,247,0.15)'; setHoveredCell(dateStr); } }}
-                onMouseLeave={e => { e.currentTarget.style.background = isToday ? 'rgba(124,111,247,0.15)' : hasMovies ? 'rgba(124,111,247,0.07)' : 'rgba(255,255,255,0.02)'; setHoveredCell(null); }}
+                onMouseEnter={e => { if (hasMovies) { e.currentTarget.style.background = 'rgba(136,8,8,0.15)'; setHoveredCell(dateStr); } }}
+                onMouseLeave={e => { e.currentTarget.style.background = isToday ? 'rgba(136,8,8,0.15)' : hasMovies ? 'rgba(136,8,8,0.07)' : 'rgba(255,255,255,0.02)'; setHoveredCell(null); }}
               >
                 <div style={{ fontSize: '11px', fontWeight: isToday ? 900 : 600, color: isToday ? 'var(--accent)' : hasMovies ? 'var(--text)' : 'var(--text-muted)', marginBottom: '3px' }}>{day}</div>
                 {dayMovies.slice(0, 2).map((m, mi) => (
-                  <div key={mi} style={{ fontSize: '9px', background: 'rgba(124,111,247,0.2)', borderRadius: '3px', padding: '1px 3px', marginBottom: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#a78bfa', fontWeight: 600 }}>
+                  <div key={mi} style={{ fontSize: '9px', background: 'rgba(136,8,8,0.2)', borderRadius: '3px', padding: '1px 3px', marginBottom: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#c0392b', fontWeight: 600 }}>
                     {m.title}
                   </div>
                 ))}
@@ -329,3 +329,4 @@ export default function WatchCalendarTab({ library = [], onMovieClick }) {
     </div>
   );
 }
+

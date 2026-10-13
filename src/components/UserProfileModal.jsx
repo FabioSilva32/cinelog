@@ -147,7 +147,7 @@ export default function UserProfileModal({ targetUser, currentUser, onClose, onM
             height: '140px', width: '100%',
             background: profile?.bannerUrl
               ? `url(${profile.bannerUrl}) center/cover`
-              : 'linear-gradient(135deg, rgba(124,111,247,0.3) 0%, rgba(168,85,247,0.2) 100%)',
+              : 'linear-gradient(135deg, rgba(136,8,8,0.3) 0%, rgba(136,8,8,0.2) 100%)',
             position: 'relative', flexShrink: 0
           }}
         />
@@ -168,7 +168,7 @@ export default function UserProfileModal({ targetUser, currentUser, onClose, onM
                 disabled={followLoading}
                 className="btn"
                 style={{
-                  background: isFollowing ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg, #7c6ff7, #a855f7)',
+                  background: isFollowing ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg, #880808, #880808)',
                   border: isFollowing ? '1px solid var(--border)' : 'none',
                   color: '#fff', padding: '9px 20px', borderRadius: '50px',
                   fontWeight: 800, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px',
@@ -271,3 +271,4 @@ export default function UserProfileModal({ targetUser, currentUser, onClose, onM
     </div>
   );
 }
+

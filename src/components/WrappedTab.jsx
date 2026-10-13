@@ -110,13 +110,13 @@ export default function WrappedTab({ library }) {
   const slides = [
     // 0: Intro
     {
-      color: "#7c6ff7",
-      gradient: "linear-gradient(135deg, rgba(124,111,247,0.2), rgba(168,85,247,0.12))",
+      color: "#880808",
+      gradient: "linear-gradient(135deg, rgba(136,8,8,0.2), rgba(136,8,8,0.12))",
       content: ({ isActive }) => (
         <>
           <div style={{ fontSize: "56px", marginBottom: "16px" }}>🎬</div>
-          <div style={{ fontSize: "13px", fontWeight: 800, letterSpacing: "0.12em", color: "#a78bfa", textTransform: "uppercase", marginBottom: "12px" }}>Your {year} in Film</div>
-          <h2 style={{ fontSize: "36px", fontWeight: 900, lineHeight: 1.1, marginBottom: "16px", background: "linear-gradient(135deg,#a78bfa,#e879f9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+          <div style={{ fontSize: "13px", fontWeight: 800, letterSpacing: "0.12em", color: "#c0392b", textTransform: "uppercase", marginBottom: "12px" }}>Your {year} in Film</div>
+          <h2 style={{ fontSize: "36px", fontWeight: 900, lineHeight: 1.1, marginBottom: "16px", background: "linear-gradient(135deg,#c0392b,#c0392b)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
             CineLog Wrapped
           </h2>
           <p style={{ color: "var(--text-muted)", fontSize: "15px", lineHeight: 1.6 }}>
@@ -165,20 +165,20 @@ export default function WrappedTab({ library }) {
     },
     // 3: Top Genre
     {
-      color: "#e879f9",
-      gradient: "linear-gradient(135deg, rgba(232,121,249,0.18), rgba(168,85,247,0.08))",
+      color: "#c0392b",
+      gradient: "linear-gradient(135deg, rgba(232,121,249,0.18), rgba(136,8,8,0.08))",
       content: ({ isActive }) => (
         <>
           <div style={{ fontSize: "56px", marginBottom: "16px" }}>{topGenre ? getGenreEmoji(topGenre) : "🎭"}</div>
-          <div style={{ fontSize: "13px", fontWeight: 800, letterSpacing: "0.12em", color: "#e879f9", textTransform: "uppercase", marginBottom: "12px" }}>Your Top Genre</div>
-          <div style={{ fontSize: "48px", fontWeight: 900, color: "#e879f9", lineHeight: 1.1, marginBottom: "12px" }}>
+          <div style={{ fontSize: "13px", fontWeight: 800, letterSpacing: "0.12em", color: "#c0392b", textTransform: "uppercase", marginBottom: "12px" }}>Your Top Genre</div>
+          <div style={{ fontSize: "48px", fontWeight: 900, color: "#c0392b", lineHeight: 1.1, marginBottom: "12px" }}>
             {topGenre || "No data yet"}
           </div>
           {topGenre && <p style={{ color: "var(--text-muted)", fontSize: "14px" }}>You watched {genreCounts[0][1]} {topGenre} films</p>}
           {genreCounts.length > 1 && (
             <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center", marginTop: "16px" }}>
               {genreCounts.slice(1, 4).map(([g, c]) => (
-                <span key={g} style={{ padding: "4px 14px", borderRadius: "20px", background: "rgba(232,121,249,0.12)", border: "1px solid rgba(232,121,249,0.25)", fontSize: "12px", color: "#e879f9" }}>
+                <span key={g} style={{ padding: "4px 14px", borderRadius: "20px", background: "rgba(232,121,249,0.12)", border: "1px solid rgba(232,121,249,0.25)", fontSize: "12px", color: "#c0392b" }}>
                   {getGenreEmoji(g)} {g} ({c})
                 </span>
               ))}
@@ -249,12 +249,12 @@ export default function WrappedTab({ library }) {
     },
     // 7: Grand Finale
     {
-      color: "#7c6ff7",
-      gradient: "linear-gradient(135deg, rgba(124,111,247,0.25), rgba(168,85,247,0.15), rgba(232,121,249,0.08))",
+      color: "#880808",
+      gradient: "linear-gradient(135deg, rgba(136,8,8,0.25), rgba(136,8,8,0.15), rgba(232,121,249,0.08))",
       content: ({ isActive }) => (
         <>
           <div style={{ fontSize: "56px", marginBottom: "16px" }}>🌟</div>
-          <div style={{ fontSize: "13px", fontWeight: 800, letterSpacing: "0.12em", color: "#a78bfa", textTransform: "uppercase", marginBottom: "16px" }}>That Is a Wrap!</div>
+          <div style={{ fontSize: "13px", fontWeight: 800, letterSpacing: "0.12em", color: "#c0392b", textTransform: "uppercase", marginBottom: "16px" }}>That Is a Wrap!</div>
           <h2 style={{ fontSize: "28px", fontWeight: 900, lineHeight: 1.2, marginBottom: "20px" }}>{year} was a great year for cinema</h2>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", width: "100%", textAlign: "center" }}>
             {[
@@ -307,7 +307,7 @@ export default function WrappedTab({ library }) {
     <div style={{ display: "flex", flexDirection: "column", gap: "24px", alignItems: "center", paddingBottom: "40px" }}>
       {/* Header */}
       <div style={{ width: "100%", textAlign: "center" }}>
-        <div style={{ fontSize: "28px", fontWeight: 900, marginBottom: "4px", background: "linear-gradient(135deg,#a78bfa,#e879f9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+        <div style={{ fontSize: "28px", fontWeight: 900, marginBottom: "4px", background: "linear-gradient(135deg,#c0392b,#c0392b)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
           🎬 {year} Wrapped
         </div>
         <div style={{ fontSize: "13px", color: "var(--text-dim)" }}>Your year in cinema, card by card</div>
@@ -318,7 +318,7 @@ export default function WrappedTab({ library }) {
         {slides.map((_, i) => (
           <button key={i} onClick={() => goTo(i)} style={{
             width: slide === i ? "24px" : "8px", height: "8px", borderRadius: "99px", border: "none",
-            background: slide === i ? "#a78bfa" : "rgba(255,255,255,0.15)",
+            background: slide === i ? "#c0392b" : "rgba(255,255,255,0.15)",
             cursor: "pointer", transition: "all 0.3s ease",
           }} />
         ))}
@@ -341,7 +341,7 @@ export default function WrappedTab({ library }) {
         }}>←</button>
 
         <button onClick={() => { setPlaying(p => !p); }} style={{
-          background: playing ? "rgba(239,68,68,0.15)" : "linear-gradient(135deg,#7c6ff7,#a855f7)",
+          background: playing ? "rgba(239,68,68,0.15)" : "linear-gradient(135deg,#880808,#880808)",
           border: playing ? "1px solid rgba(239,68,68,0.4)" : "none",
           borderRadius: "50px", padding: "10px 24px",
           color: "#fff", fontWeight: 800, fontSize: "14px", cursor: "pointer",
@@ -363,3 +363,5 @@ export default function WrappedTab({ library }) {
     </div>
   );
 }
+
+

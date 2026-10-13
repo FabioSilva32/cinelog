@@ -25,6 +25,8 @@ import SettingsPanel, { applyTheme, THEMES } from './components/SettingsPanel';
 import { ToastProvider, useToast } from './components/ToastSystem';
 import { MOCK_USERS } from './mockData';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
+import { getSuggestedTags } from './utils/collections';
+import { Search, Compass, Library, Award, Trophy, CalendarDays, BarChart3, Users, User, Settings, Film, Tv, X, Loader2, ArrowRight, Flame } from 'lucide-react';
 
 const GENRE_MAP = {
   28:'Action', 12:'Adventure', 16:'Animation', 35:'Comedy', 80:'Crime',
@@ -33,6 +35,8 @@ const GENRE_MAP = {
   53:'Thriller', 10752:'War', 37:'Western', 10759:'Action & Adventure',
   10765:'Sci-Fi & Fantasy', 10764:'Reality',
 };
+
+import { SHARP_SOLID_COMBOS } from './utils/themePresets';
 
 export default function App() {
   return (
@@ -43,18 +47,39 @@ export default function App() {
 }
 
 function AppInner() {
-  const [activeTab, setActiveTab] = useState('landing');
+  const toast = useToast();
+  const [activeTab, setActiveTab] = useState('explore');
+  const [profileSubTab, setProfileSubTab] = useState('overview');
 
   // Synchronize tab navigation with browser history (enables browser Back < and Forward > buttons)
   const handleTabChange = useCallback((newTab, replace = false) => {
-    setActiveTab(newTab);
+    // If navigating to a personal tracking tab that now lives inside Profile, redirect to profile sub-tab!
+    if (['stats', 'calendar', 'wrapped', 'achievements', 'constellation', 'shop', 'diary', 'watchlist'].includes(newTab)) {
+      setProfileSubTab(newTab);
+      setActiveTab('profile');
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', 'profile');
+        url.searchParams.set('sub', newTab);
+        if (replace) {
+          window.history.replaceState({ tab: 'profile', sub: newTab }, '', url.toString());
+        } else {
+          window.history.pushState({ tab: 'profile', sub: newTab }, '', url.toString());
+        }
+      } catch (e) {}
+      return;
+    }
+
+    const resolved = newTab === 'landing' ? 'explore' : newTab;
+    setActiveTab(resolved);
     try {
       const url = new URL(window.location.href);
-      url.searchParams.set('tab', newTab);
+      url.searchParams.set('tab', resolved);
+      url.searchParams.delete('sub');
       if (replace) {
-        window.history.replaceState({ tab: newTab }, '', url.toString());
+        window.history.replaceState({ tab: resolved }, '', url.toString());
       } else {
-        window.history.pushState({ tab: newTab }, '', url.toString());
+        window.history.pushState({ tab: resolved }, '', url.toString());
       }
     } catch (e) {}
   }, []);
@@ -64,22 +89,33 @@ function AppInner() {
     try {
       const params = new URLSearchParams(window.location.search);
       const initialTab = params.get('tab');
-      if (initialTab) {
+      const initialSub = params.get('sub');
+      if (['stats', 'calendar', 'wrapped', 'achievements', 'constellation', 'shop', 'diary', 'watchlist'].includes(initialTab)) {
+        setProfileSubTab(initialTab);
+        setActiveTab('profile');
+      } else if (initialTab === 'profile') {
+        if (initialSub) setProfileSubTab(initialSub);
+        setActiveTab('profile');
+      } else if (initialTab && initialTab !== 'landing') {
         setActiveTab(initialTab);
         window.history.replaceState({ tab: initialTab }, '', window.location.href);
       } else {
-        window.history.replaceState({ tab: 'landing' }, '', window.location.href);
+        setActiveTab('explore');
+        window.history.replaceState({ tab: 'explore' }, '', window.location.href);
       }
     } catch (e) {}
 
     const handlePopState = (e) => {
       if (e.state && e.state.tab) {
-        setActiveTab(e.state.tab);
+        if (e.state.sub) setProfileSubTab(e.state.sub);
+        setActiveTab(e.state.tab === 'landing' ? 'explore' : e.state.tab);
       } else {
         try {
           const p = new URLSearchParams(window.location.search);
-          const t = p.get('tab') || 'landing';
-          setActiveTab(t);
+          const t = p.get('tab') || 'explore';
+          const s = p.get('sub');
+          if (s) setProfileSubTab(s);
+          setActiveTab(t === 'landing' ? 'explore' : t);
         } catch (err) {}
       }
     };
@@ -90,6 +126,9 @@ function AppInner() {
   const [showSettings, setShowSettings] = useState(false);
   const [showCommandCenter, setShowCommandCenter] = useState(false);
   const [cmdQuery, setCmdQuery] = useState('');
+  const [cmdSearchResults, setCmdSearchResults] = useState([]);
+  const [isCmdSearching, setIsCmdSearching] = useState(false);
+  const [trendingQuickPicks, setTrendingQuickPicks] = useState([]);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [quickSearch, setQuickSearch] = useState('');
   const [quickResults, setQuickResults] = useState([]);
@@ -105,14 +144,28 @@ function AppInner() {
     return () => window.removeEventListener('cinelogBackdropHover', handler);
   }, []);
 
-  // Apply saved theme on startup
-  React.useEffect(() => {
-    const saved = localStorage.getItem('cinelog_theme');
-    if (saved) {
-      const theme = THEMES.find(t => t.id === saved);
-      if (theme) applyTheme(theme);
-    }
-  }, []);
+  const [activeComboId, setActiveComboId] = useState(() => localStorage.getItem('cinelog_active_combo') || 'crimson');
+  const [layoutMode, setLayoutMode] = useState(() => localStorage.getItem('cinelog_layout_mode') || 'top-nav');
+  const [showComboBar, setShowComboBar] = useState(true);
+
+  useEffect(() => {
+    localStorage.setItem('cinelog_layout_mode', layoutMode);
+  }, [layoutMode]);
+
+  // Apply razor-sharp solid color combo to root variables
+  useEffect(() => {
+    const combo = SHARP_SOLID_COMBOS.find(c => c.id === activeComboId) || SHARP_SOLID_COMBOS[0];
+    const root = document.documentElement;
+    root.style.setProperty('--accent', combo.accent);
+    root.style.setProperty('--accent-gradient', combo.accent);
+    root.style.setProperty('--accent-hover', combo.accent);
+    root.style.setProperty('--border-focus', combo.borderFocus);
+    root.style.setProperty('--bg', combo.bg);
+    root.style.setProperty('--surface', combo.surface);
+    root.style.setProperty('--border', combo.border);
+    root.style.setProperty('--text', combo.text);
+    localStorage.setItem('cinelog_active_combo', combo.id);
+  }, [activeComboId]);
 
   // Quick-add search
   useEffect(() => {
@@ -152,6 +205,54 @@ function AppInner() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, []);
+
+  // Reset search when modal closes
+  useEffect(() => {
+    if (!showCommandCenter) {
+      setCmdQuery('');
+      setCmdSearchResults([]);
+      setIsCmdSearching(false);
+    }
+  }, [showCommandCenter]);
+
+  // Fetch trending movies for empty-state cinema search
+  useEffect(() => {
+    fetch('https://api.themoviedb.org/3/trending/movie/day?api_key=6a2fd6b9b1bb3befbb9f14c203732225')
+      .then(r => r.json())
+      .then(d => {
+        setTrendingQuickPicks((d.results || []).slice(0, 4));
+      })
+      .catch(() => {});
+  }, []);
+
+  // Omnisearch TMDB debounced multi-search
+  useEffect(() => {
+    const q = cmdQuery.trim();
+    if (!q || q.length < 2) {
+      setCmdSearchResults([]);
+      setIsCmdSearching(false);
+      return;
+    }
+    setIsCmdSearching(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=6a2fd6b9b1bb3befbb9f14c203732225&query=${encodeURIComponent(q)}&page=1`);
+        if (res.ok) {
+          const data = await res.json();
+          const filtered = (data.results || []).filter(item =>
+            (item.media_type === 'movie' || item.media_type === 'tv' || item.media_type === 'person') &&
+            (item.title || item.name)
+          ).slice(0, 8);
+          setCmdSearchResults(filtered);
+        }
+      } catch (err) {
+        console.error('Command center search error:', err);
+      } finally {
+        setIsCmdSearching(false);
+      }
+    }, 240);
+    return () => clearTimeout(timer);
+  }, [cmdQuery]);
 
   // Supabase database sync enabled
   const useSupabase = true;
@@ -353,7 +454,12 @@ function AppInner() {
 
   const handleSaveMovie = async (updatedMovie) => {
     const tmdbId = updatedMovie.tmdb_id || updatedMovie.id;
-    const mediaType = updatedMovie.media_type || 'movie';
+    const isTv = updatedMovie.media_type === 'tv' ||
+                 updatedMovie.type === 'tv' ||
+                 updatedMovie.number_of_seasons !== undefined ||
+                 updatedMovie.first_air_date !== undefined ||
+                 Boolean(updatedMovie.details && (updatedMovie.details.number_of_seasons !== undefined || updatedMovie.details.first_air_date));
+    const mediaType = isTv ? 'tv' : (updatedMovie.media_type || 'movie');
 
     const normalizedMovie = {
       ...updatedMovie,
@@ -444,7 +550,12 @@ function AppInner() {
 
   const handleAddMovie = async (newMovie, mediaTypeFromProp) => {
     const tmdbId = newMovie.tmdb_id || newMovie.id;
-    const mediaType = mediaTypeFromProp || newMovie.media_type || 'movie';
+    const isTv = mediaTypeFromProp === 'tv' ||
+                 newMovie.media_type === 'tv' ||
+                 newMovie.type === 'tv' ||
+                 newMovie.number_of_seasons !== undefined ||
+                 newMovie.first_air_date !== undefined;
+    const mediaType = isTv ? 'tv' : (mediaTypeFromProp || newMovie.media_type || 'movie');
 
     // Normalizing raw search items to standard library items
     const cleanMovie = {
@@ -464,7 +575,11 @@ function AppInner() {
       review: newMovie.review || '',
       favorite: newMovie.favorite || false,
       date_added: newMovie.date_added || new Date().toISOString(),
-      tags: newMovie.tags || [],
+      tags: (() => {
+        const raw = Array.isArray(newMovie.tags) ? newMovie.tags : [];
+        const detected = getSuggestedTags({ title: newMovie.title || newMovie.name, tags: raw });
+        return Array.from(new Set([...raw, ...detected]));
+      })(),
       episode_ratings: newMovie.episode_ratings || {},
       episode_notes: newMovie.episode_notes || {},
       episode_watch_dates: newMovie.episode_watch_dates || {},
@@ -555,12 +670,21 @@ function AppInner() {
       title: 'Remove Movie?',
       message: `Are you sure you want to remove "${movie.title}" from your library? This will delete all its ratings and reviews.`,
       onConfirm: async () => {
-        if (useSupabase && currentUser) {
-          await supabase.from('library').delete().eq('id', movieId);
+        setConfirmConfig({ isOpen: false });
+        if (activeEditMovie && (activeEditMovie.id === movieId || String(activeEditMovie.tmdb_id) === String(movie.tmdb_id))) {
+          setActiveEditMovie(null);
+        }
+        try {
+          if (useSupabase && currentUser) {
+            await supabase.from('library').delete().eq('id', movieId);
+          }
+        } catch (err) {
+          console.error('Failed to delete movie from Supabase:', err);
         }
         setLibrary(prev => prev.filter(m => m.id !== movieId));
-        toast.warning('Removed', movie.title || 'Title removed from library');
-        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        if (toast && toast.warning) {
+          toast.warning('Removed', movie.title || 'Title removed from library');
+        }
       }
     });
   };
@@ -580,14 +704,32 @@ function AppInner() {
   };
 
   const handleMovieClick = (tmdbId, mediaType) => {
-    const existing = library.find(m => String(m.tmdb_id) === String(tmdbId) && m.media_type === mediaType);
+    let resolvedType = mediaType;
+    if (!resolvedType) {
+      const match = library.find(m => String(m.tmdb_id) === String(tmdbId));
+      if (match) resolvedType = match.media_type;
+    }
+    const existing = library.find(m => String(m.tmdb_id) === String(tmdbId) && (!resolvedType || m.media_type === resolvedType));
     if (existing) { setActiveEditMovie(existing); return; }
-    fetch(`https://api.themoviedb.org/3/${mediaType}/${tmdbId}?api_key=6a2fd6b9b1bb3befbb9f14c203732225&append_to_response=videos,credits`)
-      .then(r => r.json())
+
+    const targetType = resolvedType || 'movie';
+    const primaryUrl = `https://api.themoviedb.org/3/${targetType}/${tmdbId}?api_key=6a2fd6b9b1bb3befbb9f14c203732225&append_to_response=videos,credits`;
+
+    fetch(primaryUrl)
+      .then(async r => {
+        if (!r.ok && targetType === 'movie') {
+          const fallbackRes = await fetch(`https://api.themoviedb.org/3/tv/${tmdbId}?api_key=6a2fd6b9b1bb3befbb9f14c203732225&append_to_response=videos,credits`);
+          if (fallbackRes.ok) return fallbackRes.json();
+        }
+        return r.json();
+      })
       .then(data => {
+        if (!data || data.status_code === 34) return;
+        const isTv = data.number_of_seasons !== undefined || data.first_air_date !== undefined || targetType === 'tv';
+        const finalType = isTv ? 'tv' : 'movie';
         const directorName = data.credits?.crew?.find(c => c.job === 'Director')?.name || null;
         setActiveEditMovie({
-          id: crypto.randomUUID(), tmdb_id: data.id, media_type: mediaType,
+          id: crypto.randomUUID(), tmdb_id: data.id, media_type: finalType,
           title: data.title || data.name, poster_path: data.poster_path,
           backdrop_path: data.backdrop_path, overview: data.overview,
           release_year: (data.release_date || data.first_air_date || '').slice(0, 4),
@@ -599,7 +741,8 @@ function AppInner() {
           details: data,
           videos: data.videos
         });
-      });
+      })
+      .catch(err => console.error('Error fetching movie details:', err));
   };
 
   const handleOpenUserProfile = useCallback((userObjOrUsername) => {
@@ -822,55 +965,145 @@ function AppInner() {
     }
   };
 
-  const CMD_ACTIONS = [
-    { label: '🏠 Home / Landing', shortcut: 'H', action: () => { setActiveTab('landing'); setShowCommandCenter(false); } },
-    { label: '🎬 My Library', shortcut: 'L', action: () => { setActiveTab('library'); setShowCommandCenter(false); } },
-    { label: '🔍 Explore Movies', shortcut: 'E', action: () => { setActiveTab('explore'); setShowCommandCenter(false); } },
-    { label: '📊 Analytics & Stats', shortcut: 'S', action: () => { setActiveTab('stats'); setShowCommandCenter(false); } },
-    { label: '🏆 Tier Lists', shortcut: 'T', action: () => { setActiveTab('tierlist'); setShowCommandCenter(false); } },
-    { label: '🌠 Constellation Map', shortcut: 'C', action: () => { setActiveTab('constellation'); setShowCommandCenter(false); } },
-    { label: '📅 Watch Calendar', shortcut: 'W', action: () => { setActiveTab('calendar'); setShowCommandCenter(false); } },
-    { label: '🗂️ Collections', shortcut: 'O', action: () => { setActiveTab('collections'); setShowCommandCenter(false); } },
-    { label: '👤 My Profile', shortcut: 'P', action: () => { setActiveTab('profile'); setShowCommandCenter(false); } },
-    { label: '🏅 Achievements', shortcut: 'A', action: () => { setActiveTab('achievements'); setShowCommandCenter(false); } },
-    { label: '🎮 Daily Trivia Game', shortcut: 'V', action: () => { setActiveTab('trivia'); setShowCommandCenter(false); } },
-    { label: '🔥 Weekly Challenges & XP', shortcut: 'X', action: () => { setActiveTab('challenges'); setShowCommandCenter(false); } },
-    { label: '🎬 Yearly Wrapped', shortcut: 'Y', action: () => { setActiveTab('wrapped'); setShowCommandCenter(false); } },
-    { label: '🤖 For You — AI Picks', shortcut: 'F', action: () => { setActiveTab('foryou'); setShowCommandCenter(false); } },
-    { label: '👥 Social & Friends', shortcut: 'N', action: () => { setActiveTab('social'); setShowCommandCenter(false); } },
-    { label: '⚙️ Open Settings', shortcut: ',', action: () => { setShowSettings(true); setShowCommandCenter(false); } },
-    { label: '🪙 CinePoints Shop', shortcut: null, action: () => { setActiveTab('profile'); setShowCommandCenter(false); } },
+  const POPULAR_SUGGESTIONS = [
+    'Dune: Part Two', 'Oppenheimer', 'Interstellar', 'The Batman', 'Gladiator II', 'Blade Runner 2049', 'Inception'
   ];
 
-  const filteredCmds = cmdQuery.trim()
-    ? CMD_ACTIONS.filter(a => a.label.toLowerCase().includes(cmdQuery.toLowerCase()))
-    : CMD_ACTIONS;
+  const GENRE_QUICK_FILTERS = [
+    'Sci-Fi', 'Action', 'Thriller', 'Horror', 'Drama', 'Animation', 'Crime'
+  ];
 
   return (
-    <div className="app-container" style={{ position: 'relative' }}>
-      {/* Dynamic blurred movie backdrop overlay */}
-      <div style={{
-        position: 'fixed', inset: 0,
-        backgroundImage: hoveredBackdrop ? `url(https://image.tmdb.org/t/p/w1280${hoveredBackdrop})` : 'none',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        opacity: hoveredBackdrop ? 0.12 : 0,
-        filter: 'blur(40px) saturate(130%)',
-        zIndex: -2,
-        transition: 'opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), background-image 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
-        pointerEvents: 'none'
-      }} />
-      <Header
-        activeTab={activeTab}
-        setActiveTab={handleTabChange}
-        currentUser={currentUser}
-        onLogout={handleLogout}
-        onOpenAuth={() => setShowAuth(true)}
-        onOpenSettings={() => setShowSettings(true)}
-        onOpenCommandCenter={() => { setShowCommandCenter(true); setCmdQuery(''); }}
-        useSupabase={useSupabase}
-        setUseSupabase={handleSetUseSupabase}
-      />
+    <div style={{ background: '#000000', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* ── Sharp Solid Color Combos & Layout Live Switcher ── */}
+      {showComboBar && (
+        <div style={{
+          background: '#0d0d0d',
+          borderBottom: '1px solid #222222',
+          padding: '6px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          fontSize: '11.5px',
+          position: 'sticky',
+          top: 0,
+          zIndex: 9999,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.8)'
+        }}>
+          {/* Color Schemes */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#777', fontSize: '10px' }}>
+              Colors:
+            </span>
+            <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+              {SHARP_SOLID_COMBOS.map(combo => {
+                const isSelected = activeComboId === combo.id;
+                return (
+                  <button
+                    key={combo.id}
+                    onClick={() => setActiveComboId(combo.id)}
+                    style={{
+                      background: isSelected ? combo.accent : '#151515',
+                      color: isSelected ? (combo.accent === '#FFFFFF' ? '#000000' : '#FFFFFF') : '#AAAAAA',
+                      border: `1px solid ${isSelected ? combo.accent : '#292929'}`,
+                      borderRadius: '4px',
+                      padding: '3px 8px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <span style={{
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      background: combo.accent,
+                      border: combo.accent === '#000000' ? '1px solid #fff' : 'none'
+                    }} />
+                    {combo.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Layout Mode Selector */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#777', fontSize: '10px' }}>
+              Layout:
+            </span>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              <button
+                onClick={() => setLayoutMode('top-nav')}
+                style={{
+                  background: layoutMode === 'top-nav' ? 'var(--accent)' : '#161616',
+                  color: layoutMode === 'top-nav' ? '#fff' : '#aaa',
+                  border: `1px solid ${layoutMode === 'top-nav' ? 'var(--accent)' : '#2a2a2a'}`,
+                  borderRadius: '4px',
+                  padding: '3px 9px',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                Top-Nav (Red Render)
+              </button>
+              <button
+                onClick={() => setLayoutMode('sidebar')}
+                style={{
+                  background: layoutMode === 'sidebar' ? 'var(--accent)' : '#161616',
+                  color: layoutMode === 'sidebar' ? '#fff' : '#aaa',
+                  border: `1px solid ${layoutMode === 'sidebar' ? 'var(--accent)' : '#2a2a2a'}`,
+                  borderRadius: '4px',
+                  padding: '3px 9px',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                Left Sidebar
+              </button>
+            </div>
+            <button
+              onClick={() => setShowComboBar(false)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#666',
+                cursor: 'pointer',
+                fontSize: '11px',
+                padding: '2px 4px',
+                marginLeft: '6px'
+              }}
+              title="Hide preview bar"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Main app container with layout class */}
+      <div
+        className={`app-container ${layoutMode === 'top-nav' ? 'layout-topnav' : 'layout-sidebar'}`}
+        style={{ position: 'relative', flex: 1, minHeight: 0 }}
+      >
+        <Header
+          activeTab={activeTab}
+          setActiveTab={handleTabChange}
+          currentUser={currentUser}
+          onLogout={handleLogout}
+          onOpenAuth={() => setShowAuth(true)}
+          onOpenSettings={() => setShowSettings(true)}
+          onOpenCommandCenter={() => { setShowCommandCenter(true); setCmdQuery(''); }}
+          useSupabase={useSupabase}
+          setUseSupabase={handleSetUseSupabase}
+          layoutMode={layoutMode}
+        />
 
       <main className="page-content">
         {activeTab === 'landing' && (
@@ -889,7 +1122,7 @@ function AppInner() {
           <ExploreTab onAddMovie={handleAddMovie} library={library} onMovieClick={handleMovieClick} />
         )}
         {activeTab === 'collections' && (
-          <CollectionsTab library={library} onMovieClick={handleMovieClick} />
+          <CollectionsTab library={library} onMovieClick={handleMovieClick} onSaveMovie={handleSaveMovie} />
         )}
         {activeTab === 'tierlist' && (
           <TierListTab library={library} />
@@ -911,6 +1144,8 @@ function AppInner() {
             library={library}
             onMovieClick={handleMovieClick}
             onOpenUserProfile={handleOpenUserProfile}
+            initialSubTab={profileSubTab}
+            onSubTabChange={setProfileSubTab}
           />
         )}
         {activeTab === 'achievements' && (
@@ -970,47 +1205,426 @@ function AppInner() {
         onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
       />
 
-      {/* ── COMMAND CENTER ─────────────────────────────────────── */}
+      {/* ── CINEMA SEARCH & DISCOVERY MODAL ───────────────────── */}
       {showCommandCenter && (
         <div
-          style={{ position: 'fixed', inset: 0, background: 'rgba(4,3,8,0.88)', backdropFilter: 'blur(20px)', zIndex: 9999, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: '18vh' }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.85)',
+            backdropFilter: 'blur(16px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'center',
+            paddingTop: '12vh',
+            paddingLeft: '16px',
+            paddingRight: '16px'
+          }}
           onClick={e => e.target === e.currentTarget && setShowCommandCenter(false)}
         >
-          <div className="animate-fade-in-scale" style={{ width: '100%', maxWidth: '540px', background: '#100d1e', border: '1px solid rgba(124,111,247,0.35)', borderRadius: '18px', overflow: 'hidden', boxShadow: '0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(124,111,247,0.1)' }}>
-            {/* Search header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-              <span style={{ fontSize: '18px', opacity: 0.5 }}>⌘</span>
+          <div
+            className="animate-fade-in-scale"
+            style={{
+              width: '100%',
+              maxWidth: '580px',
+              background: '#0f0f0f',
+              border: '1px solid #242424',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              boxShadow: '0 28px 80px rgba(0,0,0,0.95), 0 0 0 1px rgba(255,255,255,0.04)',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            {/* Search Header */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '16px 20px',
+              borderBottom: '1px solid #1e1e1e',
+              background: '#131313'
+            }}>
+              <Search size={18} color="var(--accent)" style={{ flexShrink: 0 }} />
               <input
                 autoFocus
                 type="text"
-                placeholder="Search actions, pages, shortcuts…"
+                placeholder="Search films, series, actors, directors..."
                 value={cmdQuery}
                 onChange={e => setCmdQuery(e.target.value)}
-                style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: '#fff', fontSize: '16px', fontWeight: 600, fontFamily: 'var(--font-heading)' }}
+                onKeyDown={e => {
+                  if (e.key === 'Escape') setShowCommandCenter(false);
+                  if (e.key === 'Enter') {
+                    if (cmdSearchResults.length > 0) {
+                      const first = cmdSearchResults[0];
+                      if (first.media_type === 'movie' || first.media_type === 'tv') {
+                        handleMovieClick(first.id, first.media_type);
+                        setShowCommandCenter(false);
+                      }
+                    }
+                  }
+                }}
+                style={{
+                  flex: 1,
+                  background: 'none',
+                  border: 'none',
+                  outline: 'none',
+                  color: '#ffffff',
+                  fontSize: '15px',
+                  fontWeight: 600,
+                  fontFamily: 'inherit'
+                }}
               />
-              <kbd style={{ fontSize: '10px', color: 'var(--text-dim)', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', borderRadius: '4px', padding: '2px 7px', fontFamily: 'monospace' }}>ESC</kbd>
-            </div>
-            {/* Action list */}
-            <div style={{ maxHeight: '340px', overflowY: 'auto', padding: '8px' }}>
-              {filteredCmds.map((cmd, i) => (
-                <button key={i} onClick={cmd.action}
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', borderRadius: '10px', padding: '10px 14px', cursor: 'pointer', color: '#fff', fontSize: '14px', fontWeight: 600, textAlign: 'left', transition: 'background 0.12s' }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(124,111,247,0.12)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'none'}
+              {cmdQuery && (
+                <button
+                  onClick={() => setCmdQuery('')}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#666666',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                  title="Clear search"
                 >
-                  <span>{cmd.label}</span>
-                  {cmd.shortcut && <kbd style={{ fontSize: '10px', color: 'var(--text-dim)', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', borderRadius: '4px', padding: '1px 7px', fontFamily: 'monospace' }}>{cmd.shortcut}</kbd>}
+                  <X size={15} />
                 </button>
-              ))}
-              {filteredCmds.length === 0 && (
-                <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-dim)', fontSize: '13px' }}>No results for "{cmdQuery}"</div>
+              )}
+              <kbd style={{
+                fontSize: '10px',
+                color: '#777777',
+                background: '#1c1c1c',
+                border: '1px solid #282828',
+                borderRadius: '4px',
+                padding: '2px 7px',
+                fontFamily: 'monospace',
+                fontWeight: 600
+              }}>
+                ESC
+              </kbd>
+            </div>
+
+            {/* Results / Discovery Body */}
+            <div style={{ maxHeight: '440px', overflowY: 'auto', padding: '12px' }}>
+              {/* TMDB Loading state */}
+              {isCmdSearching && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '16px 12px', color: '#888888', fontSize: '13px' }}>
+                  <Loader2 size={16} className="animate-spin" color="var(--accent)" />
+                  <span>Searching TMDB cinema database...</span>
+                </div>
+              )}
+
+              {/* TMDB Live Results */}
+              {cmdSearchResults.length > 0 && (
+                <div>
+                  <div style={{
+                    fontSize: '10.5px',
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    color: '#666666',
+                    padding: '4px 10px 8px'
+                  }}>
+                    Search Results ({cmdSearchResults.length})
+                  </div>
+                  {cmdSearchResults.map((item) => {
+                    const poster = item.poster_path
+                      ? `https://image.tmdb.org/t/p/w92${item.poster_path}`
+                      : (item.profile_path ? `https://image.tmdb.org/t/p/w92${item.profile_path}` : null);
+                    const title = item.title || item.name;
+                    const year = (item.release_date || item.first_air_date || '').slice(0, 4);
+                    const isTv = item.media_type === 'tv';
+                    const isPerson = item.media_type === 'person';
+                    const inLib = library.some(m => String(m.tmdb_id) === String(item.id));
+
+                    return (
+                      <div
+                        key={`${item.media_type}-${item.id}`}
+                        onClick={() => {
+                          if (item.media_type === 'movie' || item.media_type === 'tv') {
+                            handleMovieClick(item.id, item.media_type);
+                            setShowCommandCenter(false);
+                          } else if (item.media_type === 'person') {
+                            if (item.known_for?.[0]?.id) {
+                              handleMovieClick(item.known_for[0].id, item.known_for[0].media_type || 'movie');
+                            }
+                            setShowCommandCenter(false);
+                          }
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          padding: '8px 10px',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          transition: 'background 0.12s ease',
+                          marginBottom: '3px'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = '#181818'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      >
+                        {/* Poster Thumbnail */}
+                        <div style={{
+                          width: '38px',
+                          height: '54px',
+                          borderRadius: '4px',
+                          background: '#1c1c1c',
+                          overflow: 'hidden',
+                          flexShrink: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          border: '1px solid #262626'
+                        }}>
+                          {poster ? (
+                            <img src={poster} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <Film size={16} color="#555" />
+                          )}
+                        </div>
+
+                        {/* Title & metadata */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ color: '#ffffff', fontSize: '13.5px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {title}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px', flexWrap: 'wrap' }}>
+                            <span style={{
+                              fontSize: '9px',
+                              fontWeight: 900,
+                              letterSpacing: '0.04em',
+                              padding: '1px 5px',
+                              borderRadius: '3px',
+                              background: isTv ? '#1e3a8a' : (isPerson ? '#2d2d2d' : 'var(--accent)'),
+                              color: isTv ? '#93c5fd' : (isPerson ? '#cccccc' : '#ffffff')
+                            }}>
+                              {isTv ? 'SERIES' : (isPerson ? 'PERSON' : 'MOVIE')}
+                            </span>
+                            {year && <span style={{ color: '#888888', fontSize: '12px' }}>{year}</span>}
+                            {item.vote_average > 0 && (
+                              <span style={{ color: '#eab308', fontSize: '12px', fontWeight: 700 }}>
+                                ★ {(Math.round(item.vote_average * 10) / 10).toFixed(1)}
+                              </span>
+                            )}
+                            {isPerson && item.known_for_department && (
+                              <span style={{ color: '#888888', fontSize: '11.5px' }}>{item.known_for_department}</span>
+                            )}
+                            {inLib && (
+                              <span style={{ color: '#10b981', fontSize: '11px', fontWeight: 600 }}>
+                                ✓ In Library
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <ArrowRight size={14} color="#555" style={{ flexShrink: 0 }} />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* When no query is typed: Show Trending Movies, Popular Searches & Genre Discovery */}
+              {!cmdQuery.trim() && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  {/* Trending Movies Quick Picks */}
+                  {trendingQuickPicks.length > 0 && (
+                    <div>
+                      <div style={{
+                        fontSize: '10.5px',
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.08em',
+                        color: '#666666',
+                        padding: '4px 10px 8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}>
+                        <Flame size={13} color="var(--accent)" />
+                        <span>Trending Today</span>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        {trendingQuickPicks.map((m) => (
+                          <div
+                            key={m.id}
+                            onClick={() => {
+                              handleMovieClick(m.id, 'movie');
+                              setShowCommandCenter(false);
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '12px',
+                              padding: '8px 10px',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              transition: 'background 0.12s ease'
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = '#181818'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                          >
+                            <div style={{
+                              width: '36px',
+                              height: '50px',
+                              borderRadius: '4px',
+                              background: '#1c1c1c',
+                              overflow: 'hidden',
+                              flexShrink: 0,
+                              border: '1px solid #262626'
+                            }}>
+                              {m.poster_path ? (
+                                <img
+                                  src={`https://image.tmdb.org/t/p/w92${m.poster_path}`}
+                                  alt={m.title}
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                />
+                              ) : (
+                                <Film size={15} color="#555" />
+                              )}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ color: '#ffffff', fontSize: '13.5px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {m.title}
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                                <span style={{ color: '#888888', fontSize: '12px' }}>
+                                  {(m.release_date || '').slice(0, 4)}
+                                </span>
+                                {m.vote_average > 0 && (
+                                  <span style={{ color: '#eab308', fontSize: '12px', fontWeight: 700 }}>
+                                    ★ {(Math.round(m.vote_average * 10) / 10).toFixed(1)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <ArrowRight size={14} color="#555" style={{ flexShrink: 0 }} />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Popular Searches */}
+                  <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '10px' }}>
+                    <div style={{
+                      fontSize: '10.5px',
+                      fontWeight: 800,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.08em',
+                      color: '#666666',
+                      padding: '2px 10px 8px'
+                    }}>
+                      Popular Searches
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', padding: '0 8px' }}>
+                      {POPULAR_SUGGESTIONS.map(chip => (
+                        <button
+                          key={chip}
+                          onClick={() => setCmdQuery(chip)}
+                          style={{
+                            background: '#181818',
+                            border: '1px solid #282828',
+                            color: '#cccccc',
+                            borderRadius: '6px',
+                            padding: '5px 10px',
+                            fontSize: '12px',
+                            fontWeight: 500,
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease'
+                          }}
+                          onMouseEnter={e => {
+                            e.currentTarget.style.background = '#222222';
+                            e.currentTarget.style.borderColor = 'var(--accent)';
+                            e.currentTarget.style.color = '#ffffff';
+                          }}
+                          onMouseLeave={e => {
+                            e.currentTarget.style.background = '#181818';
+                            e.currentTarget.style.borderColor = '#282828';
+                            e.currentTarget.style.color = '#cccccc';
+                          }}
+                        >
+                          {chip}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Explore by Genre */}
+                  <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '10px' }}>
+                    <div style={{
+                      fontSize: '10.5px',
+                      fontWeight: 800,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.08em',
+                      color: '#666666',
+                      padding: '2px 10px 8px'
+                    }}>
+                      Browse by Genre
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', padding: '0 8px' }}>
+                      {GENRE_QUICK_FILTERS.map(g => (
+                        <button
+                          key={g}
+                          onClick={() => setCmdQuery(g)}
+                          style={{
+                            background: '#161616',
+                            border: '1px solid #262626',
+                            color: '#aaaaaa',
+                            borderRadius: '6px',
+                            padding: '4px 9px',
+                            fontSize: '11.5px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease'
+                          }}
+                          onMouseEnter={e => {
+                            e.currentTarget.style.borderColor = 'var(--accent)';
+                            e.currentTarget.style.color = '#ffffff';
+                          }}
+                          onMouseLeave={e => {
+                            e.currentTarget.style.borderColor = '#262626';
+                            e.currentTarget.style.color = '#aaaaaa';
+                          }}
+                        >
+                          {g}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* No results */}
+              {cmdQuery.trim() && cmdSearchResults.length === 0 && !isCmdSearching && (
+                <div style={{ textAlign: 'center', padding: '36px 16px', color: '#777777', fontSize: '13px' }}>
+                  No films, series or actors found matching "{cmdQuery}"
+                </div>
               )}
             </div>
-            <div style={{ padding: '10px 20px', borderTop: '1px solid rgba(255,255,255,0.06)', fontSize: '11px', color: 'var(--text-dim)', display: 'flex', gap: '16px' }}>
-              <span>↑↓ Navigate</span>
-              <span>↵ Select</span>
-              <span>ESC Close</span>
-              <span style={{ marginLeft: 'auto' }}>⌘K Toggle</span>
+
+            {/* Clean Footer */}
+            <div style={{
+              padding: '10px 18px',
+              borderTop: '1px solid #1e1e1e',
+              background: '#0d0d0d',
+              fontSize: '11px',
+              color: '#666666',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', gap: '14px' }}>
+                <span>↵ Open Title</span>
+                <span>ESC Close</span>
+              </div>
+              <span style={{ color: 'var(--accent)', fontWeight: 700, letterSpacing: '0.04em' }}>
+                Cinema Search
+              </span>
             </div>
           </div>
         </div>
@@ -1032,9 +1646,9 @@ function AppInner() {
               position: 'fixed', bottom: '90px', right: '24px',
               width: 'min(380px, calc(100vw - 48px))',
               background: 'rgba(16,13,30,0.96)',
-              border: '1px solid rgba(124,111,247,0.35)',
+              border: '1px solid rgba(136,8,8,0.35)',
               borderRadius: '20px',
-              boxShadow: '0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(124,111,247,0.12)',
+              boxShadow: '0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(136,8,8,0.12)',
               backdropFilter: 'blur(24px)',
               zIndex: 8999,
               overflow: 'hidden',
@@ -1054,7 +1668,7 @@ function AppInner() {
                     style={{
                       width: '100%', boxSizing: 'border-box',
                       background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(124,111,247,0.25)',
+                      border: '1px solid rgba(136,8,8,0.25)',
                       borderRadius: '12px',
                       padding: '10px 12px 10px 36px',
                       color: '#fff', fontSize: '14px', fontWeight: 600,
@@ -1062,8 +1676,8 @@ function AppInner() {
                       fontFamily: 'var(--font-heading)',
                       transition: 'border-color 0.2s',
                     }}
-                    onFocus={e => e.target.style.borderColor = 'rgba(124,111,247,0.6)'}
-                    onBlur={e => e.target.style.borderColor = 'rgba(124,111,247,0.25)'}
+                    onFocus={e => e.target.style.borderColor = 'rgba(136,8,8,0.6)'}
+                    onBlur={e => e.target.style.borderColor = 'rgba(136,8,8,0.25)'}
                   />
                   {quickLoading && (
                     <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', animation: 'spin 0.8s linear infinite', display: 'inline-block' }}>⟳</span>
@@ -1100,7 +1714,7 @@ function AppInner() {
                         borderRadius: '12px', padding: '8px 10px', cursor: 'pointer',
                         color: '#fff', textAlign: 'left', transition: 'background 0.12s',
                       }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(124,111,247,0.1)'}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(136,8,8,0.1)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'none'}
                     >
                       {/* Poster */}
@@ -1118,9 +1732,9 @@ function AppInner() {
                       {/* Status badge */}
                       <div style={{ flexShrink: 0, fontSize: '11px', fontWeight: 700,
                         padding: '3px 9px', borderRadius: '20px',
-                        background: inLibrary ? 'rgba(16,185,129,0.15)' : 'rgba(124,111,247,0.15)',
-                        color: inLibrary ? '#10b981' : '#a78bfa',
-                        border: `1px solid ${inLibrary ? 'rgba(16,185,129,0.3)' : 'rgba(124,111,247,0.3)'}`,
+                        background: inLibrary ? 'rgba(16,185,129,0.15)' : 'rgba(136,8,8,0.15)',
+                        color: inLibrary ? '#10b981' : '#c0392b',
+                        border: `1px solid ${inLibrary ? 'rgba(16,185,129,0.3)' : 'rgba(136,8,8,0.3)'}`,
                       }}>{inLibrary ? '✓ In Library' : '+ Add'}</div>
                     </button>
                   );
@@ -1129,7 +1743,7 @@ function AppInner() {
 
               {/* Footer shortcut hint */}
               <div style={{ padding: '8px 18px 12px', borderTop: '1px solid rgba(255,255,255,0.04)', fontSize: '11px', color: 'var(--text-dim)', textAlign: 'center' }}>
-                Tap a result to log it · <span style={{ color: '#a78bfa' }}>Explore</span> for full search
+                Tap a result to log it · <span style={{ color: '#c0392b' }}>Explore</span> for full search
               </div>
             </div>
           )}
@@ -1141,23 +1755,19 @@ function AppInner() {
             title="Quick Add Movie"
             style={{
               position: 'fixed', bottom: '24px', right: '24px',
-              width: '58px', height: '58px',
+              width: '52px', height: '52px',
               borderRadius: '50%',
-              background: showQuickAdd
-                ? 'linear-gradient(135deg, #6d5ce7, #a855f7)'
-                : 'linear-gradient(135deg, #7c6ff7, #c084fc)',
-              border: 'none',
-              boxShadow: showQuickAdd
-                ? '0 8px 32px rgba(124,111,247,0.7), 0 0 0 4px rgba(124,111,247,0.25)'
-                : '0 8px 24px rgba(124,111,247,0.5), 0 0 0 0px rgba(124,111,247,0)',
+              background: 'var(--accent)',
+              border: '1px solid rgba(255,255,255,0.18)',
+              boxShadow: '0 6px 20px rgba(0,0,0,0.8)',
               cursor: 'pointer',
               zIndex: 9000,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '26px',
+              fontSize: '24px',
+              fontWeight: 400,
               color: '#fff',
-              transform: showQuickAdd ? 'rotate(45deg) scale(1.05)' : 'rotate(0deg) scale(1)',
-              transition: 'all 0.22s cubic-bezier(0.34,1.56,0.64,1)',
-              animation: 'fabPulse 3s ease-in-out infinite',
+              transform: showQuickAdd ? 'rotate(45deg)' : 'rotate(0deg)',
+              transition: 'transform 0.18s ease, background 0.15s ease',
             }}
           >
             +
@@ -1165,6 +1775,8 @@ function AppInner() {
         </>
       )}
 
+      </div>
     </div>
   );
 }
+

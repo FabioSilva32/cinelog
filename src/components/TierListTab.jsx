@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { RefreshCw, GripVertical, Settings2, Trash2, Plus, ChevronUp, ChevronDown, Heart, Star, Check, X } from 'lucide-react';
+import { RefreshCw, GripVertical, Settings2, Trash2, Plus, ChevronUp, ChevronDown, Heart, Star, Check, X, Sparkles, Tag } from 'lucide-react';
 import ConfirmModal from './ConfirmModal';
+import { FRANCHISE_COLLECTIONS, GENRE_LIST, matchesCollection } from '../utils/collections';
 
 const DEFAULT_TIERS = [
   { id: 's', label: 'S', color: '#ff4d4d', desc: 'All-time masterpieces' },
@@ -18,7 +19,7 @@ const COLOR_PRESETS = [
   { name: 'Emerald', value: '#4dcd80' },
   { name: 'Blue', value: '#4da6ff' },
   { name: 'Purple', value: '#9b59b6' },
-  { name: 'Lavender', value: '#a78bfa' },
+  { name: 'Lavender', value: '#c0392b' },
   { name: 'Slate', value: '#64748b' }
 ];
 
@@ -80,8 +81,43 @@ export default function TierListTab({ library = [] }) {
     }
   });
 
-  const [poolFilter, setPoolFilter] = useState('all'); // 'all', genres, or collections
+  const [poolFilter, setPoolFilter] = useState(() => lists[activeListId]?.poolFilter || 'all'); // 'all', franchise ID, genre, 'custom:...', or 'tag:...'
+  const [includeUnwatched, setIncludeUnwatched] = useState(() => lists[activeListId]?.includeUnwatched ?? true);
   const [poolSearch, setPoolSearch] = useState('');
+
+  // Synchronize custom collections created in CollectionsTab
+  const [customCollections, setCustomCollections] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('cinelog_collections_v1')) || {}; }
+    catch { return {}; }
+  });
+
+  useEffect(() => {
+    const handleSync = () => {
+      try {
+        const stored = JSON.parse(localStorage.getItem('cinelog_collections_v1')) || {};
+        setCustomCollections(stored);
+      } catch {}
+    };
+    window.addEventListener('cinelog_collections_updated', handleSync);
+    window.addEventListener('storage', handleSync);
+    return () => {
+      window.removeEventListener('cinelog_collections_updated', handleSync);
+      window.removeEventListener('storage', handleSync);
+    };
+  }, []);
+
+  // Compute available tags from library
+  const availableTags = useMemo(() => {
+    const tagSet = new Set();
+    library.forEach(m => {
+      if (Array.isArray(m.tags)) {
+        m.tags.forEach(t => {
+          if (typeof t === 'string' && t.trim()) tagSet.add(t.trim());
+        });
+      }
+    });
+    return Array.from(tagSet).sort();
+  }, [library]);
 
   const [dragInfo, setDragInfo] = useState(null);
   const [dropTarget, setDropTarget] = useState(null);
@@ -109,7 +145,9 @@ export default function TierListTab({ library = [] }) {
       [activeListId]: {
         ...lists[activeListId],
         tiers,
-        tierData
+        tierData,
+        poolFilter,
+        includeUnwatched
       }
     };
     setLists(updated);
@@ -122,10 +160,12 @@ export default function TierListTab({ library = [] }) {
     if (nextList) {
       setTiers(nextList.tiers || DEFAULT_TIERS);
       setTierData(nextList.tierData || {});
+      if (nextList.poolFilter !== undefined) setPoolFilter(nextList.poolFilter);
+      if (nextList.includeUnwatched !== undefined) setIncludeUnwatched(nextList.includeUnwatched);
     }
   };
 
-  // Sync tiers/tierData of active list to localStorage on modifications
+  // Sync tiers/tierData/filter of active list to localStorage on modifications
   useEffect(() => {
     const updated = {
       ...lists,
@@ -133,11 +173,13 @@ export default function TierListTab({ library = [] }) {
         ...lists[activeListId],
         id: activeListId,
         tiers,
-        tierData
+        tierData,
+        poolFilter,
+        includeUnwatched
       }
     };
     localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(updated));
-  }, [tiers, tierData, activeListId]);
+  }, [tiers, tierData, poolFilter, includeUnwatched, activeListId]);
 
 
   // ── HELPERS & SEEDS ────────────────────────────────────────────────
@@ -146,23 +188,16 @@ export default function TierListTab({ library = [] }) {
   }, [tierData]);
 
   const watchedMovies = useMemo(() => {
-    let pool = library.filter(
-      m => m.status === 'watched' && !assignedIds.has(String(m.id || m.tmdb_id))
-    );
+    let pool = library.filter(m => {
+      if (assignedIds.has(String(m.id || m.tmdb_id))) return false;
+      if (!includeUnwatched && m.status !== 'watched') return false;
+      return true;
+    });
 
-    if (poolFilter === 'all') return pool;
-
-    const genresSet = new Set(['Action', 'Adventure', 'Comedy', 'Drama', 'Sci-Fi', 'Horror', 'Romance', 'Thriller', 'Animation', 'Fantasy', 'Crime', 'Documentary', 'Mystery']);
-    if (genresSet.has(poolFilter)) {
-      return pool.filter(m => m.genres && m.genres.includes(poolFilter));
+    // Apply collection / franchise / genre / custom / tag filter
+    if (poolFilter !== 'all') {
+      pool = pool.filter(m => matchesCollection(m, poolFilter, customCollections));
     }
-
-    // Collections matches
-    if (poolFilter === 'mcu') return pool.filter(m => m.title?.toLowerCase().includes('avengers') || m.title?.toLowerCase().includes('iron man') || m.title?.toLowerCase().includes('captain america') || m.title?.toLowerCase().includes('thor') || m.title?.toLowerCase().includes('guardians') || m.tags?.includes('MCU'));
-    if (poolFilter === 'dc') return pool.filter(m => m.title?.toLowerCase().includes('batman') || m.title?.toLowerCase().includes('superman') || m.title?.toLowerCase().includes('justice league') || m.tags?.includes('DC'));
-    if (poolFilter === 'nolan') return pool.filter(m => m.title?.toLowerCase().includes('inception') || m.title?.toLowerCase().includes('dark knight') || m.title?.toLowerCase().includes('interstellar') || m.tags?.includes('Nolan'));
-    if (poolFilter === 'ghibli') return pool.filter(m => m.title?.toLowerCase().includes('totoro') || m.title?.toLowerCase().includes('spirited away') || m.tags?.includes('Ghibli'));
-    if (poolFilter === 'tarantino') return pool.filter(m => m.title?.toLowerCase().includes('pulp fiction') || m.title?.toLowerCase().includes('django') || m.tags?.includes('Tarantino'));
 
     // Fuzzy text search
     if (poolSearch.trim()) {
@@ -171,7 +206,7 @@ export default function TierListTab({ library = [] }) {
     }
 
     return pool;
-  }, [library, assignedIds, poolFilter, poolSearch]);
+  }, [library, assignedIds, poolFilter, poolSearch, customCollections, includeUnwatched]);
 
   const autoRankPool = () => {
     setTierData(prev => {
@@ -205,23 +240,36 @@ export default function TierListTab({ library = [] }) {
   const createNewList = (name) => {
     if (!name.trim()) return;
     const newId = `list-${Date.now()}`;
+    const lower = name.toLowerCase();
+    let detectedFilter = 'all';
+    if (lower.includes('marvel') || lower.includes('mcu') || lower.includes('avengers')) detectedFilter = 'mcu';
+    else if (lower.includes('star wars')) detectedFilter = 'star-wars';
+    else if (lower.includes('batman') || lower.includes('dc')) detectedFilter = 'batman';
+    else if (lower.includes('harry potter') || lower.includes('wizarding')) detectedFilter = 'harry-potter';
+    else if (lower.includes('lotr') || lower.includes('rings') || lower.includes('middle earth')) detectedFilter = 'lotr';
+    else if (lower.includes('pixar')) detectedFilter = 'pixar';
+    else if (lower.includes('ghibli')) detectedFilter = 'ghibli';
+    else if (lower.includes('spider')) detectedFilter = 'spider-man';
+
     const updated = {
       ...lists,
       [newId]: {
         id: newId,
         name: name.trim(),
         tiers: DEFAULT_TIERS,
-        tierData: {}
+        tierData: {},
+        poolFilter: detectedFilter,
+        includeUnwatched: true
       }
     };
     setLists(updated);
-    localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(updated));
-    
-    // Switch active state
     setActiveListId(newId);
-    localStorage.setItem('cinelog_active_tier_list_id_v4', newId);
     setTiers(DEFAULT_TIERS);
     setTierData({});
+    setPoolFilter(detectedFilter);
+    setIncludeUnwatched(true);
+    localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(updated));
+    localStorage.setItem('cinelog_active_tier_list_id_v4', newId);
   };
 
   const deleteList = (listId) => {
@@ -469,10 +517,10 @@ export default function TierListTab({ library = [] }) {
               value={activeListId}
               onChange={e => selectList(e.target.value)}
               className="form-input"
-              style={{ fontSize: '13px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border)', color: '#fff', padding: '6px 12px', borderRadius: '8px', width: '185px' }}
+              style={{ fontSize: '12.5px', background: '#141414', border: '1px solid var(--border)', color: '#fff', padding: '6px 12px', borderRadius: '6px', width: '185px' }}
             >
               {Object.values(lists).map(l => (
-                <option key={l.id} value={l.id} style={{ background: '#0a0813', color: '#fff' }}>
+                <option key={l.id} value={l.id} style={{ background: '#141414', color: '#fff' }}>
                   {l.name}
                 </option>
               ))}
@@ -486,9 +534,9 @@ export default function TierListTab({ library = [] }) {
               const name = prompt("Enter a name for your new rank list:");
               if (name && name.trim()) createNewList(name);
             }}
-            style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12.5px', height: '34px', padding: '0 12px', border: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12.5px', height: '34px', padding: '0 12px', border: '1px solid var(--border)', background: '#141414' }}
           >
-            ➕ New List
+            <Plus size={14} /> New List
           </button>
 
           {/* Delete List Button */}
@@ -496,7 +544,7 @@ export default function TierListTab({ library = [] }) {
             <button
               className="btn btn-ghost"
               onClick={() => deleteList(activeListId)}
-              style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12.5px', height: '34px', padding: '0 10px', color: 'var(--red)', border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.03)' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12.5px', height: '34px', padding: '0 10px', color: 'var(--red)', border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.06)' }}
             >
               ✕ Delete
             </button>
@@ -510,9 +558,9 @@ export default function TierListTab({ library = [] }) {
       </div>
 
       {/* Info banner */}
-      <div style={{ background: 'rgba(124,111,247,0.06)', border: '1px solid rgba(124,111,247,0.2)', borderRadius: 'var(--radius)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12.5px', color: 'var(--text-muted)' }}>
-        <span style={{ fontSize: '18px' }}>💡</span>
-        <span>Only <strong style={{ color: 'var(--text)' }}>watched</strong> movies appear in the pool. Drag posters to rank, or <strong style={{ color: 'var(--accent)' }}>tap to assign</strong> on mobile. Edit row settings via the gear icon.</span>
+      <div style={{ background: '#141414', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12.5px', color: 'var(--text-muted)' }}>
+        <span style={{ fontSize: '11px', fontWeight: 800, padding: '2px 6px', background: 'var(--accent)', color: '#fff', borderRadius: '4px' }}>TIP</span>
+        <span>Drag posters to rank, or <strong style={{ color: 'var(--accent)' }}>tap to assign</strong> on mobile. Unwatched items can be toggled in the pool below.</span>
       </div>
 
       {/* ── TIER ROWS CONTAINER ────────────────────────────────────────── */}
@@ -521,7 +569,7 @@ export default function TierListTab({ library = [] }) {
         style={{
           borderRadius: 'var(--radius-lg)',
           overflow: 'hidden',
-          border: `1px solid ${dropTarget && dropTarget !== 'pool' ? 'rgba(124,111,247,0.4)' : 'var(--border)'}`,
+          border: `1px solid ${dropTarget && dropTarget !== 'pool' ? 'rgba(136,8,8,0.4)' : 'var(--border)'}`,
           transition: 'border-color 0.2s',
           display: 'flex',
           flexDirection: 'column'
@@ -538,7 +586,7 @@ export default function TierListTab({ library = [] }) {
                   display: 'flex',
                   borderBottom: idx < tiers.length - 1 || editingTierId === tier.id ? '1px solid var(--border)' : 'none',
                   minHeight: '130px',
-                  background: isTarget ? 'rgba(124,111,247,0.08)' : 'transparent',
+                  background: isTarget ? 'rgba(136,8,8,0.08)' : 'transparent',
                   transition: 'background 0.2s',
                   position: 'relative'
                 }}
@@ -848,7 +896,7 @@ export default function TierListTab({ library = [] }) {
           transition: 'all 0.2s',
           fontSize: '13.5px'
         }}
-        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(124,111,247,0.03)'; }}
+        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(136,8,8,0.03)'; }}
         onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-dim)'; e.currentTarget.style.background = 'rgba(255,255,255,0.01)'; }}
       >
         <Plus size={16} /> Add Custom Tier Row
@@ -869,9 +917,26 @@ export default function TierListTab({ library = [] }) {
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '18px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 800 }}>📦 Unranked Movie Pool</h3>
-            <span style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', borderRadius: '20px', padding: '1.5px 8px', fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700 }}>{watchedMovies.length}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 800 }}>Unranked Movie Pool</h3>
+            <span style={{ background: '#1c1c1c', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.5px 8px', fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700 }}>{watchedMovies.length}</span>
+            <button
+              onClick={() => setIncludeUnwatched(!includeUnwatched)}
+              style={{
+                background: includeUnwatched ? 'var(--accent)' : '#161616',
+                color: includeUnwatched ? '#fff' : 'var(--text-dim)',
+                border: `1px solid ${includeUnwatched ? 'var(--accent)' : 'var(--border)'}`,
+                borderRadius: '6px',
+                padding: '3px 8px',
+                fontSize: '11px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s'
+              }}
+              title="Toggle including watchlist and unwatched library titles in the tier pool"
+            >
+              {includeUnwatched ? '✓ Unwatched Included' : '+ Include Unwatched'}
+            </button>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
@@ -882,33 +947,50 @@ export default function TierListTab({ library = [] }) {
                 value={poolFilter}
                 onChange={e => setPoolFilter(e.target.value)}
                 className="form-input"
-                style={{ fontSize: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border)', color: '#fff', padding: '4px 10px', borderRadius: '6px', width: '135px' }}
+                style={{ fontSize: '12px', background: '#141414', border: '1px solid var(--border)', color: '#fff', padding: '4px 10px', borderRadius: '6px', minWidth: '155px', maxWidth: '210px' }}
               >
-                <option value="all" style={{ background: '#0a0813' }}>All Watched</option>
-                <optgroup label="Genres" style={{ background: '#0a0813' }}>
-                  {['Action', 'Adventure', 'Comedy', 'Drama', 'Sci-Fi', 'Horror', 'Romance', 'Thriller', 'Animation', 'Fantasy', 'Crime', 'Documentary', 'Mystery'].map(g => (
-                    <option key={g} value={g}>{g}</option>
+                <option value="all" style={{ background: '#141414' }}>All Library Titles</option>
+                <optgroup label="Franchise Collections" style={{ background: '#141414' }}>
+                  {FRANCHISE_COLLECTIONS.map(f => (
+                    <option key={f.id} value={f.id} style={{ background: '#141414' }}>
+                      {f.shortTitle || f.title}
+                    </option>
                   ))}
                 </optgroup>
-                <optgroup label="Collections" style={{ background: '#0a0813' }}>
-                  <option value="mcu">Marvel (MCU)</option>
-                  <option value="dc">DC Universe</option>
-                  <option value="nolan">Christopher Nolan</option>
-                  <option value="ghibli">Studio Ghibli</option>
-                  <option value="tarantino">Quentin Tarantino</option>
+                {Object.keys(customCollections).length > 0 && (
+                  <optgroup label="Your Custom Collections" style={{ background: '#141414' }}>
+                    {Object.entries(customCollections).map(([title, data]) => (
+                      <option key={title} value={`custom:${title}`} style={{ background: '#141414' }}>
+                        {title} ({data.movieIds?.length || 0})
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                <optgroup label="Genres" style={{ background: '#141414' }}>
+                  {GENRE_LIST.map(g => (
+                    <option key={g} value={g} style={{ background: '#141414' }}>{g}</option>
+                  ))}
                 </optgroup>
+                {availableTags.length > 0 && (
+                  <optgroup label="Your Custom Tags" style={{ background: '#141414' }}>
+                    {availableTags.map(t => (
+                      <option key={t} value={`tag:${t}`} style={{ background: '#141414' }}>
+                        #{t}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
               </select>
             </div>
 
             {/* Fuzzy Search */}
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <span style={{ position: 'absolute', left: '8px', fontSize: '12px', pointerEvents: 'none', opacity: 0.5 }}>🔍</span>
               <input
                 type="text"
                 placeholder="Search pool…"
                 value={poolSearch}
                 onChange={e => setPoolSearch(e.target.value)}
-                style={{ paddingLeft: '28px', paddingRight: '8px', paddingTop: '4px', paddingBottom: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border)', borderRadius: '6px', color: '#fff', fontSize: '12px', width: '130px', outline: 'none' }}
+                style={{ paddingLeft: '10px', paddingRight: '8px', paddingTop: '4px', paddingBottom: '4px', background: '#141414', border: '1px solid var(--border)', borderRadius: '6px', color: '#fff', fontSize: '12px', width: '130px', outline: 'none' }}
               />
               {poolSearch && <button onClick={() => setPoolSearch('')} style={{ position: 'absolute', right: '6px', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: '12px', padding: 0 }}>✕</button>}
             </div>
@@ -918,9 +1000,9 @@ export default function TierListTab({ library = [] }) {
               <button
                 className="btn btn-ghost"
                 onClick={autoRankPool}
-                style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', height: '30px', padding: '0 10px', border: '1px solid rgba(124,111,247,0.3)', background: 'rgba(124,111,247,0.06)', color: 'var(--accent)' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', height: '30px', padding: '0 10px', border: '1px solid var(--border)', background: '#161616', color: 'var(--accent)' }}
               >
-                ⚡ Auto-Rank Pool
+                Auto-Rank Pool
               </button>
             )}
           </div>
@@ -1064,3 +1146,4 @@ export default function TierListTab({ library = [] }) {
     </div>
   );
 }
+

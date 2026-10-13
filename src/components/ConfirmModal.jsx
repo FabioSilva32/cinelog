@@ -62,8 +62,8 @@ export default function ConfirmModal({
             width: '48px',
             height: '48px',
             borderRadius: '50%',
-            background: isDanger ? 'rgba(239,68,68,0.1)' : 'rgba(124,111,247,0.1)',
-            border: isDanger ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(124,111,247,0.3)',
+            background: isDanger ? 'rgba(239,68,68,0.1)' : 'rgba(136,8,8,0.1)',
+            border: isDanger ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(136,8,8,0.3)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -94,7 +94,10 @@ export default function ConfirmModal({
             {cancelText}
           </button>
           <button
-            onClick={onConfirm}
+            onClick={() => {
+              if (onConfirm) onConfirm();
+              if (onCancel) onCancel();
+            }}
             className="btn"
             style={{
               flex: 1,
@@ -118,3 +121,4 @@ export default function ConfirmModal({
     </div>
   );
 }
+

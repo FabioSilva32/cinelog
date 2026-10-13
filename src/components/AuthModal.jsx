@@ -40,7 +40,7 @@ function ImageCropper({ src, onCrop, onCancel }) {
     // Border circle
     ctx.beginPath();
     ctx.arc(cx + r, cy + r, r, 0, Math.PI * 2);
-    ctx.strokeStyle = '#7c6ff7';
+    ctx.strokeStyle = '#880808';
     ctx.lineWidth = 2;
     ctx.stroke();
   }, [crop]);
@@ -155,10 +155,10 @@ function ImageCropper({ src, onCrop, onCancel }) {
 }
 
 const DEFAULT_AVATARS = [
-  { id: 'cinephile', name: 'Cinephile', path: '/avatar_cinephile.png', border: '2px solid #ec4899' },
+  { id: 'cinephile', name: 'Cinephile', path: '/avatar_cinephile.png', border: '2px solid #c0392b' },
   { id: 'reviewer', name: 'Reviewer', path: '/avatar_reviewer.png', border: '2px solid #06b6d4' },
   { id: 'watcher', name: 'Watcher', path: '/avatar_watcher.png', border: '2px solid #0ea5e9' },
-  { id: 'critic', name: 'Critic', path: '/avatar_critic.png', border: '2px solid #a855f7' }
+  { id: 'critic', name: 'Critic', path: '/avatar_critic.png', border: '2px solid #880808' }
 ];
 
 // ── Required field label helper ──────────────────────────────────────
@@ -380,7 +380,7 @@ export default function AuthModal({ onClose, onLoginSuccess, useSupabase, setUse
 
           {/* Title block */}
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-            <div style={{ display: 'inline-flex', padding: '12px', background: 'rgba(124,111,247,0.1)', borderRadius: '50%', color: 'var(--accent)', marginBottom: '12px' }}>
+            <div style={{ display: 'inline-flex', padding: '12px', background: 'rgba(136,8,8,0.1)', borderRadius: '50%', color: 'var(--accent)', marginBottom: '12px' }}>
               <Sparkles size={24} />
             </div>
             <h2 style={{ fontSize: '22px' }}>
@@ -431,7 +431,7 @@ export default function AuthModal({ onClose, onLoginSuccess, useSupabase, setUse
                       border: '2px dashed var(--accent)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       cursor: 'pointer', overflow: 'hidden', flexShrink: 0, position: 'relative',
-                      background: avatarDataUrl ? 'transparent' : 'rgba(124,111,247,0.08)',
+                      background: avatarDataUrl ? 'transparent' : 'rgba(136,8,8,0.08)',
                     }}
                   >
                     {avatarDataUrl ? (
@@ -471,7 +471,7 @@ export default function AuthModal({ onClose, onLoginSuccess, useSupabase, setUse
                             cursor: 'pointer',
                             background: 'rgba(255,255,255,0.03)',
                             border: avatarDataUrl === item.path ? item.border : '2px solid transparent',
-                            boxShadow: avatarDataUrl === item.path ? '0 0 10px rgba(124,111,247,0.4)' : 'none',
+                            boxShadow: avatarDataUrl === item.path ? '0 0 10px rgba(136,8,8,0.4)' : 'none',
                             padding: 0,
                             transition: 'all 0.2s',
                             transform: avatarDataUrl === item.path ? 'scale(1.1)' : 'scale(1)'
@@ -628,3 +628,4 @@ export default function AuthModal({ onClose, onLoginSuccess, useSupabase, setUse
     </>
   );
 }
+

@@ -196,12 +196,12 @@ function LibraryColumn({ label, icon, color, movies, onEditClick, onRemove, sear
                 display: 'flex', alignItems: 'center', gap: '10px',
                 padding: '8px 12px', borderBottom: '1px solid rgba(255,255,255,0.04)',
                 cursor: 'pointer', transition: 'all 0.15s',
-                background: isWatching ? 'rgba(124,111,247,0.05)' : 'transparent',
+                background: isWatching ? 'rgba(136,8,8,0.05)' : 'transparent',
                 borderLeft: isWatching ? '3px solid var(--accent)' : '3px solid transparent',
                 paddingLeft: isWatching ? '9px' : '12px'
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = isWatching ? 'rgba(124,111,247,0.08)' : 'rgba(255,255,255,0.04)'; triggerBackdropHover(movie.backdrop_path || movie.details?.backdrop_path); }}
-              onMouseLeave={e => { e.currentTarget.style.background = isWatching ? 'rgba(124,111,247,0.05)' : 'transparent'; triggerBackdropHover(null); }}
+              onMouseEnter={e => { e.currentTarget.style.background = isWatching ? 'rgba(136,8,8,0.08)' : 'rgba(255,255,255,0.04)'; triggerBackdropHover(movie.backdrop_path || movie.details?.backdrop_path); }}
+              onMouseLeave={e => { e.currentTarget.style.background = isWatching ? 'rgba(136,8,8,0.05)' : 'transparent'; triggerBackdropHover(null); }}
             >
               {/* Small poster */}
               <div style={{ width: '32px', height: '48px', borderRadius: '3px', overflow: 'hidden', flexShrink: 0, background: 'var(--surface-solid)' }}>
@@ -223,7 +223,7 @@ function LibraryColumn({ label, icon, color, movies, onEditClick, onRemove, sear
                 }}>
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{movie.title}</span>
                   {isWatching && (
-                    <span style={{ flexShrink: 0, fontSize: '8px', background: 'rgba(124,111,247,0.15)', color: 'var(--accent)', border: '1px solid rgba(124,111,247,0.3)', borderRadius: '4px', padding: '1px 5px', fontWeight: 800, marginLeft: '6px', display: 'inline-flex', alignItems: 'center', gap: '2px', animation: 'pulse 2.5s infinite' }}>
+                    <span style={{ flexShrink: 0, fontSize: '8px', background: 'rgba(136,8,8,0.15)', color: 'var(--accent)', border: '1px solid rgba(136,8,8,0.3)', borderRadius: '4px', padding: '1px 5px', fontWeight: 800, marginLeft: '6px', display: 'inline-flex', alignItems: 'center', gap: '2px', animation: 'pulse 2.5s infinite' }}>
                       ▶ Watching
                     </span>
                   )}
@@ -441,7 +441,7 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
 
         {/* Randomizer */}
         <button className="btn btn-secondary" onClick={handleRandomSelect}
-          style={{ height: '38px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '0 14px', border: '1px solid rgba(124,111,247,0.3)', background: 'rgba(124,111,247,0.06)' }}
+          style={{ height: '38px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '0 14px', border: '1px solid rgba(136,8,8,0.3)', background: 'rgba(136,8,8,0.06)' }}
           title="Pick a random movie from your library/watchlist">
           <Dices size={13} color="var(--accent)" /> Surprise Me
         </button>
@@ -466,11 +466,11 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
         {/* View mode toggle */}
         <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '8px', padding: '2px' }}>
           <button onClick={() => setCompactView(false)} title="Normal View"
-            style={{ background: !compactView ? 'rgba(124,111,247,0.2)' : 'none', border: 'none', borderRadius: '6px', padding: '4px 8px', cursor: 'pointer', color: !compactView ? 'var(--accent)' : 'var(--text-dim)', display: 'flex', alignItems: 'center' }}>
+            style={{ background: !compactView ? 'rgba(136,8,8,0.2)' : 'none', border: 'none', borderRadius: '6px', padding: '4px 8px', cursor: 'pointer', color: !compactView ? 'var(--accent)' : 'var(--text-dim)', display: 'flex', alignItems: 'center' }}>
             <List size={14} />
           </button>
           <button onClick={() => setCompactView(true)} title="Compact Grid View"
-            style={{ background: compactView ? 'rgba(124,111,247,0.2)' : 'none', border: 'none', borderRadius: '6px', padding: '4px 8px', cursor: 'pointer', color: compactView ? 'var(--accent)' : 'var(--text-dim)', display: 'flex', alignItems: 'center' }}>
+            style={{ background: compactView ? 'rgba(136,8,8,0.2)' : 'none', border: 'none', borderRadius: '6px', padding: '4px 8px', cursor: 'pointer', color: compactView ? 'var(--accent)' : 'var(--text-dim)', display: 'flex', alignItems: 'center' }}>
             <LayoutGrid size={14} />
           </button>
         </div>
@@ -501,7 +501,7 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
                     style={{
                       cursor: 'pointer', borderRadius: '8px', overflow: 'hidden',
                       border: isWatching ? '1px solid var(--accent)' : '1px solid var(--border)',
-                      boxShadow: isWatching ? '0 0 10px rgba(124,111,247,0.25)' : 'none',
+                      boxShadow: isWatching ? '0 0 10px rgba(136,8,8,0.25)' : 'none',
                       position: 'relative', aspectRatio: '2/3', transition: 'all 0.15s',
                       background: 'var(--surface-solid)'
                     }}
@@ -570,3 +570,4 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
     </div>
   );
 }
+

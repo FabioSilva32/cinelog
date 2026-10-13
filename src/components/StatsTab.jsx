@@ -118,8 +118,8 @@ function RatingAreaChart({ library, onMovieClick }) {
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', overflow: 'visible' }}>
         <defs>
           <linearGradient id="ratingGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#7c6ff7" stopOpacity="0.55" />
-            <stop offset="100%" stopColor="#7c6ff7" stopOpacity="0.02" />
+            <stop offset="0%" stopColor="#880808" stopOpacity="0.55" />
+            <stop offset="100%" stopColor="#880808" stopOpacity="0.02" />
           </linearGradient>
         </defs>
         {[0.25, 0.5, 0.75].map(p => (
@@ -127,14 +127,14 @@ function RatingAreaChart({ library, onMovieClick }) {
             stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
         ))}
         <path d={areaD} fill="url(#ratingGrad)" />
-        <path d={pathD} fill="none" stroke="#7c6ff7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-          style={{ filter: 'drop-shadow(0 0 6px rgba(124,111,247,0.6))' }} />
+        <path d={pathD} fill="none" stroke="#880808" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+          style={{ filter: 'drop-shadow(0 0 6px rgba(136,8,8,0.6))' }} />
         {points.map((p, i) => (
           <g key={i} onMouseEnter={() => setHovIdx(i)} onMouseLeave={() => setHovIdx(null)} style={{ cursor: 'pointer' }}>
             <circle cx={p.x} cy={p.y} r={hovIdx === i ? 6 : (p.count > 0 ? 4 : 2.5)}
-              fill={hovIdx === i ? '#fff' : (p.count > 0 ? '#7c6ff7' : 'rgba(124,111,247,0.3)')}
-              stroke={p.count > 0 ? '#7c6ff7' : 'transparent'} strokeWidth="2"
-              style={{ filter: hovIdx === i ? 'drop-shadow(0 0 8px rgba(124,111,247,0.9))' : 'none', transition: 'r 0.15s' }} />
+              fill={hovIdx === i ? '#fff' : (p.count > 0 ? '#880808' : 'rgba(136,8,8,0.3)')}
+              stroke={p.count > 0 ? '#880808' : 'transparent'} strokeWidth="2"
+              style={{ filter: hovIdx === i ? 'drop-shadow(0 0 8px rgba(136,8,8,0.9))' : 'none', transition: 'r 0.15s' }} />
             <text x={p.x} y={H + 2} textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize="8.5" fontWeight="600">{p.rating}</text>
           </g>
         ))}
@@ -274,12 +274,12 @@ export default function StatsTab({ library, onMovieClick }) {
 
   const GENRE_COLOR_MAP = {
     'Action': '#ef4444', 'Adventure': '#f97316', 'Comedy': '#eab308',
-    'Drama': '#10b981', 'Sci-Fi': '#3b82f6', 'Horror': '#8b5cf6',
-    'Romance': '#ec4899', 'Thriller': '#f59e0b', 'Animation': '#06b6d4',
-    'Fantasy': '#a78bfa', 'Crime': '#6b7280', 'Documentary': '#84cc16',
-    'Mystery': '#c084fc', 'Music': '#fb7185', 'Family': '#fde68a',
+    'Drama': '#10b981', 'Sci-Fi': '#3b82f6', 'Horror': '#880808',
+    'Romance': '#880808', 'Thriller': '#f59e0b', 'Animation': '#06b6d4',
+    'Fantasy': '#880808', 'Crime': '#6b7280', 'Documentary': '#84cc16',
+    'Mystery': '#880808', 'Music': '#fb7185', 'Family': '#fde68a',
   };
-  const GENRE_FALLBACKS = ['#7c6ff7', '#10b981', '#ef4444', '#fbbf24', '#3b82f6', '#ec4899', '#8b5cf6'];
+  const GENRE_FALLBACKS = ['#880808', '#10b981', '#ef4444', '#fbbf24', '#3b82f6', '#880808', '#880808'];
 
   const donutSegments = genreStats.map(([g, v], i) => ({
     label: g, value: v,
@@ -294,37 +294,7 @@ export default function StatsTab({ library, onMovieClick }) {
       .slice(0, 6);
   }, [filteredLibrary]);
 
-  // ── MOVIE DIARY HEATMAP (GitHub Commit Style) ──────────────────────
-  // Show movie logs density over the last 12 months (365 days)
-  const heatmapData = useMemo(() => {
-    const today = new Date();
-    const oneYearAgo = new Date();
-    oneYearAgo.setFullYear(today.getFullYear() - 1);
-    
-    const logsByDate = {};
-    filteredLibrary.forEach(m => {
-      if (m.date_added) {
-        const dateStr = new Date(m.date_added).toISOString().split('T')[0];
-        logsByDate[dateStr] = (logsByDate[dateStr] || 0) + 1;
-      }
-    });
 
-    const days = [];
-    let current = new Date(oneYearAgo);
-    current.setDate(current.getDate() - current.getDay());
-
-    while (current <= today) {
-      const dateStr = current.toISOString().split('T')[0];
-      const count = logsByDate[dateStr] || 0;
-      days.push({
-        date: new Date(current),
-        dateStr,
-        count
-      });
-      current.setDate(current.getDate() + 1);
-    }
-    return days;
-  }, [filteredLibrary]);
 
   // ── STATISTICS COMPARISONS ─────────────────────────────────────────
   const comparisons = useMemo(() => {
@@ -348,7 +318,7 @@ export default function StatsTab({ library, onMovieClick }) {
     const anime = filteredLibrary.filter(m => m.media_type === 'anime' || m.type === 'anime');
     const total = filteredLibrary.length || 1;
     return [
-      { label: 'Movies', count: movies.length, color: '#7c6ff7', pct: Math.round((movies.length / total) * 100) },
+      { label: 'Movies', count: movies.length, color: '#880808', pct: Math.round((movies.length / total) * 100) },
       { label: 'Series', count: series.length, color: '#3b82f6', pct: Math.round((series.length / total) * 100) },
       { label: 'Anime', count: anime.length, color: '#f97316', pct: Math.round((anime.length / total) * 100) },
     ];
@@ -374,8 +344,8 @@ export default function StatsTab({ library, onMovieClick }) {
     return [
       { label: 'Short (<90m)', count: shortCount, color: '#06b6d4', pct: Math.round((shortCount / total) * 100) },
       { label: 'Standard (90-120m)', count: standardCount, color: '#3b82f6', pct: Math.round((standardCount / total) * 100) },
-      { label: 'Feature (120-150m)', count: featureCount, color: '#a78bfa', pct: Math.round((featureCount / total) * 100) },
-      { label: 'Epic (>150m)', count: epicCount, color: '#ec4899', pct: Math.round((epicCount / total) * 100) }
+      { label: 'Feature (120-150m)', count: featureCount, color: '#880808', pct: Math.round((featureCount / total) * 100) },
+      { label: 'Epic (>150m)', count: epicCount, color: '#880808', pct: Math.round((epicCount / total) * 100) }
     ];
   }, [filteredLibrary]);
 
@@ -433,11 +403,11 @@ export default function StatsTab({ library, onMovieClick }) {
       {/* ── STATS CARDS ROW ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
         {[
-          { label: 'Total Titles', val: filteredLibrary.length, color: 'var(--accent)', glow: 'rgba(124,111,247,0.2)', icon: Film, detail: `${watchedCount} Watched · ${watchlistCount} Watchlist` },
+          { label: 'Total Titles', val: filteredLibrary.length, color: 'var(--accent)', glow: 'rgba(136,8,8,0.2)', icon: Film, detail: `${watchedCount} Watched · ${watchlistCount} Watchlist` },
           { label: 'Time Invested', val: `${totalRuntimeHours}h`, color: 'var(--green)', glow: 'rgba(16,185,129,0.2)', icon: Clock, detail: `Approx. ${comparisons ? comparisons.totalDays : 0} complete days` },
           { label: 'Avg Rating', val: avgRating > 0 ? avgRating.toFixed(1) : '—', color: 'var(--gold)', glow: 'rgba(251,191,36,0.2)', icon: Star, detail: `Across ${filteredLibrary.filter(m => m.rating).length} rated titles` },
           { label: 'Favorites', val: favCount, color: 'var(--red)', glow: 'rgba(239,68,68,0.2)', icon: Heart, detail: `${Math.round((favCount / (filteredLibrary.length || 1)) * 100)}% of collection` },
-          { label: 'Watch Streak', val: `${streaks.current}d`, color: '#ec4899', glow: 'rgba(236,72,153,0.2)', icon: Zap, detail: `Longest streak: ${streaks.longest} days` }
+          { label: 'Watch Streak', val: `${streaks.current}d`, color: '#880808', glow: 'rgba(192,57,43,0.2)', icon: Zap, detail: `Longest streak: ${streaks.longest} days` }
         ].map((s, idx) => {
           const Icon = s.icon;
           return (
@@ -671,7 +641,7 @@ export default function StatsTab({ library, onMovieClick }) {
               {decadeStats.map(([decade, count], i) => {
                 const maxCount = Math.max(...decadeStats.map(d => d[1]));
                 const pct = Math.round((count / maxCount) * 100);
-                const DECADE_COLORS = ['#7c6ff7', '#3b82f6', '#10b981', '#fbbf24', '#f97316', '#ec4899'];
+                const DECADE_COLORS = ['#880808', '#3b82f6', '#10b981', '#fbbf24', '#f97316', '#880808'];
                 return (
                   <div key={decade}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 700, marginBottom: '5px' }}>
@@ -694,76 +664,10 @@ export default function StatsTab({ library, onMovieClick }) {
 
       </div>
 
-      {/* ── MOVIE DIARY HEATMAP ── */}
-      <div className="glass" style={{ borderRadius: 'var(--radius-lg)', padding: '24px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '18px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Calendar size={18} color="var(--accent)" />
-            <h3 style={{ fontSize: '15px', fontWeight: 800 }}>Watch Diary (Last 12 Months)</h3>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', fontSize: '11px', color: 'var(--text-muted)' }}>
-            <span>Less</span>
-            <div style={{ display: 'flex', gap: '3px' }}>
-              <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)' }} />
-              <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: 'rgba(124,111,247,0.2)' }} />
-              <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: 'rgba(124,111,247,0.45)' }} />
-              <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: 'rgba(124,111,247,0.7)' }} />
-              <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: 'var(--accent)' }} />
-            </div>
-            <span>More</span>
-          </div>
-        </div>
 
-        {/* Heatmap Grid wrapper */}
-        <div style={{ overflowX: 'auto', paddingBottom: '5px' }}>
-          <div style={{ display: 'flex', gap: '3px', width: 'max-content' }}>
-            {/* Columns representing weeks */}
-            {Array.from({ length: Math.ceil(heatmapData.length / 7) }).map((_, weekIdx) => {
-              const weekDays = heatmapData.slice(weekIdx * 7, weekIdx * 7 + 7);
-              return (
-                <div key={weekIdx} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                  {weekDays.map((day, dayIdx) => {
-                    let bg = 'rgba(255,255,255,0.03)';
-                    let border = '1px solid var(--border)';
-                    if (day.count === 1) { bg = 'rgba(124,111,247,0.25)'; border = '1px solid rgba(124,111,247,0.3)'; }
-                    else if (day.count === 2) { bg = 'rgba(124,111,247,0.5)'; border = '1px solid rgba(124,111,247,0.6)'; }
-                    else if (day.count === 3) { bg = 'rgba(124,111,247,0.75)'; border = '1px solid rgba(124,111,247,0.85)'; }
-                    else if (day.count > 3) { bg = 'var(--accent)'; border = '1px solid var(--accent)'; }
-
-                    return (
-                      <div
-                        key={dayIdx}
-                        style={{
-                          width: '11px', height: '11px', borderRadius: '2px',
-                          background: bg, border,
-                          transition: 'transform 0.15s'
-                        }}
-                        onMouseEnter={e => {
-                          e.currentTarget.style.transform = 'scale(1.3)';
-                          e.currentTarget.style.zIndex = 10;
-                        }}
-                        onMouseLeave={e => {
-                          e.currentTarget.style.transform = 'scale(1)';
-                          e.currentTarget.style.zIndex = 1;
-                        }}
-                        title={`${day.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}: ${day.count} titles logged`}
-                      />
-                    );
-                  })}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: '20px', fontSize: '11px', color: 'var(--text-dim)', paddingLeft: '5px' }}>
-          <span>Mon</span>
-          <span>Wed</span>
-          <span>Fri</span>
-          <span style={{ marginLeft: 'auto' }}>Hover points to inspect log date density</span>
-        </div>
-      </div>
 
     </div>
   );
 }
+
+

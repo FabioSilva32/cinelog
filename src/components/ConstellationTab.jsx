@@ -7,19 +7,19 @@ const GENRE_COLORS = {
   'Comedy':      '#eab308',
   'Drama':       '#10b981',
   'Sci-Fi':      '#3b82f6',
-  'Horror':      '#8b5cf6',
-  'Romance':     '#ec4899',
+  'Horror':      '#880808',
+  'Romance':     '#c0392b',
   'Thriller':    '#f59e0b',
   'Animation':   '#06b6d4',
-  'Fantasy':     '#a78bfa',
+  'Fantasy':     '#c0392b',
   'Crime':       '#6b7280',
   'Documentary': '#84cc16',
-  'Mystery':     '#c084fc',
+  'Mystery':     '#c0392b',
   'Music':       '#fb7185',
   'Family':      '#fde68a',
 };
 
-const DEFAULT_COLOR = '#7c6ff7';
+const DEFAULT_COLOR = '#880808';
 
 function normalizeGenre(rawGenre) {
   if (!rawGenre) return 'Other';
@@ -173,12 +173,12 @@ export default function ConstellationTab({ library = [], onMovieClick }) {
     const nebulas = [];
     if (wallpaperOverlay === 'nebula') {
       nebulas.push(
-        { x: W * 0.5, y: H * 0.5, r: W * 0.7, c1: 'rgba(236,72,153,0.08)', c2: 'rgba(124,111,247,0.03)' },
+        { x: W * 0.5, y: H * 0.5, r: W * 0.7, c1: 'rgba(192,57,43,0.08)', c2: 'rgba(136,8,8,0.03)' },
         { x: W * 0.2, y: H * 0.3, r: W * 0.4, c1: 'rgba(6,182,212,0.06)', c2: 'transparent' }
       );
     } else {
       nebulas.push(
-        { x: W * 0.3, y: H * 0.35, r: W * 0.5, c1: 'rgba(124,111,247,0.07)', c2: 'rgba(184,124,248,0.03)' },
+        { x: W * 0.3, y: H * 0.35, r: W * 0.5, c1: 'rgba(136,8,8,0.07)', c2: 'rgba(184,124,248,0.03)' },
         { x: W * 0.75, y: H * 0.6, r: W * 0.45, c1: 'rgba(59,130,246,0.04)', c2: 'transparent' },
         { x: W * 0.5, y: H * 0.8, r: W * 0.35, c1: 'rgba(16,185,129,0.03)', c2: 'transparent' }
       );
@@ -196,7 +196,7 @@ export default function ConstellationTab({ library = [], onMovieClick }) {
       ctx.lineWidth = 0.5;
       for (let ringIndex = 1; ringIndex <= 10; ringIndex++) {
         const rCoeff = 60 + (10 - ringIndex) * 32;
-        ctx.strokeStyle = `rgba(124, 111, 247, ${0.02 + ringIndex * 0.008})`;
+        ctx.strokeStyle = `rgba(136,8,8, ${0.02 + ringIndex * 0.008})`;
         ctx.beginPath();
         ctx.arc(W / 2, H / 2, rCoeff, 0, Math.PI * 2);
         ctx.stroke();
@@ -522,7 +522,7 @@ export default function ConstellationTab({ library = [], onMovieClick }) {
             ))}
           </div>
 
-          <div style={{ background: 'rgba(124,111,247,0.08)', border: '1px solid rgba(124,111,247,0.2)', borderRadius: '20px', padding: '5px 12px', fontSize: '11.5px', fontWeight: 700, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div style={{ background: 'rgba(136,8,8,0.08)', border: '1px solid rgba(136,8,8,0.2)', borderRadius: '20px', padding: '5px 12px', fontSize: '11.5px', fontWeight: 700, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '4px' }}>
             <Star size={11} fill="currentColor" /> {library.length} stars
           </div>
 
@@ -766,7 +766,7 @@ export default function ConstellationTab({ library = [], onMovieClick }) {
                   onClick={() => setFocusedGenre(isFocused ? null : genre)}
                   style={{
                     display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px', fontWeight: 600,
-                    background: isFocused ? 'rgba(124,111,247,0.15)' : 'rgba(255,255,255,0.03)',
+                    background: isFocused ? 'rgba(136,8,8,0.15)' : 'rgba(255,255,255,0.03)',
                     border: isFocused ? '1px solid var(--accent)' : '1px solid var(--border)',
                     borderRadius: '20px', padding: '4px 12px', cursor: 'pointer', transition: 'all 0.2s',
                     color: isFocused ? 'var(--accent)' : 'var(--text)'
@@ -788,3 +788,5 @@ export default function ConstellationTab({ library = [], onMovieClick }) {
     </div>
   );
 }
+
+

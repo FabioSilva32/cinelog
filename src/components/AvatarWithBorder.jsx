@@ -141,3 +141,4 @@ export default function AvatarWithBorder({ src, username, borderId, size = 96, o
     </div>
   );
 }
+

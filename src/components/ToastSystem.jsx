@@ -17,7 +17,7 @@ const ICONS = {
 const COLORS = {
   success: { bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.3)', icon: '#10b981' },
   error: { bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.3)', icon: '#ef4444' },
-  info: { bg: 'rgba(124,111,247,0.1)', border: 'rgba(124,111,247,0.3)', icon: '#a78bfa' },
+  info: { bg: 'rgba(136,8,8,0.1)', border: 'rgba(136,8,8,0.3)', icon: '#c0392b' },
   warning: { bg: 'rgba(251,191,36,0.1)', border: 'rgba(251,191,36,0.3)', icon: '#fbbf24' },
 };
 
@@ -116,3 +116,4 @@ export function ToastProvider({ children }) {
     </ToastContext.Provider>
   );
 }
+
