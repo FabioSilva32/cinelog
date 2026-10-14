@@ -146,7 +146,6 @@ function AppInner() {
 
   const [activeComboId, setActiveComboId] = useState(() => localStorage.getItem('cinelog_active_combo') || 'crimson');
   const [layoutMode, setLayoutMode] = useState(() => localStorage.getItem('cinelog_layout_mode') || 'top-nav');
-  const [showComboBar, setShowComboBar] = useState(true);
 
   useEffect(() => {
     localStorage.setItem('cinelog_layout_mode', layoutMode);
@@ -975,118 +974,6 @@ function AppInner() {
 
   return (
     <div style={{ background: '#000000', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* ── Sharp Solid Color Combos & Layout Live Switcher ── */}
-      {showComboBar && (
-        <div style={{
-          background: '#0d0d0d',
-          borderBottom: '1px solid #222222',
-          padding: '6px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          fontSize: '11.5px',
-          position: 'sticky',
-          top: 0,
-          zIndex: 9999,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.8)'
-        }}>
-          {/* Color Schemes */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            <span style={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#777', fontSize: '10px' }}>
-              Colors:
-            </span>
-            <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
-              {SHARP_SOLID_COMBOS.map(combo => {
-                const isSelected = activeComboId === combo.id;
-                return (
-                  <button
-                    key={combo.id}
-                    onClick={() => setActiveComboId(combo.id)}
-                    style={{
-                      background: isSelected ? combo.accent : '#151515',
-                      color: isSelected ? (combo.accent === '#FFFFFF' ? '#000000' : '#FFFFFF') : '#AAAAAA',
-                      border: `1px solid ${isSelected ? combo.accent : '#292929'}`,
-                      borderRadius: '4px',
-                      padding: '3px 8px',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '5px',
-                      transition: 'all 0.15s ease'
-                    }}
-                  >
-                    <span style={{
-                      width: '6px',
-                      height: '6px',
-                      borderRadius: '50%',
-                      background: combo.accent,
-                      border: combo.accent === '#000000' ? '1px solid #fff' : 'none'
-                    }} />
-                    {combo.name}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Layout Mode Selector */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#777', fontSize: '10px' }}>
-              Layout:
-            </span>
-            <div style={{ display: 'flex', gap: '4px' }}>
-              <button
-                onClick={() => setLayoutMode('top-nav')}
-                style={{
-                  background: layoutMode === 'top-nav' ? 'var(--accent)' : '#161616',
-                  color: layoutMode === 'top-nav' ? '#fff' : '#aaa',
-                  border: `1px solid ${layoutMode === 'top-nav' ? 'var(--accent)' : '#2a2a2a'}`,
-                  borderRadius: '4px',
-                  padding: '3px 9px',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-              >
-                Top-Nav (Red Render)
-              </button>
-              <button
-                onClick={() => setLayoutMode('sidebar')}
-                style={{
-                  background: layoutMode === 'sidebar' ? 'var(--accent)' : '#161616',
-                  color: layoutMode === 'sidebar' ? '#fff' : '#aaa',
-                  border: `1px solid ${layoutMode === 'sidebar' ? 'var(--accent)' : '#2a2a2a'}`,
-                  borderRadius: '4px',
-                  padding: '3px 9px',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-              >
-                Left Sidebar
-              </button>
-            </div>
-            <button
-              onClick={() => setShowComboBar(false)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: '#666',
-                cursor: 'pointer',
-                fontSize: '11px',
-                padding: '2px 4px',
-                marginLeft: '6px'
-              }}
-              title="Hide preview bar"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Main app container with layout class */}
       <div
         className={`app-container ${layoutMode === 'top-nav' ? 'layout-topnav' : 'layout-sidebar'}`}
