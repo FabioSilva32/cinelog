@@ -33,37 +33,32 @@ export const CURATED_MOVIE_AVATARS = [
 ];
 
 export const CINEMATIC_PRESET_BANNERS = [
-  // Marvel Cinematic Universe
-  { name: 'Avengers: Infinity War: Thor Wakanda Arrival', movie: 'Avengers: Infinity War', tag: 'Bring Me Thanos! 4K', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/nMnsSfNqMRJ5KujWMOnCS82Xklz.jpg' },
-  { name: 'Avengers: Infinity War: Battle of Wakanda', movie: 'Avengers: Infinity War', tag: 'Wakanda Frontline Charge', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/bOGkgRGdhrBYJSLpXaxhXVstddV.jpg' },
-  { name: 'Avengers: Infinity War: Nidavellir Star Forge', movie: 'Avengers: Infinity War', tag: 'Power of a Neutron Star', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/vdRUFLMMAay3RcD3MC4r8PeaAcR.jpg' },
-  { name: 'Avengers: Endgame: Portals Assemble', movie: 'Avengers: Endgame', tag: 'Avengers... Assemble 4K', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg' },
-  { name: 'Avengers: Endgame: Golden Portals Awakening', movie: 'Avengers: Endgame', tag: 'Mystic Portals Battlefield', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/rVnyAnoVoHGQPzFHONX2SSTNMHk.jpg' },
-  { name: 'Avengers: Endgame: Final Battle Charge', movie: 'Avengers: Endgame', tag: 'Earth\'s Mightiest Heroes', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/orjiB3oUIsyz60hoEqkiGpy5CeO.jpg' },
+  // Marvel Cinematic Universe — Authentic Film Scenes
+  { name: 'Avengers: Infinity War: Thor Wakanda Arrival', movie: 'Avengers: Infinity War', tag: 'Bring Me Thanos! (Film Scene)', category: 'Superhero', url: '/film_frames/infinity045.jpg' },
+  { name: 'Avengers: Infinity War: Nidavellir Star Forge', movie: 'Avengers: Infinity War', tag: 'Neutron Star Beam (Film Scene)', category: 'Superhero', url: '/film_frames/infinity044.jpg' },
+  { name: 'Avengers: Infinity War: Stormbreaker Strike', movie: 'Avengers: Infinity War', tag: 'Should Have Gone For The Head', category: 'Superhero', url: '/film_frames/infinity057.jpg' },
+  { name: 'Avengers: Endgame: Portals Scene', movie: 'Avengers: Endgame', tag: 'Mystic Portals Battlefield (Film Scene)', category: 'Superhero', url: '/film_frames/Avengers_Endgame_043.jpg' },
+  { name: 'Avengers: Endgame: Final Battle Charge', movie: 'Avengers: Endgame', tag: 'Avengers... Assemble! (Film Scene)', category: 'Superhero', url: '/film_frames/Avengers_Endgame_044.jpg' },
 
-  // DC & Superman
-  { name: 'Man of Steel: First Flight Sonic Boom', movie: 'Man of Steel', tag: 'First Flight Mach 3 Shockwave', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/69EFgWWPFWbRNHmQgYdSnyJ94Ge.jpg' },
-  { name: 'Man of Steel: Stratosphere Orbit Flight', movie: 'Man of Steel', tag: 'Supersonic Atmospheric Rise', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/dlPw6SESWNudgriKvNxJJLJryLq.jpg' },
-  { name: 'Man of Steel: Dawn Canyon Flight', movie: 'Man of Steel', tag: 'Kryptonian Flight Ascendancy', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/j2MlEEpA3wgwQiJB6p1UHC50oiw.jpg' },
-  { name: 'ZS Justice League: Solar Flight', movie: 'Zack Snyder\'s Justice League', tag: 'Black Suit Superman in Sunlight', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/9WoLTsRgrupkvCgs3bhsl2EjLhs.jpg' },
-  { name: 'The Batman: Gotham Rain & Batmobile', movie: 'The Batman (2022)', tag: '4K Gotham Nocturne', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/eUORREWq2ThkkxyiCESCu3sVdGg.jpg' },
-  { name: 'The Batman: Gotham Flare Silhouette', movie: 'The Batman (2022)', tag: 'Neo-Noir Vengeance', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/tRS6jvPM9qPrrnx2KRp3ew96Yot.jpg' },
-  { name: 'The Dark Knight: Skyscraper Overlook', movie: 'The Dark Knight', tag: 'IMAX Skyscraper Apex', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/dqK9Hag1054tghRQSqLSfrkvQnA.jpg' },
-  { name: 'The Dark Knight: Gotham Burning Crest', movie: 'The Dark Knight', tag: 'Gotham Vigilante', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/cfT29Im5VDvjE0RpyKOSdCKZal7.jpg' },
+  // DC & Superman & Batman — Authentic Film Scenes
+  { name: 'Man of Steel: First Flight Sonic Boom', movie: 'Man of Steel', tag: 'Mach 3 Shockwave (Film Scene)', category: 'Superhero', url: '/film_frames/mos/mos_25.jpg' },
+  { name: 'Man of Steel: Orbit Soaring', movie: 'Man of Steel', tag: 'Sunlight Over Earth (Film Scene)', category: 'Superhero', url: '/film_frames/mos/mos_50.jpg' },
+  { name: 'Man of Steel: Atmospheric Rise', movie: 'Man of Steel', tag: 'High Altitude Flight (Film Scene)', category: 'Superhero', url: '/film_frames/mos/mos_54.jpg' },
+  { name: 'Man of Steel: Metropolis Flight', movie: 'Man of Steel', tag: 'Metropolis Skyline Flight (Film Scene)', category: 'Superhero', url: '/film_frames/mos/mos_59.jpg' },
+  { name: 'The Dark Knight: Skyscraper Overlook', movie: 'The Dark Knight', tag: 'Gotham Night Apex (Film Scene)', category: 'Superhero', url: '/film_frames/tdk/tdk_20.jpg' },
+  { name: 'The Dark Knight: Bat-Pod Night Pursuit', movie: 'The Dark Knight', tag: 'Gotham Streets (Film Scene)', category: 'Superhero', url: '/film_frames/tdk/tdk_34.jpg' },
+  { name: 'The Dark Knight: Gargoyle Silhouette', movie: 'The Dark Knight', tag: 'The Dark Knight (Film Scene)', category: 'Superhero', url: '/film_frames/tdk/tdk_23.jpg' },
 
-  // Spider-Man & Web-Slingers
-  { name: 'Spider-Man: Brand New Day: Manhattan Spire Apex', movie: 'Spider-Man: Brand New Day', tag: 'Brand New Day 4K Perch', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/4tjxYg2AbOzzG9G1YuiT2NzYhlH.jpg' },
-  { name: 'Spider-Man: Brand New Day: Twilight Web-Swinging', movie: 'Spider-Man: Brand New Day', tag: 'Sunset City Acrobatics', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/t6GjU6Zgp2y3rcG1S1cKEAuqZ5G.jpg' },
-  { name: 'Spider-Man: Brand New Day: Skyline Leap', movie: 'Spider-Man: Brand New Day', tag: 'High Altitude Freefall', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/tanwf7KOwQ6dxZzehKsXkffIJOd.jpg' },
-  { name: 'Spider-Man: Brand New Day: City Flight', movie: 'Spider-Man: Brand New Day', tag: 'Acrobatic City Flight', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/mfo3LxD1t4TwFGl2MqDEYwkL5if.jpg' },
-  { name: 'Spider-Verse: Inverted City Leap', movie: 'Spider-Man: Across the Spider-Verse', tag: 'What\'s Up Danger 4K', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/kVd3a9YeLGkoeR50jGEXM6EqseS.jpg' },
-  { name: 'Spider-Man: No Way Home: Liberty Climax', movie: 'Spider-Man: No Way Home', tag: 'Multiverse Shield Climax', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/iQFcwSGbZXMkeyKrxbPnwnRo5fl.jpg' },
+  // Spider-Man & Web-Slingers — Authentic Film Scenes
+  { name: 'Spider-Man: Brand New Day: Spire Apex', movie: 'Spider-Man: Brand New Day', tag: 'Manhattan Skyline Perch (Film Scene)', category: 'Superhero', url: '/film_frames/bnd/bnd_spire_apex.jpg' },
+  { name: 'Spider-Man: Brand New Day: City Leap', movie: 'Spider-Man: Brand New Day', tag: 'Acrobatic City Flight (Film Scene)', category: 'Superhero', url: '/film_frames/bnd/bnd_city_leap.jpg' },
+  { name: 'Spider-Man: No Way Home: Moonlit Web-Swing', movie: 'Spider-Man: No Way Home', tag: 'Three Spider-Men Swing (Film Scene)', category: 'Superhero', url: '/film_frames/nwh/nwh_47.jpg' },
+  { name: 'Spider-Man: No Way Home: Liberty Shield Perch', movie: 'Spider-Man: No Way Home', tag: 'Statue of Liberty Shield (Film Scene)', category: 'Superhero', url: '/film_frames/nwh/nwh_48.jpg' },
+  { name: 'Spider-Verse: Inverted Skyscraper Dive', movie: 'Spider-Man: Across the Spider-Verse', tag: 'What\'s Up Danger (Film Scene)', category: 'Superhero', url: '/film_frames/atsv/atsv_30.jpg' },
 
-  // Sci-Fi & Cosmic Odyssey (Project Hail Mary, Interstellar, Dune, Blade Runner)
-  { name: 'Project Hail Mary: Red & Green Petrova Sequence', movie: 'Project Hail Mary', tag: 'Astrophage Red & Green Spectrum', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/y8vQKqARUYPktoQTp1kLuHqBZkh.jpg' },
-  { name: 'Project Hail Mary: Deep Space Hail Mary Odyssey', movie: 'Project Hail Mary', tag: 'Interstellar Voyage 4K', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/8Tfys3mDZVp4tNoH2ktm06a0Tau.jpg' },
-  { name: 'Project Hail Mary: Hail Mary & Blip-A Rendezvous', movie: 'Project Hail Mary', tag: 'First Contact in Deep Space', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/wLWvHcQz7N13DvSOTV7bHgwGXpT.jpg' },
-  { name: 'Project Hail Mary: Tau Ceti Cosmic Flare', movie: 'Project Hail Mary', tag: 'Dying Star System 4K', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/cSnlgBZ5dDTssch4ZvzC00F5ysP.jpg' },
+  // Sci-Fi & Cosmic Odyssey (Project Hail Mary, Interstellar, Star Wars, Dune)
+  { name: 'Project Hail Mary: Red & Green Petrova Sequence', movie: 'Project Hail Mary', tag: 'Astrophage Red & Green Spectrum (Film Scene)', category: 'Sci-Fi', url: '/film_frames/phm/phm_red_green_spacewalk.jpg' },
+  { name: 'Project Hail Mary: Deep Space Infrared Flare', movie: 'Project Hail Mary', tag: 'Astrophage Cosmic Flare (Film Scene)', category: 'Sci-Fi', url: '/film_frames/phm/phm_red_astrophage_flare.jpg' },
   { name: 'Interstellar: Gargantua Black Hole', movie: 'Interstellar', tag: 'Cosmic Event Horizon', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/8sNiAPPYU14PUepFNeSNGUTiHW.jpg' },
   { name: 'Interstellar: Endurance Orbiting Saturn', movie: 'Interstellar', tag: 'Wormhole Odyssey', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/vgnoBSVzWAV9sNQUORaDGvDp7wx.jpg' },
   { name: 'Blade Runner 2049: Las Vegas Amber', movie: 'Blade Runner 2049', tag: 'Deakins Amber Dust', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/gNdLJU9TxrpGx4dkZidjys3fyy0.jpg' },
@@ -71,28 +66,20 @@ export const CINEMATIC_PRESET_BANNERS = [
   { name: 'Dune: Part Two: Arrakis Sunset Dunes', movie: 'Dune: Part Two', tag: 'Desert Eclipse Vista', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/eZ239CUp1d6OryZEBPnO2n87gMG.jpg' },
   { name: 'Dune: Part Two: Sandworm Charge', movie: 'Dune: Part Two', tag: 'Shai-Hulud Apex', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/24Ov8wnusgnzXwjV1eDm0Lzo5da.jpg' },
   { name: '2001: A Space Odyssey: Worlds Alignment', movie: '2001: A Space Odyssey', tag: 'Kubrick Cosmic Stargate', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/9yTOU2SvTfAEHDPEG5qraLoe4MI.jpg' },
-  { name: '2001: A Space Odyssey: Discovery One', movie: '2001: A Space Odyssey', tag: 'Deep Space Odyssey', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/w5IDXtifKntw0ajv2co7jFlTQDM.jpg' },
-  { name: 'Star Wars: Falcon & Death Star', movie: 'Star Wars: A New Hope', tag: 'Galactic Space Opera', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/zqkmTXzjkAgXmEWLRsY4UpTWCeo.jpg' },
-  { name: 'The Empire Strikes Back: Cloud City', movie: 'The Empire Strikes Back', tag: 'Bespin Sunset Vista', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/dMZxEdrWIzUmUoOz2zvmFuutbj7.jpg' },
+  { name: 'Star Wars: Binary Sunset on Tatooine', movie: 'Star Wars: A New Hope', tag: 'Twin Suns of Tatooine (Film Scene)', category: 'Sci-Fi', url: '/film_frames/starwars/binary_sunset.jpg' },
   { name: 'TRON: Legacy: The Grid Neon Horizon', movie: 'TRON: Legacy', tag: 'Daft Punk Cyber Grid', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/uUa6jgSr5BQpcBhhaz1PV1JhSa4.jpg' },
-  { name: 'Alien: Derelict on LV-426', movie: 'Alien', tag: 'H.R. Giger Atmospheric Horror', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/AmR3JG1VQVxU8TfAvljUhfSFUOx.jpg' },
-  { name: 'The Matrix: Digital Green Corridor', movie: 'The Matrix', tag: 'Wachowski Cyber Action', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/tlm8UkiQsitc8rSuIAscQDCnP8d.jpg' },
 
-  // Epic Action & Fantasy
+  // Epic Action & Fantasy (LOTR, Gladiator, Mad Max)
   { name: 'LOTR: Return of the King: Pelennor Fields', movie: 'The Lord of the Rings: The Return of the King', tag: 'White City Citadel', category: 'Action', url: 'https://image.tmdb.org/t/p/original/ctiw6FZK4N36LmkjSklWEbuvlq9.jpg' },
   { name: 'LOTR: Fellowship of the Ring: Argonath', movie: 'The Lord of the Rings: The Fellowship of the Ring', tag: 'Pillars of the Kings', category: 'Action', url: 'https://image.tmdb.org/t/p/original/oiwc338EoBgS4sEI2ixAny4KQKg.jpg' },
-  { name: 'LOTR: Mount Doom Horizon', movie: 'The Lord of the Rings: The Return of the King', tag: 'Mordor Ash Vista', category: 'Action', url: 'https://image.tmdb.org/t/p/original/lZWdNk6BsDZrSsZ0unHAsTFfFc4.jpg' },
   { name: 'Mad Max: Fury Road: Citadel Chase', movie: 'Mad Max: Fury Road', tag: 'Wasteland Desolation', category: 'Action', url: 'https://image.tmdb.org/t/p/original/l0eIS009XtEO80aC6zjM3o3AkEl.jpg' },
-  { name: 'Mad Max: Fury Road: Sandstorm of Fire', movie: 'Mad Max: Fury Road', tag: 'Tornado of Fire', category: 'Action', url: 'https://image.tmdb.org/t/p/original/gqrnQA6Xppdl8vIb2eJc58VC1tW.jpg' },
   { name: 'Gladiator: Colosseum Glory', movie: 'Gladiator', tag: 'Roman Empire Epic', category: 'Action', url: 'https://image.tmdb.org/t/p/original/Ar7QuJ7sJEiC0oP3I8fKBKIQD9u.jpg' },
 
-  // Auteur, Drama & Thriller
+  // Auteur, Drama & Thriller (Drive 2011, Oppenheimer, Taxi Driver)
   { name: 'Drive: LA Riverbed Sunset', movie: 'Drive (2011)', tag: 'Refn Neo-Noir Magic Hour', category: 'Crime & Noir', url: 'https://image.tmdb.org/t/p/original/hoyAALgfmjMEK7O1wZ4r8wT91RP.jpg' },
   { name: 'Drive: Neon Night Driver', movie: 'Drive (2011)', tag: 'Scorpion Night City', category: 'Crime & Noir', url: 'https://image.tmdb.org/t/p/original/oeEiUwvqHxWT0XqD3YlViaiJOVD.jpg' },
   { name: 'Oppenheimer: Trinity Firestorm', movie: 'Oppenheimer', tag: '70mm Atomic Wave', category: 'Drama', url: 'https://image.tmdb.org/t/p/original/cUIqZd6jJCbO94Txt1CkTs7MSeP.jpg' },
   { name: 'Taxi Driver: 42nd Street Rain', movie: 'Taxi Driver', tag: 'Neon Rain Nocturne', category: 'Crime & Noir', url: 'https://image.tmdb.org/t/p/original/9uddYYTNcLWpzUkl5iw1RUYhLhY.jpg' },
-  { name: 'Apocalypse Now: Dawn Helicopter Patrol', movie: 'Apocalypse Now', tag: 'Napalm Sunrise', category: 'Drama', url: 'https://image.tmdb.org/t/p/original/49fzLedFVKgGgFChLMuulDJBY1c.jpg' },
-  { name: 'Fight Club: Skyline Demolition', movie: 'Fight Club', tag: 'Where Is My Mind', category: 'Drama', url: 'https://image.tmdb.org/t/p/original/5TiwfWEaPSwD20uwXjCTUqpQX70.jpg' },
   { name: 'La La Land: Griffith Park Twilight', movie: 'La La Land', tag: 'Magic Hour Twilight', category: 'Drama', url: 'https://image.tmdb.org/t/p/original/nlPCdZlHtRNcF6C9hzUH4ebmV1w.jpg' },
   { name: 'Pulp Fiction: Jack Rabbit Slims', movie: 'Pulp Fiction', tag: 'Tarantino Cult', category: 'Crime & Noir', url: 'https://image.tmdb.org/t/p/original/suaEOtk1N1sgg2MTM7oZd2cfVp3.jpg' },
 
