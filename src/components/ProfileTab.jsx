@@ -736,14 +736,16 @@ export default function ProfileTab({
               >
                 {viewedProfile?.bannerUrl && !viewedProfile.bannerUrl.startsWith('animated-') ? (
                   <img
-                    src={viewedProfile.bannerUrl}
+                    src={(viewedProfile.bannerUrl || '').replace('/w1280/', '/original/').replace('/w500/', '/original/')}
                     alt="Profile Banner"
                     style={{
                       width: '100%',
                       height: '100%',
                       objectFit: viewedProfile.bannerFitMode || 'cover',
                       objectPosition: `center ${viewedProfile.bannerPosPercent ?? 20}%`,
-                      display: 'block'
+                      display: 'block',
+                      imageRendering: 'auto',
+                      backfaceVisibility: 'hidden'
                     }}
                   />
                 ) : (
@@ -930,14 +932,16 @@ export default function ProfileTab({
           >
             {currentUser?.bannerUrl && !currentUser.bannerUrl.startsWith('animated-') ? (
               <img
-                src={currentUser.bannerUrl}
+                src={(currentUser.bannerUrl || '').replace('/w1280/', '/original/').replace('/w500/', '/original/')}
                 alt="Profile Banner"
                 style={{
                   width: '100%',
                   height: '100%',
                   objectFit: currentUser?.bannerFitMode || localStorage.getItem('cinelog_banner_fit') || 'cover',
                   objectPosition: `center ${currentUser?.bannerPosPercent !== undefined ? currentUser.bannerPosPercent : (localStorage.getItem('cinelog_banner_pos') !== null ? Number(localStorage.getItem('cinelog_banner_pos')) : 20)}%`,
-                  display: 'block'
+                  display: 'block',
+                  imageRendering: 'auto',
+                  backfaceVisibility: 'hidden'
                 }}
               />
             ) : (

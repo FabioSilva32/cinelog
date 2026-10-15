@@ -6,15 +6,9 @@ import AvatarWithBorder from './AvatarWithBorder';
 
 function BrandLogoMark({ size = 32 }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="var(--accent, #e50914)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, display: 'block' }}>
-      <rect width="20" height="20" x="2" y="2" rx="2.18" ry="2.18"/>
-      <line x1="7" x2="7" y1="2" y2="22"/>
-      <line x1="17" x2="17" y1="2" y2="22"/>
-      <line x1="2" x2="22" y1="12" y2="12"/>
-      <line x1="2" x2="7" y1="7" y2="7"/>
-      <line x1="17" x2="22" y1="7" y2="7"/>
-      <line x1="17" x2="22" y1="17" y2="17"/>
-      <line x1="2" x2="7" y1="17" y2="17"/>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={size} height={size} fill="none" style={{ flexShrink: 0, display: 'block' }}>
+      <rect width="20" height="20" x="2" y="2" rx="4" stroke="var(--accent, #e50914)" strokeWidth="2" />
+      <polygon points="10,7.5 17,12 10,16.5" fill="var(--accent, #e50914)" />
     </svg>
   );
 }

@@ -34,52 +34,47 @@ export const CURATED_MOVIE_AVATARS = [
 
 export const CINEMATIC_PRESET_BANNERS = [
   // Sci-Fi & Cyberpunk
-  { name: 'Interstellar: Gargantua', movie: 'Interstellar', tag: 'Sci-Fi Odyssey', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w1280/8sNiAPPYU14PUepFNeSNGUTiHW.jpg' },
-  { name: 'Blade Runner 2049: Neon Vegas', movie: 'Blade Runner 2049', tag: 'Cyberpunk Noir', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w1280/gNdLJU9TxrpGx4dkZidjys3fyy0.jpg' },
-  { name: 'Dune: Part Two: Arrakis Sunset', movie: 'Dune: Part Two', tag: 'Desert Epic', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w1280/eZ239CUp1d6OryZEBPnO2n87gMG.jpg' },
-  { name: 'The Matrix: Digital Lobby', movie: 'The Matrix', tag: 'Cyber Action', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w1280/tlm8UkiQsitc8rSuIAscQDCnP8d.jpg' },
-  { name: '2001: A Space Odyssey: Monolith', movie: '2001: A Space Odyssey', tag: 'Cosmic Cinema', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w1280/w5IDXtifKntw0ajv2co7jFlTQDM.jpg' },
-  { name: 'Blade Runner: Tyrell Pyramid', movie: 'Blade Runner (1982)', tag: 'Future Noir', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w1280/2spEHYDcyE9r9mS7AFEscfKVDzO.jpg' },
-  { name: 'TRON: Legacy: The Grid', movie: 'TRON: Legacy', tag: 'Neon Grid', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w1280/uUa6jgSr5BQpcBhhaz1PV1JhSa4.jpg' },
-  { name: 'Star Wars: The Empire Strikes Back', movie: 'The Empire Strikes Back', tag: 'Space Opera', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w1280/k9pshruhCpJAdH9RaGJO6jaWQ4X.jpg' },
-  { name: 'Alien: Nostromo Derelict', movie: 'Alien', tag: 'Sci-Fi Horror', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w1280/AmR3JG1VQVxU8TfAvljUhfSFUOx.jpg' },
-  { name: 'Back to the Future: Twin Pines Mall', movie: 'Back to the Future', tag: '80s Time Machine', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w1280/5bzPWQ2dFUl2aZKkp7ILJVVkRed.jpg' },
+  { name: 'Interstellar: Gargantua Black Hole', movie: 'Interstellar', tag: 'Cosmic Event Horizon', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/8sNiAPPYU14PUepFNeSNGUTiHW.jpg' },
+  { name: 'Interstellar: Endurance Orbiting Saturn', movie: 'Interstellar', tag: 'Wormhole Odyssey', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/vgnoBSVzWAV9sNQUORaDGvDp7wx.jpg' },
+  { name: 'Blade Runner 2049: Las Vegas Amber', movie: 'Blade Runner 2049', tag: 'Deakins Amber Dust', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/gNdLJU9TxrpGx4dkZidjys3fyy0.jpg' },
+  { name: 'Blade Runner 2049: Sea Wall Spinner', movie: 'Blade Runner 2049', tag: 'Cyberpunk Sea Wall', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/mVr0UiqyltcfqxbAUcLl9zWL8ah.jpg' },
+  { name: 'Dune: Part Two: Arrakis Sunset Dunes', movie: 'Dune: Part Two', tag: 'Desert Eclipse Vista', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/eZ239CUp1d6OryZEBPnO2n87gMG.jpg' },
+  { name: 'Dune: Part Two: Sandworm Charge', movie: 'Dune: Part Two', tag: 'Shai-Hulud Apex', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/24Ov8wnusgnzXwjV1eDm0Lzo5da.jpg' },
+  { name: '2001: A Space Odyssey: Worlds Alignment', movie: '2001: A Space Odyssey', tag: 'Kubrick Cosmic Stargate', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/9yTOU2SvTfAEHDPEG5qraLoe4MI.jpg' },
+  { name: '2001: A Space Odyssey: Discovery One', movie: '2001: A Space Odyssey', tag: 'Deep Space Odyssey', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/w5IDXtifKntw0ajv2co7jFlTQDM.jpg' },
+  { name: 'Star Wars: Falcon & Death Star', movie: 'Star Wars: A New Hope', tag: 'Galactic Space Opera', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/zqkmTXzjkAgXmEWLRsY4UpTWCeo.jpg' },
+  { name: 'The Empire Strikes Back: Cloud City', movie: 'The Empire Strikes Back', tag: 'Bespin Sunset Vista', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/dMZxEdrWIzUmUoOz2zvmFuutbj7.jpg' },
+  { name: 'TRON: Legacy: The Grid Neon Horizon', movie: 'TRON: Legacy', tag: 'Daft Punk Cyber Grid', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/uUa6jgSr5BQpcBhhaz1PV1JhSa4.jpg' },
+  { name: 'Alien: Derelict on LV-426', movie: 'Alien', tag: 'H.R. Giger Atmospheric Horror', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/AmR3JG1VQVxU8TfAvljUhfSFUOx.jpg' },
+  { name: 'The Matrix: Digital Green Corridor', movie: 'The Matrix', tag: 'Wachowski Cyber Action', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/tlm8UkiQsitc8rSuIAscQDCnP8d.jpg' },
 
   // Superhero & Modern Action
-  { name: 'The Dark Knight: Gotham Overlook', movie: 'The Dark Knight', tag: 'Gotham Vigilante', category: 'Action', url: 'https://image.tmdb.org/t/p/w1280/9FE5eD92WfVCiivM9Pq9GVSrlWk.jpg' },
-  { name: 'The Batman: Red Flare', movie: 'The Batman', tag: 'Neo-Noir Hero', category: 'Action', url: 'https://image.tmdb.org/t/p/w1280/rvtdN5XkWAfGX6xDuPL6yYS2seK.jpg' },
-  { name: 'Spider-Verse: Multiverse Leap', movie: 'Spider-Man: Across the Spider-Verse', tag: 'Multiverse Marvel', category: 'Action', url: 'https://image.tmdb.org/t/p/w1280/kVd3a9YeLGkoeR50jGEXM6EqseS.jpg' },
-  { name: 'Mad Max: Fury Road: Sandstorm', movie: 'Mad Max: Fury Road', tag: 'Wasteland Action', category: 'Action', url: 'https://image.tmdb.org/t/p/w1280/gqrnQA6Xppdl8vIb2eJc58VC1tW.jpg' },
-  { name: 'John Wick: Chapter 4: Neon Duel', movie: 'John Wick: Chapter 4', tag: 'Gun-Fu Master', category: 'Action', url: 'https://image.tmdb.org/t/p/w1280/7I6VUdPj6tQECNHdviJkUHD2u89.jpg' },
-  { name: 'Top Gun: Maverick: Supersonic Flight', movie: 'Top Gun: Maverick', tag: 'Aviation Thrill', category: 'Action', url: 'https://image.tmdb.org/t/p/w1280/AaV1YIdWKnjAIAOe8UUKBFm327v.jpg' },
-  { name: 'Gladiator: Colosseum Glory', movie: 'Gladiator', tag: 'Roman Epic', category: 'Action', url: 'https://image.tmdb.org/t/p/w1280/Ar7QuJ7sJEiC0oP3I8fKBKIQD9u.jpg' },
-  { name: 'Avengers: Endgame: Final Stand', movie: 'Avengers: Endgame', tag: 'Marvel Apex', category: 'Action', url: 'https://image.tmdb.org/t/p/w1280/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg' },
-  { name: 'Kill Bill: Vol. 1: House of Blue Leaves', movie: 'Kill Bill: Vol. 1', tag: 'Martial Revenge', category: 'Action', url: 'https://image.tmdb.org/t/p/w1280/iffzIhuLAO38Po6sh1s6ZEVwlNL.jpg' },
-  { name: 'LOTR: The Return of the King', movie: 'The Lord of the Rings: The Return of the King', tag: 'Fantasy Pinnacle', category: 'Action', url: 'https://image.tmdb.org/t/p/w1280/ctiw6FZK4N36LmkjSklWEbuvlq9.jpg' },
-  { name: 'LOTR: Fellowship of the Ring: Argonath', movie: 'The Lord of the Rings: The Fellowship of the Ring', tag: 'Tolkien Fantasy', category: 'Action', url: 'https://image.tmdb.org/t/p/w1280/oiwc338EoBgS4sEI2ixAny4KQKg.jpg' },
+  { name: 'The Batman: Gotham Rain & Batmobile', movie: 'The Batman (2022)', tag: '4K Gotham Nocturne', category: 'Action', url: 'https://image.tmdb.org/t/p/original/eUORREWq2ThkkxyiCESCu3sVdGg.jpg' },
+  { name: 'The Batman: Gotham Flare Silhouette', movie: 'The Batman (2022)', tag: 'Neo-Noir Vengeance', category: 'Action', url: 'https://image.tmdb.org/t/p/original/tRS6jvPM9qPrrnx2KRp3ew96Yot.jpg' },
+  { name: 'The Dark Knight: Skyscraper Overlook', movie: 'The Dark Knight', tag: 'IMAX Skyscraper Apex', category: 'Action', url: 'https://image.tmdb.org/t/p/original/dqK9Hag1054tghRQSqLSfrkvQnA.jpg' },
+  { name: 'The Dark Knight: Gotham Burning Crest', movie: 'The Dark Knight', tag: 'Gotham Vigilante', category: 'Action', url: 'https://image.tmdb.org/t/p/original/cfT29Im5VDvjE0RpyKOSdCKZal7.jpg' },
+  { name: 'Spider-Verse: Inverted City Leap', movie: 'Spider-Man: Across the Spider-Verse', tag: 'What\'s Up Danger 4K', category: 'Action', url: 'https://image.tmdb.org/t/p/original/kVd3a9YeLGkoeR50jGEXM6EqseS.jpg' },
+  { name: 'Mad Max: Fury Road: Citadel Chase', movie: 'Mad Max: Fury Road', tag: 'Wasteland Desolation', category: 'Action', url: 'https://image.tmdb.org/t/p/original/l0eIS009XtEO80aC6zjM3o3AkEl.jpg' },
+  { name: 'Mad Max: Fury Road: Sandstorm of Fire', movie: 'Mad Max: Fury Road', tag: 'Tornado of Fire', category: 'Action', url: 'https://image.tmdb.org/t/p/original/gqrnQA6Xppdl8vIb2eJc58VC1tW.jpg' },
+  { name: 'LOTR: Return of the King: Pelennor Fields', movie: 'The Lord of the Rings: The Return of the King', tag: 'White City Citadel', category: 'Action', url: 'https://image.tmdb.org/t/p/original/ctiw6FZK4N36LmkjSklWEbuvlq9.jpg' },
+  { name: 'LOTR: Fellowship of the Ring: Argonath', movie: 'The Lord of the Rings: The Fellowship of the Ring', tag: 'Pillars of the Kings', category: 'Action', url: 'https://image.tmdb.org/t/p/original/oiwc338EoBgS4sEI2ixAny4KQKg.jpg' },
+  { name: 'LOTR: Mount Doom Horizon', movie: 'The Lord of the Rings: The Return of the King', tag: 'Mordor Ash Vista', category: 'Action', url: 'https://image.tmdb.org/t/p/original/lZWdNk6BsDZrSsZ0unHAsTFfFc4.jpg' },
+  { name: 'Gladiator: Colosseum Glory', movie: 'Gladiator', tag: 'Roman Empire Epic', category: 'Action', url: 'https://image.tmdb.org/t/p/original/Ar7QuJ7sJEiC0oP3I8fKBKIQD9u.jpg' },
 
   // Auteur, Drama & Thriller
-  { name: 'Oppenheimer: Trinity Wave', movie: 'Oppenheimer', tag: 'Atomic Drama', category: 'Drama', url: 'https://image.tmdb.org/t/p/w1280/neeNHeXjMF5fXoCJRsOmkNGC7q.jpg' },
-  { name: 'Inception: Folded Paris', movie: 'Inception', tag: 'Mind Heist', category: 'Drama', url: 'https://image.tmdb.org/t/p/w1280/8ZTVqvKDQ8emSGUEMjsS4yHAwrp.jpg' },
-  { name: 'Pulp Fiction: Jack Rabbit Slims', movie: 'Pulp Fiction', tag: 'Tarantino Cult', category: 'Crime & Noir', url: 'https://image.tmdb.org/t/p/w1280/suaEOtk1N1sgg2MTM7oZd2cfVp3.jpg' },
-  { name: 'Fight Club: Collapse', movie: 'Fight Club', tag: 'Psychological Cult', category: 'Drama', url: 'https://image.tmdb.org/t/p/w1280/c6OLXfKAk5BKeR6broC8pYiCquX.jpg' },
-  { name: 'The Godfather: Corleone Estate', movie: 'The Godfather', tag: 'Cinema Royalty', category: 'Crime & Noir', url: 'https://image.tmdb.org/t/p/w1280/ejdD20cdHNFAYAN2DlqPToXKyzx.jpg' },
-  { name: 'Parasite: The Glass House', movie: 'Parasite', tag: 'Palme d\'Or Masterpiece', category: 'Drama', url: 'https://image.tmdb.org/t/p/w1280/TU9NIjwzjoKPwQHoHshkFcQUCG.jpg' },
-  { name: 'La La Land: Griffith Twilight', movie: 'La La Land', tag: 'Hollywood Musical', category: 'Drama', url: 'https://image.tmdb.org/t/p/w1280/nlPCdZlHtRNcF6C9hzUH4ebmV1w.jpg' },
-  { name: 'The Shining: Overlook Hotel', movie: 'The Shining', tag: 'Kubrick Horror', category: 'Drama', url: 'https://image.tmdb.org/t/p/w1280/AdKA2F1SzYPhSZdEbjH1Zh75UVQ.jpg' },
-  { name: 'Apocalypse Now: Ride of the Valkyries', movie: 'Apocalypse Now', tag: 'War Epic', category: 'Drama', url: 'https://image.tmdb.org/t/p/w1280/49fzLedFVKgGgFChLMuulDJBY1c.jpg' },
-  { name: 'GoodFellas: Copacabana', movie: 'GoodFellas', tag: 'Scorsese Mob', category: 'Crime & Noir', url: 'https://image.tmdb.org/t/p/w1280/gILte6Zd7m1YneIr6MVhh30S9pr.jpg' },
-  { name: 'Drive: Synthwave Los Angeles', movie: 'Drive', tag: 'Neo-Noir Synth', category: 'Crime & Noir', url: 'https://image.tmdb.org/t/p/w1280/hoyAALgfmjMEK7O1wZ4r8wT91RP.jpg' },
-  { name: 'Taxi Driver: 42nd Street Rain', movie: 'Taxi Driver', tag: 'Urban Isolation', category: 'Crime & Noir', url: 'https://image.tmdb.org/t/p/w1280/9uddYYTNcLWpzUkl5iw1RUYhLhY.jpg' },
-  { name: 'The Grand Budapest Hotel: Facade', movie: 'The Grand Budapest Hotel', tag: 'Wes Anderson Pastel', category: 'Drama', url: 'https://image.tmdb.org/t/p/w1280/jK65srQczOKTpW62wPxwwKztGgE.jpg' },
-  { name: 'Whiplash: Caravan Solo', movie: 'Whiplash', tag: 'Obsession & Jazz', category: 'Drama', url: 'https://image.tmdb.org/t/p/w1280/fRGxZuo7jJUWQsVg9PREb98Aclp.jpg' },
-  { name: 'Brazil: Bureaucratic Dystopia', movie: 'Brazil', tag: 'Gilliam Surrealism', category: 'Drama', url: 'https://image.tmdb.org/t/p/w1280/9IYyCLf5NNAQFK9pNtqzEU9HWzM.jpg' },
+  { name: 'Drive: LA Riverbed Sunset', movie: 'Drive (2011)', tag: 'Refn Neo-Noir Magic Hour', category: 'Crime & Noir', url: 'https://image.tmdb.org/t/p/original/hoyAALgfmjMEK7O1wZ4r8wT91RP.jpg' },
+  { name: 'Drive: Neon Night Driver', movie: 'Drive (2011)', tag: 'Scorpion Night City', category: 'Crime & Noir', url: 'https://image.tmdb.org/t/p/original/oeEiUwvqHxWT0XqD3YlViaiJOVD.jpg' },
+  { name: 'Oppenheimer: Trinity Firestorm', movie: 'Oppenheimer', tag: '70mm Atomic Wave', category: 'Drama', url: 'https://image.tmdb.org/t/p/original/cUIqZd6jJCbO94Txt1CkTs7MSeP.jpg' },
+  { name: 'Taxi Driver: 42nd Street Rain', movie: 'Taxi Driver', tag: 'Neon Rain Nocturne', category: 'Crime & Noir', url: 'https://image.tmdb.org/t/p/original/9uddYYTNcLWpzUkl5iw1RUYhLhY.jpg' },
+  { name: 'Apocalypse Now: Dawn Helicopter Patrol', movie: 'Apocalypse Now', tag: 'Napalm Sunrise', category: 'Drama', url: 'https://image.tmdb.org/t/p/original/49fzLedFVKgGgFChLMuulDJBY1c.jpg' },
+  { name: 'Fight Club: Skyline Demolition', movie: 'Fight Club', tag: 'Where Is My Mind', category: 'Drama', url: 'https://image.tmdb.org/t/p/original/5TiwfWEaPSwD20uwXjCTUqpQX70.jpg' },
+  { name: 'La La Land: Griffith Park Twilight', movie: 'La La Land', tag: 'Magic Hour Twilight', category: 'Drama', url: 'https://image.tmdb.org/t/p/original/nlPCdZlHtRNcF6C9hzUH4ebmV1w.jpg' },
+  { name: 'Pulp Fiction: Jack Rabbit Slims', movie: 'Pulp Fiction', tag: 'Tarantino Cult', category: 'Crime & Noir', url: 'https://image.tmdb.org/t/p/original/suaEOtk1N1sgg2MTM7oZd2cfVp3.jpg' },
 
   // Animation & Fantasy
-  { name: 'Spirited Away: Sea Railway', movie: 'Spirited Away', tag: 'Studio Ghibli', category: 'Animation', url: 'https://image.tmdb.org/t/p/w1280/6oaL4DP75yABrd5EbC4H2zq5ghc.jpg' },
-  { name: 'Princess Mononoke: Forest Spirit', movie: 'Princess Mononoke', tag: 'Ghibli Mythos', category: 'Animation', url: 'https://image.tmdb.org/t/p/w1280/gl0jzn4BupSbL2qMVeqrjKkF9Js.jpg' },
-  { name: 'Howl\'s Moving Castle: Flower Field', movie: 'Howl\'s Moving Castle', tag: 'Ghibli Romance', category: 'Animation', url: 'https://image.tmdb.org/t/p/w1280/nv5wwZou159v5OC61i4ElR7OqyY.jpg' },
-  { name: 'Akira: Neo-Tokyo Highway', movie: 'Akira', tag: 'Anime Legend', category: 'Animation', url: 'https://image.tmdb.org/t/p/w1280/fK40VGYIm7hmKrLJ26fgPQU0qRG.jpg' }
+  { name: 'Spirited Away: Sea Railway at Twilight', movie: 'Spirited Away', tag: 'Endless Sea Train', category: 'Animation', url: 'https://image.tmdb.org/t/p/original/6oaL4DP75yABrd5EbC4H2zq5ghc.jpg' },
+  { name: 'Princess Mononoke: Ancient Spirit Forest', movie: 'Princess Mononoke', tag: 'Ghibli Mythic Wilderness', category: 'Animation', url: 'https://image.tmdb.org/t/p/original/gl0jzn4BupSbL2qMVeqrjKkF9Js.jpg' },
+  { name: 'Akira: Neo-Tokyo Highway', movie: 'Akira', tag: 'Anime Legend 4K', category: 'Animation', url: 'https://image.tmdb.org/t/p/original/fK40VGYIm7hmKrLJ26fgPQU0qRG.jpg' }
 ];
 
 export default function ProfileCustomizerModal({
@@ -352,7 +347,7 @@ export default function ProfileCustomizerModal({
               }}>
                 {bannerUrl && !bannerUrl.startsWith('animated-') ? (
                   <img
-                    src={bannerUrl}
+                    src={bannerUrl.replace('/w1280/', '/original/').replace('/w500/', '/original/')}
                     alt="Banner Preview"
                     style={{
                       width: '100%',
@@ -361,7 +356,9 @@ export default function ProfileCustomizerModal({
                       objectPosition: `center ${bannerPosPercent}%`,
                       display: 'block',
                       pointerEvents: 'none',
-                      userSelect: 'none'
+                      userSelect: 'none',
+                      imageRendering: 'auto',
+                      backfaceVisibility: 'hidden'
                     }}
                   />
                 ) : (
@@ -735,7 +732,7 @@ export default function ProfileCustomizerModal({
                               onMouseLeave={e => { if (!isSelected) e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
                             >
                               <img
-                                src={preset.url.replace('/w1280/', '/w780/')}
+                                src={preset.url.replace('/original/', '/w780/').replace('/w1280/', '/w780/')}
                                 alt={preset.name}
                                 loading="lazy"
                                 decoding="async"
