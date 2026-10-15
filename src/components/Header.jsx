@@ -6,22 +6,15 @@ import AvatarWithBorder from './AvatarWithBorder';
 
 function BrandLogoMark({ size = 32 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" style={{ flexShrink: 0, display: 'block' }}>
-      <defs>
-        <linearGradient id="brandIrisGrad" x1="6" y1="6" x2="42" y2="42" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#ff3344" />
-          <stop offset="50%" stopColor="#c01525" />
-          <stop offset="100%" stopColor="#70060e" />
-        </linearGradient>
-        <linearGradient id="brandGoldCore" x1="18" y1="18" x2="30" y2="30" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#fef08a" />
-          <stop offset="100%" stopColor="#f59e0b" />
-        </linearGradient>
-      </defs>
-      <rect width="48" height="48" rx="12" fill="#0d0a14" stroke="rgba(255,255,255,0.14)" strokeWidth="1.5" />
-      <path d="M36 15C32.8 10.2 27.5 7.5 21.5 8C12.8 8.8 6 16.3 6 25C6 34.4 13.6 42 23 42C29.6 42 35.2 38.2 38 32.5L29.5 28C27.8 30.5 24.8 32 21.5 31.5C17.2 30.8 13.8 27.2 14 22.8C14.2 18.5 17.8 15 22.2 15C25.5 15 28.5 16.5 30 19L36 15Z" fill="url(#brandIrisGrad)" />
-      <circle cx="24" cy="24" r="5" fill="url(#brandGoldCore)" />
-      <circle cx="24" cy="24" r="2.2" fill="#ffffff" />
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="var(--accent, #e50914)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, display: 'block' }}>
+      <rect width="20" height="20" x="2" y="2" rx="2.18" ry="2.18"/>
+      <line x1="7" x2="7" y1="2" y2="22"/>
+      <line x1="17" x2="17" y1="2" y2="22"/>
+      <line x1="2" x2="22" y1="12" y2="12"/>
+      <line x1="2" x2="7" y1="7" y2="7"/>
+      <line x1="17" x2="22" y1="7" y2="7"/>
+      <line x1="17" x2="22" y1="17" y2="17"/>
+      <line x1="2" x2="7" y1="17" y2="17"/>
     </svg>
   );
 }
@@ -674,12 +667,6 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
           </div>
         </div>
       </header>
-      <LogoShowcaseModal
-        show={showLogoModal}
-        onClose={() => setShowLogoModal(false)}
-        activeLogoId={activeLogoId}
-        onSelectLogo={handleSelectLogo}
-      />
     </>
   );
 }
