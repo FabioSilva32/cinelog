@@ -906,10 +906,10 @@ export default function ProfileTab({
             ───────────────────────────────────────────────────────────── */
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
 
-          {/* BANNER (420px grand cinematic marquee with fallback ambiance) */}
+          {/* BANNER (520px grand cinematic marquee with fallback ambiance) */}
           <div
             style={{
-              height: '420px',
+              height: '520px',
               width: '100%',
               borderRadius: '24px 24px 0 0',
               overflow: 'hidden',
@@ -948,7 +948,7 @@ export default function ProfileTab({
               </div>
             )}
 
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 65%, rgba(13,11,20,0.95) 100%)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 75%, rgba(13,11,20,0.7) 90%, rgba(13,11,20,0.96) 100%)', pointerEvents: 'none' }} />
 
             {/* SINGLE UNIFIED CUSTOMIZE BUTTON */}
             <button

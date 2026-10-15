@@ -52,6 +52,7 @@ export default function AvatarWithBorder({ src, username, borderId, size = 96, o
           aspectRatio: '1 / 1',
           borderRadius: '50%',
           objectFit: 'cover',
+          objectPosition: style?.objectPosition || (finalSrc && finalSrc.includes('image.tmdb.org') ? 'center 18%' : 'center center'),
           display: 'block',
           boxSizing: 'border-box',
           flexShrink: 0,

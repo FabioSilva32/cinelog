@@ -12,39 +12,39 @@ import { BORDER_STYLES, BADGE_COLORS } from '../utils/achievements';
 const TMDB_KEY = '6a2fd6b9b1bb3befbb9f14c203732225';
 
 export const CURATED_MOVIE_AVATARS = [
-  { id: 'spiderman', name: 'Spider-Man Mask', movie: 'Spider-Verse', category: 'Action', url: 'https://images.unsplash.com/photo-1635805737707-575885ab0820?w=400&fit=crop&q=85' },
-  { id: 'batman', name: 'Dark Knight Cowl', movie: 'The Batman', category: 'Action', url: 'https://images.unsplash.com/photo-1531259683007-016a7b628fc3?w=400&fit=crop&q=85' },
-  { id: 'stormtrooper', name: 'Stormtrooper Helmet', movie: 'Star Wars: A New Hope', category: 'Sci-Fi', url: 'https://images.unsplash.com/photo-1579566346927-c68383817a25?w=400&fit=crop&q=85' },
-  { id: 'mando', name: 'Mandalorian Beskar', movie: 'The Mandalorian', category: 'Sci-Fi', url: 'https://images.unsplash.com/photo-1608889175123-8ee362201f81?w=400&fit=crop&q=85' },
-  { id: 'ironman', name: 'Mark III Armored Helmet', movie: 'Iron Man', category: 'Action', url: 'https://images.unsplash.com/photo-1635863138275-d9b33299680b?w=400&fit=crop&q=85' },
-  { id: 'astronaut_gold', name: 'Interstellar EVA Helmet', movie: 'Interstellar', category: 'Sci-Fi', url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&fit=crop&q=85' },
-  { id: 'cosmic_explorer', name: 'Deep Space Explorer', movie: '2001: A Space Odyssey', category: 'Sci-Fi', url: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&fit=crop&q=85' },
-  { id: 'cyberpunk_visor', name: 'Cyberpunk Optic Visor', movie: 'Blade Runner 2049', category: 'Sci-Fi', url: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&fit=crop&q=85' },
-  { id: 'android', name: 'Synthetic Android Core', movie: 'Ex Machina', category: 'Sci-Fi', url: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=400&fit=crop&q=85' },
-  { id: 'panavision_cam', name: 'Panavision 35mm Camera', movie: 'Hollywood Archive', category: 'Classics', url: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400&fit=crop&q=85' },
-  { id: 'projector', name: 'Vintage 35mm Projector', movie: 'Cinema Paradiso', category: 'Classics', url: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400&fit=crop&q=85' },
-  { id: 'clapperboard', name: 'Director\'s Clapperboard', movie: 'Studio Production', category: 'Classics', url: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=400&fit=crop&q=85' },
-  { id: 'film_reel', name: 'Celluloid Film Reel', movie: '35mm Film Archive', category: 'Classics', url: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=400&fit=crop&q=85' },
-  { id: 'theater_marquee', name: 'Cinema Neon Marquee', movie: 'Midnight Screenings', category: 'Classics', url: 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=400&fit=crop&q=85' },
-  { id: 'popcorn', name: 'Vintage Cinema Popcorn', movie: 'Concession Stand', category: 'Pop Culture', url: 'https://images.unsplash.com/photo-1585647347483-22b66260dfff?w=400&fit=crop&q=85' },
-  { id: 'neon_sign', name: 'Cinema Neon Glow', movie: 'Drive (2011)', category: 'Action', url: 'https://images.unsplash.com/photo-1514306191717-452ec28c7814?w=400&fit=crop&q=85' },
-  { id: 'synth_arcade', name: '80s Synth Arcade', movie: 'Tron / Ready Player One', category: 'Sci-Fi', url: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=400&fit=crop&q=85' },
-  { id: 'cyber_grid', name: 'Matrix Cyber Grid', movie: 'The Matrix', category: 'Sci-Fi', url: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=400&fit=crop&q=85' }
+  { id: 'spiderman', name: 'Spider-Man (Miles Morales)', movie: 'Spider-Man: Across the Spider-Verse', category: 'Superhero', url: 'https://image.tmdb.org/t/p/w500/8Vt6mWEReuy4Of61Lnj5Xj704m8.jpg', pos: 'center 16%' },
+  { id: 'darth_vader', name: 'Darth Vader', movie: 'Star Wars: The Empire Strikes Back', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w500/ebluYJHkKoYHQ1x0XXlOLWdcqoL.jpg', pos: 'center 20%' },
+  { id: 'mandalorian', name: 'The Mandalorian (Din Djarin)', movie: 'The Mandalorian', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w500/vrxpwApFKUWKK0rwcaK8be5OVWK.jpg', pos: 'center 18%' },
+  { id: 'batman', name: 'Batman (The Dark Knight)', movie: 'The Batman', category: 'Superhero', url: 'https://image.tmdb.org/t/p/w500/74xTEgt7R36Fpooo50r9T25onhq.jpg', pos: 'center 22%' },
+  { id: 'iron_man', name: 'Iron Man (Mark VII)', movie: 'The Avengers', category: 'Superhero', url: 'https://image.tmdb.org/t/p/w500/RYMX2wcKCBAr24UyPD7xwmjaTn.jpg', pos: 'center 18%' },
+  { id: 'ghostface', name: 'Ghostface', movie: 'Scream VI', category: 'Horror', url: 'https://image.tmdb.org/t/p/w500/wDWwtvkRRlgTiUr6TyLSMX8FCuZ.jpg', pos: 'center 15%' },
+  { id: 'deadpool', name: 'Deadpool (Wade Wilson)', movie: 'Deadpool & Wolverine', category: 'Superhero', url: 'https://image.tmdb.org/t/p/w500/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg', pos: 'center 18%' },
+  { id: 'noface', name: 'No-Face (Kaonashi)', movie: 'Spirited Away', category: 'Animation', url: 'https://image.tmdb.org/t/p/w500/vUn89LJRkJQJ5QiAETXVrNzVFl0.jpg', pos: 'center 25%' },
+  { id: 'mononoke', name: 'Princess Mononoke (San)', movie: 'Princess Mononoke', category: 'Animation', url: 'https://image.tmdb.org/t/p/w500/cMYCDADoLKLbB83g4WnJegaZimC.jpg', pos: 'center 22%' },
+  { id: 'optimus_prime', name: 'Optimus Prime', movie: 'Transformers', category: 'Action', url: 'https://image.tmdb.org/t/p/w500/lkZ9gqCEjzX85lKR6Jjd1uGAXNp.jpg', pos: 'center 18%' },
+  { id: 'black_panther', name: 'Black Panther (T\'Challa)', movie: 'Black Panther', category: 'Superhero', url: 'https://image.tmdb.org/t/p/w500/uxzzxijgPIY7slzFvMotPv8wjKA.jpg', pos: 'center 18%' },
+  { id: 'v_vendetta', name: 'V (Guy Fawkes Mask)', movie: 'V for Vendetta', category: 'Action', url: 'https://image.tmdb.org/t/p/w500/1avD1JeaRiJX5M4ahPdZPypGoGN.jpg', pos: 'center 16%' },
+  { id: 'jason', name: 'Jason Voorhees', movie: 'Friday the 13th', category: 'Horror', url: 'https://image.tmdb.org/t/p/w500/9kukTSlgFgXnQGdpcHvHcpTDiUc.jpg', pos: 'center 20%' },
+  { id: 'walle', name: 'WALL-E', movie: 'WALL-E', category: 'Animation', url: 'https://image.tmdb.org/t/p/w500/hbhFnRzzg6ZDmm8YAmxBnQpQIPh.jpg', pos: 'center 20%' },
+  { id: 'boba_fett', name: 'Boba Fett', movie: 'The Book of Boba Fett', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w500/gNbdjDi1HamTCrfvM9JeA94bNi2.jpg', pos: 'center 18%' },
+  { id: 'kylo_ren', name: 'Kylo Ren', movie: 'Star Wars: The Force Awakens', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w500/wqnLdwVXoBjKibFRR5U3y0aDUhs.jpg', pos: 'center 18%' },
+  { id: 'stormtrooper', name: 'Imperial Stormtrooper', movie: 'Star Wars: A New Hope', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w500/iWEJuiNOlScWVxfNVyXiXf6lCiG.jpg', pos: 'center 18%' },
+  { id: 'doctor_fate', name: 'Doctor Fate (Helm of Nabu)', movie: 'Black Adam', category: 'Superhero', url: 'https://image.tmdb.org/t/p/w500/rCtreCr4xiYEWDQTebybolIh6Xe.jpg', pos: 'center 18%' }
 ];
 
 export const CINEMATIC_PRESET_BANNERS = [
-  { name: 'Interstellar: Gargantua', tag: 'Sci-Fi Odyssey', url: 'https://image.tmdb.org/t/p/w1280/8sNiAPPYU14PUepFNeSNGUTiHW.jpg' },
-  { name: 'Blade Runner 2049: Neon Vegas', tag: 'Cyberpunk Noir', url: 'https://image.tmdb.org/t/p/w1280/gNdLJU9TxrpGx4dkZidjys3fyy0.jpg' },
-  { name: 'Dune: Part Two: Arrakis', tag: 'Epic Desert', url: 'https://image.tmdb.org/t/p/w1280/eZ239CUp1d6OryZEBPnO2n87gMG.jpg' },
-  { name: 'The Dark Knight: Gotham Overlook', tag: 'Gotham Vigilante', url: 'https://image.tmdb.org/t/p/w1280/9FE5eD92WfVCiivM9Pq9GVSrlWk.jpg' },
-  { name: 'Oppenheimer: Trinity Wave', tag: 'Atomic Drama', url: 'https://image.tmdb.org/t/p/w1280/neeNHeXjMF5fXoCJRsOmkNGC7q.jpg' },
-  { name: 'Spider-Verse: Multiverse Leap', tag: 'Multiverse Marvel', url: 'https://image.tmdb.org/t/p/w1280/kVd3a9YeLGkoeR50jGEXM6EqseS.jpg' },
-  { name: 'Inception: Folded Paris', tag: 'Mind Heist', url: 'https://image.tmdb.org/t/p/w1280/8ZTVqvKDQ8emSGUEMjsS4yHAwrp.jpg' },
-  { name: 'Spirited Away: Sea Railway', tag: 'Studio Ghibli', url: 'https://image.tmdb.org/t/p/w1280/6oaL4DP75yABrd5EbC4H2zq5ghc.jpg' },
-  { name: 'Mad Max: Fury Road: Sandstorm', tag: 'Wasteland Action', url: 'https://image.tmdb.org/t/p/w1280/gqrnQA6Xppdl8vIb2eJc58VC1tW.jpg' },
-  { name: 'The Matrix: Digital Lobby', tag: 'Cyber Dystopia', url: 'https://image.tmdb.org/t/p/w1280/tlm8UkiQsitc8rSuIAscQDCnP8d.jpg' },
-  { name: '2001: Cosmic Monolith', tag: 'Cosmic Cinema', url: 'https://image.tmdb.org/t/p/w1280/w5IDXtifKntw0ajv2co7jFlTQDM.jpg' },
-  { name: 'Fight Club: Collapse', tag: 'Psychological Cult', url: 'https://image.tmdb.org/t/p/w1280/c6OLXfKAk5BKeR6broC8pYiCquX.jpg' }
+  { name: 'Interstellar: Gargantua', tag: 'Sci-Fi Odyssey', url: 'https://image.tmdb.org/t/p/original/8sNiAPPYU14PUepFNeSNGUTiHW.jpg' },
+  { name: 'Blade Runner 2049: Neon Vegas', tag: 'Cyberpunk Noir', url: 'https://image.tmdb.org/t/p/original/gNdLJU9TxrpGx4dkZidjys3fyy0.jpg' },
+  { name: 'Dune: Part Two: Arrakis', tag: 'Epic Desert', url: 'https://image.tmdb.org/t/p/original/eZ239CUp1d6OryZEBPnO2n87gMG.jpg' },
+  { name: 'The Dark Knight: Gotham Overlook', tag: 'Gotham Vigilante', url: 'https://image.tmdb.org/t/p/original/9FE5eD92WfVCiivM9Pq9GVSrlWk.jpg' },
+  { name: 'Oppenheimer: Trinity Wave', tag: 'Atomic Drama', url: 'https://image.tmdb.org/t/p/original/neeNHeXjMF5fXoCJRsOmkNGC7q.jpg' },
+  { name: 'Spider-Verse: Multiverse Leap', tag: 'Multiverse Marvel', url: 'https://image.tmdb.org/t/p/original/kVd3a9YeLGkoeR50jGEXM6EqseS.jpg' },
+  { name: 'Inception: Folded Paris', tag: 'Mind Heist', url: 'https://image.tmdb.org/t/p/original/8ZTVqvKDQ8emSGUEMjsS4yHAwrp.jpg' },
+  { name: 'Spirited Away: Sea Railway', tag: 'Studio Ghibli', url: 'https://image.tmdb.org/t/p/original/6oaL4DP75yABrd5EbC4H2zq5ghc.jpg' },
+  { name: 'Mad Max: Fury Road: Sandstorm', tag: 'Wasteland Action', url: 'https://image.tmdb.org/t/p/original/gqrnQA6Xppdl8vIb2eJc58VC1tW.jpg' },
+  { name: 'The Matrix: Digital Lobby', tag: 'Cyber Dystopia', url: 'https://image.tmdb.org/t/p/original/tlm8UkiQsitc8rSuIAscQDCnP8d.jpg' },
+  { name: '2001: Cosmic Monolith', tag: 'Cosmic Cinema', url: 'https://image.tmdb.org/t/p/original/w5IDXtifKntw0ajv2co7jFlTQDM.jpg' },
+  { name: 'Fight Club: Collapse', tag: 'Psychological Cult', url: 'https://image.tmdb.org/t/p/original/c6OLXfKAk5BKeR6broC8pYiCquX.jpg' }
 ];
 
 export default function ProfileCustomizerModal({
@@ -274,9 +274,9 @@ export default function ProfileCustomizerModal({
               boxShadow: '0 16px 40px rgba(0,0,0,0.7)',
               position: 'relative'
             }}>
-              {/* Card Banner (155px tall) */}
+              {/* Card Banner (135px tall — matches 520px profile banner aspect ratio 1:1) */}
               <div style={{
-                height: '155px',
+                height: '135px',
                 width: '100%',
                 position: 'relative',
                 overflow: 'hidden',
@@ -755,7 +755,7 @@ export default function ProfileCustomizerModal({
                       {tmdbSearchResults.length > 0 ? (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                           {tmdbSearchResults.map(m => {
-                            const fullUrl = `https://image.tmdb.org/t/p/w1280${m.backdrop_path}`;
+                            const fullUrl = `https://image.tmdb.org/t/p/original${m.backdrop_path}`;
                             const isSelected = bannerUrl === fullUrl;
                             return (
                               <div
@@ -912,7 +912,7 @@ export default function ProfileCustomizerModal({
                               <img
                                 src={char.url}
                                 alt={char.name}
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: char.pos || 'center 18%' }}
                                 loading="lazy"
                               />
                             </div>
