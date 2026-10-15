@@ -3,8 +3,6 @@ import { Film, Compass, List, BarChart3, User, LogOut, Sparkles, CalendarDays, A
 import { isSupabaseConfigured } from '../supabaseClient';
 import { BORDER_STYLES } from '../utils/achievements';
 import AvatarWithBorder from './AvatarWithBorder';
-import CineLogLogo, { updateFavicon } from './CineLogLogos';
-import LogoShowcaseModal from './LogoShowcaseModal';
 
 const NAV_GROUPS = [
   {
@@ -41,29 +39,6 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(true);
-  const [activeLogoId, setActiveLogoId] = useState(() => localStorage.getItem('cinelog_active_logo') || 'aperture-c');
-  const [showLogoModal, setShowLogoModal] = useState(false);
-
-  useEffect(() => {
-    updateFavicon(activeLogoId);
-  }, [activeLogoId]);
-
-  useEffect(() => {
-    const handleLogoChange = (e) => {
-      const nextId = e.detail?.logoId || localStorage.getItem('cinelog_active_logo') || 'aperture-c';
-      setActiveLogoId(nextId);
-      updateFavicon(nextId);
-    };
-    window.addEventListener('cinelog_logo_changed', handleLogoChange);
-    return () => window.removeEventListener('cinelog_logo_changed', handleLogoChange);
-  }, []);
-
-  const handleSelectLogo = (logoId) => {
-    setActiveLogoId(logoId);
-    localStorage.setItem('cinelog_active_logo', logoId);
-    updateFavicon(logoId);
-    window.dispatchEvent(new CustomEvent('cinelog_logo_changed', { detail: { logoId } }));
-  };
   const menuRef = useRef(null);
   const moreNavRef = useRef(null);
   const notifRef = useRef(null);
@@ -88,7 +63,6 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
   // ── CINEMATIC TOP-NAV BAR (RED RENDER STYLE) ──
   if (layoutMode === 'top-nav') {
     return (
-      <>
       <header className="app-header topnav-header" style={{
         position: 'sticky',
         top: 0,
@@ -109,53 +83,28 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
         }}>
           {/* Left: Brand + Sleek Clean Nav Links */}
           <div className="topnav-left" style={{ display: 'flex', alignItems: 'center', gap: '36px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div
-                className="logo-wrapper"
-                onClick={() => handleNavClick('explore')}
-                style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', userSelect: 'none', flexShrink: 0 }}
-                title="CineLog — Go to Explore"
-              >
-                <CineLogLogo logoId={activeLogoId} size={32} />
+            <div
+              className="logo-wrapper"
+              onClick={() => handleNavClick('explore')}
+              style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', userSelect: 'none', flexShrink: 0 }}
+              title="CineLog — Go to Explore"
+            >
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                background: 'var(--accent)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                boxShadow: '0 2px 10px rgba(229,9,20,0.4)'
+              }}>
+                <Film size={18} color="#FFFFFF" />
               </div>
-
-              {/* 20 Logos Showcase Launcher Pill */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowLogoModal(true);
-                }}
-                className="logo-showcase-launcher"
-                title="Explore 20 brand logo designs with site colors"
-                style={{
-                  background: 'rgba(192,57,43,0.12)',
-                  border: '1px solid rgba(192,57,43,0.35)',
-                  borderRadius: '20px',
-                  padding: '3px 10px',
-                  color: '#fbbf24',
-                  fontSize: '11px',
-                  fontWeight: 800,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                  boxShadow: '0 0 10px rgba(192,57,43,0.15)'
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background = 'rgba(192,57,43,0.25)';
-                  e.currentTarget.style.borderColor = 'rgba(251,191,36,0.6)';
-                  e.currentTarget.style.transform = 'translateY(-1px) scale(1.02)';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background = 'rgba(192,57,43,0.12)';
-                  e.currentTarget.style.borderColor = 'rgba(192,57,43,0.35)';
-                  e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                }}
-              >
-                <Sparkles size={11} color="#fbbf24" />
-                <span style={{ color: '#fff', letterSpacing: '0.3px' }}>20 Logos</span>
-              </button>
+              <span style={{ color: '#FFFFFF', fontWeight: 900, fontSize: '21px', letterSpacing: '-0.5px' }}>
+                Cine<span style={{ color: 'var(--accent)' }}>Log</span>
+              </span>
             </div>
 
             {/* Primary Cinema Tabs (Clean & uncluttered) */}
@@ -503,13 +452,6 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
           </div>
         </div>
       </header>
-      <LogoShowcaseModal
-        show={showLogoModal}
-        onClose={() => setShowLogoModal(false)}
-        activeLogoId={activeLogoId}
-        onSelectLogo={handleSelectLogo}
-      />
-      </>
     );
   }
 
@@ -525,8 +467,11 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
           <Menu size={24} />
         </button>
 
-        <div className="logo-wrapper" onClick={() => handleNavClick('explore')} style={{ cursor: 'pointer' }}>
-          <CineLogLogo logoId={activeLogoId} size={24} />
+        <div className="logo-wrapper" onClick={() => handleNavClick('explore')} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+          <div style={{ width: '26px', height: '26px', borderRadius: '6px', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Film size={15} color="#fff" />
+          </div>
+          <span style={{ color: '#fff', fontWeight: 900, fontSize: '18px' }}>Cine<span style={{ color: 'var(--accent)' }}>Log</span></span>
         </div>
 
         <button
@@ -548,8 +493,11 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
         <div className="header-content">
           {/* Logo & Close button on Mobile */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-            <div className="logo-wrapper" onClick={() => handleNavClick('explore')} style={{ cursor: 'pointer' }}>
-              <CineLogLogo logoId={activeLogoId} size={26} />
+            <div className="logo-wrapper" onClick={() => handleNavClick('explore')} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+              <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Film size={16} color="#fff" />
+              </div>
+              <span style={{ color: '#fff', fontWeight: 900, fontSize: '19px' }}>Cine<span style={{ color: 'var(--accent)' }}>Log</span></span>
             </div>
 
             <button
