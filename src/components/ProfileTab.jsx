@@ -1870,12 +1870,12 @@ export default function ProfileTab({
       />
 
       {/* ─────────────────────────────────────────────────────────────
-          SHOWCASE SEARCH MODAL
+          SHOWCASE SEARCH MODAL (PORTALED DIRECTLY TO BODY WITH HIGHEST Z-INDEX)
           ───────────────────────────────────────────────────────────── */}
-      {selectingSlotIdx !== null && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(4,3,8,0.85)', backdropFilter: 'blur(12px)', zIndex: 1000000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px', paddingTop: '10vh' }}
+      {selectingSlotIdx !== null && createPortal(
+        <div style={{ position: 'fixed', inset: 0, width: '100vw', height: '100vh', background: 'rgba(4,3,8,0.88)', backdropFilter: 'blur(16px)', zIndex: 9999999, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px', paddingTop: '10vh' }}
           onClick={() => { setSelectingSlotIdx(null); setSearchQuery(''); }}>
-          <div className="glass" style={{ width: '100%', maxWidth: '440px', maxHeight: '80vh', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', background: '#0d0b18', display: 'flex', flexDirection: 'column', padding: '20px', gap: '16px' }}
+          <div className="glass animate-fade-in-scale" style={{ width: '100%', maxWidth: '440px', maxHeight: '80vh', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', background: '#0d0b18', display: 'flex', flexDirection: 'column', padding: '20px', gap: '16px', boxShadow: '0 25px 70px rgba(0,0,0,0.95)' }}
             onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '14.5px', fontWeight: 800 }}>Choose Film for Slot {selectingSlotIdx + 1}</span>
@@ -1916,14 +1916,15 @@ export default function ProfileTab({
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ─────────────────────────────────────────────────────────────
           SHARE CARD MODAL
           ───────────────────────────────────────────────────────────── */}
-      {activeShareCard && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(16px)' }}
+      {activeShareCard && createPortal(
+        <div style={{ position: 'fixed', inset: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.88)', zIndex: 9999999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(16px)' }}
           onClick={() => setActiveShareCard(null)}>
           <div className="glass animate-fade-in-scale" style={{ width: '100%', maxWidth: '380px', borderRadius: 'var(--radius-xl)', overflow: 'hidden', border: '1px solid var(--border)', background: 'rgba(10,8,19,0.98)', boxShadow: 'var(--shadow-xl)', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}
             onClick={e => e.stopPropagation()}>

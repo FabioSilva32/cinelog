@@ -199,15 +199,25 @@ export default function LogoShowcaseModal({ show, onClose, activeLogoId, onSelec
 
                 {/* THE LOGO HERO CANVAS PREVIEW */}
                 <div style={{
-                  minHeight: '84px',
+                  minHeight: '100px',
                   display: 'flex',
+                  flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  padding: '12px 0',
+                  padding: '14px 0',
+                  gap: '12px',
                   borderBottom: previewBg === 'light' ? '1px solid rgba(0,0,0,0.06)' : '1px solid rgba(255,255,255,0.06)',
                   borderTop: previewBg === 'light' ? '1px solid rgba(0,0,0,0.06)' : '1px solid rgba(255,255,255,0.06)'
                 }}>
-                  {logo.render(42)}
+                  <div>{logo.render(38)}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: previewBg === 'light' ? '#64748b' : 'var(--text-dim)' }}>
+                      Favicon Preview:
+                    </span>
+                    <div style={{ padding: '2px', background: 'rgba(0,0,0,0.5)', borderRadius: '6px', display: 'flex', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      {logo.renderIcon(22)}
+                    </div>
+                  </div>
                 </div>
 
                 {/* LOGO DETAILS & METADATA */}

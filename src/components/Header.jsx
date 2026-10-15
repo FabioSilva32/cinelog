@@ -3,7 +3,7 @@ import { Film, Compass, List, BarChart3, User, LogOut, Sparkles, CalendarDays, A
 import { isSupabaseConfigured } from '../supabaseClient';
 import { BORDER_STYLES } from '../utils/achievements';
 import AvatarWithBorder from './AvatarWithBorder';
-import CineLogLogo from './CineLogLogos';
+import CineLogLogo, { updateFavicon } from './CineLogLogos';
 import LogoShowcaseModal from './LogoShowcaseModal';
 
 const NAV_GROUPS = [
@@ -45,9 +45,14 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
   const [showLogoModal, setShowLogoModal] = useState(false);
 
   useEffect(() => {
+    updateFavicon(activeLogoId);
+  }, [activeLogoId]);
+
+  useEffect(() => {
     const handleLogoChange = (e) => {
-      if (e.detail?.logoId) setActiveLogoId(e.detail.logoId);
-      else setActiveLogoId(localStorage.getItem('cinelog_active_logo') || 'aperture-c');
+      const nextId = e.detail?.logoId || localStorage.getItem('cinelog_active_logo') || 'aperture-c';
+      setActiveLogoId(nextId);
+      updateFavicon(nextId);
     };
     window.addEventListener('cinelog_logo_changed', handleLogoChange);
     return () => window.removeEventListener('cinelog_logo_changed', handleLogoChange);
@@ -56,6 +61,7 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
   const handleSelectLogo = (logoId) => {
     setActiveLogoId(logoId);
     localStorage.setItem('cinelog_active_logo', logoId);
+    updateFavicon(logoId);
     window.dispatchEvent(new CustomEvent('cinelog_logo_changed', { detail: { logoId } }));
   };
   const menuRef = useRef(null);
