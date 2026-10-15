@@ -128,6 +128,9 @@ function AppInner() {
   const [cmdQuery, setCmdQuery] = useState('');
   const [cmdSearchResults, setCmdSearchResults] = useState([]);
   const [isCmdSearching, setIsCmdSearching] = useState(false);
+  const [cmdPage, setCmdPage] = useState(1);
+  const [cmdTotalPages, setCmdTotalPages] = useState(1);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [trendingQuickPicks, setTrendingQuickPicks] = useState([]);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [quickSearch, setQuickSearch] = useState('');
@@ -211,6 +214,9 @@ function AppInner() {
       setCmdQuery('');
       setCmdSearchResults([]);
       setIsCmdSearching(false);
+      setCmdPage(1);
+      setCmdTotalPages(1);
+      setIsLoadingMore(false);
     }
   }, [showCommandCenter]);
 
@@ -224,12 +230,14 @@ function AppInner() {
       .catch(() => {});
   }, []);
 
-  // Omnisearch TMDB debounced multi-search
+  // Omnisearch TMDB debounced multi-search (initial page)
   useEffect(() => {
     const q = cmdQuery.trim();
     if (!q || q.length < 2) {
       setCmdSearchResults([]);
       setIsCmdSearching(false);
+      setCmdPage(1);
+      setCmdTotalPages(1);
       return;
     }
     setIsCmdSearching(true);
@@ -241,8 +249,10 @@ function AppInner() {
           const filtered = (data.results || []).filter(item =>
             (item.media_type === 'movie' || item.media_type === 'tv' || item.media_type === 'person') &&
             (item.title || item.name)
-          ).slice(0, 8);
+          );
           setCmdSearchResults(filtered);
+          setCmdPage(1);
+          setCmdTotalPages(data.total_pages || 1);
         }
       } catch (err) {
         console.error('Command center search error:', err);
@@ -252,6 +262,36 @@ function AppInner() {
     }, 240);
     return () => clearTimeout(timer);
   }, [cmdQuery]);
+
+  // Infinite scroll loader for search results
+  const handleLoadMoreSearch = async () => {
+    if (isLoadingMore || isCmdSearching || cmdPage >= cmdTotalPages) return;
+    const q = cmdQuery.trim();
+    if (!q) return;
+    setIsLoadingMore(true);
+    const nextPage = cmdPage + 1;
+    try {
+      const res = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=6a2fd6b9b1bb3befbb9f14c203732225&query=${encodeURIComponent(q)}&page=${nextPage}`);
+      if (res.ok) {
+        const data = await res.json();
+        const filtered = (data.results || []).filter(item =>
+          (item.media_type === 'movie' || item.media_type === 'tv' || item.media_type === 'person') &&
+          (item.title || item.name)
+        );
+        setCmdSearchResults(prev => {
+          const existingIds = new Set(prev.map(p => `${p.media_type}-${p.id}`));
+          const newItems = filtered.filter(f => !existingIds.has(`${f.media_type}-${f.id}`));
+          return [...prev, ...newItems];
+        });
+        setCmdPage(nextPage);
+        setCmdTotalPages(data.total_pages || nextPage);
+      }
+    } catch (err) {
+      console.error('Failed to load more search results:', err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   // Supabase database sync enabled
   const useSupabase = true;
@@ -1057,6 +1097,9 @@ function AppInner() {
 
       {activeEditMovie && (
         <MovieDetailModal
+          key={activeEditMovie.tmdb_id}
+          inLibrary={library.some(m => String(m.tmdb_id) === String(activeEditMovie.tmdb_id))}
+          onOpenMovie={handleMovieClick}
           movie={activeEditMovie}
           currentUser={currentUser}
           onClose={() => setActiveEditMovie(null)}
@@ -1195,7 +1238,15 @@ function AppInner() {
             </div>
 
             {/* Results / Discovery Body */}
-            <div style={{ maxHeight: '440px', overflowY: 'auto', padding: '12px' }}>
+            <div
+              onScroll={(e) => {
+                const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+                if (scrollHeight - scrollTop - clientHeight < 80) {
+                  handleLoadMoreSearch();
+                }
+              }}
+              style={{ maxHeight: '440px', overflowY: 'auto', padding: '12px' }}
+            >
               {/* TMDB Loading state */}
               {isCmdSearching && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '16px 12px', color: '#888888', fontSize: '13px' }}>
@@ -1312,6 +1363,21 @@ function AppInner() {
                       </div>
                     );
                   })}
+
+                  {/* Infinite scroll loading indicator */}
+                  {isLoadingMore && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', color: '#888888', fontSize: '12px' }}>
+                      <Loader2 size={15} className="animate-spin" color="var(--accent)" />
+                      <span>Loading more titles...</span>
+                    </div>
+                  )}
+
+                  {/* End of results message */}
+                  {cmdPage >= cmdTotalPages && cmdSearchResults.length >= 15 && (
+                    <div style={{ textAlign: 'center', padding: '12px', color: '#666666', fontSize: '11px', fontWeight: 600 }}>
+                      All {cmdSearchResults.length} titles loaded
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1517,8 +1583,7 @@ function AppInner() {
         </div>
       )}
       {/* ── FLOATING ACTION BUTTON (Quick Add) ──────────────────── */}
-      {true && (
-        <>
+      <>
           {/* FAB backdrop */}
           {showQuickAdd && (
             <div
@@ -1660,7 +1725,6 @@ function AppInner() {
             +
           </button>
         </>
-      )}
 
       </div>
     </div>

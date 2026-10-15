@@ -74,7 +74,7 @@ function TonightPicker({ library, onMovieClick }) {
 
         {pick && (
           <div
-            onClick={() => onMovieClick && onMovieClick(pick.tmdb_id || pick.id, pick.media_type || 'movie')}
+            onClick={() => onMovieClick && onMovieClick(pick.tmdb_id || pick.id, pick.media_type || (pick.first_air_date || pick.name ? 'tv' : 'movie'))}
             className="animate-fade-in"
             style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(136,8,8,0.08)', border: '1px solid rgba(136,8,8,0.25)', borderRadius: '12px', padding: '10px 16px', cursor: 'pointer', flex: 1, minWidth: '200px', transition: 'all 0.2s' }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(136,8,8,0.14)'; e.currentTarget.style.borderColor = 'rgba(136,8,8,0.4)'; }}
@@ -524,14 +524,14 @@ export default function CollectionsTab({ library = [], onMovieClick, onSaveMovie
                     <div key={movie.id || movie.tmdb_id} style={{ flexShrink: 0 }}>
                       {movie.poster_path ? (
                         <img src={`https://image.tmdb.org/t/p/w200${movie.poster_path}`} alt={movie.title}
-                          onClick={() => onMovieClick(movie.tmdb_id || movie.id, movie.media_type || 'movie')}
+                          onClick={() => onMovieClick(movie.tmdb_id || movie.id, movie.media_type || (movie.first_air_date || movie.name ? 'tv' : 'movie'))}
                           style={{ width: '42px', height: '63px', objectFit: 'cover', borderRadius: '5px', border: '1px solid var(--border)', cursor: 'pointer', transition: 'transform 0.15s' }}
                           onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-3px)'}
                           onMouseLeave={e => e.currentTarget.style.transform = ''}
                           title={movie.title}
                         />
                       ) : (
-                        <div onClick={() => onMovieClick(movie.tmdb_id || movie.id, movie.media_type || 'movie')}
+                        <div onClick={() => onMovieClick(movie.tmdb_id || movie.id, movie.media_type || (movie.first_air_date || movie.name ? 'tv' : 'movie'))}
                           style={{ width: '42px', height: '63px', background: 'rgba(255,255,255,0.05)', borderRadius: '5px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', cursor: 'pointer' }}
                           title={movie.title}>🎬</div>
                       )}
@@ -583,7 +583,7 @@ export default function CollectionsTab({ library = [], onMovieClick, onSaveMovie
                   {movies.slice(0, 8).map(movie => (
                     <div key={movie.id} style={{ flexShrink: 0 }}>
                       <img src={`https://image.tmdb.org/t/p/w200${movie.poster_path}`} alt={movie.title}
-                        onClick={() => onMovieClick(movie.tmdb_id || movie.id, movie.media_type || 'movie')}
+                        onClick={() => onMovieClick(movie.tmdb_id || movie.id, movie.media_type || (movie.first_air_date || movie.name ? 'tv' : 'movie'))}
                         style={{ width: '42px', height: '63px', objectFit: 'cover', borderRadius: '5px', border: '1px solid var(--border)', cursor: 'pointer', transition: 'transform 0.15s' }}
                         onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-3px)'}
                         onMouseLeave={e => e.currentTarget.style.transform = ''}
@@ -784,9 +784,24 @@ export default function CollectionsTab({ library = [], onMovieClick, onSaveMovie
                                 }} title="Watched" />
                               )}
 
+                              {/* TV badge if TV series */}
+                              {(movie.media_type === 'tv' || Boolean(movie.first_air_date)) && (
+                                <div style={{
+                                  position: 'absolute', top: '4px', left: '4px', zIndex: 3,
+                                  background: 'rgba(10, 10, 14, 0.85)',
+                                  border: '1px solid rgba(59, 130, 246, 0.5)',
+                                  color: '#60A5FA',
+                                  borderRadius: '3px', padding: '1px 3.5px',
+                                  fontSize: '7px', fontWeight: 900, letterSpacing: '0.04em',
+                                  textTransform: 'uppercase', pointerEvents: 'none'
+                                }}>
+                                  TV
+                                </div>
+                              )}
+
                               {/* Poster Image */}
                               <img src={`https://image.tmdb.org/t/p/w200${movie.poster_path}`} alt={movie.title}
-                                onClick={() => onMovieClick(movie.tmdb_id || movie.id, movie.media_type || 'movie')}
+                                onClick={() => onMovieClick(movie.tmdb_id || movie.id, movie.media_type || (movie.first_air_date || movie.name ? 'tv' : 'movie'))}
                                 style={{ width: '56px', height: '84px', objectFit: 'cover', borderRadius: '6px', border: `1px solid ${isWatched ? 'rgba(16,185,129,0.4)' : 'var(--border)'}`, cursor: 'pointer', transition: 'transform 0.15s' }}
                                 onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-3px)'}
                                 onMouseLeave={e => e.currentTarget.style.transform = ''}

@@ -1,10 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { X, Heart, Film, Tag, Star, Clock, Users, ExternalLink, Play, FolderHeart, Plus, Check } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { X, Heart, Film, Tag, Star, Clock, Users, ExternalLink, Play, FolderHeart, Plus, Check, Eye, Bookmark, XCircle, ChevronDown, Repeat, EyeOff } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
 import { MOCK_REVIEWS } from '../mockData';
 import { getMovieCollections, getSuggestedTags } from '../utils/collections';
 
 const TMDB_KEY = '6a2fd6b9b1bb3befbb9f14c203732225';
+
+const POPULAR_CINE_TAGS = [
+  'Rewatch', 'Masterpiece', 'Cinema Trip', 'Comfort Watch', 'Mind-Bending',
+  'Plot Twist', 'Cult Classic', 'Must-See', 'Visually Stunning', 'Soundtrack',
+  'Atmospheric', 'Slow Burn', 'Tearjerker', 'Guilty Pleasure', 'Underrated'
+];
 
 function getRatingColor(r) {
   const n = Number(r);
@@ -33,7 +39,13 @@ const ratingLabel = (r) => {
   return '💀 Poor';
 };
 
-export default function MovieDetailModal({ movie, currentUser, onClose, onSave, onToggleFavorite, isFavorite, onOpenUserProfile }) {
+const formatMoney = (n) => {
+  if (!n || n <= 0) return null;
+  if (n >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
+  return `$${(n / 1e6).toFixed(1)}M`;
+};
+
+export default function MovieDetailModal({ movie, currentUser, onClose, onSave, onToggleFavorite, isFavorite, onOpenUserProfile, onOpenMovie, inLibrary }) {
   const [status, setStatus] = useState(movie.status || 'plan_to_watch');
   const [rating, setRating] = useState(movie.rating != null ? Number(movie.rating) : 0);
   const [episodeData, setEpisodeData] = useState(() => {
@@ -70,9 +82,9 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
 
   const [expandedEpisodeLogs, setExpandedEpisodeLogs] = useState({});
 
-  const episodeRatings = episodeData.ratings || {};
-  const episodeNotes = episodeData.notes || {};
-  const episodeWatchDates = episodeData.dates || {};
+  const episodeRatings = useMemo(() => episodeData.ratings || {}, [episodeData.ratings]);
+  const episodeNotes = useMemo(() => episodeData.notes || {}, [episodeData.notes]);
+  const episodeWatchDates = useMemo(() => episodeData.dates || {}, [episodeData.dates]);
 
   const updateEpisodeRating = (epKey, ratingVal) => {
     setEpisodeData(prev => {
@@ -151,7 +163,8 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
     }
     return '';
   });
-  const [activeSection, setActiveSection] = useState('log');
+  const [activeSection, setActiveSection] = useState('overview');
+  const [logOpen, setLogOpen] = useState(true);
   const [publicReviews, setPublicReviews] = useState([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [revealedReviews, setRevealedReviews] = useState({});
@@ -361,7 +374,13 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
     Promise.all([
       movie.details ? Promise.resolve(movie.details) : fetch(`${base}${p}&append_to_response=videos,credits`).then(r => r.json()),
       fetch(`${base}/credits${p}`).then(r => r.json()).catch(() => ({ cast: [] })),
-      fetch(`${base}/similar${p}`).then(r => r.json()).catch(() => ({ results: [] })),
+      fetch(`${base}/recommendations${p}`).then(r => r.json()).then(async rec => {
+        const good = (rec.results || []).filter(x => x.poster_path && x.vote_average > 0);
+        if (good.length >= 4) return { results: good };
+        const sim = await fetch(`${base}/similar${p}`).then(r => r.json()).catch(() => ({ results: [] }));
+        const merged = [...good, ...(sim.results || []).filter(x => x.poster_path && x.vote_average > 0 && !good.some(g => g.id === x.id))];
+        return { results: merged };
+      }).catch(() => ({ results: [] })),
     ]).then(([det, credits, sim]) => {
       if (!active) return;
       setDetails(det);
@@ -438,10 +457,17 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
     return Math.round((sum / keys.length) * 10) / 10;
   };
 
+  const availableTagSuggestions = useMemo(() => {
+    const q = newTag.trim().toLowerCase();
+    const active = new Set(tags.map(t => t.toLowerCase()));
+    return POPULAR_CINE_TAGS.filter(t => !active.has(t.toLowerCase()) && (!q || t.toLowerCase().includes(q)));
+  }, [newTag, tags]);
+
   const handleAddTag = (e) => {
-    if (e.key === 'Enter' && newTag.trim()) {
+    if ((e.key === 'Enter' || e.key === ',') && newTag.trim()) {
       e.preventDefault();
-      if (!tags.includes(newTag.trim())) setTags([...tags, newTag.trim()]);
+      const clean = newTag.trim().replace(/^#/, '');
+      if (clean && !tags.includes(clean)) setTags([...tags, clean]);
       setNewTag('');
     }
   };
@@ -495,15 +521,17 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
     (cast.length === 0 ? null : null);
 
   const SECTIONS = [
-    { id: 'log', label: 'Log' },
+    { id: 'overview', label: 'Overview' },
     { id: 'episodes', label: 'Episodes', hidden: movie.media_type !== 'tv' },
-    { id: 'streaming', label: 'Streaming' },
     { id: 'details', label: 'Details' },
     { id: 'cast', label: 'Cast' },
     { id: 'reviews', label: 'Reviews' },
     { id: 'trailer', label: 'Trailer', hidden: !trailerKey },
     { id: 'similar', label: 'Similar', hidden: similar.length === 0 },
   ].filter(s => !s.hidden);
+
+  const STATUS_ICONS = { watched: Eye, plan_to_watch: Bookmark, watching: Play, dropped: XCircle };
+  const STATUS_SHORT = { watched: 'Watched', plan_to_watch: 'Watchlist', watching: 'Watching', dropped: 'Dropped' };
 
   return (
     <div
@@ -512,7 +540,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
     >
       <div
         className="animate-fade-in-scale"
-        style={{ width: '100%', maxWidth: '940px', maxHeight: '94vh', borderRadius: 'var(--radius-xl)', overflow: 'hidden', border: '1px solid var(--border)', position: 'relative', display: 'flex', flexDirection: 'column', background: '#121212' }}
+        style={{ width: '100%', maxWidth: '1120px', maxHeight: '94vh', borderRadius: 'var(--radius-xl)', overflow: 'hidden', border: '1px solid var(--border)', position: 'relative', display: 'flex', flexDirection: 'column', background: '#121212' }}
       >
         {/* ── BACKDROP HERO ── */}
         <div style={{ position: 'relative', height: '220px', flexShrink: 0, overflow: 'hidden' }}>
@@ -533,13 +561,6 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
             <X size={18} />
           </button>
 
-          {/* Favorite button */}
-          <button
-            onClick={() => onToggleFavorite(movie.id)}
-            style={{ position: 'absolute', top: '14px', right: '58px', background: isFavorite ? 'var(--accent)' : '#181818', border: `1px solid ${isFavorite ? 'var(--accent)' : '#333333'}`, color: isFavorite ? '#fff' : 'var(--text)', cursor: 'pointer', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', zIndex: 10 }}
-          >
-            <Heart size={17} fill={isFavorite ? 'currentColor' : 'none'} />
-          </button>
 
           {/* Movie info overlay */}
           <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', padding: '0 28px 18px', display: 'flex', alignItems: 'flex-end', gap: '20px' }}>
@@ -578,357 +599,416 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
           </div>
         </div>
 
-        {/* ── SCROLLABLE BODY ── */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '32px 28px 24px' }}>
-          {/* Overview */}
+        {/* ── SYNOPSIS + ACTION ROW (fixed) ── */}
+        <div style={{ flexShrink: 0, padding: '38px 28px 0' }}>
           {(details?.overview || movie.overview) && (
-            <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: '24px' }}>
+            <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', lineHeight: 1.65, margin: '0 0 18px', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
               {details?.overview || movie.overview}
             </p>
           )}
 
-          {/* Sub-tabs */}
-          <div style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', padding: '4px', marginBottom: '24px', width: 'fit-content' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', paddingBottom: '18px' }}>
+            <button
+              id="modal-save-btn"
+              className="btn btn-primary"
+              onClick={handleSave}
+              style={{ fontSize: '14px', padding: '11px 26px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800 }}
+            >
+              <Plus size={17} /> {movie.date_added && inLibrary ? 'Save Changes' : 'Add to Library'}
+            </button>
+
+            <div style={{ display: 'flex', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: '10px', padding: '3px', gap: '2px' }}>
+              {STATUS_OPTS.map(s => {
+                const Icon = STATUS_ICONS[s.val];
+                const active = status === s.val;
+                return (
+                  <button
+                    key={s.val}
+                    id={`modal-status-${s.val}`}
+                    type="button"
+                    title={STATUS_SHORT[s.val]}
+                    onClick={() => { setStatus(s.val); if (s.val === 'watched') setLogOpen(true); }}
+                    style={{ background: active ? `${s.color}22` : 'transparent', border: `1px solid ${active ? s.color : 'transparent'}`, color: active ? s.color : 'var(--text-muted)', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', fontSize: '10.5px', fontWeight: 700, transition: 'all 0.15s', minWidth: '66px' }}
+                  >
+                    <Icon size={16} />
+                    {STATUS_SHORT[s.val]}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              id="modal-favorite-btn"
+              onClick={() => onToggleFavorite(movie.id)}
+              title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+              style={{ background: isFavorite ? 'var(--accent)' : '#1a1a1a', border: `1px solid ${isFavorite ? 'var(--accent)' : 'var(--border)'}`, color: isFavorite ? '#fff' : 'var(--text)', cursor: 'pointer', width: '48px', height: '48px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}
+            >
+              <Heart size={18} fill={isFavorite ? 'currentColor' : 'none'} />
+            </button>
+          </div>
+        </div>
+
+        {/* ── SCROLLABLE BODY ── */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 28px 28px', display: 'flex', flexDirection: 'column', gap: '22px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+          {/* Underlined tabs */}
+          <div style={{ display: 'flex', flexShrink: 0, gap: '26px', borderBottom: '1px solid var(--border)' }}>
             {SECTIONS.map(s => (
-              <button key={s.id} onClick={() => setActiveSection(s.id)}
-                style={{ background: activeSection === s.id ? accentColor : 'transparent', color: activeSection === s.id ? '#fff' : 'var(--text-muted)', border: 'none', borderRadius: '7px', padding: '7px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap' }}>
+              <button key={s.id} id={`modal-tab-${s.id}`} onClick={() => setActiveSection(s.id)}
+                style={{ background: 'transparent', color: activeSection === s.id ? '#fff' : 'var(--text-muted)', border: 'none', borderBottom: `2px solid ${activeSection === s.id ? 'var(--accent)' : 'transparent'}`, marginBottom: '-1px', padding: '8px 0 11px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap' }}>
                 {s.label}
               </button>
             ))}
           </div>
 
-          {/* ── LOG SECTION ── */}
-          {activeSection === 'log' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
-              {/* Status */}
-              <div>
-                <div className="form-label" style={{ marginBottom: '10px' }}>Status</div>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {STATUS_OPTS.map(s => (
-                    <button
-                      key={s.val}
-                      type="button"
-                      onClick={() => setStatus(s.val)}
-                      style={{
-                        flex: 1, minWidth: '110px', padding: '10px 8px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', transition: 'all 0.2s',
-                        border: `1px solid ${status === s.val ? s.color : 'var(--border)'}`,
-                        background: status === s.val ? `${s.color}15` : 'rgba(255,255,255,0.03)',
-                        color: status === s.val ? s.color : 'var(--text-muted)',
-                      }}
-                    >
-                      {s.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+          {/* ── LOG (rating, tags, review) ── */}
+          <div style={{ display: activeSection === 'overview' ? 'block' : 'none', flexShrink: 0 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '26px', padding: '4px 0 8px' }}>
 
-              {/* Two-Column Grid under Status */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '24px', alignItems: 'start' }}>
-                
-                {/* Left Column: Rating & Tags */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                  {/* Rating */}
-                  {status === 'watched' && (
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                        <div className="form-label">Your Rating</div>
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                          <span style={{ fontSize: '34px', fontWeight: 900, color: ratingColor, fontFamily: 'var(--font-heading)', letterSpacing: '-1px', lineHeight: 1 }}>
-                            {rating > 0 ? rating.toFixed(1) : '—'}
-                          </span>
-                          <span style={{ fontSize: '12px', color: 'var(--text-dim)', fontWeight: 500 }}>{ratingLabel(rating)}</span>
-                        </div>
-                      </div>
-
-                      <div style={{ position: 'relative', padding: '8px 0' }}>
-                        <input
-                          type="range" min="0" max="10" step="0.1" value={rating}
-                          onChange={e => setRating(parseFloat(e.target.value))}
-                          style={{
-                            width: '100%', height: '6px', appearance: 'none',
-                            background: rating > 0
-                              ? `linear-gradient(to right, ${ratingColor} 0%, ${ratingColor} ${rating * 10}%, rgba(255,255,255,0.08) ${rating * 10}%, rgba(255,255,255,0.08) 100%)`
-                              : 'rgba(255,255,255,0.08)',
-                            borderRadius: '3px', outline: 'none', cursor: 'pointer', accentColor: ratingColor,
-                          }}
-                        />
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
-                          {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
-                            <span key={n} style={{ fontSize: '9px', color: Math.abs(rating - n) < 0.6 ? ratingColor : 'var(--text-dim)', fontWeight: Math.abs(rating - n) < 0.6 ? 800 : 400, transition: 'color 0.2s' }}>{n}</span>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '12px' }}>
-                        {[
-                          { label: '💀 1', val: 1 },
-                          { label: '😐 5', val: 5 },
-                          { label: '👍 7', val: 7 },
-                          { label: '🔥 8.5', val: 8.5 },
-                          { label: '⭐ 10', val: 10 },
-                        ].map(q => (
-                          <button key={q.label} type="button" onClick={() => setRating(q.val)}
-                            style={{ background: Math.abs(rating - q.val) < 0.2 ? 'var(--accent)' : 'rgba(255,255,255,0.05)', border: `1px solid ${Math.abs(rating - q.val) < 0.2 ? 'var(--accent)' : 'var(--border)'}`, borderRadius: '20px', padding: '4px 12px', fontSize: '12px', color: Math.abs(rating - q.val) < 0.2 ? '#fff' : 'var(--text-muted)', cursor: 'pointer', transition: 'all 0.15s', fontWeight: 700 }}>
-                            {q.label}
-                          </button>
-                        ))}
-                        {rating > 0 && (
-                          <button type="button" onClick={() => setRating(0)}
-                            style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '20px', padding: '4px 12px', fontSize: '12px', color: 'var(--red)', cursor: 'pointer', fontWeight: 700 }}>
-                            Clear
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Watch Date */}
-                      <div style={{ marginTop: '16px' }}>
-                        <div className="form-label" style={{ marginBottom: '8px' }}>Date Watched</div>
-                        <input
-                          type="date"
-                          value={watchDate}
-                          onChange={e => setWatchDate(e.target.value)}
-                          className="form-input"
-                          style={{ fontSize: '13.5px', width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '8px', color: '#fff', padding: '8px 12px' }}
-                        />
-                      </div>
-
-                    </div>
-                  )}
-
-                  {/* Tags */}
+              {/* Row 1: Rating + Date watched */}
+              {status === 'watched' && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 230px', gap: '40px', alignItems: 'start' }}>
                   <div>
-                    <div className="form-label" style={{ marginBottom: '8px' }}>Tags <span style={{ color: 'var(--text-dim)', fontWeight: 400, textTransform: 'none', fontSize: '11px' }}>(Enter to add)</span></div>
-                    <input type="text" placeholder="Add tags: Rewatch, Comfort, Must-See…" value={newTag}
-                      onChange={e => setNewTag(e.target.value)} onKeyDown={handleAddTag}
-                      className="form-input" style={{ fontSize: '13.5px', width: '100%' }} />
-                    {tags.length > 0 && (
-                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '10px' }}>
-                        {tags.map(tag => (
-                          <span key={tag} style={{ background: 'rgba(136,8,8,0.1)', border: '1px solid rgba(136,8,8,0.25)', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', color: '#c0392b', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            {tag}
-                            <button onClick={() => setTags(tags.filter(t => t !== tag))} style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: '12px', padding: 0, lineHeight: 1, transition: 'color 0.15s' }}
-                              onMouseEnter={e => e.currentTarget.style.color = 'var(--red)'}
-                              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-dim)'}
-                            >✕</button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Collections & Franchise Tagging */}
-                  <div style={{ marginTop: '14px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px 12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <FolderHeart size={12} color="var(--accent)" /> Franchises & Collections
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '10px' }}>
+                      <div className="form-label">Your Rating</div>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
+                        <span style={{ fontSize: '12px', color: 'var(--text-dim)', fontWeight: 500 }}>{ratingLabel(rating)}</span>
+                        <span style={{ fontSize: '34px', fontWeight: 900, color: ratingColor, fontFamily: 'var(--font-heading)', letterSpacing: '-1px', lineHeight: 1 }}>
+                          {rating > 0 ? rating.toFixed(1) : '—'}
+                        </span>
                       </div>
                     </div>
 
-                    {/* Matched Collections Badges */}
-                    {matchedCollections.length > 0 ? (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
-                        {matchedCollections.map(col => (
-                          <span key={col.id} style={{
-                            fontSize: '11px',
-                            fontWeight: 650,
-                            background: 'rgba(136,8,8,0.12)',
-                            border: '1px solid rgba(136,8,8,0.3)',
-                            color: '#FFCDD2',
-                            borderRadius: '12px',
-                            padding: '2.5px 8px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}>
-                            {col.emoji} {col.shortTitle || col.title}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginBottom: '8px' }}>
-                        No predefined franchise detected.
-                      </div>
-                    )}
-
-                    {/* Suggested Franchise Tags (click to tag) */}
-                    {suggestedFranchiseTags.filter(t => !tags.includes(t)).length > 0 && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: '4px' }}>
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Tag with:</span>
-                        {suggestedFranchiseTags.filter(t => !tags.includes(t)).map(st => (
-                          <button
-                            key={st}
-                            type="button"
-                            onClick={() => setTags(prev => [...prev, st])}
-                            style={{
-                              background: 'rgba(136,8,8,0.15)',
-                              border: '1px dashed var(--accent)',
-                              color: 'var(--accent)',
-                              borderRadius: '14px',
-                              padding: '2px 8px',
-                              fontSize: '11px',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              transition: 'all 0.15s'
-                            }}
-                            title={`Click to add #${st} tag to this movie`}
-                          >
-                            + Tag "{st}"
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Add to Custom Collection Picker */}
-                    {Object.keys(customCollections).length > 0 && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-                        <span style={{ fontSize: '11px', color: 'var(--text-dim)' }}>Custom list:</span>
-                        <select
-                          onChange={e => {
-                            const collName = e.target.value;
-                            if (!collName) return;
-                            const mId = String(movie.id || movie.tmdb_id);
-                            const colData = customCollections[collName] || { movieIds: [] };
-                            const curIds = colData.movieIds || [];
-                            const updatedIds = curIds.includes(mId)
-                              ? curIds.filter(id => id !== mId)
-                              : [...curIds, mId];
-                            const updated = {
-                              ...customCollections,
-                              [collName]: { ...colData, movieIds: updatedIds }
-                            };
-                            setCustomCollections(updated);
-                            localStorage.setItem('cinelog_collections_v1', JSON.stringify(updated));
-                            window.dispatchEvent(new Event('cinelog_collections_updated'));
-                            e.target.value = '';
-                          }}
-                          defaultValue=""
-                          style={{
-                            background: 'rgba(0,0,0,0.3)',
-                            border: '1px solid var(--border)',
-                            borderRadius: '6px',
-                            color: '#fff',
-                            fontSize: '11px',
-                            padding: '3px 8px',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <option value="" disabled>Add/Remove from list…</option>
-                          {Object.entries(customCollections).map(([name, data]) => {
-                            const mId = String(movie.id || movie.tmdb_id);
-                            const inList = (data.movieIds || []).includes(mId);
-                            return (
-                              <option key={name} value={name} style={{ background: '#0a0813' }}>
-                                {inList ? '✓ ' : '+ '} {data.emoji || '🎬'} {name}
-                              </option>
-                            );
-                          })}
-                        </select>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Right Column: Notes & Review */}
-                <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minWidth: 0, flex: 1, alignSelf: 'stretch' }}>
-                  {/* Rewatch control */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12.5px', fontWeight: 700, color: isRewatch ? '#c0392b' : 'var(--text-muted)' }}>
-                      <input type="checkbox" checked={isRewatch} onChange={e => setIsRewatch(e.target.checked)}
-                        style={{ accentColor: '#c0392b', cursor: 'pointer', width: '14px', height: '14px' }} />
-                      🔁 Rewatch
-                    </label>
-                    {isRewatch && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <span style={{ fontSize: '11px', color: 'var(--text-dim)' }}>Times watched:</span>
-                        <input type="number" min={1} max={99} value={rewatchCount} onChange={e => setRewatchCount(Number(e.target.value))}
-                          style={{ width: '46px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '6px', color: '#fff', padding: '3px 6px', fontSize: '12px', textAlign: 'center' }} />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Markdown toolbar */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '10px', color: 'var(--text-dim)', fontWeight: 700, marginRight: '4px' }}>NOTES</span>
-                    {[
-                      { label: 'B', wrap: '**', title: 'Bold' },
-                      { label: 'I', wrap: '*', title: 'Italic' },
-                      { label: 'S', wrap: '~~', title: 'Strikethrough' },
-                    ].map(btn => (
-                      <button key={btn.label} type="button" title={btn.title}
-                        onClick={() => insertMarkdown(btn.wrap)}
-                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', borderRadius: '4px', color: 'var(--text-muted)', fontSize: '11px', fontWeight: 900, padding: '2px 8px', cursor: 'pointer', minWidth: '24px' }}>
-                        {btn.label}
-                      </button>
-                    ))}
-                    <div style={{ flex: 1 }} />
-                    {['write','preview'].map(t => (
-                      <button key={t} type="button" onClick={() => setReviewTab(t)}
-                        style={{ background: reviewTab === t ? 'rgba(136,8,8,0.2)' : 'none', border: `1px solid ${reviewTab === t ? 'var(--accent)' : 'var(--border)'}`, borderRadius: '4px', color: reviewTab === t ? 'var(--accent)' : 'var(--text-dim)', fontSize: '10px', fontWeight: 700, padding: '2px 8px', cursor: 'pointer', textTransform: 'capitalize' }}>
-                        {t === 'write' ? '✏️ Write' : '👁 Preview'}
-                      </button>
-                    ))}
-                  </div>
-
-                  {reviewTab === 'write' ? (
-                    <div>
-                      <textarea
-                        id="review-textarea"
-                        placeholder="What did you think? Supports **bold**, *italic*, ~~strikethrough~~…"
-                        value={review} onChange={e => setReview(e.target.value)}
-                        className="form-input"
+                    <div style={{ position: 'relative', padding: '8px 0' }}>
+                      <input
+                        type="range" min="0" max="10" step="0.1" value={rating}
+                        onChange={e => setRating(parseFloat(e.target.value))}
                         style={{
-                          width: '100%',
-                          minHeight: status === 'watched' ? '180px' : '120px',
-                          resize: 'vertical',
-                          fontSize: '13.5px',
-                          lineHeight: 1.6,
-                          fontFamily: 'var(--font-mono, monospace)'
+                          '--thumb': ratingColor,
+                          width: '100%', height: '6px', appearance: 'none',
+                          background: rating > 0
+                            ? `linear-gradient(to right, ${ratingColor} 0%, ${ratingColor} ${rating * 10}%, rgba(255,255,255,0.08) ${rating * 10}%, rgba(255,255,255,0.08) 100%)`
+                            : 'rgba(255,255,255,0.08)',
+                          borderRadius: '3px', outline: 'none', cursor: 'pointer', accentColor: ratingColor,
                         }}
                       />
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', fontSize: '10.5px', color: 'var(--text-dim)', marginTop: '4px' }}>
-                        <span>{review.length} chars</span>
-                        <span>·</span>
-                        <span>{review.trim() ? review.trim().split(/\s+/).length : 0} words</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
+                        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                          <span key={n} style={{ fontSize: '9px', color: Math.abs(rating - n) < 0.6 ? ratingColor : 'var(--text-dim)', fontWeight: Math.abs(rating - n) < 0.6 ? 800 : 400, transition: 'color 0.2s' }}>{n}</span>
+                        ))}
                       </div>
                     </div>
-                  ) : (
-                    <div
-                      style={{
-                        minHeight: status === 'watched' ? '180px' : '120px',
-                        background: 'rgba(255,255,255,0.02)',
-                        border: '1px solid var(--border)',
-                        borderRadius: '8px',
-                        padding: '12px',
-                        fontSize: '13.5px',
-                        lineHeight: 1.6,
-                        color: review ? 'var(--text-muted)' : 'var(--text-dim)',
-                        fontStyle: review ? 'normal' : 'italic',
-                        flex: 1,
-                        overflowY: 'auto'
-                      }}
-                      dangerouslySetInnerHTML={{ __html: review ? renderMarkdown(review) : 'Nothing written yet…' }}
-                    />
-                  )}
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
-                    <input
-                      type="checkbox"
-                      id="containsSpoilers"
-                      checked={containsSpoilers}
-                      onChange={e => setContainsSpoilers(e.target.checked)}
-                      style={{ cursor: 'pointer', width: '15px', height: '15px', accentColor: accentColor }}
-                    />
-                    <label htmlFor="containsSpoilers" style={{ fontSize: '12.5px', color: 'var(--text-muted)', fontWeight: 700, cursor: 'pointer', userSelect: 'none' }}>
-                      ⚠️ Review contains spoilers
-                    </label>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '10px' }}>
+                      {[
+                        { label: '💀 1', val: 1 },
+                        { label: '😐 5', val: 5 },
+                        { label: '👍 7', val: 7 },
+                        { label: '🔥 8.5', val: 8.5 },
+                        { label: '⭐ 10', val: 10 },
+                      ].map(q => (
+                        <button key={q.label} type="button" onClick={() => setRating(q.val)}
+                          style={{ background: Math.abs(rating - q.val) < 0.2 ? 'var(--accent)' : 'rgba(255,255,255,0.05)', border: `1px solid ${Math.abs(rating - q.val) < 0.2 ? 'var(--accent)' : 'var(--border)'}`, borderRadius: '20px', padding: '4px 12px', fontSize: '12px', color: Math.abs(rating - q.val) < 0.2 ? '#fff' : 'var(--text-muted)', cursor: 'pointer', transition: 'all 0.15s', fontWeight: 700 }}>
+                          {q.label}
+                        </button>
+                      ))}
+                      {rating > 0 && (
+                        <button type="button" onClick={() => setRating(0)}
+                          style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: '20px', padding: '4px 12px', fontSize: '12px', color: 'var(--text-muted)', cursor: 'pointer', fontWeight: 700 }}>
+                          Clear
+                        </button>
+                      )}
+                    </div>
                   </div>
 
+                  {/* Date watched */}
+                  <div>
+                    <div className="form-label" style={{ marginBottom: '10px' }}>Date Watched</div>
+                    <input
+                      type="date"
+                      value={watchDate}
+                      onChange={e => setWatchDate(e.target.value)}
+                      className="form-input"
+                      style={{ fontSize: '13.5px', width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '8px', color: '#fff', padding: '9px 12px' }}
+                    />
+                  </div>
+                </div>
+              )}
 
+              {/* Row 2: Prominent Review Box */}
+              <div style={{
+                background: '#151515',
+                border: '1px solid #282828',
+                borderRadius: '12px',
+                padding: '16px 18px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+                transition: 'border-color 0.2s, box-shadow 0.2s'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#fff' }}>
+                      Your Review
+                    </span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-dim)' }}>
+                      · {review.trim() ? review.trim().split(/\s+/).length : 0} words
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <button
+                      id="modal-rewatch-toggle"
+                      type="button"
+                      onClick={() => setIsRewatch(v => !v)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: isRewatch ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.03)',
+                        border: `1px solid ${isRewatch ? 'var(--text-muted)' : '#303030'}`,
+                        color: isRewatch ? '#fff' : 'var(--text-muted)',
+                        borderRadius: '20px',
+                        padding: '4px 12px',
+                        fontSize: '11.5px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s'
+                      }}
+                    >
+                      <Repeat size={13} /> Rewatch
+                    </button>
+                    {isRewatch && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <span style={{ fontSize: '11px', color: 'var(--text-dim)' }}>Times:</span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={99}
+                          value={rewatchCount}
+                          onChange={e => setRewatchCount(Number(e.target.value))}
+                          style={{
+                            width: '44px',
+                            background: 'rgba(0,0,0,0.4)',
+                            border: '1px solid #333',
+                            borderRadius: '6px',
+                            color: '#fff',
+                            padding: '3px 6px',
+                            fontSize: '11.5px',
+                            textAlign: 'center'
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    <button
+                      id="modal-spoiler-toggle"
+                      type="button"
+                      onClick={() => setContainsSpoilers(v => !v)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: containsSpoilers ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.03)',
+                        border: `1px solid ${containsSpoilers ? '#f59e0b' : '#303030'}`,
+                        color: containsSpoilers ? '#fbbf24' : 'var(--text-muted)',
+                        borderRadius: '20px',
+                        padding: '4px 12px',
+                        fontSize: '11.5px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s'
+                      }}
+                    >
+                      <EyeOff size={13} /> Contains spoilers
+                    </button>
+                  </div>
                 </div>
 
+                <textarea
+                  id="review-textarea"
+                  rows={3}
+                  placeholder="What did you think about this title? Share your thoughts, highlights, or critique..."
+                  value={review}
+                  onChange={e => setReview(e.target.value)}
+                  onInput={e => {
+                    e.target.style.height = 'auto';
+                    e.target.style.height = Math.min(e.target.scrollHeight, 220) + 'px';
+                  }}
+                  onFocus={e => {
+                    e.currentTarget.style.borderColor = 'var(--accent)';
+                    e.currentTarget.parentElement.style.borderColor = '#444';
+                  }}
+                  onBlur={e => {
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                    e.currentTarget.parentElement.style.borderColor = '#282828';
+                  }}
+                  style={{
+                    width: '100%',
+                    resize: 'none',
+                    background: 'rgba(0,0,0,0.35)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: '8px',
+                    outline: 'none',
+                    color: '#fff',
+                    fontSize: '14px',
+                    lineHeight: 1.6,
+                    fontFamily: 'inherit',
+                    padding: '12px 14px',
+                    minHeight: '90px',
+                    maxHeight: '220px',
+                    transition: 'border-color 0.2s'
+                  }}
+                />
               </div>
+
+              {/* Row 3: Tags + Franchises (under Review Box) */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', alignItems: 'start' }}>
+                {/* Tags */}
+                <div>
+                  <div className="form-label" style={{ marginBottom: '10px' }}>Tags <span style={{ color: 'var(--text-dim)', fontWeight: 400, textTransform: 'none', fontSize: '11px' }}>(Enter or click pill to add)</span></div>
+                  <input type="text" placeholder="Add tags: Rewatch, Comfort, Must-See…" value={newTag}
+                    onChange={e => setNewTag(e.target.value)} onKeyDown={handleAddTag}
+                    className="form-input" style={{ fontSize: '13.5px', width: '100%' }} />
+
+                  {/* Suggestions Chips */}
+                  {availableTagSuggestions.length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
+                      <span style={{ fontSize: '10px', color: 'var(--text-dim)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Suggested:</span>
+                      {availableTagSuggestions.slice(0, 5).map(suggestion => (
+                        <button
+                          key={suggestion}
+                          type="button"
+                          onClick={() => {
+                            if (!tags.includes(suggestion)) setTags(prev => [...prev, suggestion]);
+                            setNewTag('');
+                          }}
+                          style={{
+                            background: 'rgba(255,255,255,0.03)',
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            color: 'var(--text-muted)',
+                            borderRadius: '14px',
+                            padding: '2px 9px',
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            transition: 'all 0.15s'
+                          }}
+                          onMouseEnter={e => {
+                            e.currentTarget.style.borderColor = 'var(--accent)';
+                            e.currentTarget.style.color = '#fff';
+                            e.currentTarget.style.background = 'rgba(229,9,20,0.12)';
+                          }}
+                          onMouseLeave={e => {
+                            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                            e.currentTarget.style.color = 'var(--text-muted)';
+                            e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                          }}
+                          title={`Click to add #${suggestion}`}
+                        >
+                          + {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {tags.length > 0 && (
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '10px' }}>
+                      {tags.map(tag => (
+                        <span key={tag} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', padding: '4px 10px 4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          #{tag}
+                          <button onClick={() => setTags(tags.filter(t => t !== tag))} style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: '12px', padding: 0, lineHeight: 1, transition: 'color 0.15s' }}
+                            onMouseEnter={e => e.currentTarget.style.color = 'var(--red)'}
+                            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-dim)'}
+                          >✕</button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Collections & Franchise Tagging */}
+                <div>
+                  <div className="form-label" style={{ marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <FolderHeart size={12} color="var(--accent)" /> Franchises &amp; Collections
+                  </div>
+
+                  {matchedCollections.length > 0 ? (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
+                      {matchedCollections.map(col => (
+                        <span key={col.id} style={{ fontSize: '12px', fontWeight: 600, background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: '20px', padding: '4px 12px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                          {col.emoji} {col.shortTitle || col.title}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '12px', color: 'var(--text-dim)', marginBottom: '10px' }}>
+                      No predefined franchise detected.
+                    </div>
+                  )}
+
+                  {suggestedFranchiseTags.filter(t => !tags.includes(t)).length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Tag with:</span>
+                      {suggestedFranchiseTags.filter(t => !tags.includes(t)).map(st => (
+                        <button
+                          key={st}
+                          type="button"
+                          onClick={() => setTags(prev => [...prev, st])}
+                          style={{ background: 'transparent', border: '1px dashed var(--text-dim)', color: 'var(--text-muted)', borderRadius: '20px', padding: '3px 10px', fontSize: '11.5px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s' }}
+                          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--text-dim)'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+                          title={`Click to add #${st} tag to this movie`}
+                        >
+                          + {st}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {Object.keys(customCollections).length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--text-dim)' }}>Custom list:</span>
+                      <select
+                        onChange={e => {
+                          const collName = e.target.value;
+                          if (!collName) return;
+                          const mId = String(movie.id || movie.tmdb_id);
+                          const colData = customCollections[collName] || { movieIds: [] };
+                          const curIds = colData.movieIds || [];
+                          const updatedIds = curIds.includes(mId)
+                            ? curIds.filter(id => id !== mId)
+                            : [...curIds, mId];
+                          const updated = {
+                            ...customCollections,
+                            [collName]: { ...colData, movieIds: updatedIds }
+                          };
+                          setCustomCollections(updated);
+                          localStorage.setItem('cinelog_collections_v1', JSON.stringify(updated));
+                          window.dispatchEvent(new Event('cinelog_collections_updated'));
+                          e.target.value = '';
+                        }}
+                        defaultValue=""
+                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '8px', color: '#fff', fontSize: '12px', padding: '5px 10px', cursor: 'pointer' }}
+                      >
+                        <option value="" disabled>Add/Remove from list…</option>
+                        {Object.entries(customCollections).map(([name, data]) => {
+                          const mId = String(movie.id || movie.tmdb_id);
+                          const inList = (data.movieIds || []).includes(mId);
+                          return (
+                            <option key={name} value={name} style={{ background: '#0a0813' }}>
+                              {inList ? '✓ ' : '+ '} {data.emoji || '🎬'} {name}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                  )}
+                </div>
+              </div>
+
             </div>
-          )}
+          </div>
 
           {/* ── EPISODES SECTION ── */}
           {activeSection === 'episodes' && (
@@ -1168,17 +1248,17 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                     { label: 'Status', val: details.status },
                     { label: 'Original Title', val: details.original_title || details.original_name },
                     { label: 'Runtime', val: details.runtime ? `${details.runtime} minutes` : details.episode_run_time?.[0] ? `${details.episode_run_time[0]} min/ep` : null },
-                    { label: 'Budget', val: details.budget > 0 ? `$${(details.budget / 1000000).toFixed(1)}M` : null },
-                    { label: 'Box Office', val: details.revenue > 0 ? `$${(details.revenue / 1000000).toFixed(1)}M` : null },
+                    { label: 'Budget', val: formatMoney(details.budget) },
+                    { label: 'Box Office', val: formatMoney(details.revenue) },
                     { label: 'Seasons', val: details.number_of_seasons ? `${details.number_of_seasons} seasons` : null },
                     { label: 'Episodes', val: details.number_of_episodes ? `${details.number_of_episodes} episodes` : null },
                     { label: 'Language', val: details.original_language?.toUpperCase() },
                     { label: 'Production', val: details.production_companies?.slice(0, 2).map(c => c.name).join(', ') },
                     { label: 'Countries', val: details.production_countries?.slice(0, 2).map(c => c.name).join(', ') },
                     { label: 'TMDB Score', val: details.vote_average ? `${details.vote_average.toFixed(1)} (${details.vote_count?.toLocaleString()} votes)` : null },
-                    { label: 'Popularity', val: details.popularity ? `${details.popularity.toFixed(0)}` : null },
+                    { label: 'Popularity', val: details.popularity ? `${details.popularity.toFixed(0)}` : null, hint: 'TMDB popularity index: a live score based on recent views, searches, watchlist adds and ratings. Higher = more buzz right now.' },
                   ].filter(r => r.val).map(row => (
-                    <div key={row.label} style={{ background: 'rgba(255,255,255,0.02)', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                    <div key={row.label} title={row.hint} style={{ background: 'rgba(255,255,255,0.02)', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border)', cursor: row.hint ? 'help' : 'default' }}>
                       <div style={{ fontSize: '10px', color: 'var(--text-dim)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>{row.label}</div>
                       <div style={{ fontSize: '13px', fontWeight: 600 }}>{row.val}</div>
                     </div>
@@ -1198,7 +1278,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
           )}
 
           {/* ── STREAMING SECTION ── */}
-          {activeSection === 'streaming' && (
+          {activeSection === 'overview' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--accent)' }}>📺 Where to Watch</span>
@@ -1386,7 +1466,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                   <div style={{ fontSize: '32px', marginBottom: '8px' }}>✍️</div>
                   <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '4px' }}>No Reviews Yet</div>
                   <p style={{ fontSize: '12px', color: 'var(--text-muted)', maxWidth: '280px', margin: '0 auto' }}>
-                    Be the first to share your thoughts on this title under the 📋 Log tab!
+                    Be the first to share your thoughts on this title under "Your log"!
                   </p>
                 </div>
               )}
@@ -1412,7 +1492,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '12px' }}>
               {similar.map(item => (
                 <div key={item.id} style={{ borderRadius: 'var(--radius)', overflow: 'hidden', cursor: 'pointer', background: 'var(--surface-solid)', border: '1px solid var(--border)', transition: 'transform 0.2s' }}
-                  onClick={() => { onClose(); setTimeout(() => onSave?.({ ...movie, tmdb_id: item.id }), 100); }}
+                  onClick={() => { if (onOpenMovie) onOpenMovie(item.id, movie.media_type === 'tv' ? 'tv' : 'movie'); }}
                   onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-3px)'}
                   onMouseLeave={e => e.currentTarget.style.transform = ''}
                 >
@@ -1433,13 +1513,6 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
           )}
         </div>
 
-        {/* ── STICKY FOOTER ── */}
-        <div style={{ borderTop: '1px solid var(--border)', padding: '14px 28px', display: 'flex', gap: '10px', justifyContent: 'flex-end', background: 'rgba(10,8,19,0.98)', backdropFilter: 'blur(20px)', flexShrink: 0 }}>
-          <button className="btn btn-ghost" onClick={onClose} style={{ fontSize: '13.5px' }}>Cancel</button>
-          <button className="btn btn-primary" onClick={handleSave} style={{ fontSize: '13.5px', padding: '9px 26px' }}>
-            Save to Library
-          </button>
-        </div>
       </div>
     </div>
   );

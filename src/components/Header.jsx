@@ -71,7 +71,7 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
         borderBottom: '1px solid var(--border)',
         width: '100%'
       }}>
-        <div style={{
+        <div className="topnav-inner" style={{
           maxWidth: '1440px',
           margin: '0 auto',
           padding: '0 32px',
@@ -82,11 +82,11 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
           gap: '24px'
         }}>
           {/* Left: Brand + Sleek Clean Nav Links */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '36px' }}>
+          <div className="topnav-left" style={{ display: 'flex', alignItems: 'center', gap: '36px' }}>
             <div
               className="logo-wrapper"
               onClick={() => handleNavClick('explore')}
-              style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', userSelect: 'none' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', userSelect: 'none', flexShrink: 0 }}
             >
               {/* Sleek red camera icon like in mockup */}
               <div style={{
@@ -108,7 +108,7 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
             </div>
 
             {/* Primary Cinema Tabs (Clean & uncluttered) */}
-            <nav style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <nav className="topnav-nav" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               {[
                 { id: 'library', label: 'Library' },
                 { id: 'explore', label: 'Explore' },
@@ -146,9 +146,31 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
           </div>
 
           {/* Right: Search Pill + Notifications Bell + User Profile */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
+            {/* Mobile search icon button */}
+            <button
+              className="topnav-search-mobile-btn"
+              onClick={onOpenCommandCenter}
+              title="Search films"
+              style={{
+                background: '#141414',
+                border: '1px solid #242424',
+                borderRadius: '8px',
+                width: '38px',
+                height: '38px',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: '#9E9E9E',
+                flexShrink: 0
+              }}
+            >
+              <Search size={16} />
+            </button>
+
             {/* Search Input bar pill matching mockup - clean without ⌘K */}
             <div
+              className="topnav-search"
               onClick={onOpenCommandCenter}
               style={{
                 display: 'flex',

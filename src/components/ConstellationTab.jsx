@@ -459,7 +459,7 @@ export default function ConstellationTab({ library = [], onMovieClick }) {
     for (const star of starsRef.current) {
       const dist = Math.hypot(star.x - mx, star.y - my);
       if (dist < star.size * 5 + 8) {
-        onMovieClick && onMovieClick(star.movie.tmdb_id, star.movie.media_type || 'movie');
+        if (onMovieClick) onMovieClick(star.movie.tmdb_id, star.movie.media_type || (star.movie.first_air_date || star.movie.name ? 'tv' : 'movie'));
         break;
       }
     }

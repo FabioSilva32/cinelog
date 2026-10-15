@@ -113,7 +113,7 @@ function SharpPosterRow({ title, items = [], onCardClick, inLib, onAdd, actionBu
           return (
             <div
               key={movie.id}
-              onClick={() => onCardClick(movie, movie.media_type || 'movie')}
+              onClick={() => onCardClick(movie, movie.media_type || (movie.first_air_date || movie.name ? 'tv' : 'movie'))}
               style={{
                 width: '180px',
                 flexShrink: 0,
@@ -153,12 +153,36 @@ function SharpPosterRow({ title, items = [], onCardClick, inLib, onAdd, actionBu
                   <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', background: '#181818' }}>🎬</div>
                 )}
 
+                {/* Media Type Badge: highlight TV series clearly */}
+                {(movie.media_type === 'tv' || Boolean(movie.first_air_date) || Boolean(movie.name && !movie.title)) && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '8px',
+                    left: '8px',
+                    background: 'rgba(10, 10, 14, 0.85)',
+                    backdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(59, 130, 246, 0.45)',
+                    color: '#60A5FA',
+                    fontSize: '9px',
+                    fontWeight: 800,
+                    letterSpacing: '0.06em',
+                    padding: '2px 7px',
+                    borderRadius: '4px',
+                    textTransform: 'uppercase',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.6)',
+                    pointerEvents: 'none',
+                    zIndex: 2
+                  }}>
+                    TV Series
+                  </div>
+                )}
+
                 {/* Subtle Add Quick Button on hover corner */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     if (!isSaved && onAdd) {
-                      onAdd(movie, movie.media_type || 'movie');
+                      onAdd(movie, movie.media_type || (movie.first_air_date || movie.name ? 'tv' : 'movie'));
                     }
                   }}
                   title={isSaved ? 'In Library' : 'Add to Library'}
@@ -246,7 +270,7 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
 
   const handleExploreCardClick = (item, type) => {
     if (!onMovieClick) return;
-    const mediaType = type || item.media_type || 'movie';
+    const mediaType = type || item.media_type || (item.first_air_date || item.name ? 'tv' : 'movie');
     onMovieClick(item.id || item.tmdb_id, mediaType);
   };
 
@@ -410,13 +434,17 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
           overflow: 'hidden',
           position: 'relative',
           display: 'flex',
-          minHeight: '360px',
+          height: '380px',
+          minHeight: '380px',
+          maxHeight: '380px',
+          boxSizing: 'border-box',
           boxShadow: '0 16px 40px rgba(0,0,0,0.7)'
         }}
       >
         {/* Left: High-Res Movie Backdrop with cinematic gradient overlay */}
         <div style={{
           width: '52%',
+          height: '100%',
           position: 'relative',
           overflow: 'hidden',
           flexShrink: 0
@@ -424,7 +452,7 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
           <img
             key={currentHero.id}
             src={`https://image.tmdb.org/t/p/w1280${currentHero.backdrop_path}`}
-            alt={currentHero.title}
+            alt={currentHero.title || currentHero.name}
             style={{
               width: '100%',
               height: '100%',
@@ -450,13 +478,16 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
         {/* Right: Movie Info, Controls & Actions */}
         <div style={{
           flex: 1,
-          padding: '32px 36px 24px',
+          height: '100%',
+          boxSizing: 'border-box',
+          padding: '28px 36px 20px',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
           background: '#121212',
           zIndex: 2,
-          position: 'relative'
+          position: 'relative',
+          overflow: 'hidden'
         }}>
           {/* Badge & Carousel Controls Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
@@ -525,15 +556,21 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
 
           {/* Movie Title */}
           <h1 style={{
-            fontSize: '28px',
+            fontSize: '26px',
             fontWeight: 900,
             letterSpacing: '-0.5px',
             color: '#FFFFFF',
             margin: '0 0 8px 0',
             textTransform: 'uppercase',
-            lineHeight: 1.15
+            lineHeight: 1.15,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            minHeight: '60px',
+            maxHeight: '60px'
           }}>
-            {currentHero.title}
+            {currentHero.title || currentHero.name}
           </h1>
 
           {/* Rating & Metadata */}
@@ -543,7 +580,7 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
             gap: '12px',
             fontSize: '13px',
             color: '#9E9E9E',
-            marginBottom: '12px',
+            marginBottom: '10px',
             fontWeight: 600
           }}>
             {currentHero.vote_average > 0 && (
@@ -552,7 +589,7 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
               </span>
             )}
             <span>
-              {(currentHero.release_date || '').slice(0, 4)}
+              {(currentHero.release_date || currentHero.first_air_date || '').slice(0, 4)}
               {(currentHero.genre_ids || []).length > 0 && ` · ${(currentHero.genre_ids || []).map(g => GENRE_MAP[g]).filter(Boolean).slice(0, 2).join(' · ')}`}
             </span>
           </div>
@@ -562,12 +599,13 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
             fontSize: '13px',
             color: '#A0A0A0',
             lineHeight: 1.6,
-            margin: '0 0 20px 0',
+            margin: '0 0 16px 0',
             maxWidth: '520px',
             display: '-webkit-box',
             WebkitLineClamp: 3,
             WebkitBoxOrient: 'vertical',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            height: '62px'
           }}>
             {currentHero.overview}
           </p>
@@ -575,7 +613,7 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
           {/* Action buttons */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}>
             <button
-              onClick={() => quickAdd(currentHero, 'movie')}
+              onClick={() => quickAdd(currentHero, currentHero.media_type || (currentHero.first_air_date || currentHero.name ? 'tv' : 'movie'))}
               style={{
                 background: inLib(currentHero.id) ? '#10b981' : 'var(--accent)',
                 border: 'none',
@@ -601,7 +639,7 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
             </button>
 
             <button
-              onClick={() => onMovieClick(currentHero.id, 'movie')}
+              onClick={() => onMovieClick(currentHero.id, currentHero.media_type || (currentHero.first_air_date || currentHero.name ? 'tv' : 'movie'))}
               style={{
                 background: '#1A1A1A',
                 border: '1px solid #333333',

@@ -296,7 +296,20 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
   // Split by type and apply status/genre filters
   const filtered = useMemo(() => {
     let list = library;
-    if (filterStatus !== 'all') list = list.filter(m => m.status === filterStatus);
+    if (filterStatus === 'watched_this_month') {
+      const now = new Date();
+      const curYear = now.getFullYear();
+      const curMonth = now.getMonth();
+      list = list.filter(m => {
+        if (m.status !== 'watched') return false;
+        const dStr = m.watch_date || m.date_added;
+        if (!dStr) return false;
+        const d = new Date(dStr);
+        return !isNaN(d.getTime()) && d.getFullYear() === curYear && d.getMonth() === curMonth;
+      });
+    } else if (filterStatus !== 'all') {
+      list = list.filter(m => m.status === filterStatus);
+    }
     if (filterGenre !== 'all') list = list.filter(m => (m.genres || []).includes(filterGenre));
     return list;
   }, [library, filterStatus, filterGenre]);
@@ -307,10 +320,29 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
 
   // Stats
   const stats = useMemo(() => {
+    const now = new Date();
+    const curYear = now.getFullYear();
+    const curMonth = now.getMonth();
+    const isThisMonth = (m) => {
+      if (m.status !== 'watched') return false;
+      const dStr = m.watch_date || m.date_added;
+      if (!dStr) return false;
+      const d = new Date(dStr);
+      return !isNaN(d.getTime()) && d.getFullYear() === curYear && d.getMonth() === curMonth;
+    };
+
     const watched = library.filter(m => m.status === 'watched');
+    const thisMonth = library.filter(isThisMonth);
     const rated = watched.filter(m => m.rating);
     const avg = rated.length > 0 ? (rated.reduce((s, m) => s + Number(m.rating), 0) / rated.length).toFixed(1) : '—';
-    return { total: library.length, watched: watched.length, watchlist: library.filter(m => m.status === 'plan_to_watch').length, avg, favs: library.filter(m => m.favorite).length };
+    return {
+      total: library.length,
+      watched: watched.length,
+      thisMonth: thisMonth.length,
+      watchlist: library.filter(m => m.status === 'plan_to_watch').length,
+      avg,
+      favs: library.filter(m => m.favorite).length
+    };
   }, [library]);
 
   const handleExportJSON = () => {
@@ -329,19 +361,29 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
 
   const handleExportCSV = () => {
     try {
-      const headers = ['Title', 'Year', 'Type', 'Status', 'Rating', 'Genres', 'Tags', 'Favorite', 'Review', 'Date Added'];
-      const rows = library.map(m => [
-        `"${(m.title || '').replace(/"/g, '""')}"`,
-        m.release_year || '',
-        m.media_type || 'movie',
-        m.status || '',
-        m.rating != null ? m.rating : '',
-        `"${(m.genres || []).join(', ')}"`,
-        `"${(m.tags || []).join(', ')}"`,
-        m.favorite ? 'Yes' : 'No',
-        `"${(m.review || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
-        m.date_added ? new Date(m.date_added).toLocaleDateString() : '',
-      ]);
+      const headers = ['Title', 'Year', 'Rating10', 'WatchedDate', 'Rewatch', 'Type', 'Status', 'Genres', 'Tags', 'Favorite', 'Review', 'Date Added'];
+      const rows = library.map(m => {
+        const cleanReview = (m.review || '')
+          .replace(/__EPISODE_DATA__:.+$/s, '')
+          .replace(/__EPISODE_RATINGS__:.+$/s, '')
+          .replace(/"/g, '""')
+          .trim();
+        const watchedDateStr = m.watch_date || (m.status === 'watched' && m.date_added ? new Date(m.date_added).toISOString().slice(0, 10) : '');
+        return [
+          `"${(m.title || '').replace(/"/g, '""')}"`,
+          m.release_year || '',
+          m.rating != null ? m.rating : '',
+          watchedDateStr,
+          m.is_rewatch ? 'Yes' : 'No',
+          m.media_type || 'movie',
+          m.status || '',
+          `"${(m.genres || []).join(', ')}"`,
+          `"${(m.tags || []).join(', ')}"`,
+          m.favorite ? 'Yes' : 'No',
+          `"${cleanReview}"`,
+          m.date_added ? new Date(m.date_added).toLocaleDateString() : '',
+        ];
+      });
       const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -380,6 +422,7 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
         {[
           { label: 'Total', val: stats.total, color: 'var(--accent)' },
           { label: 'Watched', val: stats.watched, color: 'var(--green)' },
+          { label: 'This Month', val: stats.thisMonth, color: '#f59e0b' },
           { label: 'Watchlist', val: stats.watchlist, color: 'var(--blue)' },
           { label: 'Avg Rating', val: stats.avg + (stats.avg !== '—' ? '' : ''), color: 'var(--gold)' },
           { label: 'Favorites', val: stats.favs, color: 'var(--red)' },
@@ -429,6 +472,7 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
           {[
             { id: 'all', label: 'All' },
             { id: 'watched', label: '✓ Watched' },
+            { id: 'watched_this_month', label: '📅 This Month' },
             { id: 'watching', label: '▶ Watching' },
             { id: 'plan_to_watch', label: '⏳ Watchlist' }
           ].map(s => (
@@ -532,6 +576,25 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
                     )}
                     {movie.favorite && (
                       <div style={{ position: 'absolute', top: '4px', left: '4px', fontSize: '10px', zIndex: 5 }}>❤️</div>
+                    )}
+                    {(movie.media_type === 'tv' || movie.type === 'tv') && (
+                      <div style={{
+                        position: 'absolute',
+                        bottom: '5px',
+                        left: '5px',
+                        background: 'rgba(10, 10, 14, 0.85)',
+                        border: '1px solid rgba(59, 130, 246, 0.5)',
+                        color: '#60A5FA',
+                        borderRadius: '3px',
+                        padding: '1px 4px',
+                        fontSize: '7.5px',
+                        fontWeight: 900,
+                        letterSpacing: '0.04em',
+                        textTransform: 'uppercase',
+                        zIndex: 4
+                      }}>
+                        TV
+                      </div>
                     )}
                   {movie.theater_seat && (
                     <div

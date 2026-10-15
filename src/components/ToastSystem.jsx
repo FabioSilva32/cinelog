@@ -38,13 +38,13 @@ function ToastItem({ toast, onDismiss }) {
     <div
       style={{
         display: 'flex', alignItems: 'flex-start', gap: '12px',
-        background: 'rgba(10,8,19,0.97)', border: `1px solid ${theme.border}`,
+        background: `linear-gradient(${theme.bg}, ${theme.bg}), #141414`,
+        border: `1px solid ${theme.border}`,
         borderLeft: `3px solid ${theme.icon}`,
         borderRadius: '12px', padding: '12px 16px',
         backdropFilter: 'blur(20px)', boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
         minWidth: '280px', maxWidth: '400px', cursor: 'pointer',
         animation: exiting ? 'toastExit 0.32s cubic-bezier(0.4,0,0.2,1) forwards' : 'toastEnter 0.3s cubic-bezier(0.4,0,0.2,1) forwards',
-        background: theme.bg,
       }}
       onClick={() => { setExiting(true); setTimeout(() => onDismiss(toast.id), 320); }}
     >
