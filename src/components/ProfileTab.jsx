@@ -3,7 +3,8 @@ import { createPortal } from 'react-dom';
 import {
   Heart, Calendar, Star, Film, Trophy, BarChart3, X,
   Search, Plus, Upload, Flame, Coins, ArrowLeft, SlidersHorizontal,
-  Image as ImageIcon, Trash2, CheckCircle2, User, Award, Check, Edit2, Sparkles
+  Image as ImageIcon, Trash2, CheckCircle2, User, Award, Check, Edit2, Sparkles,
+  ChevronDown, ChevronUp, Crown, ExternalLink
 } from 'lucide-react';
 import { ACHIEVEMENTS, BORDER_STYLES, BADGE_COLORS, isUserCreator } from '../utils/achievements';
 import AvatarWithBorder, { DEFAULT_GREY_AVATAR } from './AvatarWithBorder';
@@ -553,6 +554,27 @@ export default function ProfileTab({
     return Array.from(new Set(earned));
   }, [library, currentUser, isCreator]);
 
+  const [showAllBadges, setShowAllBadges] = useState(false);
+
+  const BADGE_PRESTIGE_ORDER = useMemo(() => [
+    'Creator', 'The Maker.',
+    'Cinema Overlord', 'Film Legend', 'Hall of Famer', 'Diamond Legend',
+    'Gold Watcher', 'Absolute Critic', 'Master Essayist', 'Grand Essayist',
+    'Genre Master', 'Streak Master', 'Silver Watcher', 'Dedicated Critic',
+    'Elite Critic', 'Critic', 'Bronze Watcher'
+  ], []);
+
+  const sortedBadges = useMemo(() => {
+    return [...unlockedBadges].sort((a, b) => {
+      const idxA = BADGE_PRESTIGE_ORDER.indexOf(a);
+      const idxB = BADGE_PRESTIGE_ORDER.indexOf(b);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return a.localeCompare(b);
+    });
+  }, [unlockedBadges, BADGE_PRESTIGE_ORDER]);
+
   const unlockedBorders = useMemo(() => {
     const unlocked = new Set(['none', 'bronze', 'silver', 'gold']);
     if (isCreator) {
@@ -872,23 +894,37 @@ export default function ProfileTab({
             ───────────────────────────────────────────────────────────── */
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
 
-          {/* BANNER (320px immersive) */}
+          {/* BANNER (340px immersive with fallback cinematic ambiance) */}
           <div
             style={{
-              height: '320px',
+              height: '340px',
               width: '100%',
-              borderRadius: '20px 20px 0 0',
+              borderRadius: '24px 24px 0 0',
               overflow: 'hidden',
               position: 'relative',
               background: (currentUser?.bannerUrl && !currentUser.bannerUrl.startsWith('animated-'))
                 ? `url("${currentUser.bannerUrl}") center ${currentUser.bannerPosPercent ?? 20}% / ${currentUser.bannerFitMode === 'contain' ? 'contain' : 'cover'} no-repeat`
-                : (!currentUser?.bannerUrl ? 'linear-gradient(135deg, #181818 0%, #101010 50%, #000000 100%)' : '#08070e')
+                : (!currentUser?.bannerUrl
+                    ? 'radial-gradient(ellipse at 50% 25%, rgba(136,8,8,0.32) 0%, rgba(18,14,28,0.9) 65%, #08060d 100%)'
+                    : '#08070e')
             }}
           >
             {currentUser?.bannerUrl && currentUser.bannerUrl.startsWith('animated-') && (
               <AnimatedBannerBackground bannerId={currentUser.bannerUrl} />
             )}
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 80%, rgba(10,8,19,0.9) 100%)', pointerEvents: 'none' }} />
+
+            {!currentUser?.bannerUrl && (
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                opacity: 0.18,
+                backgroundImage: 'radial-gradient(rgba(255,255,255,0.25) 1px, transparent 1px)',
+                backgroundSize: '24px 24px',
+                pointerEvents: 'none'
+              }} />
+            )}
+
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 65%, rgba(13,11,20,0.95) 100%)', pointerEvents: 'none' }} />
 
             {/* SINGLE UNIFIED CUSTOMIZE BUTTON */}
             <button
@@ -896,125 +932,263 @@ export default function ProfileTab({
               onClick={() => handleOpenCustomizer('banner')}
               style={{
                 position: 'absolute',
-                top: '18px',
-                right: '18px',
+                top: '20px',
+                right: '20px',
                 zIndex: 5,
                 background: 'rgba(10,8,22,0.85)',
-                backdropFilter: 'blur(14px)',
+                backdropFilter: 'blur(16px)',
                 border: '1px solid rgba(255,255,255,0.22)',
                 color: '#fff',
                 borderRadius: '30px',
-                padding: '8px 20px',
+                padding: '9px 22px',
                 fontSize: '13px',
                 fontWeight: 800,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.6)',
                 transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)'
               }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = 'var(--accent)'; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.22)'; }}
+              onMouseEnter={e => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.borderColor = 'var(--accent)';
+                e.currentTarget.style.boxShadow = '0 12px 35px rgba(136,8,8,0.4)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = '';
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.22)';
+                e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.6)';
+              }}
             >
-              <SlidersHorizontal size={14} color="var(--accent)" /> Customize
+              <SlidersHorizontal size={15} color="var(--accent)" /> Customize Studio
             </button>
           </div>
 
-          {/* PROFILE HEADER ROW (Wide clean layout with full-width badges ribbon) */}
-          <div style={{ background: '#121212', padding: '0 28px 24px', border: '1px solid var(--border)', borderTop: 'none', borderLeft: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
+          {/* PROFILE HEADER ROW (Polished Studio Card) */}
+          <div style={{
+            background: 'linear-gradient(180deg, #13111b 0%, #0d0b13 100%)',
+            padding: '0 32px 28px',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderTop: 'none',
+            borderRadius: '0 0 24px 24px',
+            boxShadow: '0 24px 60px rgba(0,0,0,0.7)',
+            position: 'relative'
+          }}>
             
-            {/* Top Bar: Avatar + Name/Bio on Left, Stats on Right */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '24px', flexWrap: 'wrap' }}>
+            {/* Top Bar: Avatar + Name/Bio on Left, Stats Capsules on Right */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '28px', flexWrap: 'wrap' }}>
               
-              {/* Left: Avatar (overlapping banner) + Name & Bio (clean padding) */}
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '22px', flex: 1, minWidth: '300px' }}>
-                <div style={{ marginTop: '-55px', position: 'relative', flexShrink: 0, zIndex: 10 }}>
+              {/* Left: Avatar (overlapping banner with glowing presence) + Name & Bio */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '24px', flex: 1, minWidth: '320px' }}>
+                <div style={{
+                  marginTop: '-65px',
+                  position: 'relative',
+                  flexShrink: 0,
+                  zIndex: 10,
+                  filter: isCreator ? 'drop-shadow(0 0 22px rgba(251,191,36,0.35))' : 'drop-shadow(0 12px 26px rgba(0,0,0,0.85))'
+                }}>
                   <AvatarWithBorder
                     src={currentUser?.avatar || DEFAULT_GREY_AVATAR}
                     username={currentUser?.username || 'Profile'}
                     borderId={currentUser?.equippedBorder || 'none'}
-                    size={110}
+                    size={118}
                   />
                 </div>
 
-                <div style={{ paddingTop: '14px', minWidth: 0, flex: 1 }}>
-                  <h2 style={{ fontSize: '26px', fontWeight: 900, color: '#fff', letterSpacing: '-0.4px', margin: '0 0 3px 0', lineHeight: 1.2 }}>
-                    {(currentUser?.displayName && !currentUser.displayName.includes('-----') && currentUser.displayName.trim() !== '—') ? currentUser.displayName : (currentUser?.username || 'CineLog Fan')}
-                  </h2>
-                  <div style={{ color: 'var(--accent)', fontSize: '13.5px', fontWeight: 700, marginBottom: '6px' }}>
+                <div style={{ paddingTop: '16px', minWidth: 0, flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                    <h2 style={{ fontSize: '28px', fontWeight: 900, color: '#fff', letterSpacing: '-0.5px', margin: 0, lineHeight: 1.2 }}>
+                      {(currentUser?.displayName && !currentUser.displayName.includes('-----') && currentUser.displayName.trim() !== '—') ? currentUser.displayName : (currentUser?.username || 'CineLog Fan')}
+                    </h2>
+                    {isCreator && (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '3px 10px',
+                        borderRadius: '20px',
+                        background: 'linear-gradient(135deg, rgba(251,191,36,0.2) 0%, rgba(168,85,247,0.2) 100%)',
+                        border: '1px solid rgba(251,191,36,0.5)',
+                        color: '#fbbf24',
+                        fontSize: '11px',
+                        fontWeight: 900,
+                        letterSpacing: '0.04em',
+                        textTransform: 'uppercase'
+                      }}>
+                        <Crown size={12} fill="#fbbf24" /> Creator
+                      </span>
+                    )}
+                  </div>
+
+                  <div style={{ color: 'var(--accent)', fontSize: '14px', fontWeight: 700, marginBottom: '8px' }}>
                     @{currentUser?.username || 'cinelog_user'}
                   </div>
-                  <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', lineHeight: 1.5, maxWidth: '540px', margin: 0 }}>
-                    {currentUser?.bio || 'No bio written yet. Click Customize to personalize your profile.'}
+
+                  <p style={{ fontSize: '13.5px', color: 'rgba(255,255,255,0.7)', lineHeight: 1.55, maxWidth: '580px', margin: 0 }}>
+                    {currentUser?.bio || 'No cinema story written yet. Click Customize Studio to personalize your bio.'}
                   </p>
                 </div>
               </div>
 
-              {/* Right: Stats Counters */}
-              <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'flex-end', paddingTop: '16px' }}>
+              {/* Right: Modern Frosted Stat Capsules */}
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'flex-end', paddingTop: '16px' }}>
                 {[
                   { label: 'Films', val: watchedCount, color: 'var(--green)' },
                   { label: 'Reviews', val: reviewsCount, color: 'var(--accent)' },
                   { label: 'Favorites', val: favoritesCount, color: 'var(--red)' },
                   { label: 'Watchlist', val: watchlistCount, color: '#60a5fa' },
-                  { label: 'CinePoints', val: `🪙 ${cinePoints}`, color: 'var(--accent)' },
+                  { label: 'CinePoints', val: `🪙 ${cinePoints}`, color: '#fbbf24' },
                   ...(avgRating ? [{ label: 'Avg Rating', val: `★ ${avgRating}`, color: 'var(--gold)' }] : []),
                 ].map(s => (
-                  <div key={s.label} style={{ textAlign: 'center', minWidth: '55px' }}>
-                    <div style={{ fontSize: '20px', fontWeight: 900, color: s.color, fontFamily: 'var(--font-heading)' }}>{s.val}</div>
-                    <div style={{ fontSize: '10px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>{s.label}</div>
+                  <div
+                    key={s.label}
+                    style={{
+                      textAlign: 'center',
+                      minWidth: '68px',
+                      padding: '10px 14px',
+                      background: 'rgba(255,255,255,0.035)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: '14px',
+                      backdropFilter: 'blur(8px)',
+                      boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+                      transition: 'transform 0.15s ease, border-color 0.15s ease'
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+                  >
+                    <div style={{ fontSize: '20px', fontWeight: 900, color: s.color, fontFamily: 'var(--font-heading)', lineHeight: 1.1 }}>{s.val}</div>
+                    <div style={{ fontSize: '9.5px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 800, marginTop: '4px' }}>{s.label}</div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* FULL-WIDTH EXTENDED BADGES RIBBON (Extends fully across the entire container) */}
-            {unlockedBadges.length > 0 && (
-              <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-dim)' }}>
-                    🎖️ Unlocked Titles & Badges ({unlockedBadges.length})
-                  </span>
-                </div>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', width: '100%', alignItems: 'center' }}>
-                  {unlockedBadges.map(badgeName => {
-                    const colors = BADGE_COLORS[badgeName] || { border: '1px solid var(--border)', color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.03)' };
-                    return (
-                      <span
-                        key={badgeName}
+            {/* BADGES RIBBON WITH LIMIT AND SHOW MORE TOGGLE */}
+            {sortedBadges.length > 0 && (() => {
+              const BADGE_LIMIT = 5;
+              const displayedBadges = showAllBadges ? sortedBadges : sortedBadges.slice(0, BADGE_LIMIT);
+              const remainingCount = Math.max(0, sortedBadges.length - BADGE_LIMIT);
+
+              return (
+                <div style={{
+                  marginTop: '22px',
+                  paddingTop: '16px',
+                  borderTop: '1px solid rgba(255,255,255,0.07)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-dim)' }}>
+                        🎖️ Featured Titles & Badges
+                      </span>
+                      <span style={{
+                        fontSize: '10.5px',
+                        background: 'rgba(255,255,255,0.06)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        padding: '1px 8px',
+                        borderRadius: '10px',
+                        color: 'rgba(255,255,255,0.7)',
+                        fontWeight: 800
+                      }}>
+                        {showAllBadges ? `${sortedBadges.length} Total` : `${Math.min(BADGE_LIMIT, sortedBadges.length)} of ${sortedBadges.length}`}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSubTabChange('achievements')}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--accent)',
+                        fontSize: '11.5px',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: 0
+                      }}
+                    >
+                      View All in Badges & XP <ExternalLink size={12} />
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', width: '100%', alignItems: 'center' }}>
+                    {displayedBadges.map(badgeName => {
+                      const colors = BADGE_COLORS[badgeName] || { border: '1px solid var(--border)', color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.03)' };
+                      return (
+                        <span
+                          key={badgeName}
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 800,
+                            padding: '4px 12px',
+                            borderRadius: '14px',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.04em',
+                            whiteSpace: 'nowrap',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            transition: 'all 0.2s ease',
+                            ...colors
+                          }}
+                        >
+                          {badgeName}
+                        </span>
+                      );
+                    })}
+
+                    {sortedBadges.length > BADGE_LIMIT && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllBadges(!showAllBadges)}
                         style={{
-                          fontSize: '10.5px',
+                          fontSize: '11px',
                           fontWeight: 800,
-                          padding: '3px 10px',
-                          borderRadius: '12px',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.04em',
-                          whiteSpace: 'nowrap',
-                          transition: 'transform 0.15s ease',
-                          ...colors
+                          padding: '4px 12px',
+                          borderRadius: '14px',
+                          background: showAllBadges ? 'rgba(255,255,255,0.08)' : 'rgba(136,8,8,0.18)',
+                          border: showAllBadges ? '1px solid rgba(255,255,255,0.22)' : '1px solid rgba(136,8,8,0.4)',
+                          color: showAllBadges ? '#fff' : 'var(--accent)',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          transition: 'all 0.15s ease'
                         }}
                       >
-                        {badgeName}
-                      </span>
-                    );
-                  })}
+                        {showAllBadges ? (
+                          <>Show Less <ChevronUp size={13} /></>
+                        ) : (
+                          <>+{remainingCount} more <ChevronDown size={13} /></>
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
           </div>
 
-          {/* FULL CINEMATIC SUB-NAV (LETTERBOXD PRO STYLE) */}
+          {/* FULL CINEMATIC SUB-NAV (MODERN FLOATING PILL BAR) */}
           <div style={{
             display: 'flex',
-            borderBottom: '1px solid var(--border)',
-            gap: '0',
-            marginBottom: '0',
-            background: '#101010',
-            border: '1px solid var(--border)',
-            borderRadius: '12px 12px 0 0',
-            overflowX: 'auto'
+            marginTop: '24px',
+            background: 'rgba(15, 12, 22, 0.85)',
+            backdropFilter: 'blur(16px)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '18px',
+            padding: '6px',
+            gap: '4px',
+            overflowX: 'auto',
+            boxShadow: '0 8px 30px rgba(0,0,0,0.35)'
           }}>
             {[
               { id: 'overview', label: 'Overview', icon: Film },
@@ -1034,22 +1208,33 @@ export default function ProfileTab({
                   key={tab.id}
                   onClick={() => handleSubTabChange(tab.id)}
                   style={{
-                    background: 'none',
-                    border: 'none',
-                    padding: '14px 18px',
+                    background: isActive ? 'rgba(136,8,8,0.24)' : 'transparent',
+                    border: isActive ? '1px solid rgba(136,8,8,0.55)' : '1px solid transparent',
+                    padding: '11px 18px',
+                    borderRadius: '12px',
                     fontSize: '13px',
                     fontWeight: isActive ? 800 : 600,
                     whiteSpace: 'nowrap',
                     color: isActive ? '#FFFFFF' : 'var(--text-muted)',
-                    borderBottom: isActive ? '3px solid var(--accent)' : '3px solid transparent',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '6px',
+                    gap: '7px',
                     cursor: 'pointer',
-                    transition: 'all 0.15s ease'
+                    boxShadow: isActive ? '0 0 18px rgba(136,8,8,0.3)' : 'none',
+                    transition: 'all 0.18s ease'
                   }}
-                  onMouseEnter={e => { if (!isActive) e.currentTarget.style.color = '#fff'; }}
-                  onMouseLeave={e => { if (!isActive) e.currentTarget.style.color = 'var(--text-muted)'; }}
+                  onMouseEnter={e => {
+                    if (!isActive) {
+                      e.currentTarget.style.color = '#fff';
+                      e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                    }
+                  }}
+                  onMouseLeave={e => {
+                    if (!isActive) {
+                      e.currentTarget.style.color = 'var(--text-muted)';
+                      e.currentTarget.style.background = 'transparent';
+                    }
+                  }}
                 >
                   <Icon size={14} color={isActive ? 'var(--accent)' : 'currentColor'} />
                   {tab.label}
@@ -1069,35 +1254,141 @@ export default function ProfileTab({
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
                   {/* Favorites Showcase */}
-                  <div className="glass" style={{ borderRadius: 'var(--radius-xl)', padding: '20px', border: '1px solid var(--border)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Heart size={16} color="var(--red)" fill="var(--red)" />
-                        <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0 }}>Favorites Showcase</h3>
+                  <div className="glass" style={{
+                    borderRadius: '20px',
+                    padding: '24px',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'linear-gradient(180deg, rgba(20,16,28,0.7) 0%, rgba(12,10,18,0.85) 100%)',
+                    boxShadow: '0 12px 36px rgba(0,0,0,0.4)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+                        <div style={{
+                          width: '32px', height: '32px', borderRadius: '10px',
+                          background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        }}>
+                          <Heart size={16} color="var(--red)" fill="var(--red)" />
+                        </div>
+                        <div>
+                          <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: '#fff' }}>Favorites Showcase</h3>
+                          <span style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 600 }}>Top 6 cinematic masterpieces</span>
+                        </div>
                       </div>
                       <button
                         onClick={() => handleOpenCustomizer('showcase')}
-                        style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                        style={{
+                          background: 'rgba(255,255,255,0.04)',
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          borderRadius: '20px',
+                          padding: '6px 14px',
+                          color: 'var(--accent)',
+                          fontSize: '12px',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          transition: 'all 0.15s ease'
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.background = 'rgba(136,8,8,0.15)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
                       >
-                        Edit Slots →
+                        <Edit2 size={12} /> Edit Showcase Slots
                       </button>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '10px' }}>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px' }}>
                       {Array.from({ length: 6 }).map((_, i) => {
                         const fav = (currentUser?.favorites || [])[i];
                         return (
-                          <div key={i} style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--surface-solid)' }}>
+                          <div
+                            key={i}
+                            style={{
+                              borderRadius: '12px',
+                              overflow: 'hidden',
+                              border: fav ? '1px solid rgba(255,255,255,0.14)' : '1.5px dashed rgba(255,255,255,0.12)',
+                              background: fav ? '#0a0812' : 'rgba(255,255,255,0.02)',
+                              transition: 'transform 0.2s cubic-bezier(0.4,0,0.2,1), box-shadow 0.2s ease, border-color 0.2s ease',
+                              cursor: fav ? 'pointer' : 'default',
+                              position: 'relative'
+                            }}
+                            onClick={() => {
+                              if (fav && onMovieClick) onMovieClick(fav.tmdb_id || fav.id, fav.media_type);
+                            }}
+                            onMouseEnter={e => {
+                              if (fav) {
+                                e.currentTarget.style.transform = 'translateY(-4px) scale(1.02)';
+                                e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.6)';
+                                e.currentTarget.style.borderColor = 'var(--accent)';
+                              }
+                            }}
+                            onMouseLeave={e => {
+                              if (fav) {
+                                e.currentTarget.style.transform = '';
+                                e.currentTarget.style.boxShadow = '';
+                                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)';
+                              }
+                            }}
+                          >
                             <div style={{ aspectRatio: '2/3', position: 'relative', overflow: 'hidden' }}>
                               {fav ? (
                                 <>
-                                  <img src={`https://image.tmdb.org/t/p/w300${fav.poster_path}`} alt={fav.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
-                                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%)', padding: '14px 6px 5px' }}>
-                                    <div style={{ fontSize: '9px', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>{fav.title}</div>
-                                    {fav.score && <div style={{ fontSize: '9px', color: 'var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px', fontWeight: 800 }}>★ {Number(fav.score).toFixed(1)}</div>}
+                                  <img
+                                    src={`https://image.tmdb.org/t/p/w300${fav.poster_path}`}
+                                    alt={fav.title}
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                    loading="lazy"
+                                  />
+                                  <div style={{
+                                    position: 'absolute',
+                                    top: '6px',
+                                    left: '6px',
+                                    background: 'rgba(0,0,0,0.7)',
+                                    backdropFilter: 'blur(6px)',
+                                    padding: '1px 6px',
+                                    borderRadius: '6px',
+                                    fontSize: '9.5px',
+                                    fontWeight: 900,
+                                    color: 'rgba(255,255,255,0.7)'
+                                  }}>
+                                    0{i + 1}
+                                  </div>
+                                  <div style={{
+                                    position: 'absolute',
+                                    bottom: 0,
+                                    left: 0,
+                                    right: 0,
+                                    background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 60%, transparent 100%)',
+                                    padding: '20px 8px 8px'
+                                  }}>
+                                    <div style={{ fontSize: '10px', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center', color: '#fff' }}>
+                                      {fav.title}
+                                    </div>
+                                    {fav.score && (
+                                      <div style={{ fontSize: '9.5px', color: 'var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px', fontWeight: 900, marginTop: '2px' }}>
+                                        <Star size={10} fill="currentColor" /> {Number(fav.score).toFixed(1)}
+                                      </div>
+                                    )}
                                   </div>
                                 </>
                               ) : (
-                                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', opacity: 0.12 }}>🎬</div>
+                                <div
+                                  style={{
+                                    height: '100%',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '6px',
+                                    color: 'rgba(255,255,255,0.25)',
+                                    cursor: 'pointer'
+                                  }}
+                                  onClick={() => handleOpenCustomizer('showcase')}
+                                >
+                                  <div style={{ fontSize: '18px', opacity: 0.5 }}>🎬</div>
+                                  <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.04em' }}>Slot {i + 1}</div>
+                                </div>
                               )}
                             </div>
                           </div>
@@ -1105,8 +1396,8 @@ export default function ProfileTab({
                       })}
                     </div>
                     {(currentUser?.favorites || []).length === 0 && (
-                      <div style={{ textAlign: 'center', color: 'var(--text-dim)', fontSize: '12px', marginTop: '10px' }}>
-                        Click Customize at the top of the page to assign films to your showcase slots.
+                      <div style={{ textAlign: 'center', color: 'var(--text-dim)', fontSize: '12px', marginTop: '16px' }}>
+                        Click <strong>Edit Showcase Slots</strong> above to assign your 6 all-time favorite films.
                       </div>
                     )}
                   </div>
