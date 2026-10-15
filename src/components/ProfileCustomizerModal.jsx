@@ -6,7 +6,6 @@ import {
   Crown, ExternalLink, RefreshCw
 } from 'lucide-react';
 import AvatarWithBorder, { DEFAULT_GREY_AVATAR } from './AvatarWithBorder';
-import AnimatedBannerBackground, { ALL_ANIMATED_BANNERS } from './AnimatedBannerBackground';
 import { BORDER_STYLES, BADGE_COLORS } from '../utils/achievements';
 
 const TMDB_KEY = '6a2fd6b9b1bb3befbb9f14c203732225';
@@ -34,52 +33,52 @@ export const CURATED_MOVIE_AVATARS = [
 
 export const CINEMATIC_PRESET_BANNERS = [
   // Sci-Fi & Cyberpunk
-  { name: 'Interstellar: Gargantua', movie: 'Interstellar', tag: 'Sci-Fi Odyssey', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/8sNiAPPYU14PUepFNeSNGUTiHW.jpg' },
-  { name: 'Blade Runner 2049: Neon Vegas', movie: 'Blade Runner 2049', tag: 'Cyberpunk Noir', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/gNdLJU9TxrpGx4dkZidjys3fyy0.jpg' },
-  { name: 'Dune: Part Two: Arrakis Sunset', movie: 'Dune: Part Two', tag: 'Desert Epic', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/eZ239CUp1d6OryZEBPnO2n87gMG.jpg' },
-  { name: 'The Matrix: Digital Lobby', movie: 'The Matrix', tag: 'Cyber Action', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/tlm8UkiQsitc8rSuIAscQDCnP8d.jpg' },
-  { name: '2001: A Space Odyssey: Monolith', movie: '2001: A Space Odyssey', tag: 'Cosmic Cinema', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/w5IDXtifKntw0ajv2co7jFlTQDM.jpg' },
-  { name: 'Blade Runner: Tyrell Pyramid', movie: 'Blade Runner (1982)', tag: 'Future Noir', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/2spEHYDcyE9r9mS7AFEscfKVDzO.jpg' },
-  { name: 'TRON: Legacy: The Grid', movie: 'TRON: Legacy', tag: 'Neon Grid', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/uUa6jgSr5BQpcBhhaz1PV1JhSa4.jpg' },
-  { name: 'Star Wars: The Empire Strikes Back', movie: 'The Empire Strikes Back', tag: 'Space Opera', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/k9pshruhCpJAdH9RaGJO6jaWQ4X.jpg' },
-  { name: 'Alien: Nostromo Derelict', movie: 'Alien', tag: 'Sci-Fi Horror', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/AmR3JG1VQVxU8TfAvljUhfSFUOx.jpg' },
-  { name: 'Back to the Future: Twin Pines Mall', movie: 'Back to the Future', tag: '80s Time Machine', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/5bzPWQ2dFUl2aZKkp7ILJVVkRed.jpg' },
+  { name: 'Interstellar: Gargantua', movie: 'Interstellar', tag: 'Sci-Fi Odyssey', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w1280/8sNiAPPYU14PUepFNeSNGUTiHW.jpg' },
+  { name: 'Blade Runner 2049: Neon Vegas', movie: 'Blade Runner 2049', tag: 'Cyberpunk Noir', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w1280/gNdLJU9TxrpGx4dkZidjys3fyy0.jpg' },
+  { name: 'Dune: Part Two: Arrakis Sunset', movie: 'Dune: Part Two', tag: 'Desert Epic', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w1280/eZ239CUp1d6OryZEBPnO2n87gMG.jpg' },
+  { name: 'The Matrix: Digital Lobby', movie: 'The Matrix', tag: 'Cyber Action', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w1280/tlm8UkiQsitc8rSuIAscQDCnP8d.jpg' },
+  { name: '2001: A Space Odyssey: Monolith', movie: '2001: A Space Odyssey', tag: 'Cosmic Cinema', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w1280/w5IDXtifKntw0ajv2co7jFlTQDM.jpg' },
+  { name: 'Blade Runner: Tyrell Pyramid', movie: 'Blade Runner (1982)', tag: 'Future Noir', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w1280/2spEHYDcyE9r9mS7AFEscfKVDzO.jpg' },
+  { name: 'TRON: Legacy: The Grid', movie: 'TRON: Legacy', tag: 'Neon Grid', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w1280/uUa6jgSr5BQpcBhhaz1PV1JhSa4.jpg' },
+  { name: 'Star Wars: The Empire Strikes Back', movie: 'The Empire Strikes Back', tag: 'Space Opera', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w1280/k9pshruhCpJAdH9RaGJO6jaWQ4X.jpg' },
+  { name: 'Alien: Nostromo Derelict', movie: 'Alien', tag: 'Sci-Fi Horror', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w1280/AmR3JG1VQVxU8TfAvljUhfSFUOx.jpg' },
+  { name: 'Back to the Future: Twin Pines Mall', movie: 'Back to the Future', tag: '80s Time Machine', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w1280/5bzPWQ2dFUl2aZKkp7ILJVVkRed.jpg' },
 
   // Superhero & Modern Action
-  { name: 'The Dark Knight: Gotham Overlook', movie: 'The Dark Knight', tag: 'Gotham Vigilante', category: 'Action', url: 'https://image.tmdb.org/t/p/original/9FE5eD92WfVCiivM9Pq9GVSrlWk.jpg' },
-  { name: 'The Batman: Red Flare', movie: 'The Batman', tag: 'Neo-Noir Hero', category: 'Action', url: 'https://image.tmdb.org/t/p/original/rvtdN5XkWAfGX6xDuPL6yYS2seK.jpg' },
-  { name: 'Spider-Verse: Multiverse Leap', movie: 'Spider-Man: Across the Spider-Verse', tag: 'Multiverse Marvel', category: 'Action', url: 'https://image.tmdb.org/t/p/original/kVd3a9YeLGkoeR50jGEXM6EqseS.jpg' },
-  { name: 'Mad Max: Fury Road: Sandstorm', movie: 'Mad Max: Fury Road', tag: 'Wasteland Action', category: 'Action', url: 'https://image.tmdb.org/t/p/original/gqrnQA6Xppdl8vIb2eJc58VC1tW.jpg' },
-  { name: 'John Wick: Chapter 4: Neon Duel', movie: 'John Wick: Chapter 4', tag: 'Gun-Fu Master', category: 'Action', url: 'https://image.tmdb.org/t/p/original/7I6VUdPj6tQECNHdviJkUHD2u89.jpg' },
-  { name: 'Top Gun: Maverick: Supersonic Flight', movie: 'Top Gun: Maverick', tag: 'Aviation Thrill', category: 'Action', url: 'https://image.tmdb.org/t/p/original/AaV1YIdWKnjAIAOe8UUKBFm327v.jpg' },
-  { name: 'Gladiator: Colosseum Glory', movie: 'Gladiator', tag: 'Roman Epic', category: 'Action', url: 'https://image.tmdb.org/t/p/original/Ar7QuJ7sJEiC0oP3I8fKBKIQD9u.jpg' },
-  { name: 'Avengers: Endgame: Final Stand', movie: 'Avengers: Endgame', tag: 'Marvel Apex', category: 'Action', url: 'https://image.tmdb.org/t/p/original/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg' },
-  { name: 'Kill Bill: Vol. 1: House of Blue Leaves', movie: 'Kill Bill: Vol. 1', tag: 'Martial Revenge', category: 'Action', url: 'https://image.tmdb.org/t/p/original/iffzIhuLAO38Po6sh1s6ZEVwlNL.jpg' },
-  { name: 'LOTR: The Return of the King', movie: 'The Lord of the Rings: The Return of the King', tag: 'Fantasy Pinnacle', category: 'Action', url: 'https://image.tmdb.org/t/p/original/ctiw6FZK4N36LmkjSklWEbuvlq9.jpg' },
-  { name: 'LOTR: Fellowship of the Ring: Argonath', movie: 'The Lord of the Rings: The Fellowship of the Ring', tag: 'Tolkien Fantasy', category: 'Action', url: 'https://image.tmdb.org/t/p/original/oiwc338EoBgS4sEI2ixAny4KQKg.jpg' },
+  { name: 'The Dark Knight: Gotham Overlook', movie: 'The Dark Knight', tag: 'Gotham Vigilante', category: 'Action', url: 'https://image.tmdb.org/t/p/w1280/9FE5eD92WfVCiivM9Pq9GVSrlWk.jpg' },
+  { name: 'The Batman: Red Flare', movie: 'The Batman', tag: 'Neo-Noir Hero', category: 'Action', url: 'https://image.tmdb.org/t/p/w1280/rvtdN5XkWAfGX6xDuPL6yYS2seK.jpg' },
+  { name: 'Spider-Verse: Multiverse Leap', movie: 'Spider-Man: Across the Spider-Verse', tag: 'Multiverse Marvel', category: 'Action', url: 'https://image.tmdb.org/t/p/w1280/kVd3a9YeLGkoeR50jGEXM6EqseS.jpg' },
+  { name: 'Mad Max: Fury Road: Sandstorm', movie: 'Mad Max: Fury Road', tag: 'Wasteland Action', category: 'Action', url: 'https://image.tmdb.org/t/p/w1280/gqrnQA6Xppdl8vIb2eJc58VC1tW.jpg' },
+  { name: 'John Wick: Chapter 4: Neon Duel', movie: 'John Wick: Chapter 4', tag: 'Gun-Fu Master', category: 'Action', url: 'https://image.tmdb.org/t/p/w1280/7I6VUdPj6tQECNHdviJkUHD2u89.jpg' },
+  { name: 'Top Gun: Maverick: Supersonic Flight', movie: 'Top Gun: Maverick', tag: 'Aviation Thrill', category: 'Action', url: 'https://image.tmdb.org/t/p/w1280/AaV1YIdWKnjAIAOe8UUKBFm327v.jpg' },
+  { name: 'Gladiator: Colosseum Glory', movie: 'Gladiator', tag: 'Roman Epic', category: 'Action', url: 'https://image.tmdb.org/t/p/w1280/Ar7QuJ7sJEiC0oP3I8fKBKIQD9u.jpg' },
+  { name: 'Avengers: Endgame: Final Stand', movie: 'Avengers: Endgame', tag: 'Marvel Apex', category: 'Action', url: 'https://image.tmdb.org/t/p/w1280/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg' },
+  { name: 'Kill Bill: Vol. 1: House of Blue Leaves', movie: 'Kill Bill: Vol. 1', tag: 'Martial Revenge', category: 'Action', url: 'https://image.tmdb.org/t/p/w1280/iffzIhuLAO38Po6sh1s6ZEVwlNL.jpg' },
+  { name: 'LOTR: The Return of the King', movie: 'The Lord of the Rings: The Return of the King', tag: 'Fantasy Pinnacle', category: 'Action', url: 'https://image.tmdb.org/t/p/w1280/ctiw6FZK4N36LmkjSklWEbuvlq9.jpg' },
+  { name: 'LOTR: Fellowship of the Ring: Argonath', movie: 'The Lord of the Rings: The Fellowship of the Ring', tag: 'Tolkien Fantasy', category: 'Action', url: 'https://image.tmdb.org/t/p/w1280/oiwc338EoBgS4sEI2ixAny4KQKg.jpg' },
 
   // Auteur, Drama & Thriller
-  { name: 'Oppenheimer: Trinity Wave', movie: 'Oppenheimer', tag: 'Atomic Drama', category: 'Drama', url: 'https://image.tmdb.org/t/p/original/neeNHeXjMF5fXoCJRsOmkNGC7q.jpg' },
-  { name: 'Inception: Folded Paris', movie: 'Inception', tag: 'Mind Heist', category: 'Drama', url: 'https://image.tmdb.org/t/p/original/8ZTVqvKDQ8emSGUEMjsS4yHAwrp.jpg' },
-  { name: 'Pulp Fiction: Jack Rabbit Slims', movie: 'Pulp Fiction', tag: 'Tarantino Cult', category: 'Crime & Noir', url: 'https://image.tmdb.org/t/p/original/suaEOtk1N1sgg2MTM7oZd2cfVp3.jpg' },
-  { name: 'Fight Club: Collapse', movie: 'Fight Club', tag: 'Psychological Cult', category: 'Drama', url: 'https://image.tmdb.org/t/p/original/c6OLXfKAk5BKeR6broC8pYiCquX.jpg' },
-  { name: 'The Godfather: Corleone Estate', movie: 'The Godfather', tag: 'Cinema Royalty', category: 'Crime & Noir', url: 'https://image.tmdb.org/t/p/original/ejdD20cdHNFAYAN2DlqPToXKyzx.jpg' },
-  { name: 'Parasite: The Glass House', movie: 'Parasite', tag: 'Palme d\'Or Masterpiece', category: 'Drama', url: 'https://image.tmdb.org/t/p/original/TU9NIjwzjoKPwQHoHshkFcQUCG.jpg' },
-  { name: 'La La Land: Griffith Twilight', movie: 'La La Land', tag: 'Hollywood Musical', category: 'Drama', url: 'https://image.tmdb.org/t/p/original/nlPCdZlHtRNcF6C9hzUH4ebmV1w.jpg' },
-  { name: 'The Shining: Overlook Hotel', movie: 'The Shining', tag: 'Kubrick Horror', category: 'Drama', url: 'https://image.tmdb.org/t/p/original/AdKA2F1SzYPhSZdEbjH1Zh75UVQ.jpg' },
-  { name: 'Apocalypse Now: Ride of the Valkyries', movie: 'Apocalypse Now', tag: 'War Epic', category: 'Drama', url: 'https://image.tmdb.org/t/p/original/49fzLedFVKgGgFChLMuulDJBY1c.jpg' },
-  { name: 'GoodFellas: Copacabana', movie: 'GoodFellas', tag: 'Scorsese Mob', category: 'Crime & Noir', url: 'https://image.tmdb.org/t/p/original/gILte6Zd7m1YneIr6MVhh30S9pr.jpg' },
-  { name: 'Drive: Synthwave Los Angeles', movie: 'Drive', tag: 'Neo-Noir Synth', category: 'Crime & Noir', url: 'https://image.tmdb.org/t/p/original/hoyAALgfmjMEK7O1wZ4r8wT91RP.jpg' },
-  { name: 'Taxi Driver: 42nd Street Rain', movie: 'Taxi Driver', tag: 'Urban Isolation', category: 'Crime & Noir', url: 'https://image.tmdb.org/t/p/original/9uddYYTNcLWpzUkl5iw1RUYhLhY.jpg' },
-  { name: 'The Grand Budapest Hotel: Facade', movie: 'The Grand Budapest Hotel', tag: 'Wes Anderson Pastel', category: 'Drama', url: 'https://image.tmdb.org/t/p/original/jK65srQczOKTpW62wPxwwKztGgE.jpg' },
-  { name: 'Whiplash: Caravan Solo', movie: 'Whiplash', tag: 'Obsession & Jazz', category: 'Drama', url: 'https://image.tmdb.org/t/p/original/fRGxZuo7jJUWQsVg9PREb98Aclp.jpg' },
-  { name: 'Brazil: Bureaucratic Dystopia', movie: 'Brazil', tag: 'Gilliam Surrealism', category: 'Drama', url: 'https://image.tmdb.org/t/p/original/9IYyCLf5NNAQFK9pNtqzEU9HWzM.jpg' },
+  { name: 'Oppenheimer: Trinity Wave', movie: 'Oppenheimer', tag: 'Atomic Drama', category: 'Drama', url: 'https://image.tmdb.org/t/p/w1280/neeNHeXjMF5fXoCJRsOmkNGC7q.jpg' },
+  { name: 'Inception: Folded Paris', movie: 'Inception', tag: 'Mind Heist', category: 'Drama', url: 'https://image.tmdb.org/t/p/w1280/8ZTVqvKDQ8emSGUEMjsS4yHAwrp.jpg' },
+  { name: 'Pulp Fiction: Jack Rabbit Slims', movie: 'Pulp Fiction', tag: 'Tarantino Cult', category: 'Crime & Noir', url: 'https://image.tmdb.org/t/p/w1280/suaEOtk1N1sgg2MTM7oZd2cfVp3.jpg' },
+  { name: 'Fight Club: Collapse', movie: 'Fight Club', tag: 'Psychological Cult', category: 'Drama', url: 'https://image.tmdb.org/t/p/w1280/c6OLXfKAk5BKeR6broC8pYiCquX.jpg' },
+  { name: 'The Godfather: Corleone Estate', movie: 'The Godfather', tag: 'Cinema Royalty', category: 'Crime & Noir', url: 'https://image.tmdb.org/t/p/w1280/ejdD20cdHNFAYAN2DlqPToXKyzx.jpg' },
+  { name: 'Parasite: The Glass House', movie: 'Parasite', tag: 'Palme d\'Or Masterpiece', category: 'Drama', url: 'https://image.tmdb.org/t/p/w1280/TU9NIjwzjoKPwQHoHshkFcQUCG.jpg' },
+  { name: 'La La Land: Griffith Twilight', movie: 'La La Land', tag: 'Hollywood Musical', category: 'Drama', url: 'https://image.tmdb.org/t/p/w1280/nlPCdZlHtRNcF6C9hzUH4ebmV1w.jpg' },
+  { name: 'The Shining: Overlook Hotel', movie: 'The Shining', tag: 'Kubrick Horror', category: 'Drama', url: 'https://image.tmdb.org/t/p/w1280/AdKA2F1SzYPhSZdEbjH1Zh75UVQ.jpg' },
+  { name: 'Apocalypse Now: Ride of the Valkyries', movie: 'Apocalypse Now', tag: 'War Epic', category: 'Drama', url: 'https://image.tmdb.org/t/p/w1280/49fzLedFVKgGgFChLMuulDJBY1c.jpg' },
+  { name: 'GoodFellas: Copacabana', movie: 'GoodFellas', tag: 'Scorsese Mob', category: 'Crime & Noir', url: 'https://image.tmdb.org/t/p/w1280/gILte6Zd7m1YneIr6MVhh30S9pr.jpg' },
+  { name: 'Drive: Synthwave Los Angeles', movie: 'Drive', tag: 'Neo-Noir Synth', category: 'Crime & Noir', url: 'https://image.tmdb.org/t/p/w1280/hoyAALgfmjMEK7O1wZ4r8wT91RP.jpg' },
+  { name: 'Taxi Driver: 42nd Street Rain', movie: 'Taxi Driver', tag: 'Urban Isolation', category: 'Crime & Noir', url: 'https://image.tmdb.org/t/p/w1280/9uddYYTNcLWpzUkl5iw1RUYhLhY.jpg' },
+  { name: 'The Grand Budapest Hotel: Facade', movie: 'The Grand Budapest Hotel', tag: 'Wes Anderson Pastel', category: 'Drama', url: 'https://image.tmdb.org/t/p/w1280/jK65srQczOKTpW62wPxwwKztGgE.jpg' },
+  { name: 'Whiplash: Caravan Solo', movie: 'Whiplash', tag: 'Obsession & Jazz', category: 'Drama', url: 'https://image.tmdb.org/t/p/w1280/fRGxZuo7jJUWQsVg9PREb98Aclp.jpg' },
+  { name: 'Brazil: Bureaucratic Dystopia', movie: 'Brazil', tag: 'Gilliam Surrealism', category: 'Drama', url: 'https://image.tmdb.org/t/p/w1280/9IYyCLf5NNAQFK9pNtqzEU9HWzM.jpg' },
 
   // Animation & Fantasy
-  { name: 'Spirited Away: Sea Railway', movie: 'Spirited Away', tag: 'Studio Ghibli', category: 'Animation', url: 'https://image.tmdb.org/t/p/original/6oaL4DP75yABrd5EbC4H2zq5ghc.jpg' },
-  { name: 'Princess Mononoke: Forest Spirit', movie: 'Princess Mononoke', tag: 'Ghibli Mythos', category: 'Animation', url: 'https://image.tmdb.org/t/p/original/gl0jzn4BupSbL2qMVeqrjKkF9Js.jpg' },
-  { name: 'Howl\'s Moving Castle: Flower Field', movie: 'Howl\'s Moving Castle', tag: 'Ghibli Romance', category: 'Animation', url: 'https://image.tmdb.org/t/p/original/nv5wwZou159v5OC61i4ElR7OqyY.jpg' },
-  { name: 'Akira: Neo-Tokyo Highway', movie: 'Akira', tag: 'Anime Legend', category: 'Animation', url: 'https://image.tmdb.org/t/p/original/fK40VGYIm7hmKrLJ26fgPQU0qRG.jpg' }
+  { name: 'Spirited Away: Sea Railway', movie: 'Spirited Away', tag: 'Studio Ghibli', category: 'Animation', url: 'https://image.tmdb.org/t/p/w1280/6oaL4DP75yABrd5EbC4H2zq5ghc.jpg' },
+  { name: 'Princess Mononoke: Forest Spirit', movie: 'Princess Mononoke', tag: 'Ghibli Mythos', category: 'Animation', url: 'https://image.tmdb.org/t/p/w1280/gl0jzn4BupSbL2qMVeqrjKkF9Js.jpg' },
+  { name: 'Howl\'s Moving Castle: Flower Field', movie: 'Howl\'s Moving Castle', tag: 'Ghibli Romance', category: 'Animation', url: 'https://image.tmdb.org/t/p/w1280/nv5wwZou159v5OC61i4ElR7OqyY.jpg' },
+  { name: 'Akira: Neo-Tokyo Highway', movie: 'Akira', tag: 'Anime Legend', category: 'Animation', url: 'https://image.tmdb.org/t/p/w1280/fK40VGYIm7hmKrLJ26fgPQU0qRG.jpg' }
 ];
 
 export default function ProfileCustomizerModal({
@@ -113,7 +112,6 @@ export default function ProfileCustomizerModal({
 
   // Banner studio states
   const [bannerMode, setBannerMode] = useState('presets'); // 'presets' | 'tmdb' | 'upload'
-  const [presetCategory, setPresetCategory] = useState('stills'); // 'stills' | 'motion'
   const [presetSearchQuery, setPresetSearchQuery] = useState('');
   const [presetGenreFilter, setPresetGenreFilter] = useState('All');
   const [tmdbSearchQuery, setTmdbSearchQuery] = useState('');
@@ -141,8 +139,8 @@ export default function ProfileCustomizerModal({
       setUsername(currentUser?.username || '');
       setBio(currentUser?.bio || '');
       setAvatar(currentUser?.avatar || '');
-      setEquippedBorder(currentUser?.equippedBorder || 'none');
-      setBannerUrl(currentUser?.bannerUrl || localStorage.getItem('cinelog_banner_url') || '');
+      const rawBanner = currentUser?.bannerUrl || localStorage.getItem('cinelog_banner_url') || '';
+      setBannerUrl(rawBanner.startsWith('animated-') ? '' : rawBanner);
       setBannerFitMode(currentUser?.bannerFitMode || localStorage.getItem('cinelog_banner_fit') || 'cover');
       const resolvedPos = currentUser?.bannerPosPercent !== undefined
         ? currentUser.bannerPosPercent
@@ -357,8 +355,6 @@ export default function ProfileCustomizerModal({
                       userSelect: 'none'
                     }}
                   />
-                ) : (bannerUrl && bannerUrl.startsWith('animated-')) ? (
-                  <AnimatedBannerBackground bannerId={bannerUrl} />
                 ) : (
                   <div style={{
                     width: '100%',
@@ -482,7 +478,7 @@ export default function ProfileCustomizerModal({
               </div>
 
               {/* Vertical slider with visible glowing track bar */}
-              {bannerFitMode === 'cover' && !bannerUrl.startsWith('animated-') && (
+              {bannerFitMode === 'cover' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700 }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>▲ Top</span>
@@ -629,7 +625,7 @@ export default function ProfileCustomizerModal({
                     padding: '4px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.08)'
                   }}>
                     {[
-                      { id: 'presets', label: 'Presets & Live Motion', icon: Sparkles },
+                      { id: 'presets', label: 'Iconic Cinema Stills', icon: Sparkles },
                       { id: 'tmdb', label: 'Search TMDB Backdrops', icon: Search },
                       { id: 'upload', label: 'Upload & Direct Link', icon: Upload }
                     ].map(sub => (
@@ -653,205 +649,112 @@ export default function ProfileCustomizerModal({
                     ))}
                   </div>
 
-                  {/* Mode 1: Presets & Live Motion */}
+                  {/* Mode 1: Iconic Cinema Stills */}
                   {bannerMode === 'presets' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {/* Search bar for preset backdrops */}
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <button
-                          type="button"
-                          onClick={() => setPresetCategory('stills')}
-                          style={{
-                            padding: '6px 14px', borderRadius: '20px', fontSize: '11.5px', fontWeight: 800,
-                            background: presetCategory === 'stills' ? 'rgba(255,255,255,0.1)' : 'transparent',
-                            color: presetCategory === 'stills' ? '#fff' : 'var(--text-dim)',
-                            border: presetCategory === 'stills' ? '1px solid rgba(255,255,255,0.2)' : '1px solid transparent',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          🎬 Cinematic Stills ({CINEMATIC_PRESET_BANNERS.length})
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setPresetCategory('motion')}
-                          style={{
-                            padding: '6px 14px', borderRadius: '20px', fontSize: '11.5px', fontWeight: 800,
-                            background: presetCategory === 'motion' ? 'rgba(255,255,255,0.1)' : 'transparent',
-                            color: presetCategory === 'motion' ? '#fff' : 'var(--text-dim)',
-                            border: presetCategory === 'motion' ? '1px solid rgba(255,255,255,0.2)' : '1px solid transparent',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          ✨ Live Motion Banners ({ALL_ANIMATED_BANNERS.length})
-                        </button>
+                        <div style={{ position: 'relative', flex: 1 }}>
+                          <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
+                          <input
+                            type="text"
+                            placeholder="Search backdrops (e.g. Dune, Batman, Ghibli, Noir, Interstellar, Pulp Fiction)..."
+                            value={presetSearchQuery}
+                            onChange={e => setPresetSearchQuery(e.target.value)}
+                            className="form-input"
+                            style={{ paddingLeft: '34px', fontSize: '12px', height: '36px' }}
+                          />
+                          {presetSearchQuery && (
+                            <button
+                              type="button"
+                              onClick={() => setPresetSearchQuery('')}
+                              style={{
+                                position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
+                                background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', display: 'flex'
+                              }}
+                            >
+                              <X size={14} />
+                            </button>
+                          )}
+                        </div>
                       </div>
 
-                      {/* Cinematic Stills Grid with Search & Filters */}
-                      {presetCategory === 'stills' && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                          {/* Search bar for preset backdrops */}
-                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                            <div style={{ position: 'relative', flex: 1 }}>
-                              <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
-                              <input
-                                type="text"
-                                placeholder="Search backdrops (e.g. Dune, Batman, Ghibli, Noir, Interstellar, Pulp Fiction)..."
-                                value={presetSearchQuery}
-                                onChange={e => setPresetSearchQuery(e.target.value)}
-                                className="form-input"
-                                style={{ paddingLeft: '34px', fontSize: '12px', height: '36px' }}
+                      {/* Quick genre filter chips */}
+                      <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '2px' }}>
+                        {['All', 'Sci-Fi', 'Action', 'Drama', 'Crime & Noir', 'Animation'].map(cat => (
+                          <button
+                            key={cat}
+                            type="button"
+                            onClick={() => setPresetGenreFilter(cat)}
+                            style={{
+                              padding: '4px 10px', borderRadius: '14px', fontSize: '11px', fontWeight: 700,
+                              background: presetGenreFilter === cat ? 'rgba(192,57,43,0.3)' : 'rgba(255,255,255,0.04)',
+                              color: presetGenreFilter === cat ? '#fff' : 'var(--text-dim)',
+                              border: presetGenreFilter === cat ? '1px solid var(--accent)' : '1px solid rgba(255,255,255,0.08)',
+                              cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s ease'
+                            }}
+                          >
+                            {cat}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Compact 3-to-4 Column Grid */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '10px' }}>
+                        {CINEMATIC_PRESET_BANNERS.filter(preset => {
+                          const matchesSearch = !presetSearchQuery.trim() ||
+                            preset.name.toLowerCase().includes(presetSearchQuery.toLowerCase()) ||
+                            (preset.movie && preset.movie.toLowerCase().includes(presetSearchQuery.toLowerCase())) ||
+                            (preset.tag && preset.tag.toLowerCase().includes(presetSearchQuery.toLowerCase())) ||
+                            (preset.category && preset.category.toLowerCase().includes(presetSearchQuery.toLowerCase()));
+                          const matchesGenre = presetGenreFilter === 'All' || preset.category === presetGenreFilter;
+                          return matchesSearch && matchesGenre;
+                        }).map(preset => {
+                          const isSelected = bannerUrl === preset.url;
+                          return (
+                            <div
+                              key={preset.name}
+                              onClick={() => { setBannerUrl(preset.url); handleBannerFitChange('cover'); }}
+                              style={{
+                                borderRadius: '10px', overflow: 'hidden', cursor: 'pointer',
+                                border: isSelected ? '2px solid var(--accent)' : '1px solid rgba(255,255,255,0.1)',
+                                boxShadow: isSelected ? '0 0 16px rgba(192,57,43,0.6)' : 'none',
+                                position: 'relative', background: '#120f20', transition: 'all 0.15s ease',
+                                aspectRatio: '16/9'
+                              }}
+                              onMouseEnter={e => { if (!isSelected) e.currentTarget.style.borderColor = 'rgba(255,255,255,0.35)'; }}
+                              onMouseLeave={e => { if (!isSelected) e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
+                            >
+                              <img
+                                src={preset.url.replace('/w1280/', '/w780/')}
+                                alt={preset.name}
+                                loading="lazy"
+                                decoding="async"
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                               />
-                              {presetSearchQuery && (
-                                <button
-                                  type="button"
-                                  onClick={() => setPresetSearchQuery('')}
-                                  style={{
-                                    position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
-                                    background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', display: 'flex'
-                                  }}
-                                >
-                                  <X size={14} />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Quick genre filter chips */}
-                          <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '2px' }}>
-                            {['All', 'Sci-Fi', 'Action', 'Drama', 'Crime & Noir', 'Animation'].map(cat => (
-                              <button
-                                key={cat}
-                                type="button"
-                                onClick={() => setPresetGenreFilter(cat)}
-                                style={{
-                                  padding: '4px 10px', borderRadius: '14px', fontSize: '11px', fontWeight: 700,
-                                  background: presetGenreFilter === cat ? 'rgba(192,57,43,0.3)' : 'rgba(255,255,255,0.04)',
-                                  color: presetGenreFilter === cat ? '#fff' : 'var(--text-dim)',
-                                  border: presetGenreFilter === cat ? '1px solid var(--accent)' : '1px solid rgba(255,255,255,0.08)',
-                                  cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s ease'
-                                }}
-                              >
-                                {cat}
-                              </button>
-                            ))}
-                          </div>
-
-                          {/* Compact 3-to-4 Column Grid */}
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '10px' }}>
-                            {CINEMATIC_PRESET_BANNERS.filter(preset => {
-                              const matchesSearch = !presetSearchQuery.trim() ||
-                                preset.name.toLowerCase().includes(presetSearchQuery.toLowerCase()) ||
-                                (preset.movie && preset.movie.toLowerCase().includes(presetSearchQuery.toLowerCase())) ||
-                                (preset.tag && preset.tag.toLowerCase().includes(presetSearchQuery.toLowerCase())) ||
-                                (preset.category && preset.category.toLowerCase().includes(presetSearchQuery.toLowerCase()));
-                              const matchesGenre = presetGenreFilter === 'All' || preset.category === presetGenreFilter;
-                              return matchesSearch && matchesGenre;
-                            }).map(preset => {
-                              const isSelected = bannerUrl === preset.url;
-                              return (
-                                <div
-                                  key={preset.name}
-                                  onClick={() => { setBannerUrl(preset.url); handleBannerFitChange('cover'); }}
-                                  style={{
-                                    borderRadius: '10px', overflow: 'hidden', cursor: 'pointer',
-                                    border: isSelected ? '2px solid var(--accent)' : '1px solid rgba(255,255,255,0.1)',
-                                    boxShadow: isSelected ? '0 0 16px rgba(192,57,43,0.6)' : 'none',
-                                    position: 'relative', background: '#120f20', transition: 'all 0.15s ease',
-                                    aspectRatio: '16/9'
-                                  }}
-                                  onMouseEnter={e => { if (!isSelected) e.currentTarget.style.borderColor = 'rgba(255,255,255,0.35)'; }}
-                                  onMouseLeave={e => { if (!isSelected) e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
-                                >
-                                  <img
-                                    src={preset.url}
-                                    alt={preset.name}
-                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                    loading="lazy"
-                                  />
-                                  <div style={{
-                                    position: 'absolute', bottom: 0, left: 0, right: 0,
-                                    background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 60%, transparent 100%)',
-                                    padding: '16px 8px 6px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end'
-                                  }}>
-                                    <div style={{ overflow: 'hidden', paddingRight: '4px' }}>
-                                      <div style={{ fontSize: '11px', fontWeight: 800, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                        {preset.name.split(':')[0]}
-                                      </div>
-                                      <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.65)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                        {preset.tag}
-                                      </div>
-                                    </div>
-                                    {isSelected && (
-                                      <div style={{ background: 'var(--accent)', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                        <Check size={11} color="#fff" />
-                                      </div>
-                                    )}
+                              <div style={{
+                                position: 'absolute', bottom: 0, left: 0, right: 0,
+                                background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 60%, transparent 100%)',
+                                padding: '16px 8px 6px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end'
+                              }}>
+                                <div style={{ overflow: 'hidden', paddingRight: '4px' }}>
+                                  <div style={{ fontSize: '11px', fontWeight: 800, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {preset.name.split(':')[0]}
+                                  </div>
+                                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.65)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {preset.tag}
                                   </div>
                                 </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Live Motion Banners Grid WITH COMPACT CARD PREVIEW */}
-                      {presetCategory === 'motion' && (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '10px' }}>
-                          {ALL_ANIMATED_BANNERS.map(item => {
-                            const isUnlocked = isCreator || (currentUser?.purchasedBanners || []).includes(item.id);
-                            const isSelected = bannerUrl === item.id;
-                            return (
-                              <div
-                                key={item.id}
-                                onClick={() => {
-                                  if (isUnlocked) setBannerUrl(item.id);
-                                }}
-                                style={{
-                                  height: '95px',
-                                  borderRadius: '10px',
-                                  overflow: 'hidden',
-                                  position: 'relative',
-                                  cursor: isUnlocked ? 'pointer' : 'default',
-                                  border: isSelected ? '2px solid var(--accent)' : '1px solid rgba(255,255,255,0.14)',
-                                  boxShadow: isSelected ? '0 0 16px var(--accent)' : '0 4px 12px rgba(0,0,0,0.4)',
-                                  transition: 'all 0.15s ease',
-                                  opacity: isUnlocked ? 1 : 0.65
-                                }}
-                              >
-                                {/* Active Live Canvas Preview */}
-                                <AnimatedBannerBackground bannerId={item.id} />
-
-                                {/* Glass Overlay with Title & Points */}
-                                <div style={{
-                                  position: 'absolute', bottom: 0, left: 0, right: 0,
-                                  background: 'linear-gradient(to top, rgba(10,8,16,0.95) 0%, rgba(10,8,16,0.5) 60%, transparent 100%)',
-                                  padding: '16px 8px 6px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end',
-                                  pointerEvents: 'none', zIndex: 10
-                                }}>
-                                  <div>
-                                    <div style={{ fontSize: '11px', fontWeight: 900, color: isSelected ? 'var(--accent)' : '#fff', textShadow: '0 2px 6px rgba(0,0,0,0.9)' }}>
-                                      {item.name}
-                                    </div>
-                                    <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.75)', fontWeight: 600 }}>
-                                      🪙 {item.cost} CinePoints
-                                    </div>
+                                {isSelected && (
+                                  <div style={{ background: 'var(--accent)', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                    <Check size={11} color="#fff" />
                                   </div>
-
-                                  {isSelected && (
-                                    <div style={{ background: 'var(--accent)', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                      <Check size={11} color="#fff" />
-                                    </div>
-                                  )}
-                                  {!isUnlocked && (
-                                    <span style={{ fontSize: '8.5px', background: 'rgba(0,0,0,0.85)', color: 'var(--gold)', padding: '2px 5px', borderRadius: '4px', fontWeight: 800 }}>
-                                      🔒 In Shop
-                                    </span>
-                                  )}
-                                </div>
+                                )}
                               </div>
-                            );
-                          })}
-                        </div>
-                      )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
 

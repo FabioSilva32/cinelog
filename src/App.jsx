@@ -379,7 +379,7 @@ function AppInner() {
                 bio: profile.bio || '',
                 favorites: profile.favorites || [],
                 equippedBorder: profile.equipped_border || localShop.equippedBorder || localStorage.getItem(`equipped_border_${session.user.id}`) || 'none',
-                bannerUrl: profile.banner_url || localShop.bannerUrl || localStorage.getItem(`cinelog_banner_url_${session.user.id}`) || localStorage.getItem('cinelog_banner_url') || '',
+                bannerUrl: ((profile.banner_url || localShop.bannerUrl || localStorage.getItem(`cinelog_banner_url_${session.user.id}`) || localStorage.getItem('cinelog_banner_url') || '').startsWith('animated-') ? '' : (profile.banner_url || localShop.bannerUrl || localStorage.getItem(`cinelog_banner_url_${session.user.id}`) || localStorage.getItem('cinelog_banner_url') || '')),
                 bannerFitMode: profile.banner_fit_mode || localShop.bannerFitMode || localStorage.getItem(`cinelog_banner_fit_${session.user.id}`) || localStorage.getItem('cinelog_banner_fit') || 'cover',
                 bannerPosPercent: profile.banner_pos_percent ?? localShop.bannerPosPercent ?? (localStorage.getItem(`cinelog_banner_pos_${session.user.id}`) !== null ? Number(localStorage.getItem(`cinelog_banner_pos_${session.user.id}`)) : (localStorage.getItem('cinelog_banner_pos') !== null ? Number(localStorage.getItem('cinelog_banner_pos')) : 20)),
                 spentCinePoints: profile.spent_cine_points ?? localShop.spentCinePoints ?? 0,

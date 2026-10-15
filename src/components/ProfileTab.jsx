@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import { ACHIEVEMENTS, BORDER_STYLES, BADGE_COLORS, isUserCreator } from '../utils/achievements';
 import AvatarWithBorder, { DEFAULT_GREY_AVATAR } from './AvatarWithBorder';
-import AnimatedBannerBackground, { ALL_ANIMATED_BANNERS } from './AnimatedBannerBackground';
 import { supabase } from '../supabaseClient';
 import StatsTab from './StatsTab';
 import WatchCalendarTab from './WatchCalendarTab';
@@ -743,8 +742,6 @@ export default function ProfileTab({
                       display: 'block'
                     }}
                   />
-                ) : viewedProfile?.bannerUrl?.startsWith('animated-') ? (
-                  <AnimatedBannerBackground bannerId={viewedProfile.bannerUrl} />
                 ) : (
                   <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #181818 0%, #101010 50%, #000000 100%)' }} />
                 )}
@@ -939,8 +936,6 @@ export default function ProfileTab({
                   display: 'block'
                 }}
               />
-            ) : currentUser?.bannerUrl && currentUser.bannerUrl.startsWith('animated-') ? (
-              <AnimatedBannerBackground bannerId={currentUser.bannerUrl} />
             ) : (
               <div style={{
                 width: '100%',
@@ -1744,51 +1739,7 @@ export default function ProfileTab({
                   </div>
                 </div>
 
-                {/* 2. Exclusive Animated Banners Shop */}
-                <div>
-                  <h4 style={{ fontSize: '14px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--accent)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <ImageIcon size={16} /> Live Animated Profile Banners
-                  </h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
-                    {ALL_ANIMATED_BANNERS.map(banner => {
-                      const isUnlocked = isCreator || (currentUser?.purchasedBanners || []).includes(banner.id);
-                      const isEquipped = (currentUser?.bannerUrl || '') === banner.id;
-                      return (
-                        <div key={banner.id} style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '14px', border: isEquipped ? '2px solid var(--accent)' : '1px solid var(--border)' }}>
-                          <div style={{ height: '75px', borderRadius: '8px', overflow: 'hidden', position: 'relative', border: '1px solid rgba(255,255,255,0.1)' }}>
-                            <AnimatedBannerBackground bannerId={banner.id} />
-                            <div style={{ position: 'absolute', bottom: '4px', left: '8px', fontSize: '10px', fontWeight: 800, color: '#fff', zIndex: 10, background: 'rgba(0,0,0,0.7)', padding: '2px 6px', borderRadius: '4px' }}>Live Motion</div>
-                          </div>
-                          <div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#fff' }}>{banner.name}</span>
-                              <span style={{ fontSize: '11px', color: 'var(--gold)', fontWeight: 800 }}>🪙 {banner.cost} pts</span>
-                            </div>
-                            <p style={{ fontSize: '11px', color: 'var(--text-dim)', margin: '4px 0 0', lineHeight: 1.4 }}>{banner.desc}</p>
-                          </div>
-                          {isEquipped ? (
-                            <button disabled className="btn" style={{ marginTop: 'auto', background: 'rgba(136,8,8,0.15)', border: '1px solid var(--accent)', color: 'var(--accent)', padding: '7px 0', fontSize: '12px', fontWeight: 800, borderRadius: '8px', cursor: 'default' }}>✓ Equipped</button>
-                          ) : isUnlocked ? (
-                            <button className="btn btn-secondary" onClick={() => { if (onUpdateProfile) onUpdateProfile({ bannerUrl: banner.id, bannerFitMode: 'cover' }); }} style={{ marginTop: 'auto', padding: '7px 0', fontSize: '12px', fontWeight: 800, borderRadius: '8px' }}>Equip Banner</button>
-                          ) : (
-                            <button className="btn btn-primary"
-                              onClick={() => {
-                                if (cinePoints < banner.cost) { alert("Not enough CinePoints!"); return; }
-                                const nextPurchased = [...(currentUser?.purchasedBanners || []), banner.id];
-                                const nextSpent = (currentUser?.spentCinePoints || 0) + banner.cost;
-                                if (onUpdateProfile) onUpdateProfile({ purchasedBanners: nextPurchased, spentCinePoints: nextSpent, bannerUrl: banner.id, bannerFitMode: 'cover' });
-                              }}
-                              style={{ marginTop: 'auto', padding: '7px 0', fontSize: '12px', fontWeight: 800, borderRadius: '8px' }}>
-                              Unlock ({banner.cost} pts)
-                            </button>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* 3. Exclusive Shop Borders */}
+                {/* 2. Exclusive Shop Borders */}
                 <div>
                   <h4 style={{ fontSize: '14px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--accent)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Award size={16} /> Exclusive Shop Avatar Borders
