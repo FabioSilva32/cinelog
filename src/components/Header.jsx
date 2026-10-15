@@ -4,6 +4,28 @@ import { isSupabaseConfigured } from '../supabaseClient';
 import { BORDER_STYLES } from '../utils/achievements';
 import AvatarWithBorder from './AvatarWithBorder';
 
+function BrandLogoMark({ size = 32 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" style={{ flexShrink: 0, display: 'block' }}>
+      <defs>
+        <linearGradient id="brandIrisGrad" x1="6" y1="6" x2="42" y2="42" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#ff3344" />
+          <stop offset="50%" stopColor="#c01525" />
+          <stop offset="100%" stopColor="#70060e" />
+        </linearGradient>
+        <linearGradient id="brandGoldCore" x1="18" y1="18" x2="30" y2="30" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fef08a" />
+          <stop offset="100%" stopColor="#f59e0b" />
+        </linearGradient>
+      </defs>
+      <rect width="48" height="48" rx="12" fill="#0d0a14" stroke="rgba(255,255,255,0.14)" strokeWidth="1.5" />
+      <path d="M36 15C32.8 10.2 27.5 7.5 21.5 8C12.8 8.8 6 16.3 6 25C6 34.4 13.6 42 23 42C29.6 42 35.2 38.2 38 32.5L29.5 28C27.8 30.5 24.8 32 21.5 31.5C17.2 30.8 13.8 27.2 14 22.8C14.2 18.5 17.8 15 22.2 15C25.5 15 28.5 16.5 30 19L36 15Z" fill="url(#brandIrisGrad)" />
+      <circle cx="24" cy="24" r="5" fill="url(#brandGoldCore)" />
+      <circle cx="24" cy="24" r="2.2" fill="#ffffff" />
+    </svg>
+  );
+}
+
 const NAV_GROUPS = [
   {
     title: 'Discover',
@@ -89,19 +111,7 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
               style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', userSelect: 'none', flexShrink: 0 }}
               title="CineLog — Go to Explore"
             >
-              <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                background: 'var(--accent)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                boxShadow: '0 2px 10px rgba(229,9,20,0.4)'
-              }}>
-                <Film size={18} color="#FFFFFF" />
-              </div>
+              <BrandLogoMark size={32} />
               <span style={{ color: '#FFFFFF', fontWeight: 900, fontSize: '21px', letterSpacing: '-0.5px' }}>
                 Cine<span style={{ color: 'var(--accent)' }}>Log</span>
               </span>
@@ -468,9 +478,7 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
         </button>
 
         <div className="logo-wrapper" onClick={() => handleNavClick('explore')} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-          <div style={{ width: '26px', height: '26px', borderRadius: '6px', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Film size={15} color="#fff" />
-          </div>
+          <BrandLogoMark size={26} />
           <span style={{ color: '#fff', fontWeight: 900, fontSize: '18px' }}>Cine<span style={{ color: 'var(--accent)' }}>Log</span></span>
         </div>
 
@@ -494,9 +502,7 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
           {/* Logo & Close button on Mobile */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
             <div className="logo-wrapper" onClick={() => handleNavClick('explore')} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-              <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Film size={16} color="#fff" />
-              </div>
+              <BrandLogoMark size={28} />
               <span style={{ color: '#fff', fontWeight: 900, fontSize: '19px' }}>Cine<span style={{ color: 'var(--accent)' }}>Log</span></span>
             </div>
 
