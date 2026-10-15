@@ -2,33 +2,34 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
   X, SlidersHorizontal, Image as ImageIcon, User, Award, Heart,
-  Upload, Search, Check, CheckCircle2, Trash2, Sparkles, Plus
+  Upload, Search, Check, CheckCircle2, Trash2, Sparkles, Plus,
+  Crown, ExternalLink, RefreshCw
 } from 'lucide-react';
 import AvatarWithBorder, { DEFAULT_GREY_AVATAR } from './AvatarWithBorder';
 import AnimatedBannerBackground, { ALL_ANIMATED_BANNERS } from './AnimatedBannerBackground';
-import { BORDER_STYLES } from '../utils/achievements';
+import { BORDER_STYLES, BADGE_COLORS } from '../utils/achievements';
 
 const TMDB_KEY = '6a2fd6b9b1bb3befbb9f14c203732225';
 
 export const CURATED_MOVIE_AVATARS = [
-  { id: 'spiderman', name: 'Spider-Man', movie: 'Spider-Verse', category: 'Action', url: 'https://images.unsplash.com/photo-1635805737707-575885ab0820?w=260&fit=crop&q=80' },
-  { id: 'batman', name: 'The Dark Knight', movie: 'Batman', category: 'Action', url: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=260&fit=crop&q=80' },
-  { id: 'neo', name: 'Neo', movie: 'The Matrix', category: 'Sci-Fi', url: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=260&fit=crop&q=80' },
-  { id: 'dune', name: 'Paul Atreides', movie: 'Dune: Part Two', category: 'Sci-Fi', url: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=260&fit=crop&q=80' },
-  { id: 'oppenheimer', name: 'J. Robert Oppenheimer', movie: 'Oppenheimer', category: 'Drama', url: 'https://images.unsplash.com/photo-1514565131-fce0801e5785?w=260&fit=crop&q=80' },
-  { id: 'joker', name: 'Arthur Fleck', movie: 'Joker', category: 'Drama', url: 'https://images.unsplash.com/photo-1568832359672-e36cf5d74f54?w=260&fit=crop&q=80' },
-  { id: 'officer_k', name: 'Officer K', movie: 'Blade Runner 2049', category: 'Sci-Fi', url: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=260&fit=crop&q=80' },
-  { id: 'killbill', name: 'The Bride', movie: 'Kill Bill', category: 'Action', url: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=260&fit=crop&q=80' },
-  { id: 'mia_wallace', name: 'Mia Wallace', movie: 'Pulp Fiction', category: 'Classics', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=260&fit=crop&q=80' },
-  { id: 'tyler_durden', name: 'Tyler Durden', movie: 'Fight Club', category: 'Drama', url: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=260&fit=crop&q=80' },
-  { id: 'mononoke', name: 'San', movie: 'Princess Mononoke', category: 'Anime', url: 'https://images.unsplash.com/photo-1563089145-599997674d42?w=260&fit=crop&q=80' },
-  { id: 'cooper', name: 'Cooper', movie: 'Interstellar', category: 'Sci-Fi', url: 'https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?w=260&fit=crop&q=80' },
-  { id: 'alien', name: 'Ellen Ripley', movie: 'Alien', category: 'Sci-Fi', url: 'https://images.unsplash.com/photo-1518709414768-a88981a4515d?w=260&fit=crop&q=80' },
-  { id: 'ghost_shell', name: 'Motoko Kusanagi', movie: 'Ghost in the Shell', category: 'Anime', url: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=260&fit=crop&q=80' },
-  { id: 'trooper', name: 'Imperial Trooper', movie: 'Star Wars', category: 'Sci-Fi', url: 'https://images.unsplash.com/photo-1579566346927-c68383817a25?w=260&fit=crop&q=80' },
-  { id: 'noir_detective', name: 'Sam Spade', movie: 'The Maltese Falcon', category: 'Classics', url: 'https://images.unsplash.com/photo-1509248961158-e54f6934749c?w=260&fit=crop&q=80' },
-  { id: 'cinematographer', name: 'Cinematographer', movie: '35mm Film Vault', category: 'Classics', url: 'https://images.unsplash.com/photo-1594909122845-11baa439b7bf?w=260&fit=crop&q=80' },
-  { id: 'cyber_armor', name: 'Iron Warrior', movie: 'Avengers', category: 'Action', url: 'https://images.unsplash.com/photo-1626278664285-f796b9ee7806?w=260&fit=crop&q=80' }
+  { id: 'spiderman', name: 'Spider-Man', movie: 'Spider-Verse', category: 'Action', url: 'https://images.unsplash.com/photo-1635805737707-575885ab0820?w=400&fit=crop&q=85' },
+  { id: 'batman', name: 'The Dark Knight', movie: 'Batman', category: 'Action', url: 'https://image.tmdb.org/t/p/w300/7Pxez9J8fuPd2Mn9kex13YALrCQ.jpg' },
+  { id: 'neo', name: 'Neo', movie: 'The Matrix', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w300/8RZLOyYGsoRe9p44q3xin9QkMHv.jpg' },
+  { id: 'dune', name: 'Paul Atreides', movie: 'Dune: Part Two', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w300/dFxpwRpmzpVfP1zjluH68DeQhyj.jpg' },
+  { id: 'oppenheimer', name: 'J. Robert Oppenheimer', movie: 'Oppenheimer', category: 'Drama', url: 'https://image.tmdb.org/t/p/w300/2lKs67r7FI4bPu0AXxMUJZxmUXn.jpg' },
+  { id: 'joker', name: 'Arthur Fleck', movie: 'Joker', category: 'Drama', url: 'https://image.tmdb.org/t/p/w300/u38k3hQBDwNX0VA22aQceDp9Iyv.jpg' },
+  { id: 'joker_heath', name: 'The Joker', movie: 'The Dark Knight', category: 'Drama', url: 'https://image.tmdb.org/t/p/w300/p2z2bURSg7nuMsN9P2s61e2RvNz.jpg' },
+  { id: 'officer_k', name: 'Officer K', movie: 'Blade Runner 2049', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w300/lyUyVARQKhGxaxy0FbPJCQRpiaW.jpg' },
+  { id: 'killbill', name: 'The Bride', movie: 'Kill Bill: Vol. 1', category: 'Action', url: 'https://image.tmdb.org/t/p/w300/sBgAZWi3o4FsnaTvnTNtK6jpQcF.jpg' },
+  { id: 'tyler_durden', name: 'Tyler Durden', movie: 'Fight Club', category: 'Drama', url: 'https://image.tmdb.org/t/p/w300/ajNaPmXVVMJFg9GWmu6MJzTaXdV.jpg' },
+  { id: 'alien', name: 'Ellen Ripley', movie: 'Alien', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w300/wTSnfktNBLd6kwQxgvkqYw6vEon.jpg' },
+  { id: 'cooper', name: 'Cooper', movie: 'Interstellar', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w300/lCySuYjhXix3FzQdS4oceDDrXKI.jpg' },
+  { id: 'ironman', name: 'Tony Stark', movie: 'Avengers: Endgame', category: 'Action', url: 'https://image.tmdb.org/t/p/w300/5qHNjhtjMD4YWH3UP0rm4tKwxCL.jpg' },
+  { id: 'cobb', name: 'Dom Cobb', movie: 'Inception', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w300/wo2hJpn04vbtmh0B9utCFdsQhxM.jpg' },
+  { id: 'corleone', name: 'Michael Corleone', movie: 'The Godfather', category: 'Classics', url: 'https://image.tmdb.org/t/p/w300/m8HAAjq1T75JypKk0v1FFQn4ysZ.jpg' },
+  { id: 'hansolo', name: 'Han Solo', movie: 'Star Wars', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w300/pjBMJVPpcZK23Vt1nzr1zEBTWrP.jpg' },
+  { id: 'vitocorleone', name: 'Vito Corleone', movie: 'The Godfather', category: 'Classics', url: 'https://image.tmdb.org/t/p/w300/yIvLpf9U9NfAvC7fuAgOQ8tu51T.jpg' },
+  { id: 'miles_morales', name: 'Peter Parker', movie: 'Spider-Man: No Way Home', category: 'Action', url: 'https://image.tmdb.org/t/p/w300/adwEBb2sCSzqwnpVgNEG7irl1Ne.jpg' }
 ];
 
 export const CINEMATIC_PRESET_BANNERS = [
@@ -57,6 +58,8 @@ export default function ProfileCustomizerModal({
   cinePoints = 0,
   isCreator = false,
   unlockedBorders = new Set(),
+  unlockedBadges = [],
+  sortedBadges = [],
   favorites = [],
   setFavorites,
   onSelectSlot,
@@ -71,15 +74,17 @@ export default function ProfileCustomizerModal({
   const [bannerUrl, setBannerUrl] = useState('');
   const [bannerFitMode, setBannerFitMode] = useState('cover');
   const [bannerPosPercent, setBannerPosPercent] = useState(20);
+  const [featuredBadges, setFeaturedBadges] = useState([]);
 
-  // Banner studio filters
-  const [bannerSourceTab, setBannerSourceTab] = useState('presets');
+  // Banner studio states
+  const [bannerMode, setBannerMode] = useState('presets'); // 'presets' | 'tmdb' | 'upload'
+  const [presetCategory, setPresetCategory] = useState('stills'); // 'stills' | 'motion'
   const [tmdbSearchQuery, setTmdbSearchQuery] = useState('');
   const [tmdbSearchResults, setTmdbSearchResults] = useState([]);
   const [tmdbSearching, setTmdbSearching] = useState(false);
   const [customUrlInput, setCustomUrlInput] = useState('');
 
-  // Sync draft states when modal opens or user changes
+  // Sync draft states when modal opens
   useEffect(() => {
     if (show) {
       setDisplayName(currentUser?.displayName || '');
@@ -90,6 +95,11 @@ export default function ProfileCustomizerModal({
       setBannerUrl(currentUser?.bannerUrl || '');
       setBannerFitMode(currentUser?.bannerFitMode || 'cover');
       setBannerPosPercent(currentUser?.bannerPosPercent ?? 20);
+      setFeaturedBadges(
+        currentUser?.featuredBadges && Array.isArray(currentUser.featuredBadges)
+          ? currentUser.featuredBadges
+          : []
+      );
       setCustomizerTab(initialTab);
     }
   }, [show, currentUser, initialTab]);
@@ -142,6 +152,7 @@ export default function ProfileCustomizerModal({
     reader.readAsDataURL(file);
   };
 
+  // Save changes
   const handleSave = () => {
     onSave({
       displayName,
@@ -151,9 +162,23 @@ export default function ProfileCustomizerModal({
       equippedBorder,
       bannerUrl,
       bannerFitMode,
-      bannerPosPercent
+      bannerPosPercent,
+      featuredBadges
     });
-    onClose();
+  };
+
+  // Toggle badge pinning
+  const toggleBadgePin = (badgeName) => {
+    setFeaturedBadges(prev => {
+      if (prev.includes(badgeName)) {
+        return prev.filter(b => b !== badgeName);
+      }
+      if (prev.length >= 5) {
+        alert("You can select up to 5 featured badges. Unpin one to add another.");
+        return prev;
+      }
+      return [...prev, badgeName];
+    });
   };
 
   if (!show) return null;
@@ -162,7 +187,7 @@ export default function ProfileCustomizerModal({
     <div
       style={{
         position: 'fixed', inset: 0, width: '100vw', height: '100vh',
-        background: 'rgba(4,3,10,0.92)', backdropFilter: 'blur(20px)',
+        background: 'rgba(3,2,8,0.92)', backdropFilter: 'blur(24px)',
         zIndex: 999999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
       }}
       onClick={onClose}
@@ -170,326 +195,540 @@ export default function ProfileCustomizerModal({
       <div
         className="glass animate-fade-in-scale"
         style={{
-          width: '96vw', maxWidth: '1080px', height: '88vh', maxHeight: '780px',
-          borderRadius: '24px', border: '1px solid rgba(255,255,255,0.14)',
-          background: '#0d0b16', padding: '24px', display: 'flex', flexDirection: 'column',
-          boxShadow: '0 32px 90px rgba(0,0,0,0.98)', position: 'relative'
+          width: '96vw', maxWidth: '1120px', maxHeight: '92vh',
+          borderRadius: '26px', border: '1px solid rgba(255,255,255,0.14)',
+          background: '#0d0b16', display: 'flex', flexDirection: 'column',
+          boxShadow: '0 30px 90px rgba(0,0,0,0.95)', overflow: 'hidden'
         }}
         onClick={e => e.stopPropagation()}
       >
-        {/* Customizer Studio Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '16px', borderBottom: '1px solid var(--border)', marginBottom: '18px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(136,8,8,0.2)', border: '1px solid var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {/* HEADER BAR */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '20px 28px', borderBottom: '1px solid rgba(255,255,255,0.08)',
+          background: 'rgba(255,255,255,0.02)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{
+              width: '42px', height: '42px', borderRadius: '12px',
+              background: 'rgba(136,8,8,0.2)', border: '1px solid rgba(136,8,8,0.4)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
               <SlidersHorizontal size={20} color="var(--accent)" />
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#fff', margin: 0 }}>Profile Studio</h3>
-                <span style={{ fontSize: '10px', background: 'rgba(136,8,8,0.25)', border: '1px solid var(--accent)', color: '#fff', fontWeight: 800, padding: '2px 7px', borderRadius: '10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Interactive Studio
+                <h2 style={{ fontSize: '18px', fontWeight: 900, color: '#fff', margin: 0, letterSpacing: '-0.3px' }}>
+                  Profile Studio
+                </h2>
+                <span style={{ fontSize: '10.5px', background: 'rgba(136,8,8,0.2)', color: 'var(--accent)', border: '1px solid rgba(136,8,8,0.4)', padding: '2px 8px', borderRadius: '12px', fontWeight: 900, textTransform: 'uppercase' }}>
+                  Interactive Suite
                 </span>
               </div>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0' }}>
-                Customize your banner, avatar, equipped border, bio, and favorite film showcase.
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                Customize your banner, movie character avatar, border, badges, bio, and favorite film showcase.
               </p>
             </div>
           </div>
+
           <button
             onClick={onClose}
-            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)', cursor: 'pointer', transition: 'all 0.2s' }}
-            onMouseEnter={e => e.currentTarget.style.color = '#fff'}
-            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-dim)'}
+            className="btn btn-ghost"
+            style={{ width: '36px', height: '36px', borderRadius: '50%', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
-            <X size={16} />
+            <X size={18} />
           </button>
         </div>
 
-        {/* Studio Workspace: 2-Column Layout */}
-        <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '22px', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+        {/* 2-COLUMN STUDIO WORKSPACE */}
+        <div style={{ display: 'grid', gridTemplateColumns: '330px 1fr', flex: 1, minHeight: 0, overflow: 'hidden' }}>
 
-          {/* ── LEFT COLUMN: LIVE PROFILE CARD PREVIEW & DIRECT FRAMING ── */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', padding: '16px', overflowY: 'auto' }}>
+          {/* ─────────────────────────────────────────────────────────────
+              LEFT COLUMN: EXPANDED LIVE CARD PREVIEW
+              ───────────────────────────────────────────────────────────── */}
+          <div style={{
+            background: 'rgba(0,0,0,0.4)',
+            borderRight: '1px solid rgba(255,255,255,0.08)',
+            padding: '24px 20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '18px',
+            overflowY: 'auto'
+          }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--green)', boxShadow: '0 0 8px var(--green)' }} />
-                <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-dim)' }}>
-                  Live Profile Preview
-                </span>
-              </div>
-              <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Updates Live</span>
+              <span style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--green)', boxShadow: '0 0 8px var(--green)' }} />
+                Live Card Preview
+              </span>
+              <span style={{ fontSize: '10.5px', color: 'var(--text-dim)', fontWeight: 700 }}>Real-Time</span>
             </div>
 
-            {/* Live Rendered Profile Card */}
-            <div style={{ borderRadius: '14px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.12)', background: '#13111e', boxShadow: '0 12px 30px rgba(0,0,0,0.6)' }}>
-              {/* Banner */}
-              <div style={{ height: '100px', position: 'relative', overflow: 'hidden', background: '#0a0912' }}>
-                {bannerUrl && bannerUrl.startsWith('animated-') ? (
+            {/* THE LIVE PROFILE CARD */}
+            <div style={{
+              borderRadius: '20px',
+              overflow: 'hidden',
+              background: 'linear-gradient(180deg, #161324 0%, #0d0b15 100%)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              boxShadow: '0 16px 40px rgba(0,0,0,0.7)',
+              position: 'relative'
+            }}>
+              {/* Card Banner (165px tall) */}
+              <div style={{
+                height: '165px',
+                width: '100%',
+                position: 'relative',
+                overflow: 'hidden',
+                background: (bannerUrl && !bannerUrl.startsWith('animated-'))
+                  ? `url("${bannerUrl}") center ${bannerPosPercent}% / ${bannerFitMode === 'contain' ? 'contain' : 'cover'} no-repeat`
+                  : (!bannerUrl ? 'radial-gradient(ellipse at 50% 25%, rgba(136,8,8,0.35) 0%, rgba(15,12,24,0.9) 70%, #06050a 100%)' : '#08070e')
+              }}>
+                {bannerUrl && bannerUrl.startsWith('animated-') && (
                   <AnimatedBannerBackground bannerId={bannerUrl} />
-                ) : (
-                  <div
-                    style={{
-                      width: '100%', height: '100%',
-                      background: bannerUrl
-                        ? `url("${bannerUrl}") center ${bannerPosPercent ?? 20}% / ${bannerFitMode === 'contain' ? 'contain' : 'cover'} no-repeat`
-                        : 'linear-gradient(135deg, #1f1d2b 0%, #110f1a 100%)'
-                    }}
-                  />
                 )}
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(19,17,30,0.95) 100%)', pointerEvents: 'none' }} />
-                <span style={{ position: 'absolute', top: '6px', right: '8px', fontSize: '9px', fontWeight: 800, background: 'rgba(0,0,0,0.75)', border: '1px solid rgba(255,255,255,0.15)', padding: '1px 6px', borderRadius: '4px', color: '#fff' }}>
-                  {bannerUrl && bannerUrl.startsWith('animated-') ? 'ANIMATED' : bannerFitMode.toUpperCase()}
-                </span>
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 55%, rgba(13,11,21,0.95) 100%)', pointerEvents: 'none' }} />
+
+                <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 800, color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase' }}>
+                  {bannerFitMode}
+                </div>
               </div>
 
-              {/* Avatar + Info */}
-              <div style={{ padding: '0 14px 14px', position: 'relative' }}>
-                <div style={{ marginTop: '-32px', marginBottom: '8px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-                  <AvatarWithBorder src={avatar || DEFAULT_GREY_AVATAR} username={displayName || 'User'} borderId={equippedBorder} size={64} />
-                  <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--accent)', background: 'rgba(136,8,8,0.15)', border: '1px solid rgba(136,8,8,0.3)', padding: '2px 6px', borderRadius: '6px' }}>
-                    {BORDER_STYLES[equippedBorder]?.name || 'Standard Border'}
-                  </span>
+              {/* Card Body */}
+              <div style={{ padding: '0 16px 18px', position: 'relative' }}>
+                {/* Avatar */}
+                <div style={{
+                  marginTop: '-44px',
+                  position: 'relative',
+                  display: 'inline-block',
+                  zIndex: 10,
+                  filter: isCreator ? 'drop-shadow(0 0 16px rgba(251,191,36,0.35))' : 'drop-shadow(0 8px 18px rgba(0,0,0,0.8))'
+                }}>
+                  <AvatarWithBorder
+                    src={avatar || DEFAULT_GREY_AVATAR}
+                    username={displayName || username || 'Profile'}
+                    borderId={equippedBorder}
+                    size={84}
+                  />
                 </div>
 
-                <div style={{ fontSize: '15px', fontWeight: 900, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {displayName || 'Cinema Enthusiast'}
-                </div>
-                <div style={{ fontSize: '11.5px', color: 'var(--text-dim)', marginBottom: '8px' }}>
-                  @{username || 'user'}
-                </div>
-
-                {bio && (
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '0 0 10px', lineHeight: 1.4, fontStyle: 'italic', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                    "{bio}"
-                  </p>
-                )}
-
-                {/* Stats pills */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                  <div style={{ textAlign: 'center', background: 'rgba(255,255,255,0.03)', padding: '4px', borderRadius: '6px' }}>
-                    <div style={{ fontSize: '8.5px', color: 'var(--text-dim)', fontWeight: 700, textTransform: 'uppercase' }}>Watched</div>
-                    <div style={{ fontSize: '12px', fontWeight: 900, color: 'var(--green)' }}>{watchedCount}</div>
+                {/* Identity */}
+                <div style={{ marginTop: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <div style={{ fontSize: '17px', fontWeight: 900, color: '#fff', letterSpacing: '-0.3px', lineHeight: 1.2 }}>
+                      {displayName.trim() || username || 'CineLog Fan'}
+                    </div>
+                    {isCreator && (
+                      <span style={{ fontSize: '9.5px', background: 'linear-gradient(135deg, rgba(251,191,36,0.2) 0%, rgba(168,85,247,0.2) 100%)', border: '1px solid rgba(251,191,36,0.5)', color: '#fbbf24', padding: '1px 6px', borderRadius: '10px', fontWeight: 900, textTransform: 'uppercase' }}>
+                        👑 Creator
+                      </span>
+                    )}
                   </div>
-                  <div style={{ textAlign: 'center', background: 'rgba(255,255,255,0.03)', padding: '4px', borderRadius: '6px' }}>
-                    <div style={{ fontSize: '8.5px', color: 'var(--text-dim)', fontWeight: 700, textTransform: 'uppercase' }}>Avg Rate</div>
-                    <div style={{ fontSize: '12px', fontWeight: 900, color: 'var(--gold)' }}>{avgRating || '—'}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: 700, marginTop: '2px' }}>
+                    @{username || 'cinelog_user'}
                   </div>
-                  <div style={{ textAlign: 'center', background: 'rgba(255,255,255,0.03)', padding: '4px', borderRadius: '6px' }}>
-                    <div style={{ fontSize: '8.5px', color: 'var(--text-dim)', fontWeight: 700, textTransform: 'uppercase' }}>Points</div>
-                    <div style={{ fontSize: '12px', fontWeight: 900, color: 'var(--accent)' }}>🪙 {cinePoints}</div>
+                  <div style={{ fontSize: '11.5px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.45, marginTop: '6px', fontStyle: 'italic', display: '-webkit-box', WebKitLineClamp: 2, WebKitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    "{bio || 'No cinema story written yet.'}"
+                  </div>
+                </div>
+
+                {/* Live Pinned Badges Preview */}
+                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                  {(featuredBadges.length > 0 ? featuredBadges : sortedBadges.slice(0, 3)).map(b => {
+                    const colors = BADGE_COLORS[b] || { border: '1px solid var(--border)', color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.03)' };
+                    return (
+                      <span key={b} style={{ fontSize: '9px', fontWeight: 800, padding: '2px 8px', borderRadius: '10px', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap', ...colors }}>
+                        {b}
+                      </span>
+                    );
+                  })}
+                </div>
+
+                {/* Quick Stats Pill */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginTop: '12px', background: 'rgba(255,255,255,0.03)', padding: '8px 10px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: '8.5px', color: 'var(--text-dim)', textTransform: 'uppercase', fontWeight: 800 }}>Watched</div>
+                    <div style={{ fontSize: '13px', fontWeight: 900, color: 'var(--green)' }}>{watchedCount}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '8.5px', color: 'var(--text-dim)', textTransform: 'uppercase', fontWeight: 800 }}>Avg Rate</div>
+                    <div style={{ fontSize: '13px', fontWeight: 900, color: 'var(--gold)' }}>{avgRating || '—'}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '8.5px', color: 'var(--text-dim)', textTransform: 'uppercase', fontWeight: 800 }}>Points</div>
+                    <div style={{ fontSize: '13px', fontWeight: 900, color: 'var(--accent)' }}>🪙 {cinePoints}</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Banner Framing Tools (if image banner equipped) */}
-            {bannerUrl && !bannerUrl.startsWith('animated-') && (
-              <div style={{ padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div style={{ fontSize: '10.5px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-dim)' }}>
-                  Banner Framing & Focus
-                </div>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  {[
-                    { id: 'cover', label: 'Full-Bleed Cover' },
-                    { id: 'contain', label: 'Letterbox Contain' }
-                  ].map(opt => (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => setBannerFitMode(opt.id)}
-                      style={{
-                        flex: 1, padding: '5px 8px', borderRadius: '6px', fontSize: '10.5px', fontWeight: 800,
-                        border: bannerFitMode === opt.id ? '1.5px solid var(--accent)' : '1px solid var(--border)',
-                        background: bannerFitMode === opt.id ? 'rgba(136,8,8,0.25)' : 'rgba(0,0,0,0.3)',
-                        color: bannerFitMode === opt.id ? '#fff' : 'var(--text-muted)', cursor: 'pointer'
-                      }}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
+            {/* BANNER FRAMING & FOCUS TOOLBAR */}
+            <div style={{
+              background: 'rgba(255,255,255,0.02)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '16px',
+              padding: '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
+            }}>
+              <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Banner Framing & Focus
+              </span>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-dim)', fontWeight: 700 }}>
+              {/* Mode switch */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                <button
+                  type="button"
+                  onClick={() => setBannerFitMode('cover')}
+                  style={{
+                    padding: '8px 10px', borderRadius: '10px', fontSize: '11.5px', fontWeight: 800,
+                    background: bannerFitMode === 'cover' ? 'var(--accent)' : 'rgba(255,255,255,0.04)',
+                    color: '#fff', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer'
+                  }}
+                >
+                  Full-Bleed Cover
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBannerFitMode('contain')}
+                  style={{
+                    padding: '8px 10px', borderRadius: '10px', fontSize: '11.5px', fontWeight: 800,
+                    background: bannerFitMode === 'contain' ? 'var(--accent)' : 'rgba(255,255,255,0.04)',
+                    color: '#fff', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer'
+                  }}
+                >
+                  Letterbox Contain
+                </button>
+              </div>
+
+              {/* Vertical slider */}
+              {bannerFitMode === 'cover' && !bannerUrl.startsWith('animated-') && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700 }}>
                     <span>▲ Top</span>
                     <span>Position: {bannerPosPercent}%</span>
                     <span>▼ Bottom</span>
                   </div>
                   <input
-                    type="range" min="0" max="100" step="5"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
                     value={bannerPosPercent}
                     onChange={e => setBannerPosPercent(Number(e.target.value))}
-                    style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer', height: '4px' }}
+                    style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--accent)' }}
                   />
-                </div>
-              </div>
-            )}
-
-            {/* Reset Banner button */}
-            {bannerUrl && (
-              <button
-                type="button"
-                onClick={() => {
-                  setBannerUrl('');
-                  setBannerFitMode('cover');
-                  setBannerPosPercent(20);
-                }}
-                style={{
-                  background: 'none', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px',
-                  padding: '8px', fontSize: '11px', color: 'var(--text-dim)', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                  transition: 'all 0.15s'
-                }}
-                onMouseEnter={e => { e.currentTarget.style.color = 'var(--red)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.3)'; }}
-                onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-dim)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
-              >
-                <Trash2 size={12} /> Clear Banner
-              </button>
-            )}
-          </div>
-
-          {/* ── RIGHT COLUMN: STUDIO WORKSPACE & CATALOG PANELS ── */}
-          <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
-
-            {/* Main Studio Tabs */}
-            <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', gap: '6px', marginBottom: '14px', flexShrink: 0 }}>
-              {[
-                { id: 'banner', label: 'Banners', icon: <ImageIcon size={14} /> },
-                { id: 'avatar', label: 'Avatars & Borders', icon: <User size={14} /> },
-                { id: 'info', label: 'Profile Info', icon: <Award size={14} /> },
-                { id: 'showcase', label: 'Favorites Showcase', icon: <Heart size={14} /> },
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setCustomizerTab(tab.id)}
-                  style={{
-                    background: customizerTab === tab.id ? 'rgba(136,8,8,0.18)' : 'none',
-                    border: 'none', padding: '9px 16px', fontSize: '12.5px', fontWeight: 800,
-                    color: customizerTab === tab.id ? '#ffffff' : 'var(--text-dim)',
-                    borderBottom: customizerTab === tab.id ? '2px solid var(--accent)' : '2px solid transparent',
-                    borderRadius: '8px 8px 0 0', cursor: 'pointer', transition: 'all 0.15s',
-                    display: 'flex', alignItems: 'center', gap: '6px'
-                  }}
-                >
-                  {tab.icon} {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {/* SCROLLABLE WORKSPACE PANELS */}
-            <div style={{ flex: 1, overflowY: 'auto', paddingRight: '8px' }}>
-
-              {/* ════ TAB 1: BANNERS ════ */}
-              {customizerTab === 'banner' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  {/* Banner Category Pills */}
-                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '10px' }}>
+                  {/* Quick focus shortcuts */}
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '2px' }}>
                     {[
-                      { id: 'presets', label: '🎬 Cinematic Stills (Presets)' },
-                      { id: 'tmdb', label: '🔍 Search TMDB Backdrops' },
-                      { id: 'library', label: '🎞️ From Your Library' },
-                      { id: 'animated', label: '🔥 Live Motion' },
-                      { id: 'upload', label: '📁 Upload & Direct URL' },
-                    ].map(st => (
+                      { label: 'Top (15%)', val: 15 },
+                      { label: 'Center (50%)', val: 50 },
+                      { label: 'Bottom (85%)', val: 85 }
+                    ].map(f => (
                       <button
-                        key={st.id}
-                        onClick={() => setBannerSourceTab(st.id)}
+                        key={f.label}
+                        type="button"
+                        onClick={() => setBannerPosPercent(f.val)}
                         style={{
-                          background: bannerSourceTab === st.id ? 'var(--accent)' : 'rgba(255,255,255,0.04)',
-                          border: `1px solid ${bannerSourceTab === st.id ? 'var(--accent)' : 'var(--border)'}`,
-                          borderRadius: '20px', padding: '5px 12px', fontSize: '11px', fontWeight: 800,
-                          color: bannerSourceTab === st.id ? '#fff' : 'var(--text-muted)',
-                          cursor: 'pointer', transition: 'all 0.15s'
+                          flex: 1, padding: '4px', borderRadius: '6px', fontSize: '10px', fontWeight: 700,
+                          background: bannerPosPercent === f.val ? 'rgba(136,8,8,0.25)' : 'rgba(255,255,255,0.04)',
+                          color: bannerPosPercent === f.val ? 'var(--accent)' : 'var(--text-dim)',
+                          border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer'
                         }}
                       >
-                        {st.label}
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {bannerUrl && (
+                <button
+                  type="button"
+                  onClick={() => setBannerUrl('')}
+                  style={{
+                    background: 'none', border: 'none', color: 'var(--text-dim)',
+                    fontSize: '11.5px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', paddingTop: '4px'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.color = 'var(--red)'}
+                  onMouseLeave={e => e.currentTarget.style.color = 'var(--text-dim)'}
+                >
+                  <Trash2 size={13} /> Reset to Default Banner
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* ─────────────────────────────────────────────────────────────
+              RIGHT COLUMN: CATEGORIZED STUDIO WORKSPACE
+              ───────────────────────────────────────────────────────────── */}
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+
+            {/* MAIN STUDIO TABS */}
+            <div style={{
+              display: 'flex', gap: '4px', padding: '16px 24px',
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              background: 'rgba(255,255,255,0.015)', overflowX: 'auto'
+            }}>
+              {[
+                { id: 'banner', label: 'Banners', icon: ImageIcon },
+                { id: 'avatar', label: 'Avatars & Borders', icon: User },
+                { id: 'badges', label: 'Featured Badges', icon: Award },
+                { id: 'info', label: 'Profile Info', icon: SlidersHorizontal },
+                { id: 'showcase', label: `Favorites Showcase (${(favorites.filter(Boolean)).length}/6)`, icon: Heart },
+              ].map(tab => {
+                const isActive = customizerTab === tab.id;
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setCustomizerTab(tab.id)}
+                    style={{
+                      background: isActive ? 'rgba(136,8,8,0.22)' : 'transparent',
+                      border: isActive ? '1px solid rgba(136,8,8,0.5)' : '1px solid transparent',
+                      padding: '10px 18px', borderRadius: '12px', fontSize: '13px',
+                      fontWeight: isActive ? 800 : 600, color: isActive ? '#fff' : 'var(--text-muted)',
+                      display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
+                      whiteSpace: 'nowrap', transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <Icon size={15} color={isActive ? 'var(--accent)' : 'currentColor'} />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* TAB CONTENT PANELS (Scrollable) */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
+
+              {/* ════ TAB 1: BANNERS STUDIO ════ */}
+              {customizerTab === 'banner' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+                  {/* Clean 3-Mode Segmented Selector */}
+                  <div style={{
+                    display: 'flex', gap: '6px', background: 'rgba(255,255,255,0.03)',
+                    padding: '4px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.08)'
+                  }}>
+                    {[
+                      { id: 'presets', label: 'Presets & Live Motion', icon: Sparkles },
+                      { id: 'tmdb', label: 'Search TMDB Backdrops', icon: Search },
+                      { id: 'upload', label: 'Upload & Direct Link', icon: Upload }
+                    ].map(sub => (
+                      <button
+                        key={sub.id}
+                        type="button"
+                        onClick={() => setBannerMode(sub.id)}
+                        style={{
+                          flex: 1, padding: '10px 14px', borderRadius: '10px', fontSize: '12.5px',
+                          fontWeight: bannerMode === sub.id ? 800 : 600,
+                          background: bannerMode === sub.id ? 'rgba(136,8,8,0.25)' : 'transparent',
+                          color: bannerMode === sub.id ? '#fff' : 'var(--text-muted)',
+                          border: bannerMode === sub.id ? '1px solid rgba(136,8,8,0.45)' : '1px solid transparent',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', cursor: 'pointer',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <sub.icon size={14} color={bannerMode === sub.id ? 'var(--accent)' : 'currentColor'} />
+                        {sub.label}
                       </button>
                     ))}
                   </div>
 
-                  {/* Sub-tab 1: Preset Cinematic Stills */}
-                  {bannerSourceTab === 'presets' && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
-                      {CINEMATIC_PRESET_BANNERS.map(b => {
-                        const isSelected = bannerUrl === b.url;
-                        return (
-                          <div
-                            key={b.name}
-                            onClick={() => { setBannerUrl(b.url); setBannerFitMode('cover'); }}
-                            style={{
-                              aspectRatio: '16/9', borderRadius: '10px', overflow: 'hidden',
-                              border: isSelected ? '2px solid var(--accent)' : '1px solid rgba(255,255,255,0.1)',
-                              boxShadow: isSelected ? '0 0 16px rgba(136,8,8,0.5)' : 'none',
-                              cursor: 'pointer', position: 'relative', background: '#110e1f',
-                              transition: 'transform 0.15s ease'
-                            }}
-                            onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-                            onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-                          >
-                            <img src={b.url} alt={b.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
-                            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.85) 100%)' }} />
-                            <div style={{ position: 'absolute', bottom: '8px', left: '10px', right: '10px' }}>
-                              <div style={{ fontSize: '12px', fontWeight: 800, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                {b.name}
+                  {/* Mode 1: Presets & Live Motion */}
+                  {bannerMode === 'presets' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={() => setPresetCategory('stills')}
+                          style={{
+                            padding: '6px 14px', borderRadius: '20px', fontSize: '11.5px', fontWeight: 800,
+                            background: presetCategory === 'stills' ? 'rgba(255,255,255,0.1)' : 'transparent',
+                            color: presetCategory === 'stills' ? '#fff' : 'var(--text-dim)',
+                            border: presetCategory === 'stills' ? '1px solid rgba(255,255,255,0.2)' : '1px solid transparent',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          🎬 Cinematic Stills ({CINEMATIC_PRESET_BANNERS.length})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPresetCategory('motion')}
+                          style={{
+                            padding: '6px 14px', borderRadius: '20px', fontSize: '11.5px', fontWeight: 800,
+                            background: presetCategory === 'motion' ? 'rgba(255,255,255,0.1)' : 'transparent',
+                            color: presetCategory === 'motion' ? '#fff' : 'var(--text-dim)',
+                            border: presetCategory === 'motion' ? '1px solid rgba(255,255,255,0.2)' : '1px solid transparent',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          ✨ Live Motion Banners ({ALL_ANIMATED_BANNERS.length})
+                        </button>
+                      </div>
+
+                      {/* Cinematic Stills Grid */}
+                      {presetCategory === 'stills' && (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+                          {CINEMATIC_PRESET_BANNERS.map(preset => {
+                            const isSelected = bannerUrl === preset.url;
+                            return (
+                              <div
+                                key={preset.name}
+                                onClick={() => { setBannerUrl(preset.url); setBannerFitMode('cover'); }}
+                                style={{
+                                  borderRadius: '14px', overflow: 'hidden', cursor: 'pointer',
+                                  border: isSelected ? '2px solid var(--accent)' : '1px solid rgba(255,255,255,0.1)',
+                                  boxShadow: isSelected ? '0 0 20px rgba(136,8,8,0.5)' : 'none',
+                                  position: 'relative', background: '#120f20', transition: 'all 0.2s ease',
+                                  aspectRatio: '16/9'
+                                }}
+                                onMouseEnter={e => { if (!isSelected) e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'; }}
+                                onMouseLeave={e => { if (!isSelected) e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
+                              >
+                                <img
+                                  src={preset.url}
+                                  alt={preset.name}
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                  loading="lazy"
+                                />
+                                <div style={{
+                                  position: 'absolute', bottom: 0, left: 0, right: 0,
+                                  background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 60%, transparent 100%)',
+                                  padding: '24px 12px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end'
+                                }}>
+                                  <div>
+                                    <div style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>{preset.name}</div>
+                                    <div style={{ fontSize: '10.5px', color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>{preset.tag}</div>
+                                  </div>
+                                  {isSelected && (
+                                    <div style={{ background: 'var(--accent)', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                      <Check size={13} color="#fff" />
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                              <div style={{ fontSize: '10px', color: 'var(--accent)', fontWeight: 700 }}>
-                                {b.tag}
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Live Motion Banners Grid WITH VISUAL CANVAS PREVIEW */}
+                      {presetCategory === 'motion' && (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
+                          {ALL_ANIMATED_BANNERS.map(item => {
+                            const isUnlocked = isCreator || (currentUser?.purchasedBanners || []).includes(item.id);
+                            const isSelected = bannerUrl === item.id;
+                            return (
+                              <div
+                                key={item.id}
+                                onClick={() => {
+                                  if (isUnlocked) setBannerUrl(item.id);
+                                }}
+                                style={{
+                                  height: '110px',
+                                  borderRadius: '14px',
+                                  overflow: 'hidden',
+                                  position: 'relative',
+                                  cursor: isUnlocked ? 'pointer' : 'default',
+                                  border: isSelected ? '2.5px solid var(--accent)' : '1px solid rgba(255,255,255,0.14)',
+                                  boxShadow: isSelected ? '0 0 20px var(--accent)' : '0 4px 16px rgba(0,0,0,0.4)',
+                                  transition: 'all 0.2s ease',
+                                  opacity: isUnlocked ? 1 : 0.65
+                                }}
+                              >
+                                {/* Active Live Canvas Preview */}
+                                <AnimatedBannerBackground bannerId={item.id} />
+
+                                {/* Glass Overlay with Title & Points */}
+                                <div style={{
+                                  position: 'absolute', bottom: 0, left: 0, right: 0,
+                                  background: 'linear-gradient(to top, rgba(10,8,16,0.95) 0%, rgba(10,8,16,0.5) 60%, transparent 100%)',
+                                  padding: '24px 12px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end',
+                                  pointerEvents: 'none', zIndex: 10
+                                }}>
+                                  <div>
+                                    <div style={{ fontSize: '12.5px', fontWeight: 900, color: isSelected ? 'var(--accent)' : '#fff', textShadow: '0 2px 6px rgba(0,0,0,0.9)' }}>
+                                      {item.name}
+                                    </div>
+                                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.75)', fontWeight: 600 }}>
+                                      🪙 {item.cost} CinePoints
+                                    </div>
+                                  </div>
+
+                                  {isSelected && (
+                                    <div style={{ background: 'var(--accent)', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                      <Check size={13} color="#fff" />
+                                    </div>
+                                  )}
+                                  {!isUnlocked && (
+                                    <span style={{ fontSize: '9.5px', background: 'rgba(0,0,0,0.85)', color: 'var(--gold)', padding: '2px 7px', borderRadius: '4px', fontWeight: 800 }}>
+                                      🔒 In Shop
+                                    </span>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                            {isSelected && (
-                              <div style={{ position: 'absolute', top: '8px', right: '8px', background: 'var(--accent)', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
-                                <Check size={13} color="#fff" />
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   )}
 
-                  {/* Sub-tab 2: TMDB Movie & Show Backdrops */}
-                  {bannerSourceTab === 'tmdb' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {/* Mode 2: Search TMDB Backdrops & Library */}
+                  {bannerMode === 'tmdb' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                       <form onSubmit={handleTmdbSearch} style={{ display: 'flex', gap: '8px' }}>
                         <div style={{ position: 'relative', flex: 1 }}>
-                          <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
+                          <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
                           <input
                             type="text"
-                            placeholder="Search any movie or show for HD backdrops (e.g. Oppenheimer, Batman, Dune, Matrix)..."
+                            placeholder="Search any film (e.g. Oppenheimer, Dune, The Batman, Interstellar)..."
                             value={tmdbSearchQuery}
                             onChange={e => setTmdbSearchQuery(e.target.value)}
                             className="form-input"
-                            style={{ paddingLeft: '34px', fontSize: '12.5px', height: '38px' }}
+                            style={{ paddingLeft: '36px', fontSize: '13px' }}
                           />
                         </div>
-                        <button type="submit" disabled={tmdbSearching} className="btn btn-primary" style={{ padding: '0 18px', fontSize: '12px', fontWeight: 800, height: '38px' }}>
-                          {tmdbSearching ? 'Searching…' : 'Find Stills'}
+                        <button type="submit" className="btn btn-primary" style={{ padding: '0 20px', fontWeight: 800, fontSize: '12.5px' }}>
+                          {tmdbSearching ? 'Searching...' : 'Search Backdrops'}
                         </button>
                       </form>
 
                       {tmdbSearchResults.length > 0 ? (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
-                          {tmdbSearchResults.map(item => {
-                            const highRes = `https://image.tmdb.org/t/p/w1280${item.backdrop_path}`;
-                            const isSelected = bannerUrl === highRes;
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+                          {tmdbSearchResults.map(m => {
+                            const fullUrl = `https://image.tmdb.org/t/p/w1280${m.backdrop_path}`;
+                            const isSelected = bannerUrl === fullUrl;
                             return (
                               <div
-                                key={item.id}
-                                onClick={() => { setBannerUrl(highRes); setBannerFitMode('cover'); }}
+                                key={m.id}
+                                onClick={() => { setBannerUrl(fullUrl); setBannerFitMode('cover'); }}
                                 style={{
-                                  aspectRatio: '16/9', borderRadius: '10px', overflow: 'hidden',
+                                  borderRadius: '14px', overflow: 'hidden', cursor: 'pointer',
                                   border: isSelected ? '2px solid var(--accent)' : '1px solid rgba(255,255,255,0.1)',
                                   boxShadow: isSelected ? '0 0 16px rgba(136,8,8,0.5)' : 'none',
-                                  cursor: 'pointer', position: 'relative', background: '#110e1f'
+                                  aspectRatio: '16/9', position: 'relative'
                                 }}
                               >
-                                <img src={`https://image.tmdb.org/t/p/w500${item.backdrop_path}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
-                                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(180deg,transparent 0%,rgba(0,0,0,0.85) 100%)', padding: '6px 8px', fontSize: '11px', fontWeight: 800, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                  {item.title || item.name}
+                                <img
+                                  src={`https://image.tmdb.org/t/p/w780${m.backdrop_path}`}
+                                  alt=""
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                  loading="lazy"
+                                />
+                                <div style={{
+                                  position: 'absolute', bottom: 0, left: 0, right: 0,
+                                  background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, transparent 100%)',
+                                  padding: '20px 10px 8px', fontSize: '12px', fontWeight: 800, color: '#fff',
+                                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                                }}>
+                                  {m.title || m.name}
                                 </div>
                                 {isSelected && (
-                                  <div style={{ position: 'absolute', top: '6px', right: '6px', background: 'var(--accent)', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Check size={12} color="#fff" />
+                                  <div style={{ position: 'absolute', top: '8px', right: '8px', background: 'var(--accent)', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Check size={13} color="#fff" />
                                   </div>
                                 )}
                               </div>
@@ -497,139 +736,29 @@ export default function ProfileCustomizerModal({
                           })}
                         </div>
                       ) : (
-                        <div style={{ textAlign: 'center', padding: '36px 20px', color: 'var(--text-dim)', fontSize: '12px', background: 'rgba(255,255,255,0.015)', borderRadius: '12px', border: '1px dashed var(--border)' }}>
-                          Type any film or series title above to fetch official high-definition cinema widescreen backdrops.
+                        <div style={{ textAlign: 'center', padding: '36px 20px', color: 'var(--text-dim)', fontSize: '12.5px', background: 'rgba(255,255,255,0.015)', borderRadius: '14px', border: '1px dashed var(--border)' }}>
+                          Search any title to fetch official widescreen cinema backdrops directly into your profile.
                         </div>
                       )}
                     </div>
                   )}
 
-                  {/* Sub-tab 3: Library Backdrops */}
-                  {bannerSourceTab === 'library' && (
-                    <div>
-                      {(() => {
-                        const validItems = library.filter(m => m.backdrop_path || m.details?.backdrop_path || m.poster_path);
-                        if (validItems.length === 0) {
-                          return (
-                            <div style={{ textAlign: 'center', padding: '36px 20px', color: 'var(--text-dim)', fontSize: '12.5px', background: 'rgba(255,255,255,0.015)', borderRadius: '12px', border: '1px dashed var(--border)' }}>
-                              <p style={{ margin: 0, fontWeight: 800, color: '#fff', fontSize: '14px' }}>🎬 No Watched Films Yet</p>
-                              <p style={{ marginTop: '6px', fontSize: '12px' }}>Log movies into your watched library to equip their cinema backdrops directly onto your profile.</p>
-                            </div>
-                          );
-                        }
-                        return (
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
-                            {validItems.slice(0, 30).map(m => {
-                              const backdropPath = m.backdrop_path || m.details?.backdrop_path;
-                              const imageSrc = backdropPath ? `https://image.tmdb.org/t/p/w1280${backdropPath}` : `https://image.tmdb.org/t/p/w780${m.poster_path}`;
-                              const isSelected = bannerUrl === imageSrc;
-                              return (
-                                <div
-                                  key={m.id || m.tmdb_id}
-                                  onClick={() => { setBannerUrl(imageSrc); setBannerFitMode('cover'); }}
-                                  style={{
-                                    aspectRatio: '16/9', borderRadius: '10px', overflow: 'hidden',
-                                    border: isSelected ? '2px solid var(--accent)' : '1px solid rgba(255,255,255,0.1)',
-                                    boxShadow: isSelected ? '0 0 16px rgba(136,8,8,0.5)' : 'none',
-                                    cursor: 'pointer', position: 'relative', background: '#110e1f'
-                                  }}
-                                >
-                                  <img
-                                    src={backdropPath ? `https://image.tmdb.org/t/p/w500${backdropPath}` : `https://image.tmdb.org/t/p/w342${m.poster_path}`}
-                                    alt=""
-                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                    loading="lazy"
-                                  />
-                                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(180deg,transparent 0%,rgba(0,0,0,0.85) 100%)', padding: '6px 8px', fontSize: '11px', fontWeight: 800, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    {m.title}
-                                  </div>
-                                  {isSelected && (
-                                    <div style={{ position: 'absolute', top: '6px', right: '6px', background: 'var(--accent)', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                      <Check size={12} color="#fff" />
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  )}
-
-                  {/* Sub-tab 4: Animated Motion Banners */}
-                  {bannerSourceTab === 'animated' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                        {isCreator ? '👑 Creator Perk: All live animated ambient banners are unlocked for your profile!' : 'Ambient motion banners: 35mm scanlines, shooting stars, matrix digital rain, synthwave, aurora, and plasma.'}
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
-                        {ALL_ANIMATED_BANNERS.map(item => {
-                          const isUnlocked = isCreator || (currentUser?.purchasedBanners || []).includes(item.id);
-                          const isSelected = bannerUrl === item.id;
-                          return (
-                            <div
-                              key={item.id}
-                              onClick={() => {
-                                if (isUnlocked) setBannerUrl(item.id);
-                              }}
-                              className={item.className}
-                              style={{
-                                height: '84px', borderRadius: '10px',
-                                cursor: isUnlocked ? 'pointer' : 'default',
-                                border: isSelected ? '2.5px solid var(--accent)' : '1px solid rgba(255,255,255,0.1)',
-                                boxShadow: isSelected ? '0 0 16px var(--accent)' : 'none',
-                                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                                padding: '8px', textAlign: 'center', overflow: 'hidden', position: 'relative',
-                                opacity: isUnlocked ? 1 : 0.65
-                              }}
-                            >
-                              <span style={{ fontSize: '12px', fontWeight: 900, color: isSelected ? 'var(--accent)' : '#fff', position: 'relative', zIndex: 10, textShadow: '0 2px 6px rgba(0,0,0,0.8)' }}>
-                                {item.name}
-                              </span>
-                              <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.8)', marginTop: '2px', position: 'relative', zIndex: 10 }}>
-                                🪙 {item.cost} pts
-                              </span>
-                              {isSelected && (
-                                <div style={{ position: 'absolute', top: '6px', right: '6px', background: 'var(--accent)', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 11 }}>
-                                  <Check size={12} color="#fff" />
-                                </div>
-                              )}
-                              {!isUnlocked && (
-                                <span style={{ position: 'absolute', top: '6px', right: '6px', fontSize: '9px', background: 'rgba(0,0,0,0.85)', color: 'var(--gold)', padding: '2px 6px', borderRadius: '4px', fontWeight: 800, zIndex: 11 }}>
-                                  🔒 Shop
-                                </span>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Sub-tab 5: Upload & Direct URL */}
-                  {bannerSourceTab === 'upload' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                      <label
-                        style={{
-                          border: '2px dashed rgba(136,8,8,0.4)', borderRadius: '14px', padding: '28px 16px',
-                          textAlign: 'center', background: 'rgba(136,8,8,0.05)', cursor: 'pointer',
-                          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
-                          transition: 'all 0.2s'
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.background = 'rgba(136,8,8,0.1)'; }}
-                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(136,8,8,0.4)'; e.currentTarget.style.background = 'rgba(136,8,8,0.05)'; }}
-                      >
-                        <Upload size={22} color="var(--accent)" />
-                        <div>
-                          <span style={{ fontSize: '14px', fontWeight: 800, color: '#fff' }}>Click to Upload Banner Image</span>
-                          <p style={{ fontSize: '11px', color: 'var(--text-dim)', margin: '3px 0 0' }}>Supports PNG, JPG, WEBP, and Animated GIFs up to 5MB.</p>
-                        </div>
+                  {/* Mode 3: Upload & Direct URL */}
+                  {bannerMode === 'upload' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      <label style={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        padding: '36px 20px', borderRadius: '16px', border: '2px dashed rgba(255,255,255,0.2)',
+                        background: 'rgba(255,255,255,0.02)', cursor: 'pointer', textAlign: 'center'
+                      }}>
+                        <Upload size={28} color="var(--accent)" />
+                        <span style={{ fontSize: '14px', fontWeight: 800, marginTop: '8px' }}>Click to Upload Banner Image</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-dim)', marginTop: '2px' }}>Supports PNG, JPG, WEBP, and Animated GIFs up to 5MB</span>
                         <input type="file" accept="image/*" onChange={handleBannerFileUpload} style={{ display: 'none' }} />
                       </label>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <label style={{ fontSize: '10.5px', color: 'var(--text-dim)', fontWeight: 800 }}>OR PASTE DIRECT IMAGE / GIF URL</label>
+                        <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 800 }}>OR PASTE DIRECT IMAGE / GIF URL</label>
                         <div style={{ display: 'flex', gap: '8px' }}>
                           <input
                             type="text"
@@ -648,7 +777,7 @@ export default function ProfileCustomizerModal({
                               }
                             }}
                             className="btn btn-secondary"
-                            style={{ padding: '0 16px', fontSize: '12px', fontWeight: 800 }}
+                            style={{ padding: '0 18px', fontSize: '12px', fontWeight: 800 }}
                           >
                             Apply URL
                           </button>
@@ -656,32 +785,40 @@ export default function ProfileCustomizerModal({
                       </div>
                     </div>
                   )}
+
                 </div>
               )}
 
               {/* ════ TAB 2: AVATARS & BORDERS ════ */}
               {customizerTab === 'avatar' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
 
-                  {/* Movie Character Avatars Grid */}
+                  {/* Character Avatars Section */}
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                      <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                        Curated Movie Characters & Icons ({CURATED_MOVIE_AVATARS.length})
-                      </label>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                      <div>
+                        <label style={{ fontSize: '12px', color: '#fff', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          Curated Movie Characters & Legends ({CURATED_MOVIE_AVATARS.length})
+                        </label>
+                        <div style={{ fontSize: '11px', color: 'var(--text-dim)' }}>
+                          Click any character portrait to equip it instantly to your profile.
+                        </div>
+                      </div>
+
                       <label
                         style={{
-                          display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 10px',
-                          background: 'rgba(136,8,8,0.15)', border: '1px solid rgba(136,8,8,0.3)',
-                          borderRadius: '16px', cursor: 'pointer', fontSize: '11px', fontWeight: 800, color: '#fff'
+                          display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px',
+                          background: 'rgba(136,8,8,0.18)', border: '1px solid rgba(136,8,8,0.4)',
+                          borderRadius: '20px', cursor: 'pointer', fontSize: '12px', fontWeight: 800, color: '#fff'
                         }}
                       >
-                        <Upload size={12} color="var(--accent)" /> Upload Custom Photo
+                        <Upload size={13} color="var(--accent)" /> Upload Custom Photo
                         <input type="file" accept="image/*" onChange={handleAvatarFileUpload} style={{ display: 'none' }} />
                       </label>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                    {/* BIGGER, MORE NOTICEABLE CHARACTER CARDS GRID */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
                       {CURATED_MOVIE_AVATARS.map((char) => {
                         const isSelected = avatar === char.url;
                         return (
@@ -689,50 +826,72 @@ export default function ProfileCustomizerModal({
                             key={char.id}
                             onClick={() => setAvatar(char.url)}
                             style={{
-                              display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px',
-                              borderRadius: '10px', cursor: 'pointer',
-                              border: isSelected ? '1.5px solid var(--accent)' : '1px solid rgba(255,255,255,0.08)',
-                              background: isSelected ? 'rgba(136,8,8,0.18)' : 'rgba(255,255,255,0.02)',
-                              boxShadow: isSelected ? '0 0 12px rgba(136,8,8,0.4)' : 'none',
-                              transition: 'all 0.15s ease'
+                              display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 14px',
+                              borderRadius: '16px', cursor: 'pointer',
+                              border: isSelected ? '2px solid var(--accent)' : '1px solid rgba(255,255,255,0.08)',
+                              background: isSelected ? 'rgba(136,8,8,0.22)' : 'rgba(255,255,255,0.03)',
+                              boxShadow: isSelected ? '0 0 20px rgba(136,8,8,0.45)' : '0 4px 14px rgba(0,0,0,0.35)',
+                              transition: 'transform 0.18s ease, border-color 0.18s ease'
                             }}
                             onMouseEnter={e => {
-                              if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                              if (!isSelected) {
+                                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)';
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                              }
                             }}
                             onMouseLeave={e => {
-                              if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.02)';
+                              if (!isSelected) {
+                                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                                e.currentTarget.style.transform = '';
+                              }
                             }}
                           >
-                            <img
-                              src={char.url}
-                              alt={char.name}
-                              style={{
-                                width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover',
-                                border: isSelected ? '2px solid var(--accent)' : '1px solid rgba(255,255,255,0.15)',
-                                flexShrink: 0
-                              }}
-                            />
+                            {/* LARGE 66px PORTRAIT CIRCLE */}
+                            <div style={{
+                              width: '66px', height: '66px', borderRadius: '50%', flexShrink: 0,
+                              overflow: 'hidden', position: 'relative',
+                              border: isSelected ? '2.5px solid var(--accent)' : '2px solid rgba(255,255,255,0.15)',
+                              boxShadow: isSelected ? '0 0 16px rgba(136,8,8,0.6)' : 'none'
+                            }}>
+                              <img
+                                src={char.url}
+                                alt={char.name}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                loading="lazy"
+                              />
+                            </div>
+
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: '12px', fontWeight: 800, color: isSelected ? '#fff' : 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              <div style={{ fontSize: '13.5px', fontWeight: 900, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                 {char.name}
                               </div>
-                              <div style={{ fontSize: '10px', color: isSelected ? 'var(--accent)' : 'var(--text-dim)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              <span style={{
+                                display: 'inline-block', fontSize: '10px', color: isSelected ? 'var(--accent)' : 'var(--text-dim)',
+                                background: isSelected ? 'rgba(136,8,8,0.2)' : 'rgba(255,255,255,0.05)',
+                                padding: '2px 8px', borderRadius: '8px', fontWeight: 800, marginTop: '4px',
+                                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%'
+                              }}>
                                 {char.movie}
-                              </div>
+                              </span>
                             </div>
-                            {isSelected && <Check size={14} color="var(--accent)" style={{ flexShrink: 0 }} />}
+
+                            {isSelected && (
+                              <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <Check size={13} color="#fff" />
+                              </div>
+                            )}
                           </div>
                         );
                       })}
                     </div>
                   </div>
 
-                  {/* Avatar Borders Section */}
-                  <div style={{ paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                    <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>
+                  {/* Avatar Profile Borders Section */}
+                  <div style={{ paddingTop: '18px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                    <label style={{ fontSize: '12px', color: '#fff', fontWeight: 900, textTransform: 'uppercase', marginBottom: '10px', display: 'block' }}>
                       Avatar Profile Borders
                     </label>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
                       {Object.entries(BORDER_STYLES).map(([id, config]) => {
                         const isUnlocked = unlockedBorders.has(id);
                         const isEquipped = equippedBorder === id;
@@ -741,19 +900,19 @@ export default function ProfileCustomizerModal({
                             key={id}
                             onClick={() => { if (isUnlocked) setEquippedBorder(id); }}
                             style={{
-                              padding: '8px 10px', borderRadius: '8px',
-                              border: isEquipped ? '1.5px solid var(--accent)' : '1px solid var(--border)',
-                              background: isEquipped ? 'rgba(136,8,8,0.18)' : isUnlocked ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.3)',
+                              padding: '10px 12px', borderRadius: '12px',
+                              border: isEquipped ? '2px solid var(--accent)' : '1px solid rgba(255,255,255,0.08)',
+                              background: isEquipped ? 'rgba(136,8,8,0.22)' : isUnlocked ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.3)',
                               opacity: isUnlocked ? 1 : 0.45,
                               cursor: isUnlocked ? 'pointer' : 'not-allowed',
                               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                              transition: 'all 0.15s'
+                              transition: 'all 0.15s ease'
                             }}
                           >
-                            <span style={{ fontSize: '11.5px', fontWeight: 700, color: isEquipped ? 'var(--accent)' : '#fff' }}>
+                            <span style={{ fontSize: '12px', fontWeight: 800, color: isEquipped ? 'var(--accent)' : '#fff' }}>
                               {config.name}
                             </span>
-                            <span style={{ fontSize: '9.5px', color: isUnlocked ? 'var(--green)' : 'var(--text-dim)', fontWeight: 800 }}>
+                            <span style={{ fontSize: '10px', color: isEquipped ? 'var(--accent)' : isUnlocked ? 'var(--green)' : 'var(--text-dim)', fontWeight: 800 }}>
                               {isEquipped ? '✓ Active' : isUnlocked ? 'Equip' : '🔒'}
                             </span>
                           </div>
@@ -765,24 +924,127 @@ export default function ProfileCustomizerModal({
                 </div>
               )}
 
-              {/* ════ TAB 3: PROFILE INFO ════ */}
-              {customizerTab === 'info' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 800 }}>DISPLAY NAME</label>
-                      <input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} className="form-input" style={{ fontSize: '13px' }} placeholder="e.g. Cinema Enthusiast" />
+              {/* ════ TAB 3: FEATURED BADGES (SELECT UP TO 5) ════ */}
+              {customizerTab === 'badges' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
+                    <div>
+                      <h3 style={{ fontSize: '15px', fontWeight: 900, color: '#fff', margin: '0 0 4px 0' }}>
+                        Pin Badges to Profile Header
+                      </h3>
+                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0, maxWidth: '540px' }}>
+                        Choose up to 5 badges to proudly showcase next to your name. If none are pinned, your top 5 highest-rarity badges are shown automatically.
+                      </p>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 800 }}>USERNAME (HANDLE)</label>
-                      <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="form-input" style={{ fontSize: '13px' }} placeholder="e.g. cinephile" />
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{
+                        fontSize: '12px', fontWeight: 900,
+                        padding: '4px 12px', borderRadius: '12px',
+                        background: featuredBadges.length > 0 ? 'rgba(136,8,8,0.2)' : 'rgba(255,255,255,0.05)',
+                        border: '1px solid rgba(255,255,255,0.1)', color: featuredBadges.length > 0 ? 'var(--accent)' : 'var(--text-dim)'
+                      }}>
+                        {featuredBadges.length} / 5 Pinned
+                      </span>
+
+                      {featuredBadges.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setFeaturedBadges([])}
+                          style={{
+                            background: 'none', border: 'none', color: 'var(--text-dim)', fontSize: '11.5px',
+                            fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px'
+                          }}
+                        >
+                          Reset to Top Rarity
+                        </button>
+                      )}
                     </div>
                   </div>
 
+                  {/* BADGES PICKER GRID */}
+                  {sortedBadges.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-dim)', fontSize: '13px', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px dashed var(--border)' }}>
+                      <div style={{ fontSize: '24px', marginBottom: '8px' }}>🎖️</div>
+                      <div style={{ fontWeight: 800, color: '#fff', fontSize: '14px' }}>No Badges Unlocked Yet</div>
+                      <div style={{ marginTop: '4px', fontSize: '12px' }}>Track films, write reviews, and complete milestones to unlock titles and badges that you can pin here!</div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
+                      {sortedBadges.map(badgeName => {
+                      const isPinned = featuredBadges.includes(badgeName);
+                      const colors = BADGE_COLORS[badgeName] || { border: '1px solid var(--border)', color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.03)' };
+                      return (
+                        <div
+                          key={badgeName}
+                          onClick={() => toggleBadgePin(badgeName)}
+                          style={{
+                            padding: '10px 14px', borderRadius: '12px', cursor: 'pointer',
+                            border: isPinned ? '2px solid var(--accent)' : '1px solid rgba(255,255,255,0.08)',
+                            background: isPinned ? 'rgba(136,8,8,0.2)' : 'rgba(255,255,255,0.02)',
+                            boxShadow: isPinned ? '0 0 16px rgba(136,8,8,0.4)' : 'none',
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <span style={{
+                            fontSize: '11px', fontWeight: 800, padding: '3px 9px', borderRadius: '10px',
+                            textTransform: 'uppercase', letterSpacing: '0.04em', ...colors
+                          }}>
+                            {badgeName}
+                          </span>
+
+                          <div style={{
+                            width: '20px', height: '20px', borderRadius: '50%',
+                            border: isPinned ? 'none' : '1.5px solid rgba(255,255,255,0.2)',
+                            background: isPinned ? 'var(--accent)' : 'transparent',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                          }}>
+                            {isPinned && <Check size={12} color="#fff" />}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  )}
+                </div>
+              )}
+
+              {/* ════ TAB 4: PROFILE INFO ════ */}
+              {customizerTab === 'info' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 800 }}>DISPLAY NAME</label>
+                      <input
+                        type="text"
+                        value={displayName}
+                        onChange={e => setDisplayName(e.target.value)}
+                        className="form-input"
+                        style={{ fontSize: '13px' }}
+                        placeholder="e.g. Cinema Enthusiast"
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 800 }}>USERNAME (HANDLE)</label>
+                      <input
+                        type="text"
+                        value={username}
+                        onChange={e => setUsername(e.target.value)}
+                        className="form-input"
+                        style={{ fontSize: '13px' }}
+                        placeholder="e.g. cinephile"
+                      />
+                    </div>
+                  </div>
+
+                  {/* LOCKED BIO TEXTAREA (NO INFINITE EXPAND BUG) */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 800 }}>BIO & CINEMA STORY</label>
-                      <span style={{ fontSize: '10px', color: 'var(--text-dim)' }}>{bio.length}/250 chars</span>
+                      <span style={{ fontSize: '11px', color: bio.length >= 240 ? 'var(--red)' : 'var(--text-dim)' }}>
+                        {bio.length}/250 chars
+                      </span>
                     </div>
                     <textarea
                       maxLength={250}
@@ -790,27 +1052,34 @@ export default function ProfileCustomizerModal({
                       onChange={e => setBio(e.target.value)}
                       placeholder="Share your favorite directors, genres, cinema passions, or favorite movie quotes..."
                       className="form-input"
-                      style={{ minHeight: '100px', fontSize: '13px', lineHeight: 1.5 }}
+                      style={{
+                        height: '115px',
+                        maxHeight: '115px',
+                        resize: 'none',
+                        overflowY: 'auto',
+                        fontSize: '13px',
+                        lineHeight: 1.55
+                      }}
                     />
                   </div>
                 </div>
               )}
 
-              {/* ════ TAB 4: FAVORITES SHOWCASE (6 SLOTS) ════ */}
+              {/* ════ TAB 5: FAVORITES SHOWCASE (6 SLOTS) ════ */}
               {customizerTab === 'showcase' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', margin: 0 }}>
                     Select your top 6 favorite films to showcase prominently on your public profile header. Click any slot to choose from your watched films.
                   </p>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '10px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px' }}>
                     {favorites.map((fav, idx) => (
                       <div
                         key={idx}
                         onClick={() => onSelectSlot(idx)}
                         style={{
                           aspectRatio: '2/3',
-                          borderRadius: '8px',
+                          borderRadius: '10px',
                           border: fav ? '1.5px solid var(--border)' : '1.5px dashed rgba(255,255,255,0.2)',
                           background: fav ? '#110e1f' : 'rgba(255,255,255,0.02)',
                           display: 'flex',
@@ -842,24 +1111,27 @@ export default function ProfileCustomizerModal({
                                 });
                               }}
                               style={{
-                                position: 'absolute', top: '4px', right: '4px',
+                                position: 'absolute', top: '6px', right: '6px',
                                 background: 'rgba(0,0,0,0.8)', border: 'none', borderRadius: '50%',
-                                width: '18px', height: '18px', display: 'flex', alignItems: 'center',
+                                width: '20px', height: '20px', display: 'flex', alignItems: 'center',
                                 justifyContent: 'center', color: '#fff', cursor: 'pointer'
                               }}
                             >
-                              <X size={10} />
+                              <X size={12} />
                             </button>
-                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%)', padding: '4px', textAlign: 'center' }}>
-                              <div style={{ fontSize: '9px', fontWeight: 800, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                {fav.title}
-                              </div>
+                            <div style={{
+                              position: 'absolute', bottom: 0, left: 0, right: 0,
+                              background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, transparent 100%)',
+                              padding: '14px 6px 4px', fontSize: '10px', fontWeight: 800, textAlign: 'center',
+                              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                            }}>
+                              {fav.title}
                             </div>
                           </>
                         ) : (
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                            <Plus size={16} color="var(--text-muted)" />
-                            <span style={{ fontSize: '9px', color: 'var(--text-dim)', fontWeight: 700 }}>Slot {idx + 1}</span>
+                          <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)' }}>
+                            <div style={{ fontSize: '20px', marginBottom: '2px' }}>🎬</div>
+                            <div style={{ fontSize: '10px', fontWeight: 700 }}>Slot {idx + 1}</div>
                           </div>
                         )}
                       </div>
@@ -870,35 +1142,39 @@ export default function ProfileCustomizerModal({
 
             </div>
 
+            {/* STUDIO FOOTER ACTIONS */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '16px 28px', borderTop: '1px solid rgba(255,255,255,0.08)',
+              background: 'rgba(255,255,255,0.02)'
+            }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Sparkles size={13} color="var(--accent)" /> Changes update in real time. Click Save Changes when finished.
+              </span>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={onClose}
+                  style={{ padding: '8px 20px', fontSize: '13px', fontWeight: 700 }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleSave}
+                  style={{ padding: '8px 24px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 900 }}
+                >
+                  <CheckCircle2 size={16} /> Save Changes
+                </button>
+              </div>
+            </div>
+
           </div>
 
         </div>
-
-        {/* MODAL FOOTER */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '16px', borderTop: '1px solid var(--border)', marginTop: '16px', flexShrink: 0 }}>
-          <div style={{ fontSize: '11.5px', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Sparkles size={13} color="var(--accent)" />
-            <span>Live Studio Active — preview updates immediately before saving</span>
-          </div>
-
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button
-              className="btn btn-secondary"
-              onClick={onClose}
-              style={{ padding: '8px 18px', fontSize: '12.5px' }}
-            >
-              Cancel
-            </button>
-            <button
-              className="btn btn-primary"
-              onClick={handleSave}
-              style={{ padding: '8px 24px', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800 }}
-            >
-              <CheckCircle2 size={15} /> Save Changes
-            </button>
-          </div>
-        </div>
-
       </div>
     </div>,
     document.body

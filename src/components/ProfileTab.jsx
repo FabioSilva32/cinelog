@@ -894,10 +894,10 @@ export default function ProfileTab({
             ───────────────────────────────────────────────────────────── */
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
 
-          {/* BANNER (340px immersive with fallback cinematic ambiance) */}
+          {/* BANNER (420px grand cinematic marquee with fallback ambiance) */}
           <div
             style={{
-              height: '340px',
+              height: '420px',
               width: '100%',
               borderRadius: '24px 24px 0 0',
               overflow: 'hidden',
@@ -1067,8 +1067,12 @@ export default function ProfileTab({
             {/* BADGES RIBBON WITH LIMIT AND SHOW MORE TOGGLE */}
             {sortedBadges.length > 0 && (() => {
               const BADGE_LIMIT = 5;
-              const displayedBadges = showAllBadges ? sortedBadges : sortedBadges.slice(0, BADGE_LIMIT);
-              const remainingCount = Math.max(0, sortedBadges.length - BADGE_LIMIT);
+              const userChosen = (currentUser?.featuredBadges && Array.isArray(currentUser.featuredBadges))
+                ? currentUser.featuredBadges.filter(b => unlockedBadges.includes(b))
+                : [];
+              const effectiveBadges = userChosen.length > 0 ? userChosen : sortedBadges;
+              const displayedBadges = showAllBadges ? sortedBadges : effectiveBadges.slice(0, BADGE_LIMIT);
+              const remainingCount = Math.max(0, sortedBadges.length - displayedBadges.length);
 
               return (
                 <div style={{
@@ -1082,7 +1086,7 @@ export default function ProfileTab({
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-dim)' }}>
-                        🎖️ Featured Titles & Badges
+                        🎖️ {userChosen.length > 0 ? 'Pinned Titles & Badges' : 'Featured Titles & Badges'}
                       </span>
                       <span style={{
                         fontSize: '10.5px',
@@ -1093,7 +1097,7 @@ export default function ProfileTab({
                         color: 'rgba(255,255,255,0.7)',
                         fontWeight: 800
                       }}>
-                        {showAllBadges ? `${sortedBadges.length} Total` : `${Math.min(BADGE_LIMIT, sortedBadges.length)} of ${sortedBadges.length}`}
+                        {showAllBadges ? `${sortedBadges.length} Total` : `${displayedBadges.length} of ${sortedBadges.length}`}
                       </span>
                     </div>
 
@@ -1872,6 +1876,8 @@ export default function ProfileTab({
         cinePoints={cinePoints}
         isCreator={isCreator}
         unlockedBorders={unlockedBorders}
+        unlockedBadges={unlockedBadges}
+        sortedBadges={sortedBadges}
         favorites={favorites}
         setFavorites={setFavorites}
         onSelectSlot={idx => setSelectingSlotIdx(idx)}
