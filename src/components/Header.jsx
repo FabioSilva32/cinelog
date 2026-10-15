@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Film, Compass, List, BarChart3, User, LogOut, Sparkles, CalendarDays, Award, Settings, Library, Home, Star, Trophy, HelpCircle, Flame, Clapperboard, Users, Wand2, Menu, X, Search, Bell } from 'lucide-react';
+import { Film, Compass, List, BarChart3, User, LogOut, Sparkles, CalendarDays, Award, Settings, Library, Home, Star, Trophy, HelpCircle, Flame, Clapperboard, Users, Wand2, Menu, X, Search, Bell, Palette } from 'lucide-react';
 import { isSupabaseConfigured } from '../supabaseClient';
 import { BORDER_STYLES } from '../utils/achievements';
 import AvatarWithBorder from './AvatarWithBorder';
+import CineLogLogo from './CineLogLogos';
+import LogoShowcaseModal from './LogoShowcaseModal';
 
 const NAV_GROUPS = [
   {
@@ -39,6 +41,23 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(true);
+  const [activeLogoId, setActiveLogoId] = useState(() => localStorage.getItem('cinelog_active_logo') || 'aperture-c');
+  const [showLogoModal, setShowLogoModal] = useState(false);
+
+  useEffect(() => {
+    const handleLogoChange = (e) => {
+      if (e.detail?.logoId) setActiveLogoId(e.detail.logoId);
+      else setActiveLogoId(localStorage.getItem('cinelog_active_logo') || 'aperture-c');
+    };
+    window.addEventListener('cinelog_logo_changed', handleLogoChange);
+    return () => window.removeEventListener('cinelog_logo_changed', handleLogoChange);
+  }, []);
+
+  const handleSelectLogo = (logoId) => {
+    setActiveLogoId(logoId);
+    localStorage.setItem('cinelog_active_logo', logoId);
+    window.dispatchEvent(new CustomEvent('cinelog_logo_changed', { detail: { logoId } }));
+  };
   const menuRef = useRef(null);
   const moreNavRef = useRef(null);
   const notifRef = useRef(null);
@@ -63,6 +82,7 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
   // ── CINEMATIC TOP-NAV BAR (RED RENDER STYLE) ──
   if (layoutMode === 'top-nav') {
     return (
+      <>
       <header className="app-header topnav-header" style={{
         position: 'sticky',
         top: 0,
@@ -83,28 +103,53 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
         }}>
           {/* Left: Brand + Sleek Clean Nav Links */}
           <div className="topnav-left" style={{ display: 'flex', alignItems: 'center', gap: '36px' }}>
-            <div
-              className="logo-wrapper"
-              onClick={() => handleNavClick('explore')}
-              style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', userSelect: 'none', flexShrink: 0 }}
-            >
-              {/* Sleek red camera icon like in mockup */}
-              <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                background: 'var(--accent)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                boxShadow: '0 2px 8px rgba(229,9,20,0.35)'
-              }}>
-                <Film size={18} color="#FFFFFF" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div
+                className="logo-wrapper"
+                onClick={() => handleNavClick('explore')}
+                style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', userSelect: 'none', flexShrink: 0 }}
+                title="CineLog — Go to Explore"
+              >
+                <CineLogLogo logoId={activeLogoId} size={32} />
               </div>
-              <span style={{ color: '#FFFFFF', fontWeight: 900, fontSize: '21px', letterSpacing: '-0.5px' }}>
-                Cine<span style={{ color: 'var(--accent)' }}>Log</span>
-              </span>
+
+              {/* 20 Logos Showcase Launcher Pill */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowLogoModal(true);
+                }}
+                className="logo-showcase-launcher"
+                title="Explore 20 brand logo designs with site colors"
+                style={{
+                  background: 'rgba(192,57,43,0.12)',
+                  border: '1px solid rgba(192,57,43,0.35)',
+                  borderRadius: '20px',
+                  padding: '3px 10px',
+                  color: '#fbbf24',
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: '0 0 10px rgba(192,57,43,0.15)'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = 'rgba(192,57,43,0.25)';
+                  e.currentTarget.style.borderColor = 'rgba(251,191,36,0.6)';
+                  e.currentTarget.style.transform = 'translateY(-1px) scale(1.02)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = 'rgba(192,57,43,0.12)';
+                  e.currentTarget.style.borderColor = 'rgba(192,57,43,0.35)';
+                  e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                }}
+              >
+                <Sparkles size={11} color="#fbbf24" />
+                <span style={{ color: '#fff', letterSpacing: '0.3px' }}>20 Logos</span>
+              </button>
             </div>
 
             {/* Primary Cinema Tabs (Clean & uncluttered) */}
@@ -409,6 +454,16 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
                     <div style={{ height: '1px', background: '#222222', margin: '4px 0' }} />
 
                     <button
+                      onClick={() => { setShowLogoModal(true); setShowUserMenu(false); }}
+                      style={{ width: '100%', padding: '7px 10px', textAlign: 'left', background: 'transparent', border: 'none', color: '#fbbf24', fontSize: '12px', fontWeight: 700, cursor: 'pointer', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(251,191,36,0.1)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >
+                      <Palette size={14} color="#fbbf24" />
+                      <span>Brand Logos (20 Variants)</span>
+                    </button>
+
+                    <button
                       onClick={() => { onOpenSettings(); setShowUserMenu(false); }}
                       style={{ width: '100%', padding: '7px 10px', textAlign: 'left', background: 'transparent', border: 'none', color: '#A0A0A0', fontSize: '12px', cursor: 'pointer', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}
                       onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
@@ -442,6 +497,13 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
           </div>
         </div>
       </header>
+      <LogoShowcaseModal
+        show={showLogoModal}
+        onClose={() => setShowLogoModal(false)}
+        activeLogoId={activeLogoId}
+        onSelectLogo={handleSelectLogo}
+      />
+      </>
     );
   }
 
@@ -457,18 +519,8 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
           <Menu size={24} />
         </button>
 
-        <div className="logo-wrapper" onClick={() => handleNavClick('explore')} style={{ fontSize: '20px' }}>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-            <rect width="20" height="20" x="2" y="2" rx="2.18" ry="2.18"/>
-            <line x1="7" x2="7" y1="2" y2="22"/>
-            <line x1="17" x2="17" y1="2" y2="22"/>
-            <line x1="2" x2="22" y1="12" y2="12"/>
-            <line x1="2" x2="7" y1="7" y2="7"/>
-            <line x1="17" x2="22" y1="7" y2="7"/>
-            <line x1="17" x2="22" y1="17" y2="17"/>
-            <line x1="2" x2="7" y1="17" y2="17"/>
-          </svg>
-          <span style={{ color: 'var(--accent)', background: 'none', WebkitTextFillColor: 'var(--accent)' }}>CineLog</span>
+        <div className="logo-wrapper" onClick={() => handleNavClick('explore')} style={{ cursor: 'pointer' }}>
+          <CineLogLogo logoId={activeLogoId} size={24} />
         </div>
 
         <button
@@ -490,18 +542,8 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
         <div className="header-content">
           {/* Logo & Close button on Mobile */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-            <div className="logo-wrapper" onClick={() => handleNavClick('explore')}>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                <rect width="20" height="20" x="2" y="2" rx="2.18" ry="2.18"/>
-                <line x1="7" x2="7" y1="2" y2="22"/>
-                <line x1="17" x2="17" y1="2" y2="22"/>
-                <line x1="2" x2="22" y1="12" y2="12"/>
-                <line x1="2" x2="7" y1="7" y2="7"/>
-                <line x1="17" x2="22" y1="7" y2="7"/>
-                <line x1="17" x2="22" y1="17" y2="17"/>
-                <line x1="2" x2="7" y1="17" y2="17"/>
-              </svg>
-              <span style={{ color: 'var(--accent)', background: 'none', WebkitTextFillColor: 'var(--accent)' }}>CineLog</span>
+            <div className="logo-wrapper" onClick={() => handleNavClick('explore')} style={{ cursor: 'pointer' }}>
+              <CineLogLogo logoId={activeLogoId} size={26} />
             </div>
 
             <button
@@ -672,6 +714,12 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
           </div>
         </div>
       </header>
+      <LogoShowcaseModal
+        show={showLogoModal}
+        onClose={() => setShowLogoModal(false)}
+        activeLogoId={activeLogoId}
+        onSelectLogo={handleSelectLogo}
+      />
     </>
   );
 }
