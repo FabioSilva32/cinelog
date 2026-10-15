@@ -33,7 +33,37 @@ export const CURATED_MOVIE_AVATARS = [
 ];
 
 export const CINEMATIC_PRESET_BANNERS = [
-  // Sci-Fi & Cyberpunk
+  // Marvel Cinematic Universe
+  { name: 'Avengers: Infinity War: Thor Wakanda Arrival', movie: 'Avengers: Infinity War', tag: 'Bring Me Thanos! 4K', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/nMnsSfNqMRJ5KujWMOnCS82Xklz.jpg' },
+  { name: 'Avengers: Infinity War: Battle of Wakanda', movie: 'Avengers: Infinity War', tag: 'Wakanda Frontline Charge', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/bOGkgRGdhrBYJSLpXaxhXVstddV.jpg' },
+  { name: 'Avengers: Infinity War: Nidavellir Star Forge', movie: 'Avengers: Infinity War', tag: 'Power of a Neutron Star', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/vdRUFLMMAay3RcD3MC4r8PeaAcR.jpg' },
+  { name: 'Avengers: Endgame: Portals Assemble', movie: 'Avengers: Endgame', tag: 'Avengers... Assemble 4K', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg' },
+  { name: 'Avengers: Endgame: Golden Portals Awakening', movie: 'Avengers: Endgame', tag: 'Mystic Portals Battlefield', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/rVnyAnoVoHGQPzFHONX2SSTNMHk.jpg' },
+  { name: 'Avengers: Endgame: Final Battle Charge', movie: 'Avengers: Endgame', tag: 'Earth\'s Mightiest Heroes', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/orjiB3oUIsyz60hoEqkiGpy5CeO.jpg' },
+
+  // DC & Superman
+  { name: 'Man of Steel: First Flight Sonic Boom', movie: 'Man of Steel', tag: 'First Flight Mach 3 Shockwave', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/69EFgWWPFWbRNHmQgYdSnyJ94Ge.jpg' },
+  { name: 'Man of Steel: Stratosphere Orbit Flight', movie: 'Man of Steel', tag: 'Supersonic Atmospheric Rise', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/dlPw6SESWNudgriKvNxJJLJryLq.jpg' },
+  { name: 'Man of Steel: Dawn Canyon Flight', movie: 'Man of Steel', tag: 'Kryptonian Flight Ascendancy', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/j2MlEEpA3wgwQiJB6p1UHC50oiw.jpg' },
+  { name: 'ZS Justice League: Solar Flight', movie: 'Zack Snyder\'s Justice League', tag: 'Black Suit Superman in Sunlight', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/9WoLTsRgrupkvCgs3bhsl2EjLhs.jpg' },
+  { name: 'The Batman: Gotham Rain & Batmobile', movie: 'The Batman (2022)', tag: '4K Gotham Nocturne', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/eUORREWq2ThkkxyiCESCu3sVdGg.jpg' },
+  { name: 'The Batman: Gotham Flare Silhouette', movie: 'The Batman (2022)', tag: 'Neo-Noir Vengeance', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/tRS6jvPM9qPrrnx2KRp3ew96Yot.jpg' },
+  { name: 'The Dark Knight: Skyscraper Overlook', movie: 'The Dark Knight', tag: 'IMAX Skyscraper Apex', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/dqK9Hag1054tghRQSqLSfrkvQnA.jpg' },
+  { name: 'The Dark Knight: Gotham Burning Crest', movie: 'The Dark Knight', tag: 'Gotham Vigilante', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/cfT29Im5VDvjE0RpyKOSdCKZal7.jpg' },
+
+  // Spider-Man & Web-Slingers
+  { name: 'Spider-Man: Brand New Day: Manhattan Spire Apex', movie: 'Spider-Man: Brand New Day', tag: 'Brand New Day 4K Perch', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/4tjxYg2AbOzzG9G1YuiT2NzYhlH.jpg' },
+  { name: 'Spider-Man: Brand New Day: Twilight Web-Swinging', movie: 'Spider-Man: Brand New Day', tag: 'Sunset City Acrobatics', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/t6GjU6Zgp2y3rcG1S1cKEAuqZ5G.jpg' },
+  { name: 'Spider-Man: Brand New Day: Skyline Leap', movie: 'Spider-Man: Brand New Day', tag: 'High Altitude Freefall', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/tanwf7KOwQ6dxZzehKsXkffIJOd.jpg' },
+  { name: 'Spider-Man: Brand New Day: City Flight', movie: 'Spider-Man: Brand New Day', tag: 'Acrobatic City Flight', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/mfo3LxD1t4TwFGl2MqDEYwkL5if.jpg' },
+  { name: 'Spider-Verse: Inverted City Leap', movie: 'Spider-Man: Across the Spider-Verse', tag: 'What\'s Up Danger 4K', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/kVd3a9YeLGkoeR50jGEXM6EqseS.jpg' },
+  { name: 'Spider-Man: No Way Home: Liberty Climax', movie: 'Spider-Man: No Way Home', tag: 'Multiverse Shield Climax', category: 'Superhero', url: 'https://image.tmdb.org/t/p/original/iQFcwSGbZXMkeyKrxbPnwnRo5fl.jpg' },
+
+  // Sci-Fi & Cosmic Odyssey (Project Hail Mary, Interstellar, Dune, Blade Runner)
+  { name: 'Project Hail Mary: Red & Green Petrova Sequence', movie: 'Project Hail Mary', tag: 'Astrophage Red & Green Spectrum', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/y8vQKqARUYPktoQTp1kLuHqBZkh.jpg' },
+  { name: 'Project Hail Mary: Deep Space Hail Mary Odyssey', movie: 'Project Hail Mary', tag: 'Interstellar Voyage 4K', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/8Tfys3mDZVp4tNoH2ktm06a0Tau.jpg' },
+  { name: 'Project Hail Mary: Hail Mary & Blip-A Rendezvous', movie: 'Project Hail Mary', tag: 'First Contact in Deep Space', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/wLWvHcQz7N13DvSOTV7bHgwGXpT.jpg' },
+  { name: 'Project Hail Mary: Tau Ceti Cosmic Flare', movie: 'Project Hail Mary', tag: 'Dying Star System 4K', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/cSnlgBZ5dDTssch4ZvzC00F5ysP.jpg' },
   { name: 'Interstellar: Gargantua Black Hole', movie: 'Interstellar', tag: 'Cosmic Event Horizon', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/8sNiAPPYU14PUepFNeSNGUTiHW.jpg' },
   { name: 'Interstellar: Endurance Orbiting Saturn', movie: 'Interstellar', tag: 'Wormhole Odyssey', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/vgnoBSVzWAV9sNQUORaDGvDp7wx.jpg' },
   { name: 'Blade Runner 2049: Las Vegas Amber', movie: 'Blade Runner 2049', tag: 'Deakins Amber Dust', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/gNdLJU9TxrpGx4dkZidjys3fyy0.jpg' },
@@ -48,17 +78,12 @@ export const CINEMATIC_PRESET_BANNERS = [
   { name: 'Alien: Derelict on LV-426', movie: 'Alien', tag: 'H.R. Giger Atmospheric Horror', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/AmR3JG1VQVxU8TfAvljUhfSFUOx.jpg' },
   { name: 'The Matrix: Digital Green Corridor', movie: 'The Matrix', tag: 'Wachowski Cyber Action', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/tlm8UkiQsitc8rSuIAscQDCnP8d.jpg' },
 
-  // Superhero & Modern Action
-  { name: 'The Batman: Gotham Rain & Batmobile', movie: 'The Batman (2022)', tag: '4K Gotham Nocturne', category: 'Action', url: 'https://image.tmdb.org/t/p/original/eUORREWq2ThkkxyiCESCu3sVdGg.jpg' },
-  { name: 'The Batman: Gotham Flare Silhouette', movie: 'The Batman (2022)', tag: 'Neo-Noir Vengeance', category: 'Action', url: 'https://image.tmdb.org/t/p/original/tRS6jvPM9qPrrnx2KRp3ew96Yot.jpg' },
-  { name: 'The Dark Knight: Skyscraper Overlook', movie: 'The Dark Knight', tag: 'IMAX Skyscraper Apex', category: 'Action', url: 'https://image.tmdb.org/t/p/original/dqK9Hag1054tghRQSqLSfrkvQnA.jpg' },
-  { name: 'The Dark Knight: Gotham Burning Crest', movie: 'The Dark Knight', tag: 'Gotham Vigilante', category: 'Action', url: 'https://image.tmdb.org/t/p/original/cfT29Im5VDvjE0RpyKOSdCKZal7.jpg' },
-  { name: 'Spider-Verse: Inverted City Leap', movie: 'Spider-Man: Across the Spider-Verse', tag: 'What\'s Up Danger 4K', category: 'Action', url: 'https://image.tmdb.org/t/p/original/kVd3a9YeLGkoeR50jGEXM6EqseS.jpg' },
-  { name: 'Mad Max: Fury Road: Citadel Chase', movie: 'Mad Max: Fury Road', tag: 'Wasteland Desolation', category: 'Action', url: 'https://image.tmdb.org/t/p/original/l0eIS009XtEO80aC6zjM3o3AkEl.jpg' },
-  { name: 'Mad Max: Fury Road: Sandstorm of Fire', movie: 'Mad Max: Fury Road', tag: 'Tornado of Fire', category: 'Action', url: 'https://image.tmdb.org/t/p/original/gqrnQA6Xppdl8vIb2eJc58VC1tW.jpg' },
+  // Epic Action & Fantasy
   { name: 'LOTR: Return of the King: Pelennor Fields', movie: 'The Lord of the Rings: The Return of the King', tag: 'White City Citadel', category: 'Action', url: 'https://image.tmdb.org/t/p/original/ctiw6FZK4N36LmkjSklWEbuvlq9.jpg' },
   { name: 'LOTR: Fellowship of the Ring: Argonath', movie: 'The Lord of the Rings: The Fellowship of the Ring', tag: 'Pillars of the Kings', category: 'Action', url: 'https://image.tmdb.org/t/p/original/oiwc338EoBgS4sEI2ixAny4KQKg.jpg' },
   { name: 'LOTR: Mount Doom Horizon', movie: 'The Lord of the Rings: The Return of the King', tag: 'Mordor Ash Vista', category: 'Action', url: 'https://image.tmdb.org/t/p/original/lZWdNk6BsDZrSsZ0unHAsTFfFc4.jpg' },
+  { name: 'Mad Max: Fury Road: Citadel Chase', movie: 'Mad Max: Fury Road', tag: 'Wasteland Desolation', category: 'Action', url: 'https://image.tmdb.org/t/p/original/l0eIS009XtEO80aC6zjM3o3AkEl.jpg' },
+  { name: 'Mad Max: Fury Road: Sandstorm of Fire', movie: 'Mad Max: Fury Road', tag: 'Tornado of Fire', category: 'Action', url: 'https://image.tmdb.org/t/p/original/gqrnQA6Xppdl8vIb2eJc58VC1tW.jpg' },
   { name: 'Gladiator: Colosseum Glory', movie: 'Gladiator', tag: 'Roman Empire Epic', category: 'Action', url: 'https://image.tmdb.org/t/p/original/Ar7QuJ7sJEiC0oP3I8fKBKIQD9u.jpg' },
 
   // Auteur, Drama & Thriller
@@ -664,7 +689,7 @@ export default function ProfileCustomizerModal({
                           <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
                           <input
                             type="text"
-                            placeholder="Search backdrops (e.g. Dune, Batman, Ghibli, Noir, Interstellar, Pulp Fiction)..."
+                            placeholder="Search backdrops (e.g. Marvel, Thor, Superman, Hail Mary, Spider-Man, Batman, Dune)..."
                             value={presetSearchQuery}
                             onChange={e => setPresetSearchQuery(e.target.value)}
                             className="form-input"
@@ -687,7 +712,7 @@ export default function ProfileCustomizerModal({
 
                       {/* Quick genre filter chips */}
                       <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '2px' }}>
-                        {['All', 'Sci-Fi', 'Action', 'Drama', 'Crime & Noir', 'Animation'].map(cat => (
+                        {['All', 'Superhero', 'Sci-Fi', 'Action', 'Drama', 'Crime & Noir', 'Animation'].map(cat => (
                           <button
                             key={cat}
                             type="button"
