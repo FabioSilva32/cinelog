@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { X, Sparkles, Mail, User, Phone, FileText, Camera, Check, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { MOCK_USERS } from '../mockData';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 // ── Simple Canvas-based Image Cropper ───────────────────────────────
 function ImageCropper({ src, onCrop, onCancel }) {
@@ -173,6 +174,7 @@ function FieldLabel({ children, required }) {
 
 // ── Main AuthModal ───────────────────────────────────────────────────
 export default function AuthModal({ onClose, onLoginSuccess, useSupabase, setUseSupabase }) {
+  useBodyScrollLock(true);
   const [isLogin, setIsLogin] = useState(true);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [showPass, setShowPass] = useState(false);
@@ -358,18 +360,25 @@ export default function AuthModal({ onClose, onLoginSuccess, useSupabase, setUse
       )}
 
       {/* Modal overlay */}
-      <div style={{
-        position: 'fixed', inset: 0,
-        background: 'rgba(8,7,11,0.85)', backdropFilter: 'blur(12px)',
-        zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px'
-      }}>
+      <div
+        className="modal-backdrop"
+        style={{
+          position: 'fixed', inset: 0,
+          background: 'rgba(8,7,11,0.85)', backdropFilter: 'blur(12px)',
+          zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px',
+          overscrollBehavior: 'contain'
+        }}
+        onClick={e => e.target === e.currentTarget && onClose()}
+        onWheel={e => e.stopPropagation()}
+      >
         <div
           className="glass animate-fade-in"
           style={{
             width: '100%', maxWidth: '460px', borderRadius: 'var(--radius-lg)',
             border: '1px solid var(--border)', position: 'relative', padding: '32px',
-            maxHeight: '92vh', overflowY: 'auto'
+            maxHeight: '92vh', overflowY: 'auto', overscrollBehavior: 'contain'
           }}
+          onWheel={e => e.stopPropagation()}
         >
           <button
             onClick={onClose}

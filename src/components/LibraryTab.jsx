@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { Search, Heart, Star, Edit, Trash, Plus, Upload, Download, Dices, X, Check, AlertCircle, ChevronRight, LayoutGrid, List } from 'lucide-react';
 import { triggerBackdropHover } from '../utils/backdrop';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 const GENRE_MAP = {28:'Action',12:'Adventure',16:'Animation',35:'Comedy',80:'Crime',99:'Documentary',18:'Drama',10751:'Family',14:'Fantasy',36:'History',27:'Horror',10402:'Music',9648:'Mystery',10749:'Romance',878:'Sci-Fi',53:'Thriller',10752:'War',37:'Western',10759:'Action & Adventure',10765:'Sci-Fi & Fantasy'};
 
@@ -15,6 +16,7 @@ function getRatingColor(r) {
 
 // ── JSON Import Modal ────────────────────────────────────────────────
 function ImportModal({ onClose, onImport }) {
+  useBodyScrollLock(true);
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState('');
   const [isImporting, setIsImporting] = useState(false);
@@ -69,8 +71,17 @@ function ImportModal({ onClose, onImport }) {
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(8,7,11,0.9)', backdropFilter: 'blur(12px)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-      <div className="glass animate-fade-in" style={{ width: '100%', maxWidth: '520px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', padding: '28px', position: 'relative' }}>
+    <div
+      className="modal-backdrop"
+      style={{ position: 'fixed', inset: 0, background: 'rgba(8,7,11,0.9)', backdropFilter: 'blur(12px)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', overscrollBehavior: 'contain' }}
+      onClick={e => e.target === e.currentTarget && !isImporting && onClose()}
+      onWheel={e => e.stopPropagation()}
+    >
+      <div
+        className="glass animate-fade-in"
+        style={{ width: '100%', maxWidth: '520px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', padding: '28px', position: 'relative', overscrollBehavior: 'contain' }}
+        onWheel={e => e.stopPropagation()}
+      >
         <button disabled={isImporting} onClick={onClose} style={{ position: 'absolute', right: '18px', top: '18px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: isImporting ? 'not-allowed' : 'pointer' }}><X size={20} /></button>
         <h3 style={{ fontSize: '20px', marginBottom: '6px' }}>Import from JSON</h3>
         <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '18px' }}>Supports CineLog, Letterboxd exports, or any JSON with title/status fields.</p>

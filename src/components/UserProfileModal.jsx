@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { X, UserPlus, UserMinus, Film, Star, Heart, Calendar, Award } from 'lucide-react';
 import AvatarWithBorder from './AvatarWithBorder';
 import { supabase } from '../supabaseClient';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 export default function UserProfileModal({ targetUser, currentUser, onClose, onMovieClick }) {
+  useBodyScrollLock(true);
   const [profile, setProfile] = useState(targetUser || null);
   const [userLibrary, setUserLibrary] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -108,23 +110,28 @@ export default function UserProfileModal({ targetUser, currentUser, onClose, onM
 
   return (
     <div
+      className="modal-backdrop"
       onClick={onClose}
+      onWheel={e => e.stopPropagation()}
       style={{
         position: 'fixed', inset: 0, zIndex: 1100,
         background: 'rgba(0, 0, 0, 0.82)', backdropFilter: 'blur(10px)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '20px', animation: 'fadeIn 0.2s ease-out'
+        padding: '20px', animation: 'fadeIn 0.2s ease-out',
+        overscrollBehavior: 'contain'
       }}
     >
       <div
         onClick={e => e.stopPropagation()}
-        className="glass"
+        onWheel={e => e.stopPropagation()}
+        className="glass animate-fade-in-scale"
         style={{
           width: '100%', maxWidth: '640px', maxHeight: '88vh',
           borderRadius: '24px', border: '1px solid var(--border)',
           background: 'rgba(18, 18, 24, 0.95)', overflowY: 'auto',
           position: 'relative', display: 'flex', flexDirection: 'column',
-          boxShadow: '0 24px 60px rgba(0,0,0,0.6)'
+          boxShadow: '0 24px 60px rgba(0,0,0,0.6)',
+          overscrollBehavior: 'contain'
         }}
       >
         {/* Close button */}

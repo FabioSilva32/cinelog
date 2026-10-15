@@ -15,6 +15,7 @@ import WrappedTab from './WrappedTab';
 import AchievementsTab from './AchievementsTab';
 import ConstellationTab from './ConstellationTab';
 import ProfileCustomizerModal from './ProfileCustomizerModal';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 const TMDB_KEY = '6a2fd6b9b1bb3befbb9f14c203732225';
 
@@ -476,6 +477,9 @@ export default function ProfileTab({
   const [selectingSlotIdx, setSelectingSlotIdx] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [popupActiveTab, setPopupActiveTab] = useState('movie');
+
+  // Prevent background scroll when choosing favorite film or viewing share card
+  useBodyScrollLock(selectingSlotIdx !== null || activeShareCard !== null);
 
   // Stats calculations
   const watchedCount = useMemo(() => library.filter(m => m.status === 'watched').length, [library]);
@@ -1873,10 +1877,12 @@ export default function ProfileTab({
           SHOWCASE SEARCH MODAL (PORTALED DIRECTLY TO BODY WITH HIGHEST Z-INDEX)
           ───────────────────────────────────────────────────────────── */}
       {selectingSlotIdx !== null && createPortal(
-        <div style={{ position: 'fixed', inset: 0, width: '100vw', height: '100vh', background: 'rgba(4,3,8,0.88)', backdropFilter: 'blur(16px)', zIndex: 9999999, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px', paddingTop: '10vh' }}
-          onClick={() => { setSelectingSlotIdx(null); setSearchQuery(''); }}>
-          <div className="glass animate-fade-in-scale" style={{ width: '100%', maxWidth: '440px', maxHeight: '80vh', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', background: '#0d0b18', display: 'flex', flexDirection: 'column', padding: '20px', gap: '16px', boxShadow: '0 25px 70px rgba(0,0,0,0.95)' }}
-            onClick={e => e.stopPropagation()}>
+        <div style={{ position: 'fixed', inset: 0, width: '100vw', height: '100vh', background: 'rgba(4,3,8,0.88)', backdropFilter: 'blur(16px)', zIndex: 9999999, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px', paddingTop: '10vh', overscrollBehavior: 'contain' }}
+          onClick={() => { setSelectingSlotIdx(null); setSearchQuery(''); }}
+          onWheel={e => e.stopPropagation()}>
+          <div className="glass animate-fade-in-scale" style={{ width: '100%', maxWidth: '440px', maxHeight: '80vh', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', background: '#0d0b18', display: 'flex', flexDirection: 'column', padding: '20px', gap: '16px', boxShadow: '0 25px 70px rgba(0,0,0,0.95)', overscrollBehavior: 'contain' }}
+            onClick={e => e.stopPropagation()}
+            onWheel={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '14.5px', fontWeight: 800 }}>Choose Film for Slot {selectingSlotIdx + 1}</span>
               <button className="btn btn-ghost" onClick={() => { setSelectingSlotIdx(null); setSearchQuery(''); }} style={{ padding: '4px', width: '24px', height: '24px', borderRadius: '50%' }}>
@@ -1924,10 +1930,12 @@ export default function ProfileTab({
           SHARE CARD MODAL
           ───────────────────────────────────────────────────────────── */}
       {activeShareCard && createPortal(
-        <div style={{ position: 'fixed', inset: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.88)', zIndex: 9999999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(16px)' }}
-          onClick={() => setActiveShareCard(null)}>
-          <div className="glass animate-fade-in-scale" style={{ width: '100%', maxWidth: '380px', borderRadius: 'var(--radius-xl)', overflow: 'hidden', border: '1px solid var(--border)', background: 'rgba(10,8,19,0.98)', boxShadow: 'var(--shadow-xl)', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}
-            onClick={e => e.stopPropagation()}>
+        <div style={{ position: 'fixed', inset: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.88)', zIndex: 9999999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(16px)', overscrollBehavior: 'contain' }}
+          onClick={() => setActiveShareCard(null)}
+          onWheel={e => e.stopPropagation()}>
+          <div className="glass animate-fade-in-scale" style={{ width: '100%', maxWidth: '380px', borderRadius: 'var(--radius-xl)', overflow: 'hidden', border: '1px solid var(--border)', background: 'rgba(10,8,19,0.98)', boxShadow: 'var(--shadow-xl)', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', overscrollBehavior: 'contain' }}
+            onClick={e => e.stopPropagation()}
+            onWheel={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>CineLog Chronicles</span>
               <button onClick={() => setActiveShareCard(null)} style={{ background: 'none', border: 'none', color: 'var(--text-dim)', fontSize: '18px', cursor: 'pointer' }}>✕</button>

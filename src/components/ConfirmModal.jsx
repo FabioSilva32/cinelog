@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { AlertTriangle, Trash2, X } from 'lucide-react';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 export default function ConfirmModal({
   isOpen,
@@ -11,6 +12,8 @@ export default function ConfirmModal({
   onCancel,
   isDanger = true
 }) {
+  useBodyScrollLock(isOpen);
+
   // Listen for Escape key to close
   useEffect(() => {
     if (!isOpen) return;
@@ -25,7 +28,9 @@ export default function ConfirmModal({
 
   return (
     <div
+      className="modal-backdrop"
       onClick={onCancel}
+      onWheel={e => e.stopPropagation()}
       style={{
         position: 'fixed',
         inset: 0,
@@ -36,12 +41,14 @@ export default function ConfirmModal({
         alignItems: 'flex-start',
         justifyContent: 'center',
         padding: '20px',
-        paddingTop: '12vh'
+        paddingTop: '12vh',
+        overscrollBehavior: 'contain'
       }}
     >
       <div
         className="glass animate-fade-in-scale"
         onClick={e => e.stopPropagation()}
+        onWheel={e => e.stopPropagation()}
         style={{
           width: '100%',
           maxWidth: '400px',
@@ -53,7 +60,8 @@ export default function ConfirmModal({
           flexDirection: 'column',
           alignItems: 'center',
           textAlign: 'center',
-          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)'
+          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)',
+          overscrollBehavior: 'contain'
         }}
       >
         {/* Header Icon */}

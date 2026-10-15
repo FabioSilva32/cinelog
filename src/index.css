@@ -104,6 +104,14 @@ html {
   scroll-behavior: smooth;
 }
 
+html.modal-open,
+body.modal-open {
+  overflow: hidden !important;
+  height: 100vh !important;
+  touch-action: none;
+  overscroll-behavior: none !important;
+}
+
 body {
   background: #000000;
   color: var(--text);
@@ -113,6 +121,13 @@ body {
   position: relative;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Prevent scroll chaining from any modal/dialog to background window */
+.modal-backdrop,
+.animate-fade-in-scale,
+[role="dialog"] {
+  overscroll-behavior: contain !important;
 }
 
 /* No blurry glowing ambient background orbs */
@@ -1349,6 +1364,23 @@ input[type='range']::-moz-range-thumb {
     display: flex !important;
   }
 }
+
+/* ── MODAL SCROLL LOCK & OVERSCROLL PREVENTION ── */
+html.modal-open,
+body.modal-open {
+  overflow: hidden !important;
+  height: 100vh !important;
+  touch-action: none;
+  overscroll-behavior: none !important;
+}
+
+.modal-backdrop,
+.modal-overlay,
+[role="dialog"],
+.animate-fade-in-scale {
+  overscroll-behavior: contain !important;
+}
+
 
 
 

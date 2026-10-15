@@ -3,6 +3,7 @@ import { X, Heart, Film, Tag, Star, Clock, Users, ExternalLink, Play, FolderHear
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
 import { MOCK_REVIEWS } from '../mockData';
 import { getMovieCollections, getSuggestedTags } from '../utils/collections';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 const TMDB_KEY = '6a2fd6b9b1bb3befbb9f14c203732225';
 
@@ -46,6 +47,7 @@ const formatMoney = (n) => {
 };
 
 export default function MovieDetailModal({ movie, currentUser, onClose, onSave, onToggleFavorite, isFavorite, onOpenUserProfile, onOpenMovie, inLibrary }) {
+  useBodyScrollLock(true);
   const [status, setStatus] = useState(movie.status || 'plan_to_watch');
   const [rating, setRating] = useState(movie.rating != null ? Number(movie.rating) : 0);
   const [episodeData, setEpisodeData] = useState(() => {
@@ -535,12 +537,15 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
 
   return (
     <div
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px', paddingTop: '3vh' }}
+      className="modal-backdrop"
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px', paddingTop: '3vh', overscrollBehavior: 'contain' }}
       onClick={e => e.target === e.currentTarget && onClose()}
+      onWheel={e => e.stopPropagation()}
     >
       <div
         className="animate-fade-in-scale"
-        style={{ width: '100%', maxWidth: '1120px', maxHeight: '94vh', borderRadius: 'var(--radius-xl)', overflow: 'hidden', border: '1px solid var(--border)', position: 'relative', display: 'flex', flexDirection: 'column', background: '#121212' }}
+        style={{ width: '100%', maxWidth: '1120px', maxHeight: '94vh', borderRadius: 'var(--radius-xl)', overflow: 'hidden', border: '1px solid var(--border)', position: 'relative', display: 'flex', flexDirection: 'column', background: '#121212', overscrollBehavior: 'contain' }}
+        onWheel={e => e.stopPropagation()}
       >
         {/* ── BACKDROP HERO ── */}
         <div style={{ position: 'relative', height: '220px', flexShrink: 0, overflow: 'hidden' }}>
@@ -649,7 +654,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
         </div>
 
         {/* ── SCROLLABLE BODY ── */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 28px 28px', display: 'flex', flexDirection: 'column', gap: '22px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', padding: '0 28px 28px', display: 'flex', flexDirection: 'column', gap: '22px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
           {/* Underlined tabs */}
           <div style={{ display: 'flex', flexShrink: 0, gap: '26px', borderBottom: '1px solid var(--border)' }}>
             {SECTIONS.map(s => (

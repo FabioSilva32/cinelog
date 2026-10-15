@@ -23,6 +23,7 @@ import SocialTab from './components/SocialTab';
 import UserProfileModal from './components/UserProfileModal';
 import SettingsPanel, { applyTheme, THEMES } from './components/SettingsPanel';
 import { ToastProvider, useToast } from './components/ToastSystem';
+import { useBodyScrollLock } from './hooks/useBodyScrollLock';
 import { MOCK_USERS } from './mockData';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import { getSuggestedTags } from './utils/collections';
@@ -125,6 +126,7 @@ function AppInner() {
   }, []);
   const [showSettings, setShowSettings] = useState(false);
   const [showCommandCenter, setShowCommandCenter] = useState(false);
+  useBodyScrollLock(showCommandCenter);
   const [cmdQuery, setCmdQuery] = useState('');
   const [cmdSearchResults, setCmdSearchResults] = useState([]);
   const [isCmdSearching, setIsCmdSearching] = useState(false);
@@ -1152,6 +1154,7 @@ function AppInner() {
       {/* ── CINEMA SEARCH & DISCOVERY MODAL ───────────────────── */}
       {showCommandCenter && (
         <div
+          className="modal-backdrop"
           style={{
             position: 'fixed',
             inset: 0,
@@ -1163,9 +1166,11 @@ function AppInner() {
             justifyContent: 'center',
             paddingTop: '12vh',
             paddingLeft: '16px',
-            paddingRight: '16px'
+            paddingRight: '16px',
+            overscrollBehavior: 'contain'
           }}
           onClick={e => e.target === e.currentTarget && setShowCommandCenter(false)}
+          onWheel={e => e.stopPropagation()}
         >
           <div
             className="animate-fade-in-scale"
@@ -1178,8 +1183,10 @@ function AppInner() {
               overflow: 'hidden',
               boxShadow: '0 28px 80px rgba(0,0,0,0.95), 0 0 0 1px rgba(255,255,255,0.04)',
               display: 'flex',
-              flexDirection: 'column'
+              flexDirection: 'column',
+              overscrollBehavior: 'contain'
             }}
+            onWheel={e => e.stopPropagation()}
           >
             {/* Search Header */}
             <div style={{
@@ -1259,7 +1266,7 @@ function AppInner() {
                   handleLoadMoreSearch();
                 }
               }}
-              style={{ maxHeight: '440px', overflowY: 'auto', padding: '12px' }}
+              style={{ maxHeight: '440px', overflowY: 'auto', overscrollBehavior: 'contain', padding: '12px' }}
             >
               {/* TMDB Loading state */}
               {isCmdSearching && (

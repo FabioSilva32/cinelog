@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { X, Palette, Gamepad2, Keyboard, Info, ChevronRight, Check, RefreshCw, Zap } from 'lucide-react';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 // ── THEMES ────────────────────────────────────────────────────────────
 // CineLog is permanently styled with the Razor-Sharp Crimson & Pitch Black theme.
@@ -100,6 +101,7 @@ function TriviaGame() {
 
 // ── Main SettingsPanel ─────────────────────────────────────────────────
 export default function SettingsPanel({ onClose }) {
+  useBodyScrollLock(true);
   const [activeSection, setActiveSection] = useState('trivia');
 
   const SECTIONS = [
@@ -109,12 +111,15 @@ export default function SettingsPanel({ onClose }) {
 
   return (
     <div
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
+      className="modal-backdrop"
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', overscrollBehavior: 'contain' }}
       onClick={e => e.target === e.currentTarget && onClose()}
+      onWheel={e => e.stopPropagation()}
     >
       <div
         className="glass animate-fade-in"
-        style={{ width: '100%', maxWidth: '700px', maxHeight: '88vh', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', display: 'flex', overflow: 'hidden', background: '#121212' }}
+        style={{ width: '100%', maxWidth: '700px', maxHeight: '88vh', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', display: 'flex', overflow: 'hidden', background: '#121212', overscrollBehavior: 'contain' }}
+        onWheel={e => e.stopPropagation()}
       >
         {/* Sidebar */}
         <div style={{ width: '190px', flexShrink: 0, borderRight: '1px solid var(--border)', background: '#0D0D0D', display: 'flex', flexDirection: 'column', padding: '16px 0' }}>
@@ -138,7 +143,7 @@ export default function SettingsPanel({ onClose }) {
         </div>
 
         {/* Content */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '24px', background: '#121212' }}>
+        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', padding: '24px', background: '#121212' }}>
 
           {/* ── TRIVIA ── */}
           {activeSection === 'trivia' && (

@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import AvatarWithBorder, { DEFAULT_GREY_AVATAR } from './AvatarWithBorder';
 import { BORDER_STYLES, BADGE_COLORS } from '../utils/achievements';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 const TMDB_KEY = '6a2fd6b9b1bb3befbb9f14c203732225';
 
@@ -155,6 +156,9 @@ export default function ProfileCustomizerModal({
     }
   }, [show, initialTab]);
 
+  // Lock background window scroll when modal is open
+  useBodyScrollLock(show);
+
   // TMDB backdrop search
   const handleTmdbSearch = async (e) => {
     e?.preventDefault();
@@ -249,9 +253,11 @@ export default function ProfileCustomizerModal({
       style={{
         position: 'fixed', inset: 0, width: '100vw', height: '100vh',
         background: 'rgba(3,2,8,0.92)', backdropFilter: 'blur(24px)',
-        zIndex: 999999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
+        zIndex: 999999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px',
+        overscrollBehavior: 'contain'
       }}
       onClick={onClose}
+      onWheel={e => e.stopPropagation()}
     >
       <div
         className="glass animate-fade-in-scale"
@@ -259,9 +265,11 @@ export default function ProfileCustomizerModal({
           width: '96vw', maxWidth: '1440px', height: '90vh', maxHeight: '92vh',
           borderRadius: '26px', border: '1px solid rgba(255,255,255,0.14)',
           background: '#0d0b16', display: 'flex', flexDirection: 'column',
-          boxShadow: '0 30px 90px rgba(0,0,0,0.95)', overflow: 'hidden'
+          boxShadow: '0 30px 90px rgba(0,0,0,0.95)', overflow: 'hidden',
+          overscrollBehavior: 'contain'
         }}
         onClick={e => e.stopPropagation()}
+        onWheel={e => e.stopPropagation()}
       >
         {/* HEADER BAR */}
         <div style={{
@@ -314,7 +322,8 @@ export default function ProfileCustomizerModal({
             display: 'flex',
             flexDirection: 'column',
             gap: '14px',
-            overflowY: 'auto'
+            overflowY: 'auto',
+            overscrollBehavior: 'contain'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -613,7 +622,7 @@ export default function ProfileCustomizerModal({
             </div>
 
             {/* TAB CONTENT PANELS (Scrollable) */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px', overscrollBehavior: 'contain' }}>
 
               {/* ════ TAB 1: BANNERS STUDIO ════ */}
               {customizerTab === 'banner' && (

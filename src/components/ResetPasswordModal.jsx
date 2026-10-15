@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { X, Lock, Check, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useToast } from './ToastSystem';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 export default function ResetPasswordModal({ onClose }) {
+  useBodyScrollLock(true);
   const toast = useToast();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -42,17 +44,25 @@ export default function ResetPasswordModal({ onClose }) {
   };
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0,
-      background: 'rgba(8,7,11,0.85)', backdropFilter: 'blur(12px)',
-      zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px'
-    }}>
+    <div
+      className="modal-backdrop"
+      style={{
+        position: 'fixed', inset: 0,
+        background: 'rgba(8,7,11,0.85)', backdropFilter: 'blur(12px)',
+        zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px',
+        overscrollBehavior: 'contain'
+      }}
+      onClick={e => e.target === e.currentTarget && onClose()}
+      onWheel={e => e.stopPropagation()}
+    >
       <div
         className="glass animate-fade-in"
         style={{
           width: '100%', maxWidth: '440px', borderRadius: 'var(--radius-lg)',
-          border: '1px solid var(--border)', position: 'relative', padding: '32px'
+          border: '1px solid var(--border)', position: 'relative', padding: '32px',
+          overscrollBehavior: 'contain'
         }}
+        onWheel={e => e.stopPropagation()}
       >
         <button
           onClick={onClose}
