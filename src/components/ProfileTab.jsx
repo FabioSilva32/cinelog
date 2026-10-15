@@ -187,9 +187,13 @@ export default function ProfileTab({
   const [bio, setBio] = useState(currentUser?.bio || '');
   const [avatar, setAvatar] = useState(currentUser?.avatar || '');
   const [equippedBorder, setEquippedBorder] = useState(currentUser?.equippedBorder || 'none');
-  const [bannerUrl, setBannerUrl] = useState(currentUser?.bannerUrl || '');
-  const [bannerFitMode, setBannerFitMode] = useState(currentUser?.bannerFitMode || 'cover');
-  const [bannerPosPercent, setBannerPosPercent] = useState(currentUser?.bannerPosPercent ?? 20);
+  const [bannerUrl, setBannerUrl] = useState(() => currentUser?.bannerUrl || localStorage.getItem('cinelog_banner_url') || '');
+  const [bannerFitMode, setBannerFitMode] = useState(() => currentUser?.bannerFitMode || localStorage.getItem('cinelog_banner_fit') || 'cover');
+  const [bannerPosPercent, setBannerPosPercent] = useState(() => {
+    if (currentUser?.bannerPosPercent !== undefined) return currentUser.bannerPosPercent;
+    const local = localStorage.getItem('cinelog_banner_pos');
+    return local !== null ? Number(local) : 20;
+  });
 
   // Banner Studio internal state
   const [bannerSourceTab, setBannerSourceTab] = useState('upload'); // 'upload' | 'tmdb' | 'library' | 'presets' | 'animated'
@@ -241,9 +245,12 @@ export default function ProfileTab({
   // Sync draft states from currentUser whenever currentUser updates
   useEffect(() => {
     if (!showCustomizer) {
-      setBannerUrl(currentUser?.bannerUrl || '');
-      setBannerFitMode(currentUser?.bannerFitMode || 'cover');
-      setBannerPosPercent(currentUser?.bannerPosPercent ?? 20);
+      setBannerUrl(currentUser?.bannerUrl || localStorage.getItem('cinelog_banner_url') || '');
+      setBannerFitMode(currentUser?.bannerFitMode || localStorage.getItem('cinelog_banner_fit') || 'cover');
+      const resolvedPos = currentUser?.bannerPosPercent !== undefined
+        ? currentUser.bannerPosPercent
+        : (localStorage.getItem('cinelog_banner_pos') !== null ? Number(localStorage.getItem('cinelog_banner_pos')) : 20);
+      setBannerPosPercent(resolvedPos);
       setEquippedBorder(currentUser?.equippedBorder || 'none');
       setDisplayName(currentUser?.displayName || '');
       setUsername(currentUser?.username || '');
@@ -259,9 +266,12 @@ export default function ProfileTab({
     setBio(currentUser?.bio || '');
     setAvatar(currentUser?.avatar || '');
     setEquippedBorder(currentUser?.equippedBorder || 'none');
-    setBannerUrl(currentUser?.bannerUrl || '');
-    setBannerFitMode(currentUser?.bannerFitMode || 'cover');
-    setBannerPosPercent(currentUser?.bannerPosPercent ?? 20);
+    setBannerUrl(currentUser?.bannerUrl || localStorage.getItem('cinelog_banner_url') || '');
+    setBannerFitMode(currentUser?.bannerFitMode || localStorage.getItem('cinelog_banner_fit') || 'cover');
+    const resolvedPos = currentUser?.bannerPosPercent !== undefined
+      ? currentUser.bannerPosPercent
+      : (localStorage.getItem('cinelog_banner_pos') !== null ? Number(localStorage.getItem('cinelog_banner_pos')) : 20);
+    setBannerPosPercent(resolvedPos);
     setFavorites(Array.from({ length: 6 }, (_, i) => (currentUser?.favorites || [])[i] || null));
     setCustomizerTab(initialTab);
     setShowCustomizer(true);
@@ -924,8 +934,8 @@ export default function ProfileTab({
                 style={{
                   width: '100%',
                   height: '100%',
-                  objectFit: currentUser?.bannerFitMode || 'cover',
-                  objectPosition: `center ${currentUser?.bannerPosPercent ?? 20}%`,
+                  objectFit: currentUser?.bannerFitMode || localStorage.getItem('cinelog_banner_fit') || 'cover',
+                  objectPosition: `center ${currentUser?.bannerPosPercent !== undefined ? currentUser.bannerPosPercent : (localStorage.getItem('cinelog_banner_pos') !== null ? Number(localStorage.getItem('cinelog_banner_pos')) : 20)}%`,
                   display: 'block'
                 }}
               />

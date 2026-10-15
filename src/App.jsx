@@ -379,9 +379,9 @@ function AppInner() {
                 bio: profile.bio || '',
                 favorites: profile.favorites || [],
                 equippedBorder: profile.equipped_border || localShop.equippedBorder || localStorage.getItem(`equipped_border_${session.user.id}`) || 'none',
-                bannerUrl: profile.banner_url || localShop.bannerUrl || '',
-                bannerFitMode: profile.banner_fit_mode || 'cover',
-                bannerPosPercent: profile.banner_pos_percent ?? 20,
+                bannerUrl: profile.banner_url || localShop.bannerUrl || localStorage.getItem(`cinelog_banner_url_${session.user.id}`) || localStorage.getItem('cinelog_banner_url') || '',
+                bannerFitMode: profile.banner_fit_mode || localShop.bannerFitMode || localStorage.getItem(`cinelog_banner_fit_${session.user.id}`) || localStorage.getItem('cinelog_banner_fit') || 'cover',
+                bannerPosPercent: profile.banner_pos_percent ?? localShop.bannerPosPercent ?? (localStorage.getItem(`cinelog_banner_pos_${session.user.id}`) !== null ? Number(localStorage.getItem(`cinelog_banner_pos_${session.user.id}`)) : (localStorage.getItem('cinelog_banner_pos') !== null ? Number(localStorage.getItem('cinelog_banner_pos')) : 20)),
                 spentCinePoints: profile.spent_cine_points ?? localShop.spentCinePoints ?? 0,
                 purchasedBorders: profile.purchased_borders || localShop.purchasedBorders || [],
                 purchasedBadges: profile.purchased_badges || localShop.purchasedBadges || [],
@@ -797,11 +797,24 @@ function AppInner() {
     // Immediately update local state & local storage cache
     setCurrentUser(prev => {
       const nextUser = { ...prev, ...updatedDetails };
+      const bannerPos = nextUser.bannerPosPercent !== undefined ? nextUser.bannerPosPercent : (prev?.bannerPosPercent ?? 20);
+      const bannerFit = nextUser.bannerFitMode || prev?.bannerFitMode || 'cover';
+      const bannerUrlVal = nextUser.bannerUrl !== undefined ? nextUser.bannerUrl : (prev?.bannerUrl || '');
+
+      localStorage.setItem('cinelog_banner_pos', bannerPos);
+      localStorage.setItem('cinelog_banner_fit', bannerFit);
+      localStorage.setItem('cinelog_banner_url', bannerUrlVal);
+
       if (nextUser.id) {
+        localStorage.setItem(`cinelog_banner_pos_${nextUser.id}`, bannerPos);
+        localStorage.setItem(`cinelog_banner_fit_${nextUser.id}`, bannerFit);
+        localStorage.setItem(`cinelog_banner_url_${nextUser.id}`, bannerUrlVal);
         localStorage.setItem(`equipped_border_${nextUser.id}`, nextUser.equippedBorder || 'none');
         localStorage.setItem(`cinelog_shop_${nextUser.id}`, JSON.stringify({
           equippedBorder: nextUser.equippedBorder || 'none',
-          bannerUrl: nextUser.bannerUrl || '',
+          bannerUrl: bannerUrlVal,
+          bannerFitMode: bannerFit,
+          bannerPosPercent: bannerPos,
           spentCinePoints: nextUser.spentCinePoints || 0,
           purchasedBorders: nextUser.purchasedBorders || [],
           purchasedBadges: nextUser.purchasedBadges || [],
@@ -812,6 +825,7 @@ function AppInner() {
         localStorage.setItem('cinelog_supabase_cached_user', JSON.stringify(nextUser));
       } else {
         localStorage.setItem('equipped_border_sandbox', nextUser.equippedBorder || 'none');
+        localStorage.setItem('cinelog_sandbox_user', JSON.stringify(nextUser));
       }
       return nextUser;
     });
