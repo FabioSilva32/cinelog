@@ -1,17 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Film, Compass, List, BarChart3, User, LogOut, Sparkles, CalendarDays, Award, Settings, Library, Home, Star, Trophy, HelpCircle, Flame, Clapperboard, Users, Wand2, Menu, X, Search, Bell, Palette } from 'lucide-react';
+import { Film, Compass, List, BarChart3, User, LogOut, Sparkles, CalendarDays, Award, Settings, Library, Home, Star, Trophy, HelpCircle, Flame, Clapperboard, Users, Wand2, Menu, X, Search, Bell } from 'lucide-react';
 import { isSupabaseConfigured } from '../supabaseClient';
 import { BORDER_STYLES } from '../utils/achievements';
 import AvatarWithBorder from './AvatarWithBorder';
 
-function BrandLogoMark({ size = 32 }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={size} height={size} fill="none" style={{ flexShrink: 0, display: 'block' }}>
-      <rect width="20" height="20" x="2" y="2" rx="4" stroke="var(--accent, #e50914)" strokeWidth="2" />
-      <polygon points="10,7.5 17,12 10,16.5" fill="var(--accent, #e50914)" />
-    </svg>
-  );
-}
 
 const NAV_GROUPS = [
   {
@@ -98,7 +90,19 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
               style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', userSelect: 'none', flexShrink: 0 }}
               title="CineLog — Go to Explore"
             >
-              <BrandLogoMark size={32} />
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                background: 'var(--accent)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                boxShadow: '0 2px 8px rgba(229,9,20,0.35)'
+              }}>
+                <Film size={18} color="#FFFFFF" />
+              </div>
               <span style={{ color: '#FFFFFF', fontWeight: 900, fontSize: '21px', letterSpacing: '-0.5px' }}>
                 Cine<span style={{ color: 'var(--accent)' }}>Log</span>
               </span>
@@ -403,17 +407,6 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
                       <span>Film Bounties</span>
                     </button>
 
-                    <div style={{ height: '1px', background: '#222222', margin: '4px 0' }} />
-
-                    <button
-                      onClick={() => { setShowLogoModal(true); setShowUserMenu(false); }}
-                      style={{ width: '100%', padding: '7px 10px', textAlign: 'left', background: 'transparent', border: 'none', color: '#fbbf24', fontSize: '12px', fontWeight: 700, cursor: 'pointer', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(251,191,36,0.1)'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                    >
-                      <Palette size={14} color="#fbbf24" />
-                      <span>Brand Logos (20 Variants)</span>
-                    </button>
 
                     <button
                       onClick={() => { onOpenSettings(); setShowUserMenu(false); }}
@@ -465,7 +458,19 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
         </button>
 
         <div className="logo-wrapper" onClick={() => handleNavClick('explore')} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-          <BrandLogoMark size={26} />
+          <div style={{
+            width: '28px',
+            height: '28px',
+            borderRadius: '7px',
+            background: 'var(--accent)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            boxShadow: '0 2px 6px rgba(229,9,20,0.35)'
+          }}>
+            <Film size={15} color="#FFFFFF" />
+          </div>
           <span style={{ color: '#fff', fontWeight: 900, fontSize: '18px' }}>Cine<span style={{ color: 'var(--accent)' }}>Log</span></span>
         </div>
 
@@ -489,7 +494,19 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
           {/* Logo & Close button on Mobile */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
             <div className="logo-wrapper" onClick={() => handleNavClick('explore')} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-              <BrandLogoMark size={28} />
+              <div style={{
+                width: '30px',
+                height: '30px',
+                borderRadius: '8px',
+                background: 'var(--accent)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                boxShadow: '0 2px 8px rgba(229,9,20,0.35)'
+              }}>
+                <Film size={16} color="#FFFFFF" />
+              </div>
               <span style={{ color: '#fff', fontWeight: 900, fontSize: '19px' }}>Cine<span style={{ color: 'var(--accent)' }}>Log</span></span>
             </div>
 
