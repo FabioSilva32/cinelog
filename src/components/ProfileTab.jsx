@@ -718,13 +718,25 @@ export default function ProfileTab({
                   borderRadius: '20px 20px 0 0',
                   overflow: 'hidden',
                   position: 'relative',
-                  background: (viewedProfile?.bannerUrl && !viewedProfile.bannerUrl.startsWith('animated-'))
-                    ? `url("${viewedProfile.bannerUrl}") center ${viewedProfile.bannerPosPercent ?? 20}% / ${viewedProfile.bannerFitMode === 'contain' ? 'contain' : 'cover'} no-repeat`
-                    : (!viewedProfile?.bannerUrl ? 'linear-gradient(135deg, #181818 0%, #101010 50%, #000000 100%)' : '#08070e')
+                  background: '#08070e'
                 }}
               >
-                {viewedProfile?.bannerUrl?.startsWith('animated-') && (
+                {viewedProfile?.bannerUrl && !viewedProfile.bannerUrl.startsWith('animated-') ? (
+                  <img
+                    src={viewedProfile.bannerUrl}
+                    alt="Profile Banner"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: viewedProfile.bannerFitMode || 'cover',
+                      objectPosition: `center ${viewedProfile.bannerPosPercent ?? 20}%`,
+                      display: 'block'
+                    }}
+                  />
+                ) : viewedProfile?.bannerUrl?.startsWith('animated-') ? (
                   <AnimatedBannerBackground bannerId={viewedProfile.bannerUrl} />
+                ) : (
+                  <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #181818 0%, #101010 50%, #000000 100%)' }} />
                 )}
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 80%, rgba(10,8,19,0.9) 100%)', pointerEvents: 'none' }} />
               </div>
@@ -902,26 +914,38 @@ export default function ProfileTab({
               borderRadius: '24px 24px 0 0',
               overflow: 'hidden',
               position: 'relative',
-              background: (currentUser?.bannerUrl && !currentUser.bannerUrl.startsWith('animated-'))
-                ? `url("${currentUser.bannerUrl}") center ${currentUser.bannerPosPercent ?? 20}% / ${currentUser.bannerFitMode === 'contain' ? 'contain' : 'cover'} no-repeat`
-                : (!currentUser?.bannerUrl
-                    ? 'radial-gradient(ellipse at 50% 25%, rgba(136,8,8,0.32) 0%, rgba(18,14,28,0.9) 65%, #08060d 100%)'
-                    : '#08070e')
+              background: '#08070e'
             }}
           >
-            {currentUser?.bannerUrl && currentUser.bannerUrl.startsWith('animated-') && (
+            {currentUser?.bannerUrl && !currentUser.bannerUrl.startsWith('animated-') ? (
+              <img
+                src={currentUser.bannerUrl}
+                alt="Profile Banner"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: currentUser?.bannerFitMode || 'cover',
+                  objectPosition: `center ${currentUser?.bannerPosPercent ?? 20}%`,
+                  display: 'block'
+                }}
+              />
+            ) : currentUser?.bannerUrl && currentUser.bannerUrl.startsWith('animated-') ? (
               <AnimatedBannerBackground bannerId={currentUser.bannerUrl} />
-            )}
-
-            {!currentUser?.bannerUrl && (
+            ) : (
               <div style={{
-                position: 'absolute',
-                inset: 0,
-                opacity: 0.18,
-                backgroundImage: 'radial-gradient(rgba(255,255,255,0.25) 1px, transparent 1px)',
-                backgroundSize: '24px 24px',
-                pointerEvents: 'none'
-              }} />
+                width: '100%',
+                height: '100%',
+                background: 'radial-gradient(ellipse at 50% 25%, rgba(136,8,8,0.32) 0%, rgba(18,14,28,0.9) 65%, #08060d 100%)'
+              }}>
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  opacity: 0.18,
+                  backgroundImage: 'radial-gradient(rgba(255,255,255,0.25) 1px, transparent 1px)',
+                  backgroundSize: '24px 24px',
+                  pointerEvents: 'none'
+                }} />
+              </div>
             )}
 
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 65%, rgba(13,11,20,0.95) 100%)', pointerEvents: 'none' }} />

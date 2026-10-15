@@ -12,39 +12,39 @@ import { BORDER_STYLES, BADGE_COLORS } from '../utils/achievements';
 const TMDB_KEY = '6a2fd6b9b1bb3befbb9f14c203732225';
 
 export const CURATED_MOVIE_AVATARS = [
-  { id: 'spiderman', name: 'Spider-Man', movie: 'Spider-Verse', category: 'Action', url: 'https://images.unsplash.com/photo-1635805737707-575885ab0820?w=400&fit=crop&q=85' },
-  { id: 'batman', name: 'The Dark Knight', movie: 'Batman', category: 'Action', url: 'https://image.tmdb.org/t/p/w300/7Pxez9J8fuPd2Mn9kex13YALrCQ.jpg' },
-  { id: 'neo', name: 'Neo', movie: 'The Matrix', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w300/8RZLOyYGsoRe9p44q3xin9QkMHv.jpg' },
-  { id: 'dune', name: 'Paul Atreides', movie: 'Dune: Part Two', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w300/dFxpwRpmzpVfP1zjluH68DeQhyj.jpg' },
-  { id: 'oppenheimer', name: 'J. Robert Oppenheimer', movie: 'Oppenheimer', category: 'Drama', url: 'https://image.tmdb.org/t/p/w300/2lKs67r7FI4bPu0AXxMUJZxmUXn.jpg' },
-  { id: 'joker', name: 'Arthur Fleck', movie: 'Joker', category: 'Drama', url: 'https://image.tmdb.org/t/p/w300/u38k3hQBDwNX0VA22aQceDp9Iyv.jpg' },
-  { id: 'joker_heath', name: 'The Joker', movie: 'The Dark Knight', category: 'Drama', url: 'https://image.tmdb.org/t/p/w300/p2z2bURSg7nuMsN9P2s61e2RvNz.jpg' },
-  { id: 'officer_k', name: 'Officer K', movie: 'Blade Runner 2049', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w300/lyUyVARQKhGxaxy0FbPJCQRpiaW.jpg' },
-  { id: 'killbill', name: 'The Bride', movie: 'Kill Bill: Vol. 1', category: 'Action', url: 'https://image.tmdb.org/t/p/w300/sBgAZWi3o4FsnaTvnTNtK6jpQcF.jpg' },
-  { id: 'tyler_durden', name: 'Tyler Durden', movie: 'Fight Club', category: 'Drama', url: 'https://image.tmdb.org/t/p/w300/ajNaPmXVVMJFg9GWmu6MJzTaXdV.jpg' },
-  { id: 'alien', name: 'Ellen Ripley', movie: 'Alien', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w300/wTSnfktNBLd6kwQxgvkqYw6vEon.jpg' },
-  { id: 'cooper', name: 'Cooper', movie: 'Interstellar', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w300/lCySuYjhXix3FzQdS4oceDDrXKI.jpg' },
-  { id: 'ironman', name: 'Tony Stark', movie: 'Avengers: Endgame', category: 'Action', url: 'https://image.tmdb.org/t/p/w300/5qHNjhtjMD4YWH3UP0rm4tKwxCL.jpg' },
-  { id: 'cobb', name: 'Dom Cobb', movie: 'Inception', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w300/wo2hJpn04vbtmh0B9utCFdsQhxM.jpg' },
-  { id: 'corleone', name: 'Michael Corleone', movie: 'The Godfather', category: 'Classics', url: 'https://image.tmdb.org/t/p/w300/m8HAAjq1T75JypKk0v1FFQn4ysZ.jpg' },
-  { id: 'hansolo', name: 'Han Solo', movie: 'Star Wars', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/w300/pjBMJVPpcZK23Vt1nzr1zEBTWrP.jpg' },
-  { id: 'vitocorleone', name: 'Vito Corleone', movie: 'The Godfather', category: 'Classics', url: 'https://image.tmdb.org/t/p/w300/yIvLpf9U9NfAvC7fuAgOQ8tu51T.jpg' },
-  { id: 'miles_morales', name: 'Peter Parker', movie: 'Spider-Man: No Way Home', category: 'Action', url: 'https://image.tmdb.org/t/p/w300/adwEBb2sCSzqwnpVgNEG7irl1Ne.jpg' }
+  { id: 'spiderman', name: 'Spider-Man Mask', movie: 'Spider-Verse', category: 'Action', url: 'https://images.unsplash.com/photo-1635805737707-575885ab0820?w=400&fit=crop&q=85' },
+  { id: 'batman', name: 'Dark Knight Cowl', movie: 'The Batman', category: 'Action', url: 'https://images.unsplash.com/photo-1531259683007-016a7b628fc3?w=400&fit=crop&q=85' },
+  { id: 'stormtrooper', name: 'Stormtrooper Helmet', movie: 'Star Wars: A New Hope', category: 'Sci-Fi', url: 'https://images.unsplash.com/photo-1579566346927-c68383817a25?w=400&fit=crop&q=85' },
+  { id: 'mando', name: 'Mandalorian Beskar', movie: 'The Mandalorian', category: 'Sci-Fi', url: 'https://images.unsplash.com/photo-1608889175123-8ee362201f81?w=400&fit=crop&q=85' },
+  { id: 'ironman', name: 'Mark III Armored Helmet', movie: 'Iron Man', category: 'Action', url: 'https://images.unsplash.com/photo-1635863138275-d9b33299680b?w=400&fit=crop&q=85' },
+  { id: 'astronaut_gold', name: 'Interstellar EVA Helmet', movie: 'Interstellar', category: 'Sci-Fi', url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&fit=crop&q=85' },
+  { id: 'cosmic_explorer', name: 'Deep Space Explorer', movie: '2001: A Space Odyssey', category: 'Sci-Fi', url: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&fit=crop&q=85' },
+  { id: 'cyberpunk_visor', name: 'Cyberpunk Optic Visor', movie: 'Blade Runner 2049', category: 'Sci-Fi', url: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&fit=crop&q=85' },
+  { id: 'android', name: 'Synthetic Android Core', movie: 'Ex Machina', category: 'Sci-Fi', url: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=400&fit=crop&q=85' },
+  { id: 'panavision_cam', name: 'Panavision 35mm Camera', movie: 'Hollywood Archive', category: 'Classics', url: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400&fit=crop&q=85' },
+  { id: 'projector', name: 'Vintage 35mm Projector', movie: 'Cinema Paradiso', category: 'Classics', url: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400&fit=crop&q=85' },
+  { id: 'clapperboard', name: 'Director\'s Clapperboard', movie: 'Studio Production', category: 'Classics', url: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=400&fit=crop&q=85' },
+  { id: 'film_reel', name: 'Celluloid Film Reel', movie: '35mm Film Archive', category: 'Classics', url: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=400&fit=crop&q=85' },
+  { id: 'theater_marquee', name: 'Cinema Neon Marquee', movie: 'Midnight Screenings', category: 'Classics', url: 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=400&fit=crop&q=85' },
+  { id: 'popcorn', name: 'Vintage Cinema Popcorn', movie: 'Concession Stand', category: 'Pop Culture', url: 'https://images.unsplash.com/photo-1585647347483-22b66260dfff?w=400&fit=crop&q=85' },
+  { id: 'neon_sign', name: 'Cinema Neon Glow', movie: 'Drive (2011)', category: 'Action', url: 'https://images.unsplash.com/photo-1514306191717-452ec28c7814?w=400&fit=crop&q=85' },
+  { id: 'synth_arcade', name: '80s Synth Arcade', movie: 'Tron / Ready Player One', category: 'Sci-Fi', url: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=400&fit=crop&q=85' },
+  { id: 'cyber_grid', name: 'Matrix Cyber Grid', movie: 'The Matrix', category: 'Sci-Fi', url: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=400&fit=crop&q=85' }
 ];
 
 export const CINEMATIC_PRESET_BANNERS = [
-  { name: 'Blade Runner 2049', tag: 'Cyberpunk Neon', url: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?auto=format&fit=crop&w=1600&h=600&q=85' },
-  { name: 'Interstellar Deep Space', tag: 'Cosmic Wormhole', url: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1600&h=600&q=85' },
-  { name: 'Dune: Arrakis Dunes', tag: 'Desert Horizon', url: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=1600&h=600&q=85' },
-  { name: 'Grand IMAX Cinema Hall', tag: 'Velvet Theater', url: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1600&h=600&q=85' },
-  { name: 'Cyberpunk Tokyo Rain', tag: 'Midnight Neon', url: 'https://images.unsplash.com/photo-1511447333015-45b65e60f6d5?auto=format&fit=crop&w=1600&h=600&q=85' },
-  { name: 'Vintage 35mm Studio', tag: 'Analog Archive', url: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&w=1600&h=600&q=85' },
-  { name: 'Apocalypse Golden Sunset', tag: 'Epic Cinema', url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&h=600&q=85' },
-  { name: 'Alpine Peak Vista', tag: 'Dramatic Drama', url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1600&h=600&q=85' },
-  { name: 'Retro Synthwave Arcade', tag: '80s Nostalgia', url: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=1600&h=600&q=85' },
-  { name: 'Film Premiere Gala', tag: 'Red Carpet', url: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=1600&h=600&q=85' },
-  { name: 'Deep Nebula Vortex', tag: 'Astrophotography', url: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=1600&h=600&q=85' },
-  { name: 'Matrix Digital Grid', tag: 'Cyber Dystopia', url: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=1600&h=600&q=85' }
+  { name: 'Interstellar: Gargantua', tag: 'Sci-Fi Odyssey', url: 'https://image.tmdb.org/t/p/w1280/8sNiAPPYU14PUepFNeSNGUTiHW.jpg' },
+  { name: 'Blade Runner 2049: Neon Vegas', tag: 'Cyberpunk Noir', url: 'https://image.tmdb.org/t/p/w1280/gNdLJU9TxrpGx4dkZidjys3fyy0.jpg' },
+  { name: 'Dune: Part Two: Arrakis', tag: 'Epic Desert', url: 'https://image.tmdb.org/t/p/w1280/eZ239CUp1d6OryZEBPnO2n87gMG.jpg' },
+  { name: 'The Dark Knight: Gotham Overlook', tag: 'Gotham Vigilante', url: 'https://image.tmdb.org/t/p/w1280/9FE5eD92WfVCiivM9Pq9GVSrlWk.jpg' },
+  { name: 'Oppenheimer: Trinity Wave', tag: 'Atomic Drama', url: 'https://image.tmdb.org/t/p/w1280/neeNHeXjMF5fXoCJRsOmkNGC7q.jpg' },
+  { name: 'Spider-Verse: Multiverse Leap', tag: 'Multiverse Marvel', url: 'https://image.tmdb.org/t/p/w1280/kVd3a9YeLGkoeR50jGEXM6EqseS.jpg' },
+  { name: 'Inception: Folded Paris', tag: 'Mind Heist', url: 'https://image.tmdb.org/t/p/w1280/8ZTVqvKDQ8emSGUEMjsS4yHAwrp.jpg' },
+  { name: 'Spirited Away: Sea Railway', tag: 'Studio Ghibli', url: 'https://image.tmdb.org/t/p/w1280/6oaL4DP75yABrd5EbC4H2zq5ghc.jpg' },
+  { name: 'Mad Max: Fury Road: Sandstorm', tag: 'Wasteland Action', url: 'https://image.tmdb.org/t/p/w1280/gqrnQA6Xppdl8vIb2eJc58VC1tW.jpg' },
+  { name: 'The Matrix: Digital Lobby', tag: 'Cyber Dystopia', url: 'https://image.tmdb.org/t/p/w1280/tlm8UkiQsitc8rSuIAscQDCnP8d.jpg' },
+  { name: '2001: Cosmic Monolith', tag: 'Cosmic Cinema', url: 'https://image.tmdb.org/t/p/w1280/w5IDXtifKntw0ajv2co7jFlTQDM.jpg' },
+  { name: 'Fight Club: Collapse', tag: 'Psychological Cult', url: 'https://image.tmdb.org/t/p/w1280/c6OLXfKAk5BKeR6broC8pYiCquX.jpg' }
 ];
 
 export default function ProfileCustomizerModal({
@@ -152,29 +152,31 @@ export default function ProfileCustomizerModal({
     reader.readAsDataURL(file);
   };
 
-  // Save changes
   const handleSave = () => {
-    onSave({
-      displayName,
-      username,
-      bio,
-      avatar,
-      equippedBorder,
-      bannerUrl,
-      bannerFitMode,
-      bannerPosPercent,
-      featuredBadges
-    });
+    if (onSave) {
+      onSave({
+        displayName,
+        username,
+        bio,
+        avatar,
+        equippedBorder,
+        bannerUrl,
+        bannerFitMode,
+        bannerPosPercent,
+        featuredBadges
+      });
+    }
+    onClose();
   };
 
-  // Toggle badge pinning
+  // Badges pin toggle (up to 5)
   const toggleBadgePin = (badgeName) => {
     setFeaturedBadges(prev => {
       if (prev.includes(badgeName)) {
         return prev.filter(b => b !== badgeName);
       }
       if (prev.length >= 5) {
-        alert("You can select up to 5 featured badges. Unpin one to add another.");
+        alert("You can pin a maximum of 5 badges to your profile header!");
         return prev;
       }
       return [...prev, badgeName];
@@ -195,7 +197,7 @@ export default function ProfileCustomizerModal({
       <div
         className="glass animate-fade-in-scale"
         style={{
-          width: '96vw', maxWidth: '1120px', maxHeight: '92vh',
+          width: '96vw', maxWidth: '1440px', height: '90vh', maxHeight: '92vh',
           borderRadius: '26px', border: '1px solid rgba(255,255,255,0.14)',
           background: '#0d0b16', display: 'flex', flexDirection: 'column',
           boxShadow: '0 30px 90px rgba(0,0,0,0.95)', overflow: 'hidden'
@@ -205,16 +207,16 @@ export default function ProfileCustomizerModal({
         {/* HEADER BAR */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '20px 28px', borderBottom: '1px solid rgba(255,255,255,0.08)',
-          background: 'rgba(255,255,255,0.02)'
+          padding: '16px 28px', borderBottom: '1px solid rgba(255,255,255,0.08)',
+          background: 'rgba(255,255,255,0.02)', flexShrink: 0
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             <div style={{
-              width: '42px', height: '42px', borderRadius: '12px',
+              width: '40px', height: '40px', borderRadius: '12px',
               background: 'rgba(136,8,8,0.2)', border: '1px solid rgba(136,8,8,0.4)',
               display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>
-              <SlidersHorizontal size={20} color="var(--accent)" />
+              <SlidersHorizontal size={19} color="var(--accent)" />
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -226,7 +228,7 @@ export default function ProfileCustomizerModal({
                 </span>
               </div>
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-                Customize your banner, movie character avatar, border, badges, bio, and favorite film showcase.
+                Customize your cinematic banner, iconic mask avatar, border, badges, bio, and favorite film showcase.
               </p>
             </div>
           </div>
@@ -241,18 +243,18 @@ export default function ProfileCustomizerModal({
         </div>
 
         {/* 2-COLUMN STUDIO WORKSPACE */}
-        <div style={{ display: 'grid', gridTemplateColumns: '330px 1fr', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', flex: 1, minHeight: 0, overflow: 'hidden' }}>
 
           {/* ─────────────────────────────────────────────────────────────
-              LEFT COLUMN: EXPANDED LIVE CARD PREVIEW
+              LEFT COLUMN: EXPANDED LIVE CARD PREVIEW & CONTROLS
               ───────────────────────────────────────────────────────────── */}
           <div style={{
             background: 'rgba(0,0,0,0.4)',
             borderRight: '1px solid rgba(255,255,255,0.08)',
-            padding: '24px 20px',
+            padding: '20px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '18px',
+            gap: '14px',
             overflowY: 'auto'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -260,7 +262,7 @@ export default function ProfileCustomizerModal({
                 <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--green)', boxShadow: '0 0 8px var(--green)' }} />
                 Live Card Preview
               </span>
-              <span style={{ fontSize: '10.5px', color: 'var(--text-dim)', fontWeight: 700 }}>Real-Time</span>
+              <span style={{ fontSize: '10.5px', color: 'var(--text-dim)', fontWeight: 700 }}>Real-Time Focus</span>
             </div>
 
             {/* THE LIVE PROFILE CARD */}
@@ -272,20 +274,38 @@ export default function ProfileCustomizerModal({
               boxShadow: '0 16px 40px rgba(0,0,0,0.7)',
               position: 'relative'
             }}>
-              {/* Card Banner (165px tall) */}
+              {/* Card Banner (155px tall) */}
               <div style={{
-                height: '165px',
+                height: '155px',
                 width: '100%',
                 position: 'relative',
                 overflow: 'hidden',
-                background: (bannerUrl && !bannerUrl.startsWith('animated-'))
-                  ? `url("${bannerUrl}") center ${bannerPosPercent}% / ${bannerFitMode === 'contain' ? 'contain' : 'cover'} no-repeat`
-                  : (!bannerUrl ? 'radial-gradient(ellipse at 50% 25%, rgba(136,8,8,0.35) 0%, rgba(15,12,24,0.9) 70%, #06050a 100%)' : '#08070e')
+                background: '#090810'
               }}>
-                {bannerUrl && bannerUrl.startsWith('animated-') && (
+                {bannerUrl && !bannerUrl.startsWith('animated-') ? (
+                  <img
+                    src={bannerUrl}
+                    alt="Banner Preview"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: bannerFitMode,
+                      objectPosition: `center ${bannerPosPercent}%`,
+                      display: 'block',
+                      pointerEvents: 'none',
+                      userSelect: 'none'
+                    }}
+                  />
+                ) : (bannerUrl && bannerUrl.startsWith('animated-')) ? (
                   <AnimatedBannerBackground bannerId={bannerUrl} />
+                ) : (
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    background: 'radial-gradient(ellipse at 50% 25%, rgba(136,8,8,0.4) 0%, rgba(15,12,24,0.92) 70%, #06050a 100%)'
+                  }} />
                 )}
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 55%, rgba(13,11,21,0.95) 100%)', pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 60%, rgba(13,11,21,0.95) 100%)', pointerEvents: 'none' }} />
 
                 <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 800, color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase' }}>
                   {bannerFitMode}
@@ -293,7 +313,7 @@ export default function ProfileCustomizerModal({
               </div>
 
               {/* Card Body */}
-              <div style={{ padding: '0 16px 18px', position: 'relative' }}>
+              <div style={{ padding: '0 16px 16px', position: 'relative' }}>
                 {/* Avatar */}
                 <div style={{
                   marginTop: '-44px',
@@ -311,9 +331,9 @@ export default function ProfileCustomizerModal({
                 </div>
 
                 {/* Identity */}
-                <div style={{ marginTop: '10px' }}>
+                <div style={{ marginTop: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <div style={{ fontSize: '17px', fontWeight: 900, color: '#fff', letterSpacing: '-0.3px', lineHeight: 1.2 }}>
+                    <div style={{ fontSize: '16.5px', fontWeight: 900, color: '#fff', letterSpacing: '-0.3px', lineHeight: 1.2 }}>
                       {displayName.trim() || username || 'CineLog Fan'}
                     </div>
                     {isCreator && (
@@ -325,13 +345,13 @@ export default function ProfileCustomizerModal({
                   <div style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: 700, marginTop: '2px' }}>
                     @{username || 'cinelog_user'}
                   </div>
-                  <div style={{ fontSize: '11.5px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.45, marginTop: '6px', fontStyle: 'italic', display: '-webkit-box', WebKitLineClamp: 2, WebKitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  <div style={{ fontSize: '11.5px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.45, marginTop: '5px', fontStyle: 'italic', display: '-webkit-box', WebKitLineClamp: 2, WebKitBoxOrient: 'vertical', overflow: 'hidden' }}>
                     "{bio || 'No cinema story written yet.'}"
                   </div>
                 </div>
 
                 {/* Live Pinned Badges Preview */}
-                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                   {(featuredBadges.length > 0 ? featuredBadges : sortedBadges.slice(0, 3)).map(b => {
                     const colors = BADGE_COLORS[b] || { border: '1px solid var(--border)', color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.03)' };
                     return (
@@ -343,7 +363,7 @@ export default function ProfileCustomizerModal({
                 </div>
 
                 {/* Quick Stats Pill */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginTop: '12px', background: 'rgba(255,255,255,0.03)', padding: '8px 10px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginTop: '10px', background: 'rgba(255,255,255,0.03)', padding: '7px 10px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
                   <div>
                     <div style={{ fontSize: '8.5px', color: 'var(--text-dim)', textTransform: 'uppercase', fontWeight: 800 }}>Watched</div>
                     <div style={{ fontSize: '13px', fontWeight: 900, color: 'var(--green)' }}>{watchedCount}</div>
@@ -362,13 +382,13 @@ export default function ProfileCustomizerModal({
 
             {/* BANNER FRAMING & FOCUS TOOLBAR */}
             <div style={{
-              background: 'rgba(255,255,255,0.02)',
+              background: 'rgba(255,255,255,0.025)',
               border: '1px solid rgba(255,255,255,0.08)',
               borderRadius: '16px',
-              padding: '16px',
+              padding: '14px 16px',
               display: 'flex',
               flexDirection: 'column',
-              gap: '12px'
+              gap: '10px'
             }}>
               <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Banner Framing & Focus
@@ -400,25 +420,61 @@ export default function ProfileCustomizerModal({
                 </button>
               </div>
 
-              {/* Vertical slider */}
+              {/* Vertical slider with visible glowing track bar */}
               {bannerFitMode === 'cover' && !bannerUrl.startsWith('animated-') && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700 }}>
-                    <span>▲ Top</span>
-                    <span>Position: {bannerPosPercent}%</span>
-                    <span>▼ Bottom</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>▲ Top</span>
+                    <span style={{ color: '#fff', fontWeight: 800 }}>Position: {bannerPosPercent}%</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>▼ Bottom</span>
                   </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    step="1"
-                    value={bannerPosPercent}
-                    onChange={e => setBannerPosPercent(Number(e.target.value))}
-                    style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--accent)' }}
-                  />
+
+                  {/* Explicit visible glowing track bar behind native input */}
+                  <div style={{ position: 'relative', width: '100%', height: '26px', display: 'flex', alignItems: 'center' }}>
+                    <div style={{
+                      position: 'absolute',
+                      left: 0,
+                      right: 0,
+                      height: '8px',
+                      borderRadius: '4px',
+                      background: 'rgba(255, 255, 255, 0.16)',
+                      boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.8)',
+                      pointerEvents: 'none',
+                      overflow: 'hidden'
+                    }}>
+                      <div style={{
+                        width: `${bannerPosPercent}%`,
+                        height: '100%',
+                        borderRadius: '4px',
+                        background: 'linear-gradient(90deg, #880808, #c0392b)',
+                        boxShadow: '0 0 10px rgba(192, 57, 43, 0.8)'
+                      }} />
+                    </div>
+
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value={bannerPosPercent}
+                      onChange={e => setBannerPosPercent(Number(e.target.value))}
+                      className="profile-banner-range-input"
+                      style={{
+                        position: 'relative',
+                        width: '100%',
+                        height: '26px',
+                        margin: 0,
+                        cursor: 'ew-resize',
+                        background: 'transparent',
+                        WebkitAppearance: 'none',
+                        appearance: 'none',
+                        zIndex: 2
+                      }}
+                    />
+                  </div>
+
                   {/* Quick focus shortcuts */}
-                  <div style={{ display: 'flex', gap: '6px', marginTop: '2px' }}>
+                  <div style={{ display: 'flex', gap: '6px' }}>
                     {[
                       { label: 'Top (15%)', val: 15 },
                       { label: 'Center (50%)', val: 50 },
@@ -429,10 +485,12 @@ export default function ProfileCustomizerModal({
                         type="button"
                         onClick={() => setBannerPosPercent(f.val)}
                         style={{
-                          flex: 1, padding: '4px', borderRadius: '6px', fontSize: '10px', fontWeight: 700,
-                          background: bannerPosPercent === f.val ? 'rgba(136,8,8,0.25)' : 'rgba(255,255,255,0.04)',
-                          color: bannerPosPercent === f.val ? 'var(--accent)' : 'var(--text-dim)',
-                          border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer'
+                          flex: 1, padding: '5px 4px', borderRadius: '6px', fontSize: '10.5px', fontWeight: 700,
+                          background: bannerPosPercent === f.val ? 'rgba(192,57,43,0.3)' : 'rgba(255,255,255,0.04)',
+                          color: bannerPosPercent === f.val ? '#fff' : 'var(--text-dim)',
+                          border: bannerPosPercent === f.val ? '1px solid var(--accent)' : '1px solid rgba(255,255,255,0.08)',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s'
                         }}
                       >
                         {f.label}
@@ -448,55 +506,53 @@ export default function ProfileCustomizerModal({
                   onClick={() => setBannerUrl('')}
                   style={{
                     background: 'none', border: 'none', color: 'var(--text-dim)',
-                    fontSize: '11.5px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', paddingTop: '4px'
+                    fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', gap: '4px', padding: '4px 0', marginTop: '2px'
                   }}
                   onMouseEnter={e => e.currentTarget.style.color = 'var(--red)'}
                   onMouseLeave={e => e.currentTarget.style.color = 'var(--text-dim)'}
                 >
-                  <Trash2 size={13} /> Reset to Default Banner
+                  <Trash2 size={12} /> Reset to Default Banner
                 </button>
               )}
             </div>
           </div>
 
           {/* ─────────────────────────────────────────────────────────────
-              RIGHT COLUMN: CATEGORIZED STUDIO WORKSPACE
+              RIGHT COLUMN: TAB NAVIGATION & WORKSPACE
               ───────────────────────────────────────────────────────────── */}
-          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
 
-            {/* MAIN STUDIO TABS */}
+            {/* TAB SELECTOR HEADER */}
             <div style={{
-              display: 'flex', gap: '4px', padding: '16px 24px',
+              display: 'flex', gap: '8px', padding: '14px 28px',
               borderBottom: '1px solid rgba(255,255,255,0.08)',
-              background: 'rgba(255,255,255,0.015)', overflowX: 'auto'
+              background: 'rgba(255,255,255,0.015)', overflowX: 'auto', flexShrink: 0
             }}>
               {[
-                { id: 'banner', label: 'Banners', icon: ImageIcon },
-                { id: 'avatar', label: 'Avatars & Borders', icon: User },
+                { id: 'banner', label: 'Banners Studio', icon: ImageIcon },
+                { id: 'avatar', label: 'Cinema Masks & Borders', icon: User },
                 { id: 'badges', label: 'Featured Badges', icon: Award },
-                { id: 'info', label: 'Profile Info', icon: SlidersHorizontal },
-                { id: 'showcase', label: `Favorites Showcase (${(favorites.filter(Boolean)).length}/6)`, icon: Heart },
-              ].map(tab => {
-                const isActive = customizerTab === tab.id;
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setCustomizerTab(tab.id)}
-                    style={{
-                      background: isActive ? 'rgba(136,8,8,0.22)' : 'transparent',
-                      border: isActive ? '1px solid rgba(136,8,8,0.5)' : '1px solid transparent',
-                      padding: '10px 18px', borderRadius: '12px', fontSize: '13px',
-                      fontWeight: isActive ? 800 : 600, color: isActive ? '#fff' : 'var(--text-muted)',
-                      display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
-                      whiteSpace: 'nowrap', transition: 'all 0.15s ease'
-                    }}
-                  >
-                    <Icon size={15} color={isActive ? 'var(--accent)' : 'currentColor'} />
-                    {tab.label}
-                  </button>
-                );
-              })}
+                { id: 'info', label: 'Identity & Story', icon: SlidersHorizontal },
+                { id: 'showcase', label: 'Favorite Films (6)', icon: Heart },
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setCustomizerTab(tab.id)}
+                  style={{
+                    padding: '8px 16px', borderRadius: '25px', fontSize: '12.5px',
+                    fontWeight: customizerTab === tab.id ? 900 : 700,
+                    background: customizerTab === tab.id ? 'var(--accent)' : 'rgba(255,255,255,0.04)',
+                    color: '#fff', border: customizerTab === tab.id ? '1px solid var(--accent)' : '1px solid rgba(255,255,255,0.08)',
+                    display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
+                    transition: 'all 0.15s ease', flexShrink: 0
+                  }}
+                >
+                  <tab.icon size={14} />
+                  {tab.label}
+                </button>
+              ))}
             </div>
 
             {/* TAB CONTENT PANELS (Scrollable) */}
@@ -570,7 +626,7 @@ export default function ProfileCustomizerModal({
 
                       {/* Cinematic Stills Grid */}
                       {presetCategory === 'stills' && (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                           {CINEMATIC_PRESET_BANNERS.map(preset => {
                             const isSelected = bannerUrl === preset.url;
                             return (
@@ -596,7 +652,7 @@ export default function ProfileCustomizerModal({
                                 <div style={{
                                   position: 'absolute', bottom: 0, left: 0, right: 0,
                                   background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 60%, transparent 100%)',
-                                  padding: '24px 12px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end'
+                                  padding: '24px 14px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end'
                                 }}>
                                   <div>
                                     <div style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>{preset.name}</div>
@@ -627,7 +683,7 @@ export default function ProfileCustomizerModal({
                                   if (isUnlocked) setBannerUrl(item.id);
                                 }}
                                 style={{
-                                  height: '110px',
+                                  height: '115px',
                                   borderRadius: '14px',
                                   overflow: 'hidden',
                                   position: 'relative',
@@ -697,7 +753,7 @@ export default function ProfileCustomizerModal({
                       </form>
 
                       {tmdbSearchResults.length > 0 ? (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                           {tmdbSearchResults.map(m => {
                             const fullUrl = `https://image.tmdb.org/t/p/w1280${m.backdrop_path}`;
                             const isSelected = bannerUrl === fullUrl;
@@ -798,10 +854,10 @@ export default function ProfileCustomizerModal({
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
                       <div>
                         <label style={{ fontSize: '12px', color: '#fff', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                          Curated Movie Characters & Legends ({CURATED_MOVIE_AVATARS.length})
+                          Cinema Masks, Helmets & Artifacts ({CURATED_MOVIE_AVATARS.length})
                         </label>
                         <div style={{ fontSize: '11px', color: 'var(--text-dim)' }}>
-                          Click any character portrait to equip it instantly to your profile.
+                          Click any stylized cinema emblem or mask to equip it instantly to your profile.
                         </div>
                       </div>
 
@@ -972,40 +1028,40 @@ export default function ProfileCustomizerModal({
                   ) : (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
                       {sortedBadges.map(badgeName => {
-                      const isPinned = featuredBadges.includes(badgeName);
-                      const colors = BADGE_COLORS[badgeName] || { border: '1px solid var(--border)', color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.03)' };
-                      return (
-                        <div
-                          key={badgeName}
-                          onClick={() => toggleBadgePin(badgeName)}
-                          style={{
-                            padding: '10px 14px', borderRadius: '12px', cursor: 'pointer',
-                            border: isPinned ? '2px solid var(--accent)' : '1px solid rgba(255,255,255,0.08)',
-                            background: isPinned ? 'rgba(136,8,8,0.2)' : 'rgba(255,255,255,0.02)',
-                            boxShadow: isPinned ? '0 0 16px rgba(136,8,8,0.4)' : 'none',
-                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            transition: 'all 0.15s ease'
-                          }}
-                        >
-                          <span style={{
-                            fontSize: '11px', fontWeight: 800, padding: '3px 9px', borderRadius: '10px',
-                            textTransform: 'uppercase', letterSpacing: '0.04em', ...colors
-                          }}>
-                            {badgeName}
-                          </span>
+                        const isPinned = featuredBadges.includes(badgeName);
+                        const colors = BADGE_COLORS[badgeName] || { border: '1px solid var(--border)', color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.03)' };
+                        return (
+                          <div
+                            key={badgeName}
+                            onClick={() => toggleBadgePin(badgeName)}
+                            style={{
+                              padding: '10px 14px', borderRadius: '12px', cursor: 'pointer',
+                              border: isPinned ? '2px solid var(--accent)' : '1px solid rgba(255,255,255,0.08)',
+                              background: isPinned ? 'rgba(136,8,8,0.2)' : 'rgba(255,255,255,0.02)',
+                              boxShadow: isPinned ? '0 0 16px rgba(136,8,8,0.4)' : 'none',
+                              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            <span style={{
+                              fontSize: '11px', fontWeight: 800, padding: '3px 9px', borderRadius: '10px',
+                              textTransform: 'uppercase', letterSpacing: '0.04em', ...colors
+                            }}>
+                              {badgeName}
+                            </span>
 
-                          <div style={{
-                            width: '20px', height: '20px', borderRadius: '50%',
-                            border: isPinned ? 'none' : '1.5px solid rgba(255,255,255,0.2)',
-                            background: isPinned ? 'var(--accent)' : 'transparent',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center'
-                          }}>
-                            {isPinned && <Check size={12} color="#fff" />}
+                            <div style={{
+                              width: '20px', height: '20px', borderRadius: '50%',
+                              border: isPinned ? 'none' : '1.5px solid rgba(255,255,255,0.2)',
+                              background: isPinned ? 'var(--accent)' : 'transparent',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}>
+                              {isPinned && <Check size={12} color="#fff" />}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
               )}
@@ -1146,7 +1202,7 @@ export default function ProfileCustomizerModal({
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '16px 28px', borderTop: '1px solid rgba(255,255,255,0.08)',
-              background: 'rgba(255,255,255,0.02)'
+              background: 'rgba(255,255,255,0.02)', flexShrink: 0
             }}>
               <span style={{ fontSize: '11px', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Sparkles size={13} color="var(--accent)" /> Changes update in real time. Click Save Changes when finished.
