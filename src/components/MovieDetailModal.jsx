@@ -88,6 +88,50 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
   const episodeNotes = useMemo(() => episodeData.notes || {}, [episodeData.notes]);
   const episodeWatchDates = useMemo(() => episodeData.dates || {}, [episodeData.dates]);
 
+  // Season-level ratings, notes, and completion dates
+  const [seasonRatings, setSeasonRatings] = useState(() => {
+    return movie.season_ratings || (movie.episode_data && movie.episode_data.season_ratings) || (episodeData && episodeData.season_ratings) || {};
+  });
+  const [seasonNotes, setSeasonNotes] = useState(() => {
+    return movie.season_notes || (movie.episode_data && movie.episode_data.season_notes) || (episodeData && episodeData.season_notes) || {};
+  });
+  const [seasonDates, setSeasonDates] = useState(() => {
+    return movie.season_dates || (movie.episode_data && movie.episode_data.season_dates) || (episodeData && episodeData.season_dates) || {};
+  });
+  const [showEpisodesList, setShowEpisodesList] = useState(true);
+  const [expandedSeasonLog, setExpandedSeasonLog] = useState(false);
+  const [episodesFilter, setEpisodesFilter] = useState('all'); // 'all' | 'rated' | 'unrated'
+
+  const updateSeasonRating = (seasonNum, ratingVal) => {
+    const sKey = String(seasonNum);
+    setSeasonRatings(prev => {
+      const copy = { ...prev };
+      if (ratingVal === 0 || ratingVal == null) delete copy[sKey];
+      else copy[sKey] = ratingVal;
+      return copy;
+    });
+  };
+
+  const updateSeasonNote = (seasonNum, noteVal) => {
+    const sKey = String(seasonNum);
+    setSeasonNotes(prev => {
+      const copy = { ...prev };
+      if (!noteVal || !noteVal.trim()) delete copy[sKey];
+      else copy[sKey] = noteVal;
+      return copy;
+    });
+  };
+
+  const updateSeasonWatchDate = (seasonNum, dateVal) => {
+    const sKey = String(seasonNum);
+    setSeasonDates(prev => {
+      const copy = { ...prev };
+      if (!dateVal) delete copy[sKey];
+      else copy[sKey] = dateVal;
+      return copy;
+    });
+  };
+
   const updateEpisodeRating = (epKey, ratingVal) => {
     setEpisodeData(prev => {
       const copy = {
@@ -440,23 +484,37 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
       .catch(() => {});
   }, [targetTmdbId, movie.media_type]);
 
-  // Auto-calculate main TV series rating average from all rated episodes
+  // Auto-calculate main TV series rating average:
+  // 1. If season ratings exist, average the seasons!
+  // 2. Otherwise if episode ratings exist, average the episodes!
   useEffect(() => {
     if (movie.media_type !== 'tv') return;
-    const keys = Object.keys(episodeRatings);
-    if (keys.length > 0) {
-      const sum = keys.reduce((acc, k) => acc + episodeRatings[k], 0);
-      const avg = Math.round((sum / keys.length) * 10) / 10;
+    const sKeys = Object.keys(seasonRatings).filter(k => seasonRatings[k] > 0);
+    if (sKeys.length > 0) {
+      const sum = sKeys.reduce((acc, k) => acc + Number(seasonRatings[k]), 0);
+      const avg = Math.round((sum / sKeys.length) * 10) / 10;
+      setRating(avg);
+      return;
+    }
+    const eKeys = Object.keys(episodeRatings).filter(k => episodeRatings[k] > 0);
+    if (eKeys.length > 0) {
+      const sum = eKeys.reduce((acc, k) => acc + Number(episodeRatings[k]), 0);
+      const avg = Math.round((sum / eKeys.length) * 10) / 10;
       setRating(avg);
     }
-  }, [episodeRatings, movie.media_type]);
+  }, [seasonRatings, episodeRatings, movie.media_type]);
 
   const getSeasonAverage = (seasonNum) => {
     const prefix = `S${String(seasonNum).padStart(2, '0')}E`;
-    const keys = Object.keys(episodeRatings).filter(k => k.startsWith(prefix));
+    const keys = Object.keys(episodeRatings).filter(k => k.startsWith(prefix) && episodeRatings[k] > 0);
     if (keys.length === 0) return null;
-    const sum = keys.reduce((acc, k) => acc + episodeRatings[k], 0);
+    const sum = keys.reduce((acc, k) => acc + Number(episodeRatings[k]), 0);
     return Math.round((sum / keys.length) * 10) / 10;
+  };
+
+  const getSeasonRatedEpCount = (seasonNum) => {
+    const prefix = `S${String(seasonNum).padStart(2, '0')}E`;
+    return Object.keys(episodeRatings).filter(k => k.startsWith(prefix) && episodeRatings[k] > 0).length;
   };
 
   const availableTagSuggestions = useMemo(() => {
@@ -482,16 +540,30 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
     const resolvedType = isTv ? 'tv' : (movie.media_type || 'movie');
     const genres = movie.genres || details?.genres?.map(g => g.name) || [];
     const directorName = movie.director || details?.credits?.crew?.find(c => c.job === 'Director')?.name || null;
+
+    const mergedEpisodeData = {
+      ...episodeData,
+      ratings: episodeData.ratings || {},
+      notes: episodeData.notes || {},
+      dates: episodeData.dates || {},
+      season_ratings: seasonRatings,
+      season_notes: seasonNotes,
+      season_dates: seasonDates
+    };
+
     onSave({
       ...movie,
       media_type: resolvedType,
       status,
       rating: status === 'watched' ? rating : null,
       review,
-      episode_data: episodeData,
-      episode_ratings: episodeData.ratings || {},
-      episode_notes: episodeData.notes || {},
-      episode_watch_dates: episodeData.dates || {},
+      episode_data: mergedEpisodeData,
+      episode_ratings: mergedEpisodeData.ratings,
+      episode_notes: mergedEpisodeData.notes,
+      episode_watch_dates: mergedEpisodeData.dates,
+      season_ratings: seasonRatings,
+      season_notes: seasonNotes,
+      season_dates: seasonDates,
       tags,
       genres,
       director: directorName,
@@ -524,7 +596,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
 
   const SECTIONS = [
     { id: 'overview', label: 'Overview' },
-    { id: 'episodes', label: 'Episodes', hidden: movie.media_type !== 'tv' },
+    { id: 'episodes', label: 'Seasons & Episodes', hidden: movie.media_type !== 'tv' },
     { id: 'details', label: 'Details' },
     { id: 'cast', label: 'Cast' },
     { id: 'reviews', label: 'Reviews' },
@@ -1015,232 +1087,604 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
             </div>
           </div>
 
-          {/* ── EPISODES SECTION ── */}
+          {/* ── EPISODES & SEASONS SECTION ── */}
           {activeSection === 'episodes' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* Seasons Selector */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* Seasons Selector Header */}
               {details?.seasons && details.seasons.length > 0 ? (
-                <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '10px', marginBottom: '10px', borderBottom: '1px solid var(--border)' }}>
-                  {details.seasons.map(s => {
-                    const seasonAvg = getSeasonAverage(s.season_number);
-                    return (
-                      <button
-                        key={s.season_number}
-                        type="button"
-                        onClick={() => setSelectedSeason(s.season_number)}
-                        style={{
-                          background: selectedSeason === s.season_number ? accentColor : 'rgba(255,255,255,0.02)',
-                          border: `1px solid ${selectedSeason === s.season_number ? accentColor : 'var(--border)'}`,
-                          color: selectedSeason === s.season_number ? '#fff' : 'var(--text-muted)',
-                          borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s'
-                        }}
-                        onMouseEnter={e => { if (selectedSeason !== s.season_number) e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
-                        onMouseLeave={e => { if (selectedSeason !== s.season_number) e.currentTarget.style.borderColor = 'var(--border)'; }}
-                      >
-                        {s.name || `Season ${s.season_number}`} ({s.episode_count} eps)
-                        {seasonAvg !== null && <span style={{ color: 'var(--gold)', marginLeft: '4px', fontWeight: 800 }}>★{seasonAvg.toFixed(1)}</span>}
-                      </button>
-                    );
-                  })}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                      Select Season
+                    </div>
+                    <div style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
+                      Rate the whole season or individual episodes below
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '10px', borderBottom: '1px solid var(--border)' }}>
+                    {details.seasons.map(s => {
+                      const directSeasonRating = seasonRatings[String(s.season_number)];
+                      const seasonAvg = getSeasonAverage(s.season_number);
+                      const isSel = selectedSeason === s.season_number;
+                      return (
+                        <button
+                          key={s.season_number}
+                          type="button"
+                          onClick={() => setSelectedSeason(s.season_number)}
+                          style={{
+                            background: isSel ? accentColor : 'rgba(255,255,255,0.03)',
+                            border: `1px solid ${isSel ? accentColor : 'var(--border)'}`,
+                            color: isSel ? '#fff' : 'var(--text)',
+                            borderRadius: '8px', padding: '7px 14px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s',
+                            display: 'flex', alignItems: 'center', gap: '6px'
+                          }}
+                          onMouseEnter={e => { if (!isSel) e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; }}
+                          onMouseLeave={e => { if (!isSel) e.currentTarget.style.borderColor = 'var(--border)'; }}
+                        >
+                          <span>{s.name || `Season ${s.season_number}`}</span>
+                          <span style={{ fontSize: '11px', opacity: 0.7 }}>({s.episode_count} eps)</span>
+                          {directSeasonRating > 0 ? (
+                            <span style={{ background: isSel ? 'rgba(0,0,0,0.25)' : 'rgba(255,215,0,0.12)', border: '1px solid rgba(255,215,0,0.3)', color: 'var(--gold)', padding: '1px 6px', borderRadius: '10px', fontSize: '11px', fontWeight: 900 }}>
+                              ★ {Number(directSeasonRating).toFixed(1)}
+                            </span>
+                          ) : seasonAvg !== null ? (
+                            <span style={{ background: isSel ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--gold)', padding: '1px 6px', borderRadius: '10px', fontSize: '10.5px', fontWeight: 700 }} title="Average of rated episodes">
+                              ★ {seasonAvg.toFixed(1)} <span style={{ fontSize: '9px', opacity: 0.75 }}>avg</span>
+                            </span>
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               ) : (
                 <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>No seasons found.</div>
               )}
 
-              {/* Episodes List */}
-              {loadingEpisodes ? (
-                <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Loading episodes…</div>
-              ) : seasonEpisodes && seasonEpisodes.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '45vh', overflowY: 'auto', paddingRight: '6px' }}>
-                  {seasonEpisodes.map(ep => {
-                    const epKey = `S${String(selectedSeason).padStart(2, '0')}E${String(ep.episode_number).padStart(2, '0')}`;
-                    const epRating = episodeRatings[epKey] || 0;
-                    const hasLog = episodeNotes[epKey] || episodeWatchDates[epKey];
-                    const isExpanded = expandedEpisodeLogs[epKey];
+              {/* ── CURRENT SEASON RATING & REVIEW CARD ── */}
+              {(() => {
+                const curSeasonKey = String(selectedSeason);
+                const currentSeasonRating = seasonRatings[curSeasonKey] || 0;
+                const currentSeasonNote = seasonNotes[curSeasonKey] || '';
+                const currentSeasonDate = seasonDates[curSeasonKey] || '';
+                const epAvg = getSeasonAverage(selectedSeason);
+                const ratedEpCount = getSeasonRatedEpCount(selectedSeason);
+                const hasSeasonReviewOrDate = Boolean(currentSeasonNote || currentSeasonDate);
+                const curSeasonInfo = details?.seasons?.find(s => s.season_number === selectedSeason);
 
-                    return (
-                      <div key={ep.id} className="glass" style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px', borderRadius: '12px', border: '1px solid var(--border)', transition: 'all 0.2s', position: 'relative' }}>
-                        
-                        {/* Upper row: still frame and info */}
-                        <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                          {ep.still_path ? (
-                            <img src={`https://image.tmdb.org/t/p/w300${ep.still_path}`} alt="" style={{ width: '180px', height: '108px', objectFit: 'cover', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }} />
-                          ) : (
-                            <div style={{ width: '180px', height: '108px', borderRadius: '8px', background: 'var(--surface-solid)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', color: 'var(--text-dim)', flexShrink: 0 }}>📺</div>
-                          )}
-                          
-                          <div style={{ flex: 1, minWidth: '200px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '6px' }}>
-                              <span style={{ fontSize: '15px', fontWeight: 900, color: '#fff', letterSpacing: '-0.3px' }}>
-                                E{ep.episode_number}. {ep.name}
-                              </span>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                {hasLog && (
-                                  <span style={{ background: 'rgba(136,8,8,0.15)', border: '1px solid rgba(136,8,8,0.3)', color: '#c0392b', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 800 }}>
-                                    📝 Logged
-                                  </span>
-                                )}
-                                {ep.air_date && (
-                                  <span style={{ fontSize: '11px', color: 'var(--text-dim)' }}>
-                                    {new Date(ep.air_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: 1.6, margin: '0 0 12px 0', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {ep.overview || "No overview available for this episode."}
-                            </p>
+                return (
+                  <div
+                    className="glass"
+                    style={{
+                      padding: '18px 20px',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(20,20,30,0.4) 100%)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '14px',
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.25)'
+                    }}
+                  >
+                    {/* Header row: Season Name + Score badge */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontSize: '17px', fontWeight: 900, color: '#fff', letterSpacing: '-0.3px' }}>
+                          {curSeasonInfo?.name || `Season ${selectedSeason}`} Overall Rating
+                        </span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-dim)', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
+                          Full Season Score
+                        </span>
+                      </div>
 
-                            {/* Controls row: rating slider & logs toggle */}
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap', borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '12px' }}>
-                              {/* Left side: Rating slider */}
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: '220px' }}>
-                                <span style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Rating:</span>
-                                <div style={{ flex: 1, position: 'relative', padding: '6px 0' }}>
-                                  <input
-                                    type="range" min="0" max="10" step="0.1" value={epRating}
-                                    onChange={e => updateEpisodeRating(epKey, parseFloat(e.target.value))}
-                                    style={{
-                                      width: '100%', height: '5px', appearance: 'none',
-                                      background: epRating > 0
-                                        ? `linear-gradient(to right, ${accentColor} 0%, ${accentColor} ${epRating * 10}%, rgba(255,255,255,0.06) ${epRating * 10}%, rgba(255,255,255,0.06) 100%)`
-                                        : 'rgba(255,255,255,0.06)',
-                                      borderRadius: '3px', outline: 'none', cursor: 'pointer', accentColor: accentColor,
-                                    }}
-                                  />
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
-                                    {[0, 2, 4, 6, 8, 10].map(n => (
-                                      <span key={n} style={{ fontSize: '8px', color: Math.abs(epRating - n) < 0.6 ? accentColor : 'var(--text-dim)', fontWeight: Math.abs(epRating - n) < 0.6 ? 800 : 400 }}>{n}</span>
-                                    ))}
-                                  </div>
-                                </div>
-                                <span style={{ fontSize: '13px', fontWeight: 900, color: epRating > 0 ? 'var(--gold)' : 'var(--text-dim)', minWidth: '48px', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
-                                  {epRating > 0 ? `★ ${epRating.toFixed(1)}` : '—'}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => updateEpisodeRating(epKey, 0)}
-                                  disabled={epRating === 0}
-                                  style={{
-                                    background: 'rgba(239,68,68,0.08)',
-                                    border: '1px solid rgba(239,68,68,0.15)',
-                                    color: 'var(--red)',
-                                    fontSize: '10.5px',
-                                    fontWeight: 800,
-                                    cursor: 'pointer',
-                                    padding: '3px 8px',
-                                    borderRadius: '4px',
-                                    transition: 'opacity 0.15s, background-color 0.15s',
-                                    opacity: epRating > 0 ? 1 : 0,
-                                    pointerEvents: epRating > 0 ? 'auto' : 'none',
-                                  }}
-                                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.15)'}
-                                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(239,68,68,0.08)'}
-                                >
-                                  Clear
-                                </button>
-                              </div>
-
-                              {/* Right side: Log toggler */}
-                              <button
-                                type="button"
-                                onClick={() => setExpandedEpisodeLogs(prev => ({ ...prev, [epKey]: !prev[epKey] }))}
-                                style={{
-                                  background: isExpanded ? 'rgba(255,255,255,0.06)' : 'transparent',
-                                  border: `1px solid ${isExpanded ? 'rgba(255,255,255,0.15)' : 'var(--border)'}`,
-                                  borderRadius: '6px',
-                                  padding: '5px 10px',
-                                  fontSize: '11.5px',
-                                  fontWeight: 700,
-                                  color: isExpanded ? '#fff' : 'var(--text-muted)',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '6px',
-                                  transition: 'all 0.15s'
-                                }}
-                                onMouseEnter={e => { if (!isExpanded) e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
-                                onMouseLeave={e => { if (!isExpanded) e.currentTarget.style.borderColor = 'var(--border)'; }}
-                              >
-                                ✍️ {isExpanded ? 'Hide Thoughts' : 'Thoughts & Logs'}
-                                <span style={{ fontSize: '9px', opacity: 0.6, transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
-                              </button>
-                            </div>
-                          </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                          <span style={{ fontSize: '22px', fontWeight: 900, color: currentSeasonRating > 0 ? 'var(--gold)' : 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
+                            {currentSeasonRating > 0 ? `★ ${currentSeasonRating.toFixed(1)}` : '—'}
+                          </span>
+                          <span style={{ fontSize: '12px', color: 'var(--text-dim)' }}>/ 10</span>
                         </div>
-
-                        {/* Expandable Thoughts & Watch Date panel */}
-                        {isExpanded && (
-                          <div
-                            className="glass"
+                        {currentSeasonRating > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => updateSeasonRating(selectedSeason, 0)}
                             style={{
-                              background: 'rgba(0,0,0,0.15)',
-                              border: '1px dashed rgba(255,255,255,0.08)',
-                              borderRadius: '8px',
-                              padding: '12px 14px',
-                              marginTop: '4px',
-                              display: 'flex',
-                              gap: '16px',
-                              flexDirection: 'row',
-                              flexWrap: 'wrap',
-                              animation: 'fadeIn 0.2s ease-out'
+                              background: 'rgba(239,68,68,0.1)',
+                              border: '1px solid rgba(239,68,68,0.2)',
+                              color: 'var(--red)',
+                              fontSize: '11px',
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                              padding: '3px 8px',
+                              borderRadius: '6px',
+                              transition: 'all 0.15s'
                             }}
+                            title="Clear season rating"
                           >
-                            {/* Watched Date */}
-                            <div style={{ flex: '1 1 150px', minWidth: '150px' }}>
-                              <label style={{ display: 'block', fontSize: '9px', color: 'var(--text-dim)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '6px', letterSpacing: '0.5px' }}>
-                                Watched Date
-                              </label>
-                              <input
-                                type="date"
-                                value={episodeWatchDates[epKey] || ''}
-                                onChange={e => updateEpisodeWatchDate(epKey, e.target.value)}
-                                className="form-input"
-                                style={{
-                                  fontSize: '12px',
-                                  padding: '6px 8px',
-                                  width: '100%',
-                                  background: 'rgba(255,255,255,0.02)',
-                                  color: '#fff',
-                                  borderRadius: '6px',
-                                  border: '1px solid var(--border)'
-                                }}
-                              />
-                            </div>
-
-                            {/* Episode Notes/Thoughts */}
-                            <div style={{ flex: '3 1 300px', minWidth: '240px' }}>
-                              <label style={{ display: 'block', fontSize: '9px', color: 'var(--text-dim)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '6px', letterSpacing: '0.5px' }}>
-                                Episode Thoughts
-                              </label>
-                              <textarea
-                                placeholder="What did you think of this episode? Key scenes, theories, rating thoughts…"
-                                value={episodeNotes[epKey] || ''}
-                                onChange={e => updateEpisodeNote(epKey, e.target.value)}
-                                className="form-input"
-                                style={{
-                                  fontSize: '12.5px',
-                                  padding: '8px 10px',
-                                  minHeight: '60px',
-                                  width: '100%',
-                                  resize: 'vertical',
-                                  background: 'rgba(255,255,255,0.02)',
-                                  color: '#fff',
-                                  borderRadius: '6px',
-                                  border: '1px solid var(--border)',
-                                  lineHeight: '1.4'
-                                }}
-                              />
-                            </div>
-                          </div>
+                            Clear
+                          </button>
                         )}
                       </div>
-                    );
-                  })}
+                    </div>
+
+                    {/* Season Rating Slider */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <input
+                        type="range"
+                        min="0"
+                        max="10"
+                        step="0.1"
+                        value={currentSeasonRating}
+                        onChange={e => updateSeasonRating(selectedSeason, parseFloat(e.target.value))}
+                        style={{
+                          width: '100%',
+                          height: '6px',
+                          appearance: 'none',
+                          background: currentSeasonRating > 0
+                            ? `linear-gradient(to right, ${accentColor} 0%, ${accentColor} ${currentSeasonRating * 10}%, rgba(255,255,255,0.08) ${currentSeasonRating * 10}%, rgba(255,255,255,0.08) 100%)`
+                            : 'rgba(255,255,255,0.08)',
+                          borderRadius: '4px',
+                          outline: 'none',
+                          cursor: 'pointer',
+                          accentColor: accentColor
+                        }}
+                      />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 2px' }}>
+                        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                          <span
+                            key={n}
+                            style={{
+                              fontSize: '9px',
+                              color: Math.abs(currentSeasonRating - n) < 0.6 ? accentColor : 'var(--text-dim)',
+                              fontWeight: Math.abs(currentSeasonRating - n) < 0.6 ? 800 : 400
+                            }}
+                          >
+                            {n}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Quick Rating Chips + Use Episode Avg button */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', paddingTop: '4px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700, marginRight: '2px' }}>Quick:</span>
+                        {[
+                          { label: '💀 1', val: 1.0 },
+                          { label: '😐 5', val: 5.0 },
+                          { label: '👍 7', val: 7.0 },
+                          { label: '🔥 8.5', val: 8.5 },
+                          { label: '⭐ 10', val: 10.0 }
+                        ].map(chip => (
+                          <button
+                            key={chip.val}
+                            type="button"
+                            onClick={() => updateSeasonRating(selectedSeason, chip.val)}
+                            style={{
+                              background: currentSeasonRating === chip.val ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.04)',
+                              border: `1px solid ${currentSeasonRating === chip.val ? accentColor : 'rgba(255,255,255,0.08)'}`,
+                              color: currentSeasonRating === chip.val ? '#fff' : 'var(--text-muted)',
+                              borderRadius: '6px',
+                              padding: '3px 8px',
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              transition: 'all 0.15s'
+                            }}
+                          >
+                            {chip.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* If user rated episodes in this season, offer to adopt the average */}
+                      {epAvg !== null && (
+                        <button
+                          type="button"
+                          onClick={() => updateSeasonRating(selectedSeason, epAvg)}
+                          style={{
+                            background: 'rgba(255,215,0,0.08)',
+                            border: '1px solid rgba(255,215,0,0.25)',
+                            color: 'var(--gold)',
+                            borderRadius: '6px',
+                            padding: '4px 10px',
+                            fontSize: '11.5px',
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            transition: 'all 0.15s'
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,215,0,0.15)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,215,0,0.08)'}
+                          title={`Set season score to the average of your ${ratedEpCount} rated episode(s)`}
+                        >
+                          <span>★ Set to Episode Avg ({epAvg.toFixed(1)})</span>
+                        </button>
+                      )}
+
+                      {/* Season Review / Date toggle */}
+                      <button
+                        type="button"
+                        onClick={() => setExpandedSeasonLog(prev => !prev)}
+                        style={{
+                          background: expandedSeasonLog ? 'rgba(255,255,255,0.08)' : 'transparent',
+                          border: `1px solid ${expandedSeasonLog ? 'rgba(255,255,255,0.18)' : 'var(--border)'}`,
+                          borderRadius: '6px',
+                          padding: '4px 10px',
+                          fontSize: '11.5px',
+                          fontWeight: 700,
+                          color: hasSeasonReviewOrDate || expandedSeasonLog ? '#fff' : 'var(--text-muted)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          transition: 'all 0.15s'
+                        }}
+                      >
+                        ✍️ {expandedSeasonLog ? 'Hide Season Review' : (hasSeasonReviewOrDate ? 'Edit Season Review & Date' : '+ Add Season Review & Date')}
+                        <span style={{ fontSize: '9px', opacity: 0.6, transform: expandedSeasonLog ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
+                      </button>
+                    </div>
+
+                    {/* Expandable Season Review & Date */}
+                    {expandedSeasonLog && (
+                      <div
+                        style={{
+                          background: 'rgba(0,0,0,0.2)',
+                          border: '1px dashed rgba(255,255,255,0.09)',
+                          borderRadius: '8px',
+                          padding: '12px 14px',
+                          display: 'flex',
+                          gap: '14px',
+                          flexWrap: 'wrap',
+                          animation: 'fadeIn 0.2s ease-out'
+                        }}
+                      >
+                        <div style={{ flex: '1 1 160px', minWidth: '150px' }}>
+                          <label style={{ display: 'block', fontSize: '9.5px', color: 'var(--text-dim)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '6px', letterSpacing: '0.5px' }}>
+                            Season Completed / Watched Date
+                          </label>
+                          <input
+                            type="date"
+                            value={currentSeasonDate}
+                            onChange={e => updateSeasonWatchDate(selectedSeason, e.target.value)}
+                            className="form-input"
+                            style={{
+                              fontSize: '12px',
+                              padding: '6px 8px',
+                              width: '100%',
+                              background: 'rgba(255,255,255,0.02)',
+                              color: '#fff',
+                              borderRadius: '6px',
+                              border: '1px solid var(--border)'
+                            }}
+                          />
+                        </div>
+
+                        <div style={{ flex: '3 1 300px', minWidth: '240px' }}>
+                          <label style={{ display: 'block', fontSize: '9.5px', color: 'var(--text-dim)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '6px', letterSpacing: '0.5px' }}>
+                            Season Review &amp; Verdict
+                          </label>
+                          <textarea
+                            placeholder={`What did you think of Season ${selectedSeason} as a whole? Pacing, stand-out moments, arc...`}
+                            value={currentSeasonNote}
+                            onChange={e => updateSeasonNote(selectedSeason, e.target.value)}
+                            className="form-input"
+                            style={{
+                              fontSize: '12.5px',
+                              padding: '8px 10px',
+                              minHeight: '65px',
+                              width: '100%',
+                              resize: 'vertical',
+                              background: 'rgba(255,255,255,0.02)',
+                              color: '#fff',
+                              borderRadius: '6px',
+                              border: '1px solid var(--border)',
+                              lineHeight: '1.4'
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* ── EPISODE-BY-EPISODE BREAKDOWN (COLLAPSIBLE) ── */}
+              <div style={{ marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {/* Header with expand/collapse and filter controls */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', paddingBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowEpisodesList(prev => !prev)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#fff',
+                        fontSize: '14px',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        padding: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <span>Episode Breakdown ({seasonEpisodes.length})</span>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', transform: showEpisodesList ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+                        ▼
+                      </span>
+                    </button>
+                    <span style={{ fontSize: '11.5px', color: 'var(--text-dim)' }}>
+                      {showEpisodesList ? '(Optional: rate individual episodes)' : '(Collapsed — click to show)'}
+                    </span>
+                  </div>
+
+                  {showEpisodesList && seasonEpisodes.length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--text-dim)', marginRight: '2px' }}>Filter:</span>
+                      {[
+                        { id: 'all', label: `All (${seasonEpisodes.length})` },
+                        {
+                          id: 'rated',
+                          label: `Rated (${seasonEpisodes.filter(ep => {
+                            const k = `S${String(selectedSeason).padStart(2, '0')}E${String(ep.episode_number).padStart(2, '0')}`;
+                            return episodeRatings[k] > 0;
+                          }).length})`
+                        },
+                        {
+                          id: 'unrated',
+                          label: `Unrated (${seasonEpisodes.filter(ep => {
+                            const k = `S${String(selectedSeason).padStart(2, '0')}E${String(ep.episode_number).padStart(2, '0')}`;
+                            return !episodeRatings[k];
+                          }).length})`
+                        }
+                      ].map(f => (
+                        <button
+                          key={f.id}
+                          type="button"
+                          onClick={() => setEpisodesFilter(f.id)}
+                          style={{
+                            background: episodesFilter === f.id ? 'rgba(255,255,255,0.12)' : 'transparent',
+                            border: `1px solid ${episodesFilter === f.id ? 'rgba(255,255,255,0.25)' : 'var(--border)'}`,
+                            color: episodesFilter === f.id ? '#fff' : 'var(--text-muted)',
+                            borderRadius: '12px',
+                            padding: '2px 8px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            transition: 'all 0.15s'
+                          }}
+                        >
+                          {f.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>No episodes found for this season.</div>
-              )}
+
+                {/* Episodes List */}
+                {showEpisodesList && (
+                  <>
+                    {loadingEpisodes ? (
+                      <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Loading episodes…</div>
+                    ) : seasonEpisodes && seasonEpisodes.length > 0 ? (
+                      (() => {
+                        const filteredEpisodes = seasonEpisodes.filter(ep => {
+                          const epKey = `S${String(selectedSeason).padStart(2, '0')}E${String(ep.episode_number).padStart(2, '0')}`;
+                          const isRated = episodeRatings[epKey] > 0;
+                          if (episodesFilter === 'rated') return isRated;
+                          if (episodesFilter === 'unrated') return !isRated;
+                          return true;
+                        });
+
+                        if (filteredEpisodes.length === 0) {
+                          return (
+                            <div style={{ textAlign: 'center', padding: '28px', color: 'var(--text-dim)', fontSize: '13px' }}>
+                              No {episodesFilter} episodes in this season.
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '45vh', overflowY: 'auto', paddingRight: '6px' }}>
+                            {filteredEpisodes.map(ep => {
+                              const epKey = `S${String(selectedSeason).padStart(2, '0')}E${String(ep.episode_number).padStart(2, '0')}`;
+                              const epRating = episodeRatings[epKey] || 0;
+                              const hasLog = episodeNotes[epKey] || episodeWatchDates[epKey];
+                              const isExpanded = expandedEpisodeLogs[epKey];
+
+                              return (
+                                <div key={ep.id} className="glass" style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px', borderRadius: '12px', border: '1px solid var(--border)', transition: 'all 0.2s', position: 'relative' }}>
+                                  
+                                  {/* Upper row: still frame and info */}
+                                  <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                                    {ep.still_path ? (
+                                      <img src={`https://image.tmdb.org/t/p/w300${ep.still_path}`} alt="" style={{ width: '180px', height: '108px', objectFit: 'cover', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }} />
+                                    ) : (
+                                      <div style={{ width: '180px', height: '108px', borderRadius: '8px', background: 'var(--surface-solid)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', color: 'var(--text-dim)', flexShrink: 0 }}>📺</div>
+                                    )}
+                                    
+                                    <div style={{ flex: 1, minWidth: '200px' }}>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '6px' }}>
+                                        <span style={{ fontSize: '15px', fontWeight: 900, color: '#fff', letterSpacing: '-0.3px' }}>
+                                          E{ep.episode_number}. {ep.name}
+                                        </span>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                          {hasLog && (
+                                            <span style={{ background: 'rgba(136,8,8,0.15)', border: '1px solid rgba(136,8,8,0.3)', color: '#c0392b', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 800 }}>
+                                              📝 Logged
+                                            </span>
+                                          )}
+                                          {ep.air_date && (
+                                            <span style={{ fontSize: '11px', color: 'var(--text-dim)' }}>
+                                              {new Date(ep.air_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: 1.6, margin: '0 0 12px 0', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {ep.overview || "No overview available for this episode."}
+                                      </p>
+
+                                      {/* Controls row: rating slider & logs toggle */}
+                                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap', borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '12px' }}>
+                                        {/* Left side: Rating slider */}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: '220px' }}>
+                                          <span style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Rating:</span>
+                                          <div style={{ flex: 1, position: 'relative', padding: '6px 0' }}>
+                                            <input
+                                              type="range" min="0" max="10" step="0.1" value={epRating}
+                                              onChange={e => updateEpisodeRating(epKey, parseFloat(e.target.value))}
+                                              style={{
+                                                width: '100%', height: '5px', appearance: 'none',
+                                                background: epRating > 0
+                                                  ? `linear-gradient(to right, ${accentColor} 0%, ${accentColor} ${epRating * 10}%, rgba(255,255,255,0.06) ${epRating * 10}%, rgba(255,255,255,0.06) 100%)`
+                                                  : 'rgba(255,255,255,0.06)',
+                                                borderRadius: '3px', outline: 'none', cursor: 'pointer', accentColor: accentColor,
+                                              }}
+                                            />
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
+                                              {[0, 2, 4, 6, 8, 10].map(n => (
+                                                <span key={n} style={{ fontSize: '8px', color: Math.abs(epRating - n) < 0.6 ? accentColor : 'var(--text-dim)', fontWeight: Math.abs(epRating - n) < 0.6 ? 800 : 400 }}>{n}</span>
+                                              ))}
+                                            </div>
+                                          </div>
+                                          <span style={{ fontSize: '13px', fontWeight: 900, color: epRating > 0 ? 'var(--gold)' : 'var(--text-dim)', minWidth: '48px', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
+                                            {epRating > 0 ? `★ ${epRating.toFixed(1)}` : '—'}
+                                          </span>
+                                          <button
+                                            type="button"
+                                            onClick={() => updateEpisodeRating(epKey, 0)}
+                                            disabled={epRating === 0}
+                                            style={{
+                                              background: 'rgba(239,68,68,0.08)',
+                                              border: '1px solid rgba(239,68,68,0.15)',
+                                              color: 'var(--red)',
+                                              fontSize: '10.5px',
+                                              fontWeight: 800,
+                                              cursor: 'pointer',
+                                              padding: '3px 8px',
+                                              borderRadius: '4px',
+                                              transition: 'opacity 0.15s, background-color 0.15s',
+                                              opacity: epRating > 0 ? 1 : 0,
+                                              pointerEvents: epRating > 0 ? 'auto' : 'none',
+                                            }}
+                                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.15)'}
+                                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(239,68,68,0.08)'}
+                                          >
+                                            Clear
+                                          </button>
+                                        </div>
+
+                                        {/* Right side: Log toggler */}
+                                        <button
+                                          type="button"
+                                          onClick={() => setExpandedEpisodeLogs(prev => ({ ...prev, [epKey]: !prev[epKey] }))}
+                                          style={{
+                                            background: isExpanded ? 'rgba(255,255,255,0.06)' : 'transparent',
+                                            border: `1px solid ${isExpanded ? 'rgba(255,255,255,0.15)' : 'var(--border)'}`,
+                                            borderRadius: '6px',
+                                            padding: '5px 10px',
+                                            fontSize: '11.5px',
+                                            fontWeight: 700,
+                                            color: isExpanded ? '#fff' : 'var(--text-muted)',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            transition: 'all 0.15s'
+                                          }}
+                                          onMouseEnter={e => { if (!isExpanded) e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
+                                          onMouseLeave={e => { if (!isExpanded) e.currentTarget.style.borderColor = 'var(--border)'; }}
+                                        >
+                                          ✍️ {isExpanded ? 'Hide Thoughts' : 'Thoughts & Logs'}
+                                          <span style={{ fontSize: '9px', opacity: 0.6, transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Expandable Thoughts & Watch Date panel */}
+                                  {isExpanded && (
+                                    <div
+                                      className="glass"
+                                      style={{
+                                        background: 'rgba(0,0,0,0.15)',
+                                        border: '1px dashed rgba(255,255,255,0.08)',
+                                        borderRadius: '8px',
+                                        padding: '12px 14px',
+                                        marginTop: '4px',
+                                        display: 'flex',
+                                        gap: '16px',
+                                        flexDirection: 'row',
+                                        flexWrap: 'wrap',
+                                        animation: 'fadeIn 0.2s ease-out'
+                                      }}
+                                    >
+                                      {/* Watched Date */}
+                                      <div style={{ flex: '1 1 150px', minWidth: '150px' }}>
+                                        <label style={{ display: 'block', fontSize: '9px', color: 'var(--text-dim)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '6px', letterSpacing: '0.5px' }}>
+                                          Watched Date
+                                        </label>
+                                        <input
+                                          type="date"
+                                          value={episodeWatchDates[epKey] || ''}
+                                          onChange={e => updateEpisodeWatchDate(epKey, e.target.value)}
+                                          className="form-input"
+                                          style={{
+                                            fontSize: '12px',
+                                            padding: '6px 8px',
+                                            width: '100%',
+                                            background: 'rgba(255,255,255,0.02)',
+                                            color: '#fff',
+                                            borderRadius: '6px',
+                                            border: '1px solid var(--border)'
+                                          }}
+                                        />
+                                      </div>
+
+                                      {/* Episode Notes/Thoughts */}
+                                      <div style={{ flex: '3 1 300px', minWidth: '240px' }}>
+                                        <label style={{ display: 'block', fontSize: '9px', color: 'var(--text-dim)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '6px', letterSpacing: '0.5px' }}>
+                                          Episode Thoughts
+                                        </label>
+                                        <textarea
+                                          placeholder="What did you think of this episode? Key scenes, theories, rating thoughts…"
+                                          value={episodeNotes[epKey] || ''}
+                                          onChange={e => updateEpisodeNote(epKey, e.target.value)}
+                                          className="form-input"
+                                          style={{
+                                            fontSize: '12.5px',
+                                            padding: '8px 10px',
+                                            minHeight: '60px',
+                                            width: '100%',
+                                            resize: 'vertical',
+                                            background: 'rgba(255,255,255,0.02)',
+                                            color: '#fff',
+                                            borderRadius: '6px',
+                                            border: '1px solid var(--border)',
+                                            lineHeight: '1.4'
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()
+                    ) : (
+                      <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>No episodes found for this season.</div>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           )}
 

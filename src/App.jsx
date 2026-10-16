@@ -442,6 +442,9 @@ function AppInner() {
                   episode_ratings: parsedEpisodeData.ratings || {},
                   episode_notes: parsedEpisodeData.notes || {},
                   episode_watch_dates: parsedEpisodeData.dates || {},
+                  season_ratings: parsedEpisodeData.season_ratings || row.season_ratings || {},
+                  season_notes: parsedEpisodeData.season_notes || row.season_notes || {},
+                  season_dates: parsedEpisodeData.season_dates || row.season_dates || {},
                   episode_data: parsedEpisodeData,
                   favorite: row.favorite,
                   date_added: row.date_added,
@@ -512,12 +515,18 @@ function AppInner() {
       const epData = normalizedMovie.episode_data || {
         ratings: normalizedMovie.episode_ratings || {},
         notes: normalizedMovie.episode_notes || {},
-        dates: normalizedMovie.episode_watch_dates || {}
+        dates: normalizedMovie.episode_watch_dates || {},
+        season_ratings: normalizedMovie.season_ratings || {},
+        season_notes: normalizedMovie.season_notes || {},
+        season_dates: normalizedMovie.season_dates || {}
       };
 
       const hasEpisodeData = Object.keys(epData.ratings || {}).length > 0 ||
                              Object.keys(epData.notes || {}).length > 0 ||
-                             Object.keys(epData.dates || {}).length > 0;
+                             Object.keys(epData.dates || {}).length > 0 ||
+                             Object.keys(epData.season_ratings || {}).length > 0 ||
+                             Object.keys(epData.season_notes || {}).length > 0 ||
+                             Object.keys(epData.season_dates || {}).length > 0;
 
       const dbReview = hasEpisodeData
         ? `${(normalizedMovie.review || '').trim()}\n\n__EPISODE_DATA__:${JSON.stringify(epData)}`
@@ -624,6 +633,10 @@ function AppInner() {
       episode_ratings: newMovie.episode_ratings || {},
       episode_notes: newMovie.episode_notes || {},
       episode_watch_dates: newMovie.episode_watch_dates || {},
+      season_ratings: newMovie.season_ratings || {},
+      season_notes: newMovie.season_notes || {},
+      season_dates: newMovie.season_dates || {},
+      episode_data: newMovie.episode_data || null,
     };
 
     const alreadyExists = library.some(m => String(m.tmdb_id) === String(cleanMovie.tmdb_id) && m.media_type === cleanMovie.media_type);
