@@ -21,6 +21,7 @@ import WrappedTab from './components/WrappedTab';
 import ForYouTab from './components/ForYouTab';
 import SocialTab from './components/SocialTab';
 import UserProfileModal from './components/UserProfileModal';
+import MobileBottomNav from './components/MobileBottomNav';
 import SettingsPanel, { applyTheme, THEMES } from './components/SettingsPanel';
 import { ToastProvider, useToast } from './components/ToastSystem';
 import { useBodyScrollLock } from './hooks/useBodyScrollLock';
@@ -1800,6 +1801,18 @@ function AppInner() {
             +
           </button>
         </>
+
+        {/* ── NATIVE MOBILE BOTTOM NAVIGATION BAR ── */}
+        <MobileBottomNav
+          activeTab={activeTab}
+          setActiveTab={handleTabChange}
+          onOpenCommandCenter={() => { setShowCommandCenter(true); setCmdQuery(''); }}
+          currentUser={currentUser}
+          onOpenAuth={() => setShowAuth(true)}
+          onOpenSettings={() => setShowSettings(true)}
+          onLogout={handleLogout}
+          libraryCount={library?.length || 0}
+        />
 
       </div>
     </div>

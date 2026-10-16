@@ -1434,42 +1434,450 @@ input[type='range']::-moz-range-thumb {
   100% { opacity: 1; }
 }
 
-/* ── RESPONSIVE TOPNAV BAR (MOBILE VIEW) ── */
+/* ── DESKTOP & MOBILE NAVIGATION TOGGLES ── */
 @media (min-width: 769px) {
-  .topnav-search-mobile-btn {
+  .topnav-search-mobile-btn,
+  .mobile-bottom-nav,
+  .mobile-drawer-overlay {
     display: none !important;
   }
 }
 
+/* ── NATIVE MOBILE APP ARCHITECTURE (PHONES & TABLETS <= 768px) ── */
 @media (max-width: 768px) {
+  /* Prevent horizontal screen wobbling/overflow */
+  html, body {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+  }
+
+  /* Compact Sticky App Top Bar */
+  .app-header.topnav-header {
+    height: 56px !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 500 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    background: #08070b !important;
+  }
+
   .topnav-inner {
-    padding: 0 14px !important;
-    gap: 12px !important;
+    height: 56px !important;
+    padding: 0 16px !important;
+    gap: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justifyContent: space-between !important;
   }
-  .topnav-left {
-    gap: 12px !important;
-    flex: 1 !important;
-    min-width: 0 !important;
-  }
+
+  /* Hide the 5 desktop horizontal links in header (now cleanly in bottom bar & drawer) */
   .topnav-nav {
-    overflow-x: auto !important;
-    white-space: nowrap !important;
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
-  }
-  .topnav-nav::-webkit-scrollbar {
     display: none !important;
   }
-  .topnav-nav button {
-    padding: 18px 10px !important;
-    font-size: 13px !important;
-  }
+
+  /* Hide desktop search input box on mobile */
   .topnav-search {
     display: none !important;
   }
+
+  /* Show tap-friendly search icon button */
   .topnav-search-mobile-btn {
     display: flex !important;
+    width: 36px !important;
+    height: 36px !important;
   }
+
+  /* Compact Profile Avatar on mobile (hide text & caret) */
+  .topnav-user-name,
+  .topnav-user-caret {
+    display: none !important;
+  }
+
+  .topnav-user-btn {
+    padding: 2px !important;
+    border-radius: 50% !important;
+    background: transparent !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Notifications Popover adapts to mobile viewport */
+  .topnav-notifications-popover {
+    position: fixed !important;
+    top: 60px !important;
+    left: 14px !important;
+    right: 14px !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: 75vh !important;
+    border-radius: 16px !important;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.95) !important;
+    z-index: 99999 !important;
+  }
+
+  /* Hide the desktop corner floating action button (bottom bar has center + Log button) */
+  #quick-add-fab {
+    display: none !important;
+  }
+
+  /* Page Content Spacing & Bottom Safe Area */
+  .page-content {
+    padding: 14px 14px calc(76px + env(safe-area-inset-bottom, 16px)) 14px !important;
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+  }
+
+  /* ── EXPLORE TAB: NATIVE FULL-BLEED MOBILE HERO BANNER ── */
+  .explore-hero-card {
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: 460px !important;
+    max-height: none !important;
+    border-radius: 16px !important;
+    position: relative !important;
+    overflow: hidden !important;
+    box-shadow: 0 12px 36px rgba(0,0,0,0.85) !important;
+    margin-bottom: 6px !important;
+  }
+
+  .explore-hero-media {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 1 !important;
+  }
+
+  .explore-hero-media img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    object-position: center top !important;
+  }
+
+  .explore-hero-content {
+    position: relative !important;
+    z-index: 3 !important;
+    width: 100% !important;
+    margin-top: auto !important;
+    padding: 24px 16px 18px !important;
+    background: linear-gradient(to top, #101014 0%, rgba(16,16,20,0.94) 50%, rgba(16,16,20,0.4) 80%, transparent 100%) !important;
+  }
+
+  .explore-hero-title {
+    font-size: 20px !important;
+    min-height: auto !important;
+    max-height: none !important;
+    line-height: 1.2 !important;
+    margin-bottom: 6px !important;
+  }
+
+  .explore-hero-content p {
+    font-size: 12px !important;
+    height: auto !important;
+    -webkit-line-clamp: 2 !important;
+    margin-bottom: 12px !important;
+    line-height: 1.4 !important;
+  }
+
+  .explore-hero-actions {
+    display: flex !important;
+    gap: 8px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .explore-hero-actions button {
+    flex: 1 !important;
+    justify-content: center !important;
+    padding: 10px 12px !important;
+    font-size: 12px !important;
+    border-radius: 8px !important;
+  }
+
+  /* ── POSTER CAROUSELS & SWIPING ON MOBILE ── */
+  .sharp-poster-card {
+    width: 136px !important;
+  }
+
+  .carousel-arrow-controls button {
+    display: none !important;
+  }
+
+  /* Horizontal Filter Bars smoothly touch-scrollable */
+  .filter-pills-bar,
+  div[style*="overflowX: 'auto'"],
+  div[style*="overflow-x: auto"] {
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+}
+
+/* ── NATIVE MOBILE BOTTOM NAVIGATION BAR ── */
+.mobile-bottom-nav {
+  display: flex;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(60px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: rgba(10, 9, 13, 0.94);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 8500;
+  align-items: center;
+  justify-content: space-around;
+  user-select: none;
+}
+
+.mobile-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px 0;
+  color: #7f7f88;
+  transition: color 0.15s ease, transform 0.1s ease;
+  position: relative;
+}
+
+.mobile-nav-item:active {
+  transform: scale(0.92);
+}
+
+.mobile-nav-item.active {
+  color: #FFFFFF;
+}
+
+.mobile-nav-item.active .mobile-nav-label {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.mobile-nav-icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+}
+
+.mobile-nav-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  margin-top: 2px;
+  transition: color 0.15s;
+}
+
+.mobile-nav-badge {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #FFFFFF;
+  font-size: 9px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 1.5px solid #0a090d;
+}
+
+/* Center "+ Log" Elevated Action Button */
+.mobile-nav-fab-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  margin-top: -16px;
+}
+
+.mobile-fab-circle {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e50914 0%, #b80710 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 18px rgba(229, 9, 20, 0.55), 0 2px 6px rgba(0, 0, 0, 0.7);
+  border: 2.5px solid #0a090d;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mobile-nav-fab-center:active .mobile-fab-circle {
+  transform: scale(0.90);
+  box-shadow: 0 2px 8px rgba(229, 9, 20, 0.4);
+}
+
+/* ── NATIVE SLIDE-UP DRAWER (MORE MENU) ── */
+.mobile-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99990;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  animation: fadeInOverlay 0.18s ease-out;
+}
+
+.mobile-drawer-sheet {
+  background: #111016;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: none;
+  border-radius: 24px 24px 0 0;
+  padding: 10px 18px calc(24px + env(safe-area-inset-bottom, 16px));
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.9);
+  animation: slideUpSheet 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mobile-drawer-handle {
+  width: 38px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 2px;
+  margin: 4px auto 14px;
+}
+
+.mobile-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.mobile-drawer-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.mobile-drawer-body {
+  padding-top: 10px;
+}
+
+.mobile-drawer-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-bottom: 16px;
+}
+
+.mobile-drawer-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  background: transparent;
+  border: none;
+  color: #E2E2E6;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: all 0.12s ease;
+}
+
+.mobile-drawer-link:active,
+.mobile-drawer-link.active {
+  background: rgba(229, 9, 20, 0.12);
+  color: #FFFFFF;
+}
+
+.mobile-drawer-icon-box {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mobile-drawer-link.active .mobile-drawer-icon-box {
+  background: rgba(229, 9, 20, 0.2);
+}
+
+.mobile-drawer-text {
+  flex: 1;
+}
+
+.mobile-drawer-badge {
+  font-size: 10px;
+  font-weight: 800;
+  background: rgba(229, 9, 20, 0.18);
+  color: var(--accent);
+  border: 1px solid rgba(229, 9, 20, 0.35);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.mobile-drawer-footer {
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.mobile-action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  border-radius: 8px;
+}
+
+.mobile-logout-btn {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #f87171;
+}
+
+@keyframes fadeInOverlay {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUpSheet {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }
 
 /* ── MODAL SCROLL LOCK & OVERSCROLL PREVENTION ── */
@@ -1487,6 +1895,7 @@ body.modal-open {
 .animate-fade-in-scale {
   overscroll-behavior: contain !important;
 }
+
 
 
 

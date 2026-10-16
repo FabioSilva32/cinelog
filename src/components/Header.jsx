@@ -275,7 +275,9 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
               </button>
 
               {showNotifications && (
-                <div style={{
+                <div
+                  className="topnav-notifications-popover"
+                  style={{
                   position: 'absolute',
                   top: 'calc(100% + 10px)',
                   right: 0,
@@ -512,6 +514,7 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
             {currentUser ? (
               <div style={{ position: 'relative' }} ref={menuRef}>
                 <button
+                  className="topnav-user-btn"
                   onClick={() => setShowUserMenu(!showUserMenu)}
                   style={{
                     background: '#141414',
@@ -536,8 +539,8 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
                     borderId={currentUser?.equippedBorder || 'none'}
                     size={28}
                   />
-                  <span>{currentUser.display_name || currentUser.displayName || currentUser.username || 'Alex R.'}</span>
-                  <span style={{ fontSize: '11px', color: '#777777', transition: 'transform 0.15s', transform: showUserMenu ? 'rotate(180deg)' : 'none' }}>▾</span>
+                  <span className="topnav-user-name">{currentUser.display_name || currentUser.displayName || currentUser.username || 'Alex R.'}</span>
+                  <span className="topnav-user-caret" style={{ fontSize: '11px', color: '#777777', transition: 'transform 0.15s', transform: showUserMenu ? 'rotate(180deg)' : 'none' }}>▾</span>
                 </button>
 
                 {showUserMenu && (

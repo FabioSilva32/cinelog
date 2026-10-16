@@ -49,7 +49,7 @@ function SharpPosterRow({ title, items = [], onCardClick, inLib, onAdd, actionBu
         }}>
           {title}
         </h3>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="carousel-arrow-controls" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {actionButton}
           <button
             onClick={() => scroll('left')}
@@ -115,6 +115,7 @@ function SharpPosterRow({ title, items = [], onCardClick, inLib, onAdd, actionBu
           return (
             <div
               key={movie.id}
+              className="sharp-poster-card"
               onClick={() => onCardClick(movie, movie.media_type || (movie.first_air_date || movie.name ? 'tv' : 'movie'))}
               style={{
                 width: '180px',
@@ -451,6 +452,7 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
 
       {/* ── DYNAMIC NEW RELEASES HERO CAROUSEL ── */}
       <div
+        className="explore-hero-card"
         onMouseEnter={() => setIsHeroPaused(true)}
         onMouseLeave={() => setIsHeroPaused(false)}
         style={{
@@ -468,9 +470,11 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
         }}
       >
         {/* Left: High-Res Movie Backdrop with cinematic gradient overlay */}
-        <div style={{
-          width: '52%',
-          height: '100%',
+        <div
+          className="explore-hero-media"
+          style={{
+            width: '52%',
+            height: '100%',
           position: 'relative',
           overflow: 'hidden',
           flexShrink: 0
@@ -502,9 +506,11 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
         </div>
 
         {/* Right: Movie Info, Controls & Actions */}
-        <div style={{
-          flex: 1,
-          height: '100%',
+        <div
+          className="explore-hero-content"
+          style={{
+            flex: 1,
+            height: '100%',
           boxSizing: 'border-box',
           padding: '28px 36px 20px',
           display: 'flex',
@@ -581,9 +587,11 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
           </div>
 
           {/* Movie Title */}
-          <h1 style={{
-            fontSize: '26px',
-            fontWeight: 900,
+          <h1
+            className="explore-hero-title"
+            style={{
+              fontSize: '26px',
+              fontWeight: 900,
             letterSpacing: '-0.5px',
             color: '#FFFFFF',
             margin: '0 0 8px 0',
@@ -637,7 +645,9 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
           </p>
 
           {/* Action buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}>
+          <div
+            className="explore-hero-actions"
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}>
             <button
               onClick={() => quickAdd(currentHero, currentHero.media_type || (currentHero.first_air_date || currentHero.name ? 'tv' : 'movie'))}
               style={{
