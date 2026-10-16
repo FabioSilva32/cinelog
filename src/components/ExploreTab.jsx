@@ -31,7 +31,9 @@ function SharpPosterRow({ title, items = [], onCardClick, inLib, onAdd, actionBu
     setTimeout(checkScroll, 250);
   };
 
-  const displayItems = (items || []).slice(0, 15);
+  const displayItems = (items || [])
+    .filter(item => item && (item.poster_path || item.title || item.name))
+    .slice(0, 15);
   if (displayItems.length === 0) return null;
 
   return (
@@ -148,10 +150,34 @@ function SharpPosterRow({ title, items = [], onCardClick, inLib, onAdd, actionBu
                     alt={movie.title || movie.name}
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      if (e.currentTarget.nextElementSibling) {
+                        e.currentTarget.nextElementSibling.style.display = 'flex';
+                      }
+                    }}
                   />
-                ) : (
-                  <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', background: '#181818' }}>🎬</div>
-                )}
+                ) : null}
+
+                <div
+                  style={{
+                    display: movie.poster_path ? 'none' : 'flex',
+                    height: '100%',
+                    width: '100%',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'linear-gradient(135deg, #181522 0%, #0d0c12 100%)',
+                    padding: '16px',
+                    textAlign: 'center',
+                    gap: '10px'
+                  }}
+                >
+                  <Film size={28} color="var(--accent)" style={{ opacity: 0.85 }} />
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.3 }}>
+                    {movie.title || movie.name}
+                  </span>
+                </div>
 
                 {/* Media Type Badge: highlight TV series clearly */}
                 {(movie.media_type === 'tv' || Boolean(movie.first_air_date) || Boolean(movie.name && !movie.title)) && (

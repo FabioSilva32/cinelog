@@ -607,6 +607,7 @@ function AppInner() {
             id: targetId
           })
           .eq('id', targetId)
+          .eq('user_id', currentUser.id)
           .select();
         data = res.data;
         error = res.error;
@@ -716,6 +717,7 @@ function AppInner() {
             id: targetId
           })
           .eq('id', targetId)
+          .eq('user_id', currentUser.id)
           .select();
         data = res.data;
         error = res.error;
@@ -766,8 +768,8 @@ function AppInner() {
           setActiveEditMovie(null);
         }
         try {
-          if (useSupabase && currentUser) {
-            await supabase.from('library').delete().eq('id', movieId);
+          if (useSupabase && currentUser?.id) {
+            await supabase.from('library').delete().eq('id', movieId).eq('user_id', currentUser.id);
           }
         } catch (err) {
           console.error('Failed to delete movie from Supabase:', err);
@@ -789,8 +791,8 @@ function AppInner() {
       }
       return m;
     }));
-    if (useSupabase && currentUser) {
-      await supabase.from('library').update({ favorite: favState }).eq('id', movieId);
+    if (useSupabase && currentUser?.id) {
+      await supabase.from('library').update({ favorite: favState }).eq('id', movieId).eq('user_id', currentUser.id);
     }
   };
 
