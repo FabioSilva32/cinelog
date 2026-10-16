@@ -1445,7 +1445,10 @@ input[type='range']::-moz-range-thumb {
 @media (min-width: 769px) {
   .topnav-search-mobile-btn,
   .mobile-bottom-nav,
-  .mobile-drawer-overlay {
+  .mobile-drawer-overlay,
+  .mobile-only-library-controls,
+  .mobile-only-library-list,
+  .mobile-only-library-grid {
     display: none !important;
   }
 }
@@ -1897,12 +1900,8 @@ input[type='range']::-moz-range-thumb {
 }
 
 /* ── MODAL SCROLL LOCK & OVERSCROLL PREVENTION ── */
-html.modal-open,
 body.modal-open {
   overflow: hidden !important;
-  height: 100vh !important;
-  touch-action: none;
-  overscroll-behavior: none !important;
 }
 
 .modal-backdrop,
@@ -2398,6 +2397,26 @@ body.modal-open {
 
   .social-feed-card {
     padding: 12px 14px !important;
+  }
+
+  /* ── LIBRARY TAB MOBILE REVAMP (LETTERBOXD CINEMA WALL & DIARY STREAM) ── */
+  .desktop-only-library-stats,
+  .desktop-only-library-filter,
+  .desktop-only-3col-library {
+    display: none !important;
+  }
+
+  .mobile-only-library-controls {
+    display: flex !important;
+  }
+
+  .mobile-library-chips {
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+
+  .mobile-library-chips::-webkit-scrollbar {
+    display: none !important;
   }
 }
 

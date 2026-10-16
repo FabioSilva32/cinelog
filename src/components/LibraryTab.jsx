@@ -304,6 +304,10 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
   const [sortBy, setSortBy] = useState('date_added-desc');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterGenre, setFilterGenre] = useState('all');
+  const [filterType, setFilterType] = useState('all'); // 'all', 'movie', 'tv', 'anime'
+  const [mobileView, setMobileView] = useState('grid'); // 'grid' | 'list'
+  const [showMobileFilterSheet, setShowMobileFilterSheet] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [compactView, setCompactView] = useState(() => {
     return typeof window !== 'undefined' ? window.innerWidth < 768 : false;
@@ -316,9 +320,10 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
     return Array.from(set).sort();
   }, [library]);
 
-  // Split by type and apply status/genre filters
+  // Split by type and apply status/genre/type/search filters
   const filtered = useMemo(() => {
     let list = library;
+
     if (filterStatus === 'watched_this_month') {
       const now = new Date();
       const curYear = now.getFullYear();
@@ -330,12 +335,38 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
         const d = new Date(dStr);
         return !isNaN(d.getTime()) && d.getFullYear() === curYear && d.getMonth() === curMonth;
       });
+    } else if (filterStatus === 'favorites') {
+      list = list.filter(m => m.favorite);
     } else if (filterStatus !== 'all') {
       list = list.filter(m => m.status === filterStatus);
     }
+
+    if (filterType !== 'all') {
+      if (filterType === 'movie') {
+        list = list.filter(m => m.media_type === 'movie' || (!m.media_type && m.type !== 'anime' && m.type !== 'tv'));
+      } else if (filterType === 'tv') {
+        list = list.filter(m => m.media_type === 'tv' || m.type === 'tv');
+      } else if (filterType === 'anime') {
+        list = list.filter(m => m.media_type === 'anime' || m.type === 'anime');
+      }
+    }
+
     if (filterGenre !== 'all') list = list.filter(m => (m.genres || []).includes(filterGenre));
-    return list;
-  }, [library, filterStatus, filterGenre]);
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(m => m.title?.toLowerCase().includes(q));
+    }
+
+    return [...list].sort((a, b) => {
+      if (sortBy === 'rating-desc') return (b.rating || 0) - (a.rating || 0);
+      if (sortBy === 'title-asc') return (a.title || '').localeCompare(b.title || '');
+      if (sortBy === 'title-desc') return (b.title || '').localeCompare(a.title || '');
+      if (sortBy === 'year-desc') return Number(b.release_year || 0) - Number(a.release_year || 0);
+      if (sortBy === 'date_added-asc') return new Date(a.date_added || 0) - new Date(b.date_added || 0);
+      return new Date(b.date_added || 0) - new Date(a.date_added || 0);
+    });
+  }, [library, filterStatus, filterType, filterGenre, searchQuery, sortBy]);
 
   const movies = filtered.filter(m => m.media_type === 'movie' || (!m.media_type && m.type !== 'anime' && m.type !== 'tv'));
   const series = filtered.filter(m => m.media_type === 'tv' || m.type === 'tv');
@@ -438,10 +469,165 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
   };
 
   return (
-    <div className="animate-fade-in library-tab-container" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div className="animate-fade-in library-tab-container" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-      {/* ── STATS ROW ───────────────────────────────────────────────── */}
-      <div className="library-stats-row" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+      {/* ── MOBILE SPECIFIC TOP BAR & CHIP RAIL ──────────────────────── */}
+      <div className="mobile-only-library-controls" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+          <div>
+            <h2 style={{ fontSize: '20px', fontWeight: 900, color: '#FFFFFF', margin: 0, display: 'flex', alignItems: 'center', gap: '8px', letterSpacing: '-0.4px' }}>
+              Library
+              <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '12px', background: 'rgba(255,255,255,0.08)', color: 'var(--text-muted)' }}>
+                {filtered.length} {filtered.length === 1 ? 'title' : 'titles'}
+              </span>
+            </h2>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {/* Quick Search Toggle */}
+            <button
+              onClick={() => setShowMobileSearch(p => !p)}
+              style={{
+                background: showMobileSearch ? 'var(--accent)' : '#141414',
+                color: showMobileSearch ? '#FFFFFF' : '#A1A1AA',
+                border: '1px solid #242424',
+                borderRadius: '8px',
+                width: '36px', height: '36px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer'
+              }}
+              title="Search Library"
+            >
+              <Search size={16} />
+            </button>
+
+            {/* Grid vs List Mode Toggle */}
+            <button
+              onClick={() => setMobileView(p => p === 'grid' ? 'list' : 'grid')}
+              style={{
+                background: '#141414',
+                color: '#FFFFFF',
+                border: '1px solid #242424',
+                borderRadius: '8px',
+                width: '36px', height: '36px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer'
+              }}
+              title={mobileView === 'grid' ? 'Switch to Diary List View' : 'Switch to 3-Column Cinema Wall'}
+            >
+              {mobileView === 'grid' ? <List size={16} /> : <LayoutGrid size={16} />}
+            </button>
+
+            {/* Filter Bottom Sheet Trigger */}
+            <button
+              onClick={() => setShowMobileFilterSheet(true)}
+              style={{
+                background: (filterGenre !== 'all' || sortBy !== 'date_added-desc') ? 'rgba(229,9,20,0.15)' : '#141414',
+                color: (filterGenre !== 'all' || sortBy !== 'date_added-desc') ? 'var(--accent)' : '#A1A1AA',
+                border: `1px solid ${(filterGenre !== 'all' || sortBy !== 'date_added-desc') ? 'var(--accent)' : '#242424'}`,
+                borderRadius: '8px',
+                width: '36px', height: '36px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer',
+                position: 'relative'
+              }}
+              title="Filters & Sorting"
+            >
+              <SlidersHorizontal size={16} />
+              {(filterGenre !== 'all' || sortBy !== 'date_added-desc') && (
+                <span style={{ position: 'absolute', top: '6px', right: '6px', width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent)' }} />
+              )}
+            </button>
+
+            {/* Surprise Me Dice */}
+            <button
+              onClick={handleRandomSelect}
+              style={{
+                background: '#141414',
+                color: 'var(--gold)',
+                border: '1px solid #242424',
+                borderRadius: '8px',
+                width: '36px', height: '36px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer'
+              }}
+              title="Surprise Me (Random title)"
+            >
+              <Dices size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* Collapsible Mobile Search */}
+        {showMobileSearch && (
+          <div style={{ position: 'relative' }}>
+            <Search size={14} color="var(--text-dim)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+            <input
+              type="text"
+              placeholder="Filter by title..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="form-input"
+              autoFocus
+              style={{ width: '100%', paddingLeft: '34px', paddingRight: '32px', height: '36px', fontSize: '13px', borderRadius: '8px', background: '#121212', border: '1px solid #242424' }}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#888', cursor: 'pointer' }}
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Swipeable Status & Type Pills */}
+        <div className="mobile-library-chips" style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none' }}>
+          {[
+            { id: 'all', label: `All (${library.length})` },
+            { id: 'watched', label: `✓ Watched (${stats.watched})` },
+            { id: 'plan_to_watch', label: `⏳ Watchlist (${stats.watchlist})` },
+            { id: 'favorites', label: `❤️ Favs (${stats.favs})` },
+            { id: 'movie', label: `🎬 Movies (${movies.length})`, isType: true },
+            { id: 'tv', label: `📺 Series (${series.length})`, isType: true },
+            { id: 'watched_this_month', label: `📅 This Month (${stats.thisMonth})` },
+            { id: 'watching', label: '▶ Watching' }
+          ].map(chip => {
+            const isActive = chip.isType ? filterType === chip.id : (filterType === 'all' && filterStatus === chip.id);
+            return (
+              <button
+                key={chip.id}
+                onClick={() => {
+                  if (chip.isType) {
+                    setFilterType(prev => prev === chip.id ? 'all' : chip.id);
+                  } else {
+                    setFilterType('all');
+                    setFilterStatus(chip.id);
+                  }
+                }}
+                style={{
+                  background: isActive ? 'var(--accent)' : '#141414',
+                  color: isActive ? '#FFFFFF' : '#A1A1AA',
+                  border: `1px solid ${isActive ? 'var(--accent)' : '#242424'}`,
+                  borderRadius: '20px',
+                  padding: '6px 13px',
+                  fontSize: '11.5px',
+                  fontWeight: isActive ? 800 : 600,
+                  whiteSpace: 'nowrap',
+                  cursor: 'pointer',
+                  flexShrink: 0
+                }}
+              >
+                {chip.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── DESKTOP STATS ROW ────────────────────────────────────────── */}
+      <div className="desktop-only-library-stats library-stats-row" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
         {[
           { label: 'Total', val: stats.total, color: 'var(--accent)' },
           { label: 'Watched', val: stats.watched, color: 'var(--green)' },
@@ -457,9 +643,8 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
         ))}
       </div>
 
-      {/* ── FILTER BAR ──────────────────────────────────────────────── */}
-      <div className="library-filter-bar" style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', position: 'relative' }}>
-        {/* Search */}
+      {/* ── DESKTOP FILTER BAR ───────────────────────────────────────── */}
+      <div className="desktop-only-library-filter library-filter-bar" style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', position: 'relative' }}>
         <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
           <Search size={14} color="var(--text-dim)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
           <input
@@ -470,7 +655,6 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
           />
         </div>
 
-        {/* Sort */}
         <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="form-input"
           style={{ height: '38px', padding: '0 12px', background: 'var(--surface-solid)', color: 'var(--text)', fontSize: '12px' }}>
           <option value="date_added-desc">Newest Added</option>
@@ -481,7 +665,6 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
           <option value="year-desc">Newest Year</option>
         </select>
 
-        {/* Genre filter dropdown */}
         <select value={filterGenre} onChange={e => setFilterGenre(e.target.value)} className="form-input"
           style={{ height: '38px', padding: '0 12px', background: 'var(--surface-solid)', color: 'var(--text)', fontSize: '12px' }}>
           <option value="all">All Genres</option>
@@ -490,7 +673,6 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
           ))}
         </select>
 
-        {/* Status pills */}
         <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '10px', padding: '2px' }}>
           {[
             { id: 'all', label: 'All' },
@@ -506,31 +688,22 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
           ))}
         </div>
 
-        {/* Randomizer */}
         <button className="btn btn-secondary" onClick={handleRandomSelect}
           style={{ height: '38px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '0 14px', border: '1px solid rgba(136,8,8,0.3)', background: 'rgba(136,8,8,0.06)' }}
           title="Pick a random movie from your library/watchlist">
           <Dices size={13} color="var(--accent)" /> Surprise Me
         </button>
-        {randomError && (
-          <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: 'var(--red)', borderRadius: '8px', padding: '6px 12px', fontSize: '11px', whiteSpace: 'nowrap', zIndex: 10 }}>
-            {randomError}
-          </div>
-        )}
 
-        {/* Export JSON */}
         <button className="btn btn-secondary" onClick={handleExportJSON}
           style={{ height: '38px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '0 14px' }}>
           <Download size={13} /> JSON
         </button>
 
-        {/* Export CSV */}
         <button className="btn btn-secondary" onClick={handleExportCSV}
           style={{ height: '38px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '0 14px' }}>
           <Download size={13} /> CSV
         </button>
 
-        {/* View mode toggle */}
         <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '8px', padding: '2px' }}>
           <button onClick={() => setCompactView(false)} title="Normal View"
             style={{ background: !compactView ? 'rgba(136,8,8,0.2)' : 'none', border: 'none', borderRadius: '6px', padding: '4px 8px', cursor: 'pointer', color: !compactView ? 'var(--accent)' : 'var(--text-dim)', display: 'flex', alignItems: 'center' }}>
@@ -542,112 +715,367 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
           </button>
         </div>
 
-        {/* Import */}
         <button className="btn btn-secondary" onClick={() => setShowImport(true)}
           style={{ height: '38px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '0 14px' }}>
           <Upload size={13} /> Import JSON
         </button>
       </div>
 
-      {/* ── COMPACT GRID VIEW ────────────────────────────────────────── */}
-      {compactView ? (
-        <div className="library-grid-container" style={{ overflowY: 'auto', flex: 1 }}>
-          <div className="library-poster-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: '10px', padding: '4px' }}>
-            {[...movies, ...series, ...anime]
-              .filter(m => !searchQuery || m.title?.toLowerCase().includes(searchQuery.toLowerCase()))
-              .sort((a, b) => {
-                if (sortBy === 'rating-desc') return (b.rating || 0) - (a.rating || 0);
-                if (sortBy === 'title-asc') return (a.title || '').localeCompare(b.title || '');
-                if (sortBy === 'year-desc') return Number(b.release_year || 0) - Number(a.release_year || 0);
-                return new Date(b.date_added || 0) - new Date(a.date_added || 0);
-              })
-              .map(movie => {
-                const isWatching = movie.status === 'watching';
-                return (
-                  <div key={movie.id || movie.tmdb_id} onClick={() => onEditClick(movie)}
-                    style={{
-                      cursor: 'pointer', borderRadius: '8px', overflow: 'hidden',
-                      border: isWatching ? '1px solid var(--accent)' : '1px solid var(--border)',
-                      boxShadow: isWatching ? '0 0 10px rgba(136,8,8,0.25)' : 'none',
-                      position: 'relative', aspectRatio: '2/3', transition: 'all 0.15s',
-                      background: 'var(--surface-solid)'
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.04)'; triggerBackdropHover(movie.backdrop_path || movie.details?.backdrop_path); }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; triggerBackdropHover(null); }}
-                  >
+      {/* ── MOBILE VIEW: DIARY STREAM (LIST) ─────────────────────────── */}
+      {mobileView === 'list' && (
+        <div className="mobile-only-library-list" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {filtered.length === 0 ? (
+            <div style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--text-dim)' }}>
+              <div style={{ fontSize: '36px', marginBottom: '8px' }}>🎬</div>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: '#FFFFFF' }}>No titles match your filter</div>
+              <div style={{ fontSize: '12px', marginTop: '4px' }}>Try resetting filters or adding titles from Explore</div>
+            </div>
+          ) : (
+            filtered.map(movie => {
+              const isWatched = movie.status === 'watched';
+              const isPlan = movie.status === 'plan_to_watch';
+              const cleanReview = (movie.review || '').replace(/__EPISODE_DATA__:.+$/s, '').replace(/__EPISODE_RATINGS__:.+$/s, '').trim();
+              const formattedDate = movie.watch_date
+                ? new Date(movie.watch_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+                : movie.date_added
+                ? new Date(movie.date_added).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+                : null;
+
+              return (
+                <div
+                  key={movie.id || movie.tmdb_id}
+                  onClick={() => onEditClick(movie)}
+                  style={{
+                    display: 'flex',
+                    gap: '12px',
+                    padding: '10px',
+                    background: '#121212',
+                    borderRadius: '10px',
+                    border: '1px solid #1f1f1f',
+                    cursor: 'pointer',
+                    transition: 'border-color 0.15s, background 0.15s'
+                  }}
+                >
+                  {/* Poster Thumbnail */}
+                  <div style={{ width: '52px', height: '78px', borderRadius: '6px', overflow: 'hidden', flexShrink: 0, background: '#1c1c1c', position: 'relative' }}>
                     {movie.poster_path ? (
-                      <img src={`https://image.tmdb.org/t/p/w200${movie.poster_path}`} alt={movie.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+                      <img src={`https://image.tmdb.org/t/p/w185${movie.poster_path}`} alt={movie.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
                     ) : (
-                      <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>🎬</div>
-                    )}
-                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 55%)', opacity: 0, transition: 'opacity 0.2s' }}
-                      onMouseEnter={e => e.currentTarget.style.opacity = 1}
-                      onMouseLeave={e => e.currentTarget.style.opacity = 0}
-                    >
-                      <div style={{ position: 'absolute', bottom: '5px', left: '5px', right: '5px' }}>
-                        <div style={{ fontSize: '9px', fontWeight: 800, color: '#fff', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{movie.title}</div>
-                        {movie.rating > 0 && <div style={{ fontSize: '9px', color: 'var(--gold)', fontWeight: 800 }}>★ {Number(movie.rating).toFixed(1)}</div>}
-                      </div>
-                    </div>
-                    {isWatching && (
-                      <div style={{ position: 'absolute', top: '4px', left: movie.favorite ? '22px' : '4px', background: 'var(--accent)', borderRadius: '4px', padding: '1.5px 5px', fontSize: '8px', fontWeight: 900, color: '#fff', display: 'flex', alignItems: 'center', gap: '2px', zIndex: 6, boxShadow: '0 2px 4px rgba(0,0,0,0.5)', animation: 'pulse 2.5s infinite' }}>
-                        ▶ WATCHING
-                      </div>
-                    )}
-                    {movie.rating > 0 && (
-                      <div style={{ position: 'absolute', top: '4px', right: '4px', background: 'rgba(0,0,0,0.75)', borderRadius: '4px', padding: '1px 5px', fontSize: '9px', fontWeight: 900, color: 'var(--gold)' }}>★{Number(movie.rating).toFixed(1)}</div>
+                      <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>🎬</div>
                     )}
                     {movie.favorite && (
-                      <div style={{ position: 'absolute', top: '4px', left: '4px', fontSize: '10px', zIndex: 5 }}>❤️</div>
+                      <div style={{ position: 'absolute', top: '3px', left: '3px', fontSize: '10px', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.8))' }}>❤️</div>
                     )}
-                    {(movie.media_type === 'tv' || movie.type === 'tv') && (
-                      <div style={{
-                        position: 'absolute',
-                        bottom: '5px',
-                        left: '5px',
-                        background: 'rgba(10, 10, 14, 0.85)',
-                        border: '1px solid rgba(59, 130, 246, 0.5)',
-                        color: '#60A5FA',
-                        borderRadius: '3px',
-                        padding: '1px 4px',
-                        fontSize: '7.5px',
-                        fontWeight: 900,
-                        letterSpacing: '0.04em',
-                        textTransform: 'uppercase',
-                        zIndex: 4
-                      }}>
-                        TV
+                  </div>
+
+                  {/* Info Column */}
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                        <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#FFFFFF', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                          {movie.title}
+                        </h4>
+                        {movie.release_year && (
+                          <span style={{ fontSize: '11px', color: 'var(--text-dim)', flexShrink: 0 }}>
+                            {movie.release_year}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Rating & Status Row */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px' }}>
+                        {movie.rating > 0 ? (
+                          <span style={{ color: 'var(--gold)', fontSize: '12px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '2px' }}>
+                            ★ {Number(movie.rating).toFixed(1)}
+                          </span>
+                        ) : (
+                          <span style={{ color: 'var(--text-dim)', fontSize: '11px' }}>Unrated</span>
+                        )}
+
+                        <span style={{
+                          fontSize: '10px',
+                          fontWeight: 700,
+                          padding: '1px 6px',
+                          borderRadius: '4px',
+                          background: isWatched ? 'rgba(16,185,129,0.15)' : isPlan ? 'rgba(59,130,246,0.15)' : 'rgba(229,9,20,0.15)',
+                          color: isWatched ? '#10B981' : isPlan ? '#60A5FA' : 'var(--accent)'
+                        }}>
+                          {isWatched ? 'Watched' : isPlan ? 'Watchlist' : 'Watching'}
+                        </span>
+
+                        {(movie.media_type === 'tv' || movie.type === 'tv') && (
+                          <span style={{ fontSize: '9px', fontWeight: 800, color: '#60A5FA', border: '1px solid rgba(96,165,250,0.4)', borderRadius: '3px', padding: '0 3px' }}>
+                            TV
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Review snippet if available */}
+                      {cleanReview && (
+                        <p style={{ fontSize: '11.5px', color: '#B3B3B3', margin: '4px 0 0 0', lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontStyle: 'italic' }}>
+                          "{cleanReview}"
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Date Footer */}
+                    {formattedDate && (
+                      <div style={{ fontSize: '10px', color: 'var(--text-dim)', marginTop: '4px' }}>
+                        {isWatched ? 'Logged' : 'Added'} {formattedDate}
                       </div>
                     )}
-                  {movie.theater_seat && (
-                    <div
-                      title={`Theater Ticket: Row & Seat ${movie.theater_seat}`}
-                      style={{
-                        position: 'absolute',
-                        bottom: '4px',
-                        right: '4px',
-                        background: 'rgba(0,0,0,0.75)',
-                        borderRadius: '4px',
-                        padding: '1px 3px',
-                        fontSize: '9px',
-                        cursor: 'help',
-                        zIndex: 5
-                      }}
-                    >
-                      🎟️
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {/* ── MOBILE VIEW: 3-COLUMN LETTERBOXD CINEMA WALL (GRID) ──────── */}
+      {mobileView === 'grid' && (
+        <div className="mobile-only-library-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+          {filtered.length === 0 ? (
+            <div style={{ gridColumn: 'span 3', padding: '60px 20px', textAlign: 'center', color: 'var(--text-dim)' }}>
+              <div style={{ fontSize: '36px', marginBottom: '8px' }}>🎬</div>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: '#FFFFFF' }}>No titles match your filter</div>
+              <div style={{ fontSize: '12px', marginTop: '4px' }}>Try resetting filters or adding titles from Explore</div>
+            </div>
+          ) : (
+            filtered.map(movie => {
+              const isWatching = movie.status === 'watching';
+              return (
+                <div
+                  key={movie.id || movie.tmdb_id}
+                  onClick={() => onEditClick(movie)}
+                  style={{
+                    cursor: 'pointer',
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                    border: isWatching ? '1px solid var(--accent)' : '1px solid #222222',
+                    boxShadow: isWatching ? '0 0 10px rgba(229,9,20,0.35)' : 'none',
+                    position: 'relative',
+                    aspectRatio: '2/3',
+                    background: '#141414',
+                    transition: 'transform 0.1s ease'
+                  }}
+                >
+                  {movie.poster_path ? (
+                    <img
+                      src={`https://image.tmdb.org/t/p/w200${movie.poster_path}`}
+                      alt={movie.title}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>🎬</div>
+                  )}
+
+                  {/* Gradient Title Overlay */}
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.2) 40%, transparent 60%)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '6px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {movie.title}
+                    </div>
+                  </div>
+
+                  {/* Badges Overlay */}
+                  {movie.rating > 0 && (
+                    <div style={{ position: 'absolute', top: '4px', right: '4px', background: 'rgba(0,0,0,0.85)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', padding: '1px 5px', fontSize: '9px', fontWeight: 900, color: 'var(--gold)', letterSpacing: '-0.2px' }}>
+                      ★{Number(movie.rating).toFixed(1)}
+                    </div>
+                  )}
+
+                  {movie.favorite && (
+                    <div style={{ position: 'absolute', top: '4px', left: '4px', fontSize: '10px', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.8))' }}>❤️</div>
+                  )}
+
+                  {isWatching && (
+                    <div style={{ position: 'absolute', top: '4px', left: movie.favorite ? '22px' : '4px', background: 'var(--accent)', borderRadius: '3px', padding: '1px 4px', fontSize: '7.5px', fontWeight: 900, color: '#fff' }}>
+                      ▶ WATCHING
+                    </div>
+                  )}
+
+                  {(movie.media_type === 'tv' || movie.type === 'tv') && (
+                    <div style={{ position: 'absolute', bottom: '22px', left: '6px', background: 'rgba(0,0,0,0.85)', border: '1px solid rgba(96,165,250,0.5)', color: '#60A5FA', borderRadius: '3px', padding: '0.5px 3.5px', fontSize: '7.5px', fontWeight: 900 }}>
+                      TV
                     </div>
                   )}
                 </div>
               );
-            })}
-          </div>
+            })
+          )}
         </div>
-      ) : (
-        /* ── 3-COLUMN LIBRARY ─────────────────────────────────────── */
-        <div style={{ display: 'flex', gap: '14px', flex: 1, minHeight: 0 }}>
-          <LibraryColumn label="Movies"  icon="🎬" color="var(--accent)" movies={movies} onEditClick={onEditClick} onRemove={onRemove} searchQuery={searchQuery} sortBy={sortBy} />
-          <LibraryColumn label="Series"  icon="📺" color="var(--blue)"   movies={series} onEditClick={onEditClick} onRemove={onRemove} searchQuery={searchQuery} sortBy={sortBy} />
-          <LibraryColumn label="Anime"   icon="⛩"  color="#f97316"       movies={anime}  onEditClick={onEditClick} onRemove={onRemove} searchQuery={searchQuery} sortBy={sortBy} />
+      )}
+
+      {/* ── DESKTOP 3-COLUMN LIBRARY ─────────────────────────────────── */}
+      <div className="desktop-only-3col-library" style={{ display: 'flex', gap: '14px', flex: 1, minHeight: 0 }}>
+        {compactView ? (
+          <div className="library-grid-container" style={{ overflowY: 'auto', flex: 1 }}>
+            <div className="library-poster-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '12px', padding: '4px' }}>
+              {filtered.map(movie => (
+                <div key={movie.id || movie.tmdb_id} onClick={() => onEditClick(movie)}
+                  style={{ cursor: 'pointer', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)', position: 'relative', aspectRatio: '2/3', background: 'var(--surface-solid)' }}>
+                  {movie.poster_path ? (
+                    <img src={`https://image.tmdb.org/t/p/w200${movie.poster_path}`} alt={movie.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+                  ) : (
+                    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>🎬</div>
+                  )}
+                  {movie.rating > 0 && (
+                    <div style={{ position: 'absolute', top: '4px', right: '4px', background: 'rgba(0,0,0,0.75)', borderRadius: '4px', padding: '1px 5px', fontSize: '9px', fontWeight: 900, color: 'var(--gold)' }}>★{Number(movie.rating).toFixed(1)}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <>
+            <LibraryColumn label="Movies"  icon="🎬" color="var(--accent)" movies={movies} onEditClick={onEditClick} onRemove={onRemove} searchQuery={searchQuery} sortBy={sortBy} />
+            <LibraryColumn label="Series"  icon="📺" color="var(--blue)"   movies={series} onEditClick={onEditClick} onRemove={onRemove} searchQuery={searchQuery} sortBy={sortBy} />
+            <LibraryColumn label="Anime"   icon="⛩"  color="#f97316"       movies={anime}  onEditClick={onEditClick} onRemove={onRemove} searchQuery={searchQuery} sortBy={sortBy} />
+          </>
+        )}
+      </div>
+
+      {/* ── MOBILE FILTER & SORT BOTTOM SHEET ────────────────────────── */}
+      {showMobileFilterSheet && (
+        <div className="mobile-drawer-overlay" onClick={() => setShowMobileFilterSheet(false)}>
+          <div className="mobile-drawer-sheet" onClick={e => e.stopPropagation()} style={{ maxHeight: '82vh', overflowY: 'auto' }}>
+            <div className="mobile-drawer-handle" />
+            <div className="mobile-drawer-header">
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 900, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <SlidersHorizontal size={18} color="var(--accent)" />
+                Filter & Sort
+              </h3>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <button
+                  onClick={() => { setSortBy('date_added-desc'); setFilterGenre('all'); setFilterStatus('all'); setFilterType('all'); }}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '12px', cursor: 'pointer', textDecoration: 'underline' }}
+                >
+                  Reset
+                </button>
+                <button className="mobile-drawer-close-btn" onClick={() => setShowMobileFilterSheet(false)}>
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              {/* Sort Order */}
+              <div>
+                <label style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-dim)', letterSpacing: '0.06em', display: 'block', marginBottom: '8px' }}>
+                  Sort By
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
+                  {[
+                    { id: 'date_added-desc', label: 'Newest Added' },
+                    { id: 'date_added-asc', label: 'Oldest Added' },
+                    { id: 'rating-desc', label: 'Highest Rated ★' },
+                    { id: 'year-desc', label: 'Release Year' },
+                    { id: 'title-asc', label: 'Title (A–Z)' },
+                    { id: 'title-desc', label: 'Title (Z–A)' }
+                  ].map(s => (
+                    <button
+                      key={s.id}
+                      onClick={() => setSortBy(s.id)}
+                      style={{
+                        background: sortBy === s.id ? 'var(--accent)' : '#161616',
+                        color: sortBy === s.id ? '#FFFFFF' : '#A1A1AA',
+                        border: `1px solid ${sortBy === s.id ? 'var(--accent)' : '#242424'}`,
+                        borderRadius: '8px',
+                        padding: '8px 10px',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Genre Filter */}
+              <div>
+                <label style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-dim)', letterSpacing: '0.06em', display: 'block', marginBottom: '8px' }}>
+                  Filter by Genre
+                </label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  <button
+                    onClick={() => setFilterGenre('all')}
+                    style={{
+                      background: filterGenre === 'all' ? 'var(--accent)' : '#161616',
+                      color: filterGenre === 'all' ? '#FFFFFF' : '#A1A1AA',
+                      border: `1px solid ${filterGenre === 'all' ? 'var(--accent)' : '#242424'}`,
+                      borderRadius: '16px',
+                      padding: '5px 12px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    All Genres
+                  </button>
+                  {availableGenres.map(g => (
+                    <button
+                      key={g}
+                      onClick={() => setFilterGenre(g)}
+                      style={{
+                        background: filterGenre === g ? 'var(--accent)' : '#161616',
+                        color: filterGenre === g ? '#FFFFFF' : '#A1A1AA',
+                        border: `1px solid ${filterGenre === g ? 'var(--accent)' : '#242424'}`,
+                        borderRadius: '16px',
+                        padding: '5px 12px',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Collection Tools */}
+              <div>
+                <label style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-dim)', letterSpacing: '0.06em', display: 'block', marginBottom: '8px' }}>
+                  Tools & Backup
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => { setShowMobileFilterSheet(false); setShowImport(true); }}
+                    style={{ fontSize: '11px', padding: '8px 4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                  >
+                    <Upload size={13} /> Import
+                  </button>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={handleExportCSV}
+                    style={{ fontSize: '11px', padding: '8px 4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                  >
+                    <Download size={13} /> CSV
+                  </button>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={handleExportJSON}
+                    style={{ fontSize: '11px', padding: '8px 4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                  >
+                    <Download size={13} /> JSON
+                  </button>
+                </div>
+              </div>
+
+              {/* Apply / View Button */}
+              <button
+                className="btn btn-primary"
+                onClick={() => setShowMobileFilterSheet(false)}
+                style={{ width: '100%', padding: '12px', fontWeight: 900, borderRadius: '10px', marginTop: '6px' }}
+              >
+                View {filtered.length} {filtered.length === 1 ? 'Title' : 'Titles'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
