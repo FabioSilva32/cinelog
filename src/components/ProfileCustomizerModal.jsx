@@ -33,51 +33,60 @@ export const CURATED_MOVIE_AVATARS = [
 ];
 
 export const CINEMATIC_PRESET_BANNERS = [
-  // Marvel Cinematic Universe — Authentic Film Scenes
-  { name: 'Avengers: Infinity War: Thor Wakanda Arrival', movie: 'Avengers: Infinity War', tag: 'Bring Me Thanos! (Film Scene)', category: 'Superhero', url: '/film_frames/infinity045.jpg' },
+  // Marvel Cinematic Universe — Authentic 4K & Master Film Scenes
+  { name: 'Avengers: Infinity War: Thor Wakanda Arrival (4K)', movie: 'Avengers: Infinity War', tag: 'Bring Me Thanos! (4K Master)', category: 'Superhero', url: '/film_frames/curated/avengers_infinity_war_thor_wakanda_4k.jpg' },
+  { name: 'Avengers: Infinity War: Thanos Pulling the Moon', movie: 'Avengers: Infinity War', tag: 'Titan Moon Shatter (Film Scene)', category: 'Superhero', url: '/film_frames/curated/avengers_infinity_war_thanos_moon_pull.jpg' },
   { name: 'Avengers: Infinity War: Nidavellir Star Forge', movie: 'Avengers: Infinity War', tag: 'Neutron Star Beam (Film Scene)', category: 'Superhero', url: '/film_frames/infinity044.jpg' },
   { name: 'Avengers: Infinity War: Stormbreaker Strike', movie: 'Avengers: Infinity War', tag: 'Should Have Gone For The Head', category: 'Superhero', url: '/film_frames/infinity057.jpg' },
   { name: 'Avengers: Endgame: Portals Scene', movie: 'Avengers: Endgame', tag: 'Mystic Portals Battlefield (Film Scene)', category: 'Superhero', url: '/film_frames/Avengers_Endgame_043.jpg' },
   { name: 'Avengers: Endgame: Final Battle Charge', movie: 'Avengers: Endgame', tag: 'Avengers... Assemble! (Film Scene)', category: 'Superhero', url: '/film_frames/Avengers_Endgame_044.jpg' },
+  { name: 'The Avengers (2012): The Original 6 Assemble', movie: 'The Avengers', tag: 'Iconic 360 Spin (Film Scene)', category: 'Superhero', url: '/film_frames/curated/the_avengers_original_6_assemble.jpg' },
+  { name: 'Thor: Ragnarok: Surtur Fire Dragon Escape', movie: 'Thor: Ragnarok', tag: 'Muspelheim Dragon Flight (Film Scene)', category: 'Superhero', url: '/film_frames/curated/thor_ragnarok_fire_dragon_escape.jpg' },
+  { name: 'Avengers: Age of Ultron: Vision & Ultron Woods Talk', movie: 'Avengers: Age of Ultron', tag: 'A Thing Isn\'t Beautiful Because It Lasts', category: 'Superhero', url: '/film_frames/curated/avengers_age_of_ultron_vision_ultron_woods.jpg' },
 
-  // DC & Superman & Batman — 1080p StillsLab Masters & Screencaps
+  // DC, Superman & Batman — 4K Masters & Scope Screencaps
+  { name: 'The Batman: Red Flare Rescue (4K Master)', movie: 'The Batman (2022)', tag: 'Subway Flood Guide (4K UHD)', category: 'Superhero', url: '/film_frames/curated/the_batman_red_flare_rescue_4k.png' },
+  { name: 'The Batman: Batmobile Highway Pursuit (4K Master)', movie: 'The Batman (2022)', tag: 'Batmobile Fire Jump (4K UHD)', category: 'Superhero', url: '/film_frames/curated/the_batman_highway_chase_4k.png' },
+  { name: 'The Batman: Shadows of Gotham (4K Master)', movie: 'The Batman (2022)', tag: 'I Am The Shadows (4K UHD)', category: 'Superhero', url: '/film_frames/curated/the_batman_shadows_4k.png' },
+  { name: 'The Dark Knight: Skyscraper Apex Overlook', movie: 'The Dark Knight', tag: 'Batman Skyscraper Apex', category: 'Superhero', url: '/film_frames/stillslab/tdk_skyscraper_apex_1080p.webp' },
+  { name: 'The Dark Knight: Gotham Anamorphic Night', movie: 'The Dark Knight', tag: 'Batman Night Vigil Action', category: 'Superhero', url: '/film_frames/stillslab/tdk_gotham_anamorphic.webp' },
   { name: 'Man of Steel: First Flight Sonic Boom', movie: 'Man of Steel', tag: 'Mach 3 Shockwave over Glaciers', category: 'Superhero', url: '/film_frames/mos/mos_25.jpg' },
   { name: 'Man of Steel: Orbit Soaring', movie: 'Man of Steel', tag: 'Sunlight Over Earth (Film Scene)', category: 'Superhero', url: '/film_frames/mos/mos_50.jpg' },
   { name: 'Man of Steel: Atmospheric Rise', movie: 'Man of Steel', tag: 'High Altitude Flight (Film Scene)', category: 'Superhero', url: '/film_frames/mos/mos_54.jpg' },
-  { name: 'The Dark Knight: Skyscraper Apex Overlook', movie: 'The Dark Knight', tag: 'Batman Skyscraper Apex', category: 'Superhero', url: '/film_frames/stillslab/tdk_skyscraper_apex_1080p.webp' },
-  { name: 'The Dark Knight: Gotham Anamorphic Night', movie: 'The Dark Knight', tag: 'Batman Night Vigil Action', category: 'Superhero', url: '/film_frames/stillslab/tdk_gotham_anamorphic.webp' },
-  { name: 'The Batman: Flare Guide Through The Flood', movie: 'The Batman (2022)', tag: 'Batman Red Flare Guide', category: 'Superhero', url: '/film_frames/stillslab/the_batman_flare_guide.webp' },
-  { name: 'The Batman: Batmobile Fire Ignition', movie: 'The Batman (2022)', tag: 'Batmobile Fire Jump', category: 'Superhero', url: '/film_frames/stillslab/the_batman_batmobile_ignition.webp' },
 
-  // Spider-Man & Web-Slingers — 1080p StillsLab Masters & Screencaps
-  { name: 'Spider-Man: Brand New Day: Skyline Web-Swing', movie: 'Spider-Man: Brand New Day', tag: 'Manhattan Skyline Web-Swing', category: 'Superhero', url: '/film_frames/stillslab/spidey_bnd_skyline_swing.webp' },
-  { name: 'Spider-Man: Brand New Day: Dusk Rooftop Perch', movie: 'Spider-Man: Brand New Day', tag: 'Empire Spire Apex Perch', category: 'Superhero', url: '/film_frames/stillslab/spidey_bnd_dusk_perch.webp' },
+  // Spider-Man & Web-Slingers — 4K UHD & Master Shots
+  { name: 'Spider-Man: Brand New Day: Skyline Web-Swing (4K)', movie: 'Spider-Man: Brand New Day', tag: 'Manhattan Skyline Web-Swing (4K UHD)', category: 'Superhero', url: '/film_frames/bnd/bnd_city_leap.jpg' },
+  { name: 'Spider-Man: Brand New Day: Spire Apex Perch (4K)', movie: 'Spider-Man: Brand New Day', tag: 'Empire Spire Apex Perch (4K UHD)', category: 'Superhero', url: '/film_frames/bnd/bnd_spire_apex.jpg' },
   { name: 'Spider-Man: No Way Home: Moonlit Web-Swing', movie: 'Spider-Man: No Way Home', tag: 'Three Spider-Men Swing (Film Scene)', category: 'Superhero', url: '/film_frames/nwh/nwh_47.jpg' },
   { name: 'Spider-Man: No Way Home: Liberty Shield Perch', movie: 'Spider-Man: No Way Home', tag: 'Statue of Liberty Shield (Film Scene)', category: 'Superhero', url: '/film_frames/nwh/nwh_48.jpg' },
   { name: 'Spider-Verse: Inverted Skyscraper Dive', movie: 'Spider-Man: Across the Spider-Verse', tag: 'What\'s Up Danger (Film Scene)', category: 'Superhero', url: '/film_frames/atsv/atsv_30.jpg' },
 
-  // Sci-Fi & Cosmic Odyssey — 1080p StillsLab Masters (Project Hail Mary, Interstellar, Dune, Star Wars, Matrix, Blade Runner)
-  { name: 'Project Hail Mary: Red & Green Energy Sequence', movie: 'Project Hail Mary', tag: 'Deep Space Astrophage Glow', category: 'Sci-Fi', url: '/film_frames/stillslab/phm_red_green_energy.webp' },
-  { name: 'Project Hail Mary: Deep Space Orbit', movie: 'Project Hail Mary', tag: 'Astrophage Solar Flare', category: 'Sci-Fi', url: '/film_frames/stillslab/phm_deep_space_orbit.webp' },
-  { name: 'Interstellar: Deep Space Cosmic Odyssey', movie: 'Interstellar', tag: 'Gargantua Black Hole Light Bending', category: 'Sci-Fi', url: '/film_frames/stillslab/interstellar_space_odyssey.webp' },
-  { name: 'Dune: Part Two: Arrakis Desert Vista', movie: 'Dune: Part Two', tag: 'Arrakis Sunset Twin Suns', category: 'Sci-Fi', url: '/film_frames/stillslab/dune2_desert_vista.webp' },
-  { name: 'Blade Runner 2049: Las Vegas Amber', movie: 'Blade Runner 2049', tag: 'Las Vegas Amber Ruin Statues', category: 'Sci-Fi', url: '/film_frames/stillslab/br2049_amber_1080p.webp' },
-  { name: 'The Matrix: Digital Green Corridor', movie: 'The Matrix', tag: 'Cascading Green Digital Code', category: 'Sci-Fi', url: '/film_frames/stillslab/the_matrix_green_1080p.webp' },
+  // Sci-Fi & Cosmic Odyssey — 4K & 2K Masters
+  { name: 'Blade Runner 2049: Las Vegas Amber Ruins (4K)', movie: 'Blade Runner 2049', tag: 'Vegas Statues in Orange Fog (4K UHD)', category: 'Sci-Fi', url: '/film_frames/curated/blade_runner_2049_orange_vegas_4k.png' },
+  { name: 'Blade Runner 2049: You Look Like a Good Joe (4K)', movie: 'Blade Runner 2049', tag: 'Purple Joi Hologram Bridge (4K UHD)', category: 'Sci-Fi', url: '/film_frames/curated/blade_runner_2049_joi_purple_4k.png' },
+  { name: 'Blade Runner 2049: Tears in the Snow (4K)', movie: 'Blade Runner 2049', tag: 'Snow Stairs Dying Glow (4K UHD)', category: 'Sci-Fi', url: '/film_frames/curated/blade_runner_2049_snow_stairs_4k.png' },
+  { name: 'Blade Runner 2049: Memory Facility Ascent (4K)', movie: 'Blade Runner 2049', tag: 'Facility Steps Architecture (4K UHD)', category: 'Sci-Fi', url: '/film_frames/curated/blade_runner_2049_memory_facility_4k.png' },
+  { name: 'Project Hail Mary: Emerald Astrophage Cloud (4K)', movie: 'Project Hail Mary', tag: 'Deep Space Emerald Cloud (4K UHD)', category: 'Sci-Fi', url: '/film_frames/curated/project_hail_mary_emerald_astrophage_4k.jpg' },
+  { name: 'Project Hail Mary: Astrophage Solar Flare (4K)', movie: 'Project Hail Mary', tag: 'Cosmic Red Nebula Horizon (4K UHD)', category: 'Sci-Fi', url: '/film_frames/curated/project_hail_mary_red_solar_flare_4k.jpg' },
+  { name: 'Interstellar: Gargantua Light Bending (2K QHD)', movie: 'Interstellar', tag: 'Gargantua Accretion Disk (2K Master)', category: 'Sci-Fi', url: '/film_frames/curated/interstellar_gargantua_black_hole_2k.jpg' },
+  { name: 'Dune: Part Two: Arrakis Sunset Vista (2K QHD)', movie: 'Dune: Part Two', tag: 'Arrakis Desert Twin Suns (2K Master)', category: 'Sci-Fi', url: '/film_frames/curated/dune_arrakis_desert_2k.jpg' },
+  { name: 'The Matrix: Cascading Digital Green Code', movie: 'The Matrix', tag: 'Cascading Green Digital Code', category: 'Sci-Fi', url: '/film_frames/stillslab/the_matrix_green_1080p.webp' },
   { name: 'Star Wars: Binary Sunset on Tatooine', movie: 'Star Wars: A New Hope', tag: 'Twin Suns of Tatooine (Film Scene)', category: 'Sci-Fi', url: '/film_frames/starwars/binary_sunset.jpg' },
   { name: '2001: A Space Odyssey: Worlds Alignment', movie: '2001: A Space Odyssey', tag: 'Kubrick Cosmic Stargate', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/9yTOU2SvTfAEHDPEG5qraLoe4MI.jpg' },
   { name: 'TRON: Legacy: The Grid Neon Horizon', movie: 'TRON: Legacy', tag: 'Daft Punk Cyber Grid', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/uUa6jgSr5BQpcBhhaz1PV1JhSa4.jpg' },
 
-  // Epic Action & Fantasy (LOTR, Gladiator, Mad Max)
+  // Epic Action & Crime Classics
+  { name: 'Heat (1995): Downtown LA Heist (4K)', movie: 'Heat (1995)', tag: 'Michael Mann Downtown Heist (4K UHD)', category: 'Crime & Noir', url: '/film_frames/curated/heat_1995_la_heist_4k.jpg' },
   { name: 'LOTR: Return of the King: Epic Battle Vista', movie: 'The Lord of the Rings: The Return of the King', tag: '1080p StillsLab Master', category: 'Action', url: '/film_frames/stillslab/lotr_rotk_1080p.webp' },
-  { name: 'LOTR: Fellowship of the Ring: Argonath', movie: 'The Lord of the Rings: The Fellowship of the Ring', tag: '1080p StillsLab Master', category: 'Action', url: '/film_frames/stillslab/lotr_fotr_1080p.webp' },
+  { name: 'LOTR: Fellowship of the Ring: Argonath', movie: 'The Lord of the Rings: The Fellowship of the Ring', tag: 'Pillars of the Kings', category: 'Action', url: '/film_frames/stillslab/lotr_fotr_1080p.webp' },
   { name: 'LOTR: Return of the King: Pelennor Fields', movie: 'The Lord of the Rings: The Return of the King', tag: 'White City Citadel', category: 'Action', url: 'https://image.tmdb.org/t/p/original/ctiw6FZK4N36LmkjSklWEbuvlq9.jpg' },
   { name: 'Mad Max: Fury Road: Citadel Chase', movie: 'Mad Max: Fury Road', tag: 'Wasteland Desolation', category: 'Action', url: 'https://image.tmdb.org/t/p/original/l0eIS009XtEO80aC6zjM3o3AkEl.jpg' },
   { name: 'Gladiator: Colosseum Glory', movie: 'Gladiator', tag: 'Roman Empire Epic', category: 'Action', url: 'https://image.tmdb.org/t/p/original/Ar7QuJ7sJEiC0oP3I8fKBKIQD9u.jpg' },
 
   // Auteur, Drama & Thriller (Drive 2011, Oppenheimer, Taxi Driver)
-  { name: 'Drive: LA Magic Hour Night Driver', movie: 'Drive (2011)', tag: '1080p StillsLab Master', category: 'Crime & Noir', url: '/film_frames/stillslab/drive_2011_1080p.webp' },
-  { name: 'Oppenheimer: 70mm Trinity Wave', movie: 'Oppenheimer', tag: '1080p StillsLab Master', category: 'Drama', url: '/film_frames/stillslab/oppenheimer_70mm_1080p.webp' },
-  { name: 'Taxi Driver: 42nd Street Rain', movie: 'Taxi Driver', tag: '1080p StillsLab Master', category: 'Crime & Noir', url: '/film_frames/stillslab/taxi_driver_neon_1080p.webp' },
+  { name: 'Drive: LA Magic Hour Night Driver', movie: 'Drive (2011)', tag: 'Refn Magic Hour', category: 'Crime & Noir', url: '/film_frames/stillslab/drive_2011_1080p.webp' },
+  { name: 'Oppenheimer: 70mm Trinity Wave', movie: 'Oppenheimer', tag: '70mm IMAX Trinity Fire', category: 'Drama', url: '/film_frames/stillslab/oppenheimer_70mm_1080p.webp' },
+  { name: 'Taxi Driver: 42nd Street Rain', movie: 'Taxi Driver', tag: 'Scorsese Neon Rain', category: 'Crime & Noir', url: '/film_frames/stillslab/taxi_driver_neon_1080p.webp' },
   { name: 'Drive: LA Riverbed Sunset', movie: 'Drive (2011)', tag: 'Refn Neo-Noir Magic Hour', category: 'Crime & Noir', url: 'https://image.tmdb.org/t/p/original/hoyAALgfmjMEK7O1wZ4r8wT91RP.jpg' },
   { name: 'La La Land: Griffith Park Twilight', movie: 'La La Land', tag: 'Magic Hour Twilight', category: 'Drama', url: 'https://image.tmdb.org/t/p/original/nlPCdZlHtRNcF6C9hzUH4ebmV1w.jpg' },
   { name: 'Pulp Fiction: Jack Rabbit Slims', movie: 'Pulp Fiction', tag: 'Tarantino Cult', category: 'Crime & Noir', url: 'https://image.tmdb.org/t/p/original/suaEOtk1N1sgg2MTM7oZd2cfVp3.jpg' },
