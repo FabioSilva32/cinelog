@@ -305,7 +305,9 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterGenre, setFilterGenre] = useState('all');
   const [showImport, setShowImport] = useState(false);
-  const [compactView, setCompactView] = useState(false);
+  const [compactView, setCompactView] = useState(() => {
+    return typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+  });
 
   // Extract available genres from library
   const availableGenres = useMemo(() => {
@@ -436,10 +438,10 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
   };
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: 'calc(100vh - 100px)' }}>
+    <div className="animate-fade-in library-tab-container" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
       {/* ── STATS ROW ───────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+      <div className="library-stats-row" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
         {[
           { label: 'Total', val: stats.total, color: 'var(--accent)' },
           { label: 'Watched', val: stats.watched, color: 'var(--green)' },
@@ -448,7 +450,7 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
           { label: 'Avg Rating', val: stats.avg + (stats.avg !== '—' ? '' : ''), color: 'var(--gold)' },
           { label: 'Favorites', val: stats.favs, color: 'var(--red)' },
         ].map(s => (
-          <div key={s.label} className="glass" style={{ padding: '12px 18px', borderRadius: 'var(--radius)', flex: 1, minWidth: '100px', textAlign: 'center' }}>
+          <div key={s.label} className="glass library-stat-card" style={{ padding: '12px 18px', borderRadius: 'var(--radius)', flex: 1, minWidth: '100px', textAlign: 'center' }}>
             <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>{s.label}</div>
             <div style={{ fontSize: '22px', fontWeight: 900, color: s.color, marginTop: '2px' }}>{s.val}</div>
           </div>
@@ -456,7 +458,7 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
       </div>
 
       {/* ── FILTER BAR ──────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', position: 'relative' }}>
+      <div className="library-filter-bar" style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', position: 'relative' }}>
         {/* Search */}
         <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
           <Search size={14} color="var(--text-dim)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
@@ -549,8 +551,8 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
 
       {/* ── COMPACT GRID VIEW ────────────────────────────────────────── */}
       {compactView ? (
-        <div style={{ overflowY: 'auto', flex: 1 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: '10px', padding: '4px' }}>
+        <div className="library-grid-container" style={{ overflowY: 'auto', flex: 1 }}>
+          <div className="library-poster-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: '10px', padding: '4px' }}>
             {[...movies, ...series, ...anime]
               .filter(m => !searchQuery || m.title?.toLowerCase().includes(searchQuery.toLowerCase()))
               .sort((a, b) => {

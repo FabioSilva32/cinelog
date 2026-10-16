@@ -136,15 +136,17 @@ function SharpPosterRow({ title, items = [], onCardClick, inLib, onAdd, actionBu
               }}
             >
               {/* Poster Container - 100% Clean Cinema Artwork */}
-              <div style={{
-                width: '180px',
-                aspectRatio: '2/3',
-                borderRadius: '8px',
-                overflow: 'hidden',
-                background: '#141414',
-                border: '1px solid #242424',
-                position: 'relative'
-              }}>
+              <div
+                className="sharp-poster-inner"
+                style={{
+                  width: '100%',
+                  aspectRatio: '2/3',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  background: '#141414',
+                  border: '1px solid #242424',
+                  position: 'relative'
+                }}>
                 {movie.poster_path ? (
                   <img
                     src={`https://image.tmdb.org/t/p/w342${movie.poster_path}`}
@@ -241,28 +243,34 @@ function SharpPosterRow({ title, items = [], onCardClick, inLib, onAdd, actionBu
               </div>
 
               {/* Title & Release Year / Rating */}
-              <div>
-                <div style={{
-                  fontSize: '13px',
-                  fontWeight: 800,
-                  color: '#FFFFFF',
-                  textTransform: 'uppercase',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  lineHeight: 1.3
-                }}>
+              <div className="sharp-poster-text-wrap">
+                <div
+                  className="sharp-poster-title"
+                  style={{
+                    fontSize: '13px',
+                    fontWeight: 800,
+                    color: '#FFFFFF',
+                    textTransform: 'uppercase',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    lineHeight: 1.3
+                  }}
+                >
                   {movie.title || movie.name}
                 </div>
-                <div style={{
-                  fontSize: '12px',
-                  color: '#777777',
-                  marginTop: '2px',
-                  fontWeight: 500,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}>
+                <div
+                  className="sharp-poster-meta"
+                  style={{
+                    fontSize: '12px',
+                    color: '#777777',
+                    marginTop: '2px',
+                    fontWeight: 500,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
                   <span>{year || '2024'}</span>
                   {movie.vote_average > 0 && (
                     <span style={{ color: '#888888', display: 'flex', alignItems: 'center', gap: '2px' }}>
