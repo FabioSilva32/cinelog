@@ -129,16 +129,6 @@ function AppInner() {
   const [showCommandCenter, setShowCommandCenter] = useState(false);
   useBodyScrollLock(showCommandCenter);
 
-  // Safety: Guarantee page scroll is never frozen when modals are closed
-  useEffect(() => {
-    if (!activeEditMovie && !showAuth && !showCommandCenter && !showSettings && !showRecoveryModal && !confirmConfig?.isOpen) {
-      document.body.classList.remove('modal-open');
-      document.documentElement.classList.remove('modal-open');
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
-      delete document.body.dataset.scrollLocks;
-    }
-  }, [activeEditMovie, showAuth, showCommandCenter, showSettings, showRecoveryModal, confirmConfig?.isOpen, activeTab]);
   const [cmdQuery, setCmdQuery] = useState('');
   const [cmdSearchResults, setCmdSearchResults] = useState([]);
   const [isCmdSearching, setIsCmdSearching] = useState(false);
@@ -334,6 +324,17 @@ function AppInner() {
   });
 
   const [isLibraryLoaded, setIsLibraryLoaded] = useState(false);
+
+  // Safety: Guarantee page scroll is never frozen when modals are closed
+  useEffect(() => {
+    if (!activeEditMovie && !showAuth && !showCommandCenter && !showSettings && !showRecoveryModal && !confirmConfig?.isOpen && !viewingUserProfile) {
+      document.body.classList.remove('modal-open');
+      document.documentElement.classList.remove('modal-open');
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+      delete document.body.dataset.scrollLocks;
+    }
+  }, [activeEditMovie, showAuth, showCommandCenter, showSettings, showRecoveryModal, confirmConfig?.isOpen, viewingUserProfile, activeTab]);
 
   // Global Escape key listener to close active top-level menus and modals
   useEffect(() => {
