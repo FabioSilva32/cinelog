@@ -2209,13 +2209,158 @@ body.modal-open {
     flex-shrink: 0 !important;
   }
 
-  /* Scrollable Body: smooth isolated scrolling that never spills */
-  .movie-detail-scroll-body {
-    padding: 8px 16px calc(24px + env(safe-area-inset-bottom, 16px)) !important;
-    overflow-y: auto !important;
+  /* ── FIX GREY TOP & BOTTOM OF SCREEN ON PHONES ── */
+  html, body, #root {
+    background: #000000 !important;
+    background-color: #000000 !important;
+  }
+
+  body {
+    padding-top: env(safe-area-inset-top, 0px) !important;
+  }
+
+  .topnav-header {
+    background: #000000 !important;
+    border-bottom: 1px solid #1c1c1c !important;
+  }
+
+  .mobile-bottom-nav {
+    background: #000000 !important;
+    background-color: #000000 !important;
+    border-top: 1px solid #1a1a1a !important;
+    padding-bottom: max(10px, env(safe-area-inset-bottom, 10px)) !important;
+  }
+
+  /* ── PROFILE TAB MOBILE REVAMP ── */
+  .profile-banner {
+    height: 180px !important;
+    min-height: 180px !important;
+    max-height: 180px !important;
+    border-radius: 14px 14px 0 0 !important;
+  }
+
+  .profile-card-header {
+    padding: 0 14px 20px !important;
+    border-radius: 0 0 18px 18px !important;
+  }
+
+  .profile-header-top-bar {
+    flex-direction: column !important;
+    gap: 14px !important;
+    align-items: stretch !important;
+  }
+
+  .profile-user-info {
+    min-width: 0 !important;
+    width: 100% !important;
+    gap: 14px !important;
+  }
+
+  .profile-subnav {
+    margin-top: 16px !important;
+    padding: 4px !important;
+    border-radius: 12px !important;
+    gap: 3px !important;
+    scrollbar-width: none !important;
     -webkit-overflow-scrolling: touch !important;
-    overscroll-behavior: contain !important;
-    touch-action: pan-y !important;
+  }
+
+  .profile-subnav::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .profile-subnav button {
+    padding: 7px 12px !important;
+    font-size: 11.5px !important;
+  }
+
+  .profile-overview-columns {
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+
+  .profile-favorites-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  /* ── COLLECTIONS / LISTS TAB MOBILE REVAMP ── */
+  .collections-mood-picker {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 4px !important;
+  }
+
+  .collections-mood-picker::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .collections-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* ── TIER LIST TAB MOBILE REVAMP ── */
+  .tier-row {
+    min-height: 90px !important;
+  }
+
+  .tier-label-box {
+    width: 52px !important;
+    font-size: 20px !important;
+    padding: 6px 2px !important;
+    letter-spacing: 0 !important;
+  }
+
+  .tier-label-box > span {
+    font-size: 18px !important;
+  }
+
+  .tier-posters-scroll {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding: 8px 10px !important;
+    min-height: 90px !important;
+    gap: 8px !important;
+    scrollbar-width: none !important;
+  }
+
+  .tier-posters-scroll::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .tier-posters-scroll img {
+    width: 52px !important;
+    height: 78px !important;
+  }
+
+  /* ── ACHIEVEMENTS TAB MOBILE REVAMP ── */
+  .achievements-content-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  /* ── WATCH CALENDAR TAB MOBILE REVAMP ── */
+  .calendar-heatmap-scroll {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 6px !important;
+  }
+
+  /* ── STATS TAB MOBILE REVAMP ── */
+  .stats-chart-wrapper {
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 16px !important;
+  }
+
+  /* ── SOCIAL TAB MOBILE REVAMP ── */
+  .social-feed-card {
+    padding: 12px 14px !important;
   }
 }
 

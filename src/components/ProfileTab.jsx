@@ -939,8 +939,9 @@ export default function ProfileTab({
             ───────────────────────────────────────────────────────────── */
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
 
-          {/* BANNER (520px grand cinematic marquee with fallback ambiance) */}
+          {/* BANNER (grand cinematic marquee with fallback ambiance) */}
           <div
+            className="profile-banner"
             style={{
               height: '520px',
               width: '100%',
@@ -1023,7 +1024,7 @@ export default function ProfileTab({
           </div>
 
           {/* PROFILE HEADER ROW (Polished Studio Card) */}
-          <div style={{
+          <div className="profile-card-header" style={{
             background: 'linear-gradient(180deg, #13111b 0%, #0d0b13 100%)',
             padding: '0 32px 28px',
             border: '1px solid rgba(255,255,255,0.08)',
@@ -1034,10 +1035,10 @@ export default function ProfileTab({
           }}>
             
             {/* Top Bar: Avatar + Name/Bio on Left, Stats Capsules on Right */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '28px', flexWrap: 'wrap' }}>
+            <div className="profile-header-top-bar" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '28px', flexWrap: 'wrap' }}>
               
               {/* Left: Avatar (overlapping banner with glowing presence) + Name & Bio */}
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '24px', flex: 1, minWidth: '320px' }}>
+              <div className="profile-user-info" style={{ display: 'flex', alignItems: 'flex-start', gap: '24px', flex: 1, minWidth: '320px' }}>
                 <div style={{
                   marginTop: '-65px',
                   position: 'relative',
@@ -1239,7 +1240,7 @@ export default function ProfileTab({
           </div>
 
           {/* FULL CINEMATIC SUB-NAV (MODERN FLOATING PILL BAR) */}
-          <div style={{
+          <div className="profile-subnav" style={{
             display: 'flex',
             marginTop: '24px',
             background: 'rgba(15, 12, 22, 0.85)',
@@ -1309,7 +1310,7 @@ export default function ProfileTab({
 
             {/* ── OVERVIEW TAB ── */}
             {profileActiveSubTab === 'overview' && (
-              <div style={{ display: 'flex', gap: '24px', alignItems: 'start' }}>
+              <div className="profile-overview-columns" style={{ display: 'flex', gap: '24px', alignItems: 'start' }}>
 
                 {/* LEFT COLUMN */}
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -1359,7 +1360,7 @@ export default function ProfileTab({
                       </button>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px' }}>
+                    <div className="profile-favorites-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px' }}>
                       {Array.from({ length: 6 }).map((_, i) => {
                         const fav = (currentUser?.favorites || [])[i];
                         return (

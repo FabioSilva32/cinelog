@@ -55,7 +55,7 @@ export default function AchievementsTab({ library, currentUser, onUpdateProfile 
       </div>
 
       {/* ── MAIN CONTENT GRID ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '24px', alignItems: 'start' }}>
+      <div className="achievements-content-grid" style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '24px', alignItems: 'start' }}>
         
         {/* Left column: Achievements List */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

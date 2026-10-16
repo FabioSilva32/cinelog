@@ -45,10 +45,10 @@ function TonightPicker({ library, onMovieClick }) {
   return (
     <div>
       {/* Mood Grid */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
+      <div className="collections-mood-picker" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
         {MOODS.map(m => (
           <button key={m.id} onClick={() => { setMood(m.id); setPick(null); }}
-            style={{ background: mood === m.id ? 'var(--accent)' : 'rgba(255,255,255,0.04)', color: mood === m.id ? '#fff' : 'var(--text-muted)', border: `1px solid ${mood === m.id ? 'var(--accent)' : 'var(--border)'}`, borderRadius: '20px', padding: '6px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}>
+            style={{ background: mood === m.id ? 'var(--accent)' : 'rgba(255,255,255,0.04)', color: mood === m.id ? '#fff' : 'var(--text-muted)', border: `1px solid ${mood === m.id ? 'var(--accent)' : 'var(--border)'}`, borderRadius: '20px', padding: '6px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap', flexShrink: 0 }}>
             {m.label}
           </button>
         ))}
@@ -475,7 +475,7 @@ export default function CollectionsTab({ library = [], onMovieClick, onSaveMovie
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+        <div className="collections-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
           {automaticCollections
             .filter(col => col.group === autoGroup)
             .filter(col => showEmpty || col.movies.length > 0)

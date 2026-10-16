@@ -582,6 +582,7 @@ export default function TierListTab({ library = [] }) {
           return (
             <div key={tier.id} style={{ display: 'flex', flexDirection: 'column' }}>
               <div
+                className="tier-row"
                 style={{
                   display: 'flex',
                   borderBottom: idx < tiers.length - 1 || editingTierId === tier.id ? '1px solid var(--border)' : 'none',
@@ -614,7 +615,7 @@ export default function TierListTab({ library = [] }) {
                   padding: '12px 6px',
                   textAlign: 'center'
                 }}
-                  className="tier-label-hover-group"
+                  className="tier-label-box tier-label-hover-group"
                 >
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100px' }}>
                     {tier.label}
@@ -644,15 +645,17 @@ export default function TierListTab({ library = [] }) {
                 </div>
 
                 {/* ── ROW ITEMS (Posters) ── */}
-                <div style={{
-                  flex: 1,
-                  padding: '12px 16px',
-                  display: 'flex',
-                  gap: '12px',
-                  flexWrap: 'wrap',
-                  alignItems: 'center',
-                  minHeight: '130px',
-                }}>
+                <div
+                  className="tier-posters-scroll"
+                  style={{
+                    flex: 1,
+                    padding: '12px 16px',
+                    display: 'flex',
+                    gap: '12px',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    minHeight: '130px',
+                  }}>
                   {moviesList.map(id => {
                     const movie = getMovie(id);
                     if (!movie) return null;
