@@ -196,7 +196,7 @@ function AppInner() {
     }
   }, [showQuickAdd]);
 
-  // Global keyboard shortcuts (Ctrl/Cmd+K for search, Escape to close menus & modals)
+  // Global keyboard shortcuts (Ctrl/Cmd+K for search)
   useEffect(() => {
     const handler = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -204,40 +204,10 @@ function AppInner() {
         setShowCommandCenter(prev => !prev);
         setCmdQuery('');
       }
-      if (e.key === 'Escape') {
-        if (showQuickAdd) {
-          setShowQuickAdd(false);
-          return;
-        }
-        if (showCommandCenter) {
-          setShowCommandCenter(false);
-          return;
-        }
-        if (showSettings) {
-          setShowSettings(false);
-          return;
-        }
-        if (showAuth) {
-          setShowAuth(false);
-          return;
-        }
-        if (showRecoveryModal) {
-          setShowRecoveryModal(false);
-          return;
-        }
-        if (activeEditMovie) {
-          setActiveEditMovie(null);
-          return;
-        }
-        if (viewingUserProfile) {
-          setViewingUserProfile(null);
-          return;
-        }
-      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [showQuickAdd, showCommandCenter, showSettings, showAuth, showRecoveryModal, activeEditMovie, viewingUserProfile]);
+  }, []);
 
   // Reset search when modal closes
   useEffect(() => {
@@ -352,6 +322,44 @@ function AppInner() {
   });
 
   const [isLibraryLoaded, setIsLibraryLoaded] = useState(false);
+
+  // Global Escape key listener to close active top-level menus and modals
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (showQuickAdd) {
+          setShowQuickAdd(false);
+          return;
+        }
+        if (showCommandCenter) {
+          setShowCommandCenter(false);
+          return;
+        }
+        if (showSettings) {
+          setShowSettings(false);
+          return;
+        }
+        if (showAuth) {
+          setShowAuth(false);
+          return;
+        }
+        if (showRecoveryModal) {
+          setShowRecoveryModal(false);
+          return;
+        }
+        if (activeEditMovie) {
+          setActiveEditMovie(null);
+          return;
+        }
+        if (viewingUserProfile) {
+          setViewingUserProfile(null);
+          return;
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showQuickAdd, showCommandCenter, showSettings, showAuth, showRecoveryModal, activeEditMovie, viewingUserProfile]);
 
   useEffect(() => {
     localStorage.setItem('cinelog_mode', 'supabase');
@@ -1088,6 +1096,8 @@ function AppInner() {
           useSupabase={useSupabase}
           setUseSupabase={handleSetUseSupabase}
           layoutMode={layoutMode}
+          library={library}
+          onMovieClick={handleMovieClick}
         />
 
       <main className="page-content">

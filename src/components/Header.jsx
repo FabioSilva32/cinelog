@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Film, Compass, List, BarChart3, User, LogOut, Sparkles, CalendarDays, Award, Settings, Library, Home, Star, Trophy, HelpCircle, Flame, Clapperboard, Users, Wand2, Menu, X, Search, Bell } from 'lucide-react';
+import { Film, Compass, List, BarChart3, User, LogOut, Sparkles, CalendarDays, Award, Settings, Library, Home, Star, Trophy, HelpCircle, Flame, Clapperboard, Users, Wand2, Menu, X, Search, Bell, BellOff, Clock } from 'lucide-react';
 import { isSupabaseConfigured } from '../supabaseClient';
 import { BORDER_STYLES } from '../utils/achievements';
 import AvatarWithBorder from './AvatarWithBorder';
+import { useNotifications } from '../utils/notifications';
 
 
 const NAV_GROUPS = [
@@ -34,15 +35,32 @@ const NAV_GROUPS = [
   }
 ];
 
-export default function Header({ activeTab, setActiveTab, currentUser, onLogout, onOpenAuth, useSupabase, setUseSupabase, onOpenSettings, onOpenCommandCenter, layoutMode = 'top-nav' }) {
+export default function Header({ activeTab, setActiveTab, currentUser, onLogout, onOpenAuth, useSupabase, setUseSupabase, onOpenSettings, onOpenCommandCenter, layoutMode = 'top-nav', library = [], onMovieClick }) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMoreNav, setShowMoreNav] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [unreadNotifications, setUnreadNotifications] = useState(true);
-  const menuRef = useRef(null);
-  const moreNavRef = useRef(null);
   const notifRef = useRef(null);
+
+  const {
+    notifications,
+    unreadCount,
+    readIds,
+    markAsRead,
+    markAllAsRead,
+    dismissNotification,
+    clearAll
+  } = useNotifications(library, currentUser);
+
+  const handleNotificationClick = (item) => {
+    markAsRead(item.id);
+    setShowNotifications(false);
+    if (item.movieId) {
+      onMovieClick?.(item.movieId, item.mediaType || 'movie');
+    } else if (item.tab) {
+      handleNavClick(item.tab);
+    }
+  };
 
   useEffect(() => {
     const handler = e => {
@@ -209,10 +227,7 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
             {/* Notifications button with sleek popover */}
             <div style={{ position: 'relative' }} ref={notifRef}>
               <button
-                onClick={() => {
-                  setShowNotifications(!showNotifications);
-                  if (unreadNotifications) setUnreadNotifications(false);
-                }}
+                onClick={() => setShowNotifications(!showNotifications)}
                 style={{
                   background: showNotifications ? '#1E1E1E' : '#141414',
                   border: `1px solid ${showNotifications ? 'var(--accent)' : '#242424'}`,
@@ -232,17 +247,27 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
                 title="Notifications"
               >
                 <Bell size={16} />
-                {unreadNotifications && (
+                {unreadCount > 0 && (
                   <span style={{
                     position: 'absolute',
-                    top: '8px',
-                    right: '8px',
-                    width: '6px',
-                    height: '6px',
-                    borderRadius: '50%',
+                    top: '-4px',
+                    right: '-4px',
+                    minWidth: '17px',
+                    height: '17px',
+                    borderRadius: '9px',
+                    padding: '0 4px',
                     background: 'var(--accent)',
-                    boxShadow: '0 0 6px var(--accent)'
-                  }} />
+                    color: '#FFFFFF',
+                    fontSize: '9.5px',
+                    fontWeight: 800,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 0 8px rgba(229,9,20,0.7)',
+                    border: '1.5px solid #141414'
+                  }}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
                 )}
               </button>
 
@@ -251,45 +276,211 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
                   position: 'absolute',
                   top: 'calc(100% + 10px)',
                   right: 0,
-                  background: '#121212',
-                  border: '1px solid #282828',
-                  borderRadius: '12px',
+                  background: '#121118',
+                  border: '1px solid #2a2833',
+                  borderRadius: '14px',
                   padding: '14px',
-                  width: '320px',
-                  boxShadow: '0 16px 40px rgba(0,0,0,0.95)',
-                  zIndex: 1000
+                  width: '350px',
+                  maxHeight: '480px',
+                  boxShadow: '0 20px 50px rgba(0,0,0,0.95), 0 0 1px rgba(255,255,255,0.1)',
+                  zIndex: 1000,
+                  display: 'flex',
+                  flexDirection: 'column'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '10px', borderBottom: '1px solid #222222', marginBottom: '10px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  {/* Top Header */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '11px', borderBottom: '1px solid #22202c', marginBottom: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <Bell size={14} color="var(--accent)" />
                       <span style={{ fontSize: '13px', fontWeight: 800, color: '#FFFFFF' }}>Notifications</span>
+                      {unreadCount > 0 && (
+                        <span style={{
+                          fontSize: '10px',
+                          background: 'rgba(229,9,20,0.18)',
+                          color: 'var(--accent)',
+                          border: '1px solid rgba(229,9,20,0.3)',
+                          borderRadius: '10px',
+                          padding: '1px 6px',
+                          fontWeight: 800
+                        }}>
+                          {unreadCount} new
+                        </span>
+                      )}
                     </div>
-                    <span
-                      style={{ fontSize: '11px', color: 'var(--accent)', cursor: 'pointer', fontWeight: 700 }}
-                      onClick={() => setUnreadNotifications(false)}
-                    >
-                      Mark read
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      {unreadCount > 0 && (
+                        <button
+                          style={{ background: 'none', border: 'none', fontSize: '11px', color: 'var(--accent)', cursor: 'pointer', fontWeight: 700, padding: 0 }}
+                          onClick={markAllAsRead}
+                          title="Mark all as read"
+                        >
+                          Mark read
+                        </button>
+                      )}
+                      {notifications.length > 0 && (
+                        <button
+                          style={{ background: 'none', border: 'none', fontSize: '11px', color: '#777777', cursor: 'pointer', fontWeight: 600, padding: 0, transition: 'color 0.15s' }}
+                          onClick={clearAll}
+                          title="Clear all notifications"
+                          onMouseEnter={e => e.currentTarget.style.color = '#FFFFFF'}
+                          onMouseLeave={e => e.currentTarget.style.color = '#777777'}
+                        >
+                          Clear all
+                        </button>
+                      )}
+                    </div>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <div style={{ padding: '9px 11px', background: '#181818', borderRadius: '8px', border: '1px solid #282828' }}>
-                      <div style={{ fontSize: '12px', fontWeight: 800, color: '#FFFFFF' }}>🎬 In Cinemas: Dune: Part Two</div>
-                      <div style={{ fontSize: '11px', color: '#9E9E9E', marginTop: '2px', lineHeight: 1.4 }}>Trending #1 this week. Log your screening to update your stats.</div>
-                      <div style={{ fontSize: '10px', color: '#666666', marginTop: '4px' }}>2 hours ago</div>
-                    </div>
+                  {/* List / Empty State */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto', maxHeight: '380px', paddingRight: '2px' }}>
+                    {notifications.length === 0 ? (
+                      <div style={{ padding: '36px 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <div style={{
+                          width: '42px', height: '42px', borderRadius: '50%',
+                          background: 'rgba(255,255,255,0.03)', border: '1px solid #22202c',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          marginBottom: '10px', color: '#666666'
+                        }}>
+                          <BellOff size={18} />
+                        </div>
+                        <div style={{ fontSize: '13px', fontWeight: 800, color: '#EEEEEE' }}>All caught up</div>
+                        <div style={{ fontSize: '11px', color: '#777777', marginTop: '4px', maxWidth: '240px', lineHeight: 1.4 }}>
+                          No new notifications right now. Check back soon for trending releases and diary alerts!
+                        </div>
+                      </div>
+                    ) : (
+                      notifications.map(item => {
+                        const isRead = readIds.includes(item.id);
+                        return (
+                          <div
+                            key={item.id}
+                            onClick={() => handleNotificationClick(item)}
+                            style={{
+                              padding: '10px 11px',
+                              background: isRead ? 'rgba(255,255,255,0.02)' : 'rgba(229,9,20,0.06)',
+                              borderRadius: '9px',
+                              border: isRead ? '1px solid #22202c' : '1px solid rgba(229,9,20,0.25)',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'flex-start',
+                              gap: '10px',
+                              position: 'relative',
+                              transition: 'all 0.15s ease'
+                            }}
+                            onMouseEnter={e => {
+                              e.currentTarget.style.borderColor = 'rgba(229,9,20,0.45)';
+                              e.currentTarget.style.background = isRead ? 'rgba(255,255,255,0.05)' : 'rgba(229,9,20,0.1)';
+                            }}
+                            onMouseLeave={e => {
+                              e.currentTarget.style.borderColor = isRead ? '#22202c' : 'rgba(229,9,20,0.25)';
+                              e.currentTarget.style.background = isRead ? 'rgba(255,255,255,0.02)' : 'rgba(229,9,20,0.06)';
+                            }}
+                          >
+                            {/* Left Poster or Badge */}
+                            {item.poster ? (
+                              <img
+                                src={item.poster}
+                                alt=""
+                                style={{
+                                  width: '38px',
+                                  height: '54px',
+                                  objectFit: 'cover',
+                                  borderRadius: '6px',
+                                  flexShrink: 0,
+                                  boxShadow: '0 2px 8px rgba(0,0,0,0.6)'
+                                }}
+                              />
+                            ) : (
+                              <div style={{
+                                width: '38px',
+                                height: '38px',
+                                borderRadius: '8px',
+                                background: 'rgba(255,255,255,0.04)',
+                                border: '1px solid #242424',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0
+                              }}>
+                                {item.type === 'milestone' ? <Trophy size={16} color="#fbbf24" /> :
+                                 item.type === 'watchlist' ? <Clock size={16} color="#38bdf8" /> :
+                                 item.type === 'showcase' ? <Star size={16} color="#ef4444" /> :
+                                 <Sparkles size={16} color="var(--accent)" />}
+                              </div>
+                            )}
 
-                    <div style={{ padding: '9px 11px', background: '#151515', borderRadius: '8px', border: '1px solid #222222' }}>
-                      <div style={{ fontSize: '12px', fontWeight: 800, color: '#FFFFFF' }}>⭐ Watch Diary Synced</div>
-                      <div style={{ fontSize: '11px', color: '#9E9E9E', marginTop: '2px', lineHeight: 1.4 }}>Your latest reviews and watch dates have been recorded.</div>
-                      <div style={{ fontSize: '10px', color: '#666666', marginTop: '4px' }}>Yesterday</div>
-                    </div>
+                            {/* Center Content */}
+                            <div style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
+                                <span style={{
+                                  fontSize: '9.5px',
+                                  fontWeight: 800,
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.4px',
+                                  color: item.tagColor || 'var(--accent)',
+                                  background: `${item.tagColor || '#e50914'}18`,
+                                  padding: '1px 5px',
+                                  borderRadius: '4px'
+                                }}>
+                                  {item.tag}
+                                </span>
+                                <span style={{ fontSize: '10px', color: '#666666' }}>• {item.time}</span>
+                              </div>
+                              <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.3 }}>
+                                {item.title}
+                              </div>
+                              <div style={{
+                                fontSize: '11px',
+                                color: '#9E9E9E',
+                                marginTop: '3px',
+                                lineHeight: 1.4,
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden'
+                              }}>
+                                {item.body}
+                              </div>
+                            </div>
 
-                    <div style={{ padding: '9px 11px', background: '#151515', borderRadius: '8px', border: '1px solid #222222' }}>
-                      <div style={{ fontSize: '12px', fontWeight: 800, color: '#FFFFFF' }}>🏆 Weekly Rank Unlocked</div>
-                      <div style={{ fontSize: '11px', color: '#9E9E9E', marginTop: '2px', lineHeight: 1.4 }}>VIP Cinephile milestone achieved. Badges updated!</div>
-                      <div style={{ fontSize: '10px', color: '#666666', marginTop: '4px' }}>3 days ago</div>
-                    </div>
+                            {/* Dismiss button & unread dot */}
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                              {!isRead && (
+                                <span style={{
+                                  width: '6px',
+                                  height: '6px',
+                                  borderRadius: '50%',
+                                  background: 'var(--accent)',
+                                  boxShadow: '0 0 6px var(--accent)'
+                                }} />
+                              )}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  dismissNotification(item.id);
+                                }}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: '#666666',
+                                  cursor: 'pointer',
+                                  padding: '2px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  borderRadius: '4px',
+                                  transition: 'color 0.15s'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.color = '#FFFFFF'}
+                                onMouseLeave={e => e.currentTarget.style.color = '#666666'}
+                                title="Dismiss notification"
+                              >
+                                <X size={12} />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
               )}
