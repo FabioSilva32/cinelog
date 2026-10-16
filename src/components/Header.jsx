@@ -40,6 +40,8 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
   const [showMoreNav, setShowMoreNav] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const menuRef = useRef(null);
+  const moreNavRef = useRef(null);
   const notifRef = useRef(null);
 
   const {
