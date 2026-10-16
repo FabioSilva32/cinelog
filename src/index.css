@@ -1453,6 +1453,7 @@ input[type='range']::-moz-range-thumb {
   }
 
   /* Compact Sticky App Top Bar */
+  .app-container.layout-topnav .app-header,
   .app-header.topnav-header {
     height: 56px !important;
     position: sticky !important;
@@ -1468,7 +1469,7 @@ input[type='range']::-moz-range-thumb {
     gap: 10px !important;
     display: flex !important;
     align-items: center !important;
-    justifyContent: space-between !important;
+    justify-content: space-between !important;
   }
 
   /* Hide the 5 desktop horizontal links in header (now cleanly in bottom bar & drawer) */
@@ -1524,8 +1525,9 @@ input[type='range']::-moz-range-thumb {
   }
 
   /* Page Content Spacing & Bottom Safe Area */
+  .app-container.layout-topnav .page-content,
   .page-content {
-    padding: 14px 14px calc(76px + env(safe-area-inset-bottom, 16px)) 14px !important;
+    padding: 12px 14px calc(76px + env(safe-area-inset-bottom, 16px)) 14px !important;
     overflow-x: hidden !important;
     max-width: 100vw !important;
     box-sizing: border-box !important;
