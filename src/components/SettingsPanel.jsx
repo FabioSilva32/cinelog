@@ -102,6 +102,16 @@ function TriviaGame() {
 // ── Main SettingsPanel ─────────────────────────────────────────────────
 export default function SettingsPanel({ onClose }) {
   useBodyScrollLock(true);
+
+  // Close panel on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose?.();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   const [activeSection, setActiveSection] = useState('trivia');
 
   const SECTIONS = [

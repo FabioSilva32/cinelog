@@ -196,7 +196,7 @@ function AppInner() {
     }
   }, [showQuickAdd]);
 
-  // Global keyboard shortcut for command center
+  // Global keyboard shortcuts (Ctrl/Cmd+K for search, Escape to close menus & modals)
   useEffect(() => {
     const handler = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -204,11 +204,40 @@ function AppInner() {
         setShowCommandCenter(prev => !prev);
         setCmdQuery('');
       }
-      if (e.key === 'Escape') setShowCommandCenter(false);
+      if (e.key === 'Escape') {
+        if (showQuickAdd) {
+          setShowQuickAdd(false);
+          return;
+        }
+        if (showCommandCenter) {
+          setShowCommandCenter(false);
+          return;
+        }
+        if (showSettings) {
+          setShowSettings(false);
+          return;
+        }
+        if (showAuth) {
+          setShowAuth(false);
+          return;
+        }
+        if (showRecoveryModal) {
+          setShowRecoveryModal(false);
+          return;
+        }
+        if (activeEditMovie) {
+          setActiveEditMovie(null);
+          return;
+        }
+        if (viewingUserProfile) {
+          setViewingUserProfile(null);
+          return;
+        }
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, []);
+  }, [showQuickAdd, showCommandCenter, showSettings, showAuth, showRecoveryModal, activeEditMovie, viewingUserProfile]);
 
   // Reset search when modal closes
   useEffect(() => {

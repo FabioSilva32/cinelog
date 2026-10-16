@@ -48,6 +48,18 @@ const formatMoney = (n) => {
 
 export default function MovieDetailModal({ movie, currentUser, onClose, onSave, onToggleFavorite, isFavorite, onOpenUserProfile, onOpenMovie, inLibrary }) {
   useBodyScrollLock(true);
+
+  // Close modal when pressing Escape
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose?.();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   const [status, setStatus] = useState(movie.status || 'plan_to_watch');
   const [rating, setRating] = useState(movie.rating != null ? Number(movie.rating) : 0);
   const [episodeData, setEpisodeData] = useState(() => {

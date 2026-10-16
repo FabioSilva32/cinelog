@@ -6,6 +6,16 @@ import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 export default function UserProfileModal({ targetUser, currentUser, onClose, onMovieClick }) {
   useBodyScrollLock(true);
+
+  // Close modal on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose?.();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   const [profile, setProfile] = useState(targetUser || null);
   const [userLibrary, setUserLibrary] = useState([]);
   const [loading, setLoading] = useState(true);

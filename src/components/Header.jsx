@@ -50,8 +50,20 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
       if (moreNavRef.current && !moreNavRef.current.contains(e.target)) setShowMoreNav(false);
       if (notifRef.current && !notifRef.current.contains(e.target)) setShowNotifications(false);
     };
+    const keyHandler = e => {
+      if (e.key === 'Escape') {
+        setShowUserMenu(false);
+        setShowMoreNav(false);
+        setIsSidebarOpen(false);
+        setShowNotifications(false);
+      }
+    };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    window.addEventListener('keydown', keyHandler);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      window.removeEventListener('keydown', keyHandler);
+    };
   }, []);
 
   // Close sidebar on link click (for mobile)

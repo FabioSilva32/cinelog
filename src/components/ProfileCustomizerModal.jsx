@@ -174,6 +174,16 @@ export default function ProfileCustomizerModal({
   // Lock background window scroll when modal is open
   useBodyScrollLock(show);
 
+  // Close modal when pressing Escape
+  useEffect(() => {
+    if (!show) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose?.();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [show, onClose]);
+
   // TMDB backdrop search
   const handleTmdbSearch = async (e) => {
     e?.preventDefault();

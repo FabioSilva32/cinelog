@@ -481,6 +481,26 @@ export default function ProfileTab({
   // Prevent background scroll when choosing favorite film or viewing share card
   useBodyScrollLock(selectingSlotIdx !== null || activeShareCard !== null);
 
+  // Handle Escape key to close slot picker, share card modal, or viewed foreign profile
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (selectingSlotIdx !== null) {
+          setSelectingSlotIdx(null);
+          setSearchQuery('');
+        } else if (activeShareCard !== null) {
+          setActiveShareCard(null);
+        } else if (viewedProfile !== null) {
+          setViewedProfile(null);
+        }
+      }
+    };
+    if (selectingSlotIdx !== null || activeShareCard !== null || viewedProfile !== null) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [selectingSlotIdx, activeShareCard, viewedProfile]);
+
   // Stats calculations
   const watchedCount = useMemo(() => library.filter(m => m.status === 'watched').length, [library]);
   const reviewsCount = useMemo(() => library.filter(m => m.review && m.review.trim()).length, [library]);

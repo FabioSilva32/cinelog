@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Sparkles, Mail, User, Phone, FileText, Camera, Check, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { MOCK_USERS } from '../mockData';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
@@ -175,6 +175,23 @@ function FieldLabel({ children, required }) {
 // ── Main AuthModal ───────────────────────────────────────────────────
 export default function AuthModal({ onClose, onLoginSuccess, useSupabase, setUseSupabase }) {
   useBodyScrollLock(true);
+
+  // Close modal or cropper on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (showCropper) {
+          setShowCropper(false);
+          setRawImageSrc(null);
+        } else {
+          onClose?.();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showCropper, onClose]);
+
   const [isLogin, setIsLogin] = useState(true);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [showPass, setShowPass] = useState(false);

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Search, Heart, Star, Edit, Trash, Plus, Upload, Download, Dices, X, Check, AlertCircle, ChevronRight, LayoutGrid, List } from 'lucide-react';
 import { triggerBackdropHover } from '../utils/backdrop';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
@@ -17,6 +17,16 @@ function getRatingColor(r) {
 // ── JSON Import Modal ────────────────────────────────────────────────
 function ImportModal({ onClose, onImport }) {
   useBodyScrollLock(true);
+
+  // Close modal on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && !isImporting) onClose?.();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isImporting, onClose]);
+
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState('');
   const [isImporting, setIsImporting] = useState(false);
