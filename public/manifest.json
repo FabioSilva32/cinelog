@@ -1,0 +1,18 @@
+{
+  "name": "CineLog — Movie Tracking & Diary",
+  "short_name": "CineLog",
+  "description": "The ultimate tracking platform for movies, TV series, anime, custom lists, and review diaries.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#08070b",
+  "theme_color": "#08070b",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
