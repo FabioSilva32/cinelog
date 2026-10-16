@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { RefreshCw, GripVertical, Settings2, Trash2, Plus, ChevronUp, ChevronDown, Heart, Star, Check, X, Sparkles, Tag } from 'lucide-react';
+import { RefreshCw, GripVertical, Settings2, Trash2, Plus, ChevronUp, ChevronDown, Heart, Star, Check, X, Sparkles, Tag, Cloud, CloudCheck } from 'lucide-react';
 import ConfirmModal from './ConfirmModal';
 import { FRANCHISE_COLLECTIONS, GENRE_LIST, matchesCollection } from '../utils/collections';
+import { supabase, isSupabaseConfigured } from '../supabaseClient';
 
 const DEFAULT_TIERS = [
   { id: 's', label: 'S', color: '#ff4d4d', desc: 'All-time masterpieces' },
@@ -23,7 +24,7 @@ const COLOR_PRESETS = [
   { name: 'Slate', value: '#64748b' }
 ];
 
-export default function TierListTab({ library = [] }) {
+export default function TierListTab({ library = [], currentUser = null }) {
   // ── SAVE/LOAD MULTIPLE LISTS STATE ────────────────────────────────
   const [lists, setLists] = useState(() => {
     try {
@@ -82,8 +83,8 @@ export default function TierListTab({ library = [] }) {
   });
 
   const [poolFilter, setPoolFilter] = useState(() => lists[activeListId]?.poolFilter || 'all'); // 'all', franchise ID, genre, 'custom:...', or 'tag:...'
-  const [includeUnwatched, setIncludeUnwatched] = useState(() => lists[activeListId]?.includeUnwatched ?? true);
   const [poolSearch, setPoolSearch] = useState('');
+  const [cloudSyncStatus, setCloudSyncStatus] = useState('idle'); // 'idle' | 'syncing' | 'synced' | 'error'
 
   // Synchronize custom collections created in CollectionsTab
   const [customCollections, setCustomCollections] = useState(() => {
@@ -137,6 +138,62 @@ export default function TierListTab({ library = [] }) {
     isDanger: true,
   });
 
+  // Debounced cloud save
+  const saveToCloud = useMemo(() => {
+    let timer = null;
+    return (dataToSave, activeId) => {
+      if (!currentUser?.id || !supabase || !isSupabaseConfigured) return;
+      if (timer) clearTimeout(timer);
+      setCloudSyncStatus('syncing');
+      timer = setTimeout(async () => {
+        try {
+          await supabase.auth.updateUser({
+            data: {
+              cinelog_tier_lists: dataToSave,
+              cinelog_active_tier_list_id: activeId
+            }
+          });
+          setCloudSyncStatus('synced');
+        } catch (e) {
+          console.warn('Tier list cloud sync failed:', e);
+          setCloudSyncStatus('error');
+        }
+      }, 700);
+    };
+  }, [currentUser?.id]);
+
+  // Two-way initial sync on mount with Supabase user_metadata
+  useEffect(() => {
+    if (!currentUser?.id || !supabase || !isSupabaseConfigured) return;
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user?.user_metadata?.cinelog_tier_lists) {
+        const cloudLists = user.user_metadata.cinelog_tier_lists;
+        const cloudActiveId = user.user_metadata.cinelog_active_tier_list_id || 'default';
+        if (cloudLists && Object.keys(cloudLists).length > 0) {
+          setLists(cloudLists);
+          localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(cloudLists));
+          if (cloudLists[cloudActiveId]) {
+            setActiveListId(cloudActiveId);
+            localStorage.setItem('cinelog_active_tier_list_id_v4', cloudActiveId);
+            setTiers(cloudLists[cloudActiveId].tiers || DEFAULT_TIERS);
+            setTierData(cloudLists[cloudActiveId].tierData || {});
+            if (cloudLists[cloudActiveId].poolFilter) setPoolFilter(cloudLists[cloudActiveId].poolFilter);
+          }
+          setCloudSyncStatus('synced');
+          return;
+        }
+      }
+      
+      // If cloud has no tier lists yet, but local storage does (e.g. created on website):
+      try {
+        const local = JSON.parse(localStorage.getItem('cinelog_saved_tier_lists_v4') || '{}');
+        if (local && Object.keys(local).length > 0) {
+          saveToCloud(local, activeListId);
+        }
+      } catch {}
+    }).catch(e => console.warn('Failed to load cloud tier lists:', e));
+  }, [currentUser?.id]);
+
   // Helper to switch list safely
   const selectList = (listId) => {
     // 1. Save current active list
@@ -146,12 +203,12 @@ export default function TierListTab({ library = [] }) {
         ...lists[activeListId],
         tiers,
         tierData,
-        poolFilter,
-        includeUnwatched
+        poolFilter
       }
     };
     setLists(updated);
     localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(updated));
+    saveToCloud(updated, listId);
 
     // 2. Load next list
     setActiveListId(listId);
@@ -161,11 +218,10 @@ export default function TierListTab({ library = [] }) {
       setTiers(nextList.tiers || DEFAULT_TIERS);
       setTierData(nextList.tierData || {});
       if (nextList.poolFilter !== undefined) setPoolFilter(nextList.poolFilter);
-      if (nextList.includeUnwatched !== undefined) setIncludeUnwatched(nextList.includeUnwatched);
     }
   };
 
-  // Sync tiers/tierData/filter of active list to localStorage on modifications
+  // Sync tiers/tierData/filter of active list to localStorage & Supabase on modifications
   useEffect(() => {
     const updated = {
       ...lists,
@@ -174,12 +230,12 @@ export default function TierListTab({ library = [] }) {
         id: activeListId,
         tiers,
         tierData,
-        poolFilter,
-        includeUnwatched
+        poolFilter
       }
     };
     localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(updated));
-  }, [tiers, tierData, poolFilter, includeUnwatched, activeListId]);
+    saveToCloud(updated, activeListId);
+  }, [tiers, tierData, poolFilter, activeListId, saveToCloud]);
 
 
   // ── HELPERS & SEEDS ────────────────────────────────────────────────
@@ -190,7 +246,8 @@ export default function TierListTab({ library = [] }) {
   const watchedMovies = useMemo(() => {
     let pool = library.filter(m => {
       if (assignedIds.has(String(m.id || m.tmdb_id))) return false;
-      if (!includeUnwatched && m.status !== 'watched') return false;
+      // Only films marked as watched can be ranked
+      if (m.status !== 'watched') return false;
       return true;
     });
 
@@ -206,7 +263,7 @@ export default function TierListTab({ library = [] }) {
     }
 
     return pool;
-  }, [library, assignedIds, poolFilter, poolSearch, customCollections, includeUnwatched]);
+  }, [library, assignedIds, poolFilter, poolSearch, customCollections]);
 
   const autoRankPool = () => {
     setTierData(prev => {
@@ -504,8 +561,27 @@ export default function TierListTab({ library = [] }) {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h2 style={{ fontSize: '26px', marginBottom: '4px', letterSpacing: '-0.5px' }}>Custom Tier Maker</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '13.5px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h2 style={{ fontSize: '26px', margin: 0, letterSpacing: '-0.5px' }}>Custom Tier Maker</h2>
+            {currentUser?.id && isSupabaseConfigured && (
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                fontSize: '11px',
+                fontWeight: 800,
+                padding: '3px 8px',
+                borderRadius: '12px',
+                background: cloudSyncStatus === 'syncing' ? 'rgba(245,158,11,0.12)' : cloudSyncStatus === 'error' ? 'rgba(239,68,68,0.12)' : 'rgba(16,185,129,0.12)',
+                color: cloudSyncStatus === 'syncing' ? '#f59e0b' : cloudSyncStatus === 'error' ? '#ef4444' : '#10b981',
+                border: `1px solid ${cloudSyncStatus === 'syncing' ? 'rgba(245,158,11,0.3)' : cloudSyncStatus === 'error' ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)'}`
+              }}>
+                <Cloud size={12} />
+                <span>{cloudSyncStatus === 'syncing' ? 'Syncing...' : cloudSyncStatus === 'error' ? 'Sync Issue' : 'Cloud Synced'}</span>
+              </div>
+            )}
+          </div>
+          <p style={{ color: 'var(--text-muted)', fontSize: '13.5px', marginTop: '4px' }}>
             Rank watched titles into customizable rows. Drag posters to reorder, or edit tiers.
           </p>
         </div>
@@ -560,7 +636,7 @@ export default function TierListTab({ library = [] }) {
       {/* Info banner */}
       <div style={{ background: '#141414', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12.5px', color: 'var(--text-muted)' }}>
         <span style={{ fontSize: '11px', fontWeight: 800, padding: '2px 6px', background: 'var(--accent)', color: '#fff', borderRadius: '4px' }}>TIP</span>
-        <span>Drag posters to rank, or <strong style={{ color: 'var(--accent)' }}>tap to assign</strong> on mobile. Unwatched items can be toggled in the pool below.</span>
+        <span>Drag posters to rank, or <strong style={{ color: 'var(--accent)' }}>tap to assign</strong> on mobile. Only titles marked as <strong>Watched</strong> appear in the ranking pool.</span>
       </div>
 
       {/* ── TIER ROWS CONTAINER ────────────────────────────────────────── */}
@@ -921,25 +997,8 @@ export default function TierListTab({ library = [] }) {
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '18px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 800 }}>Unranked Movie Pool</h3>
+            <h3 style={{ fontSize: '15px', fontWeight: 800 }}>Unranked Watched Pool</h3>
             <span style={{ background: '#1c1c1c', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.5px 8px', fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700 }}>{watchedMovies.length}</span>
-            <button
-              onClick={() => setIncludeUnwatched(!includeUnwatched)}
-              style={{
-                background: includeUnwatched ? 'var(--accent)' : '#161616',
-                color: includeUnwatched ? '#fff' : 'var(--text-dim)',
-                border: `1px solid ${includeUnwatched ? 'var(--accent)' : 'var(--border)'}`,
-                borderRadius: '6px',
-                padding: '3px 8px',
-                fontSize: '11px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.15s'
-              }}
-              title="Toggle including watchlist and unwatched library titles in the tier pool"
-            >
-              {includeUnwatched ? '✓ Unwatched Included' : '+ Include Unwatched'}
-            </button>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>

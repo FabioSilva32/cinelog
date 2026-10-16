@@ -447,6 +447,30 @@ function AppInner() {
           })
           .catch(err => console.error("Error loading user profile:", err));
 
+        // Two-way sync tier lists with Supabase cloud user_metadata
+        try {
+          const cloudTierLists = session.user.user_metadata?.cinelog_tier_lists;
+          const localTierListsStr = localStorage.getItem('cinelog_saved_tier_lists_v4');
+          if (cloudTierLists && Object.keys(cloudTierLists).length > 0) {
+            localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(cloudTierLists));
+            if (session.user.user_metadata?.cinelog_active_tier_list_id) {
+              localStorage.setItem('cinelog_active_tier_list_id_v4', session.user.user_metadata.cinelog_active_tier_list_id);
+            }
+          } else if (localTierListsStr) {
+            const parsedLocal = JSON.parse(localTierListsStr);
+            if (parsedLocal && Object.keys(parsedLocal).length > 0) {
+              supabase.auth.updateUser({
+                data: {
+                  cinelog_tier_lists: parsedLocal,
+                  cinelog_active_tier_list_id: localStorage.getItem('cinelog_active_tier_list_id_v4') || 'default'
+                }
+              }).catch(e => console.warn('Tier list cloud upload error:', e));
+            }
+          }
+        } catch (e) {
+          console.warn('Tier list session sync error:', e);
+        }
+
         // Parallel load of movie entries from Supabase
         supabase.from('library').select('*').eq('user_id', session.user.id)
           .then(({ data: libRows, error: libErr }) => {
@@ -1135,7 +1159,7 @@ function AppInner() {
           <CollectionsTab library={library} onMovieClick={handleMovieClick} onSaveMovie={handleSaveMovie} />
         )}
         {activeTab === 'tierlist' && (
-          <TierListTab library={library} />
+          <TierListTab library={library} currentUser={currentUser} />
         )}
         {activeTab === 'constellation' && (
           <ConstellationTab library={library} onMovieClick={handleMovieClick} />

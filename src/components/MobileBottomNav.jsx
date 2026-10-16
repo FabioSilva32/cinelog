@@ -84,9 +84,6 @@ export default function MobileBottomNav({
         >
           <div className="mobile-nav-icon-wrap">
             <Film size={21} strokeWidth={activeTab === 'library' ? 2.5 : 1.8} />
-            {libraryCount > 0 && (
-              <span className="mobile-nav-badge">{libraryCount > 99 ? '99+' : libraryCount}</span>
-            )}
           </div>
           <span className="mobile-nav-label">Library</span>
         </button>
