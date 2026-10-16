@@ -3,9 +3,11 @@
   "appName": "CineLog",
   "webDir": "dist",
   "backgroundColor": "#000000",
+  "android": {
+    "backgroundColor": "#000000"
+  },
   "server": {
     "url": "https://cinelog-phi.vercel.app",
     "cleartext": true
   }
 }
-

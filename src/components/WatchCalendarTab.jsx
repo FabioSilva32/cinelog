@@ -178,7 +178,7 @@ export default function WatchCalendarTab({ library = [], onMovieClick }) {
           <h3 style={{ fontSize: '15px', fontWeight: 800 }}>Viewing Heatmap — Last 52 Weeks</h3>
         </div>
 
-        <div style={{ overflowX: 'auto', paddingBottom: '4px' }}>
+        <div className="calendar-heatmap-scroll" style={{ overflowX: 'auto', paddingBottom: '4px' }}>
           <div style={{ position: 'relative', display: 'inline-block' }}>
             {/* Month labels */}
             <div style={{ display: 'flex', marginLeft: '32px', marginBottom: '6px', position: 'relative', height: '16px' }}>

@@ -176,22 +176,6 @@ function FieldLabel({ children, required }) {
 export default function AuthModal({ onClose, onLoginSuccess, useSupabase, setUseSupabase }) {
   useBodyScrollLock(true);
 
-  // Close modal or cropper on Escape key
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        if (showCropper) {
-          setShowCropper(false);
-          setRawImageSrc(null);
-        } else {
-          onClose?.();
-        }
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showCropper, onClose]);
-
   const [isLogin, setIsLogin] = useState(true);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [showPass, setShowPass] = useState(false);
@@ -210,6 +194,22 @@ export default function AuthModal({ onClose, onLoginSuccess, useSupabase, setUse
   const [avatarDataUrl, setAvatarDataUrl] = useState(null);
 
   const fileInputRef = useRef(null);
+
+  // Close modal or cropper on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (showCropper) {
+          setShowCropper(false);
+          setRawImageSrc(null);
+        } else {
+          onClose?.();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showCropper, onClose]);
 
   const handleImagePick = (e) => {
     const file = e.target.files[0];

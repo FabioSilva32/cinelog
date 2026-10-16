@@ -196,7 +196,7 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
         </div>
       )}
       {/* Sub-tabs */}
-      <div style={{ display: "flex", gap: "4px", background: "rgba(255,255,255,0.03)", borderRadius: "10px", padding: "4px", width: "fit-content" }}>
+      <div className="social-subtabs-bar" style={{ display: "flex", gap: "4px", background: "rgba(255,255,255,0.03)", borderRadius: "10px", padding: "4px", width: "fit-content" }}>
         {[
           { id: "feed", label: "Activity Feed", icon: <Activity size={14} /> },
           { id: "following", label: `Following (${following.size})`, icon: <UserCheck size={14} /> },

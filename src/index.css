@@ -219,8 +219,20 @@ body.modal-open {
   overscroll-behavior: none !important;
 }
 
+html, body, #root {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: var(--text);
+  min-height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overscroll-behavior-y: none;
+}
+
 body {
-  background: #000000;
+  background: #000000 !important;
+  background-color: #000000 !important;
   color: var(--text);
   font-family: var(--font-sans);
   min-height: 100vh;
@@ -1633,10 +1645,11 @@ input[type='range']::-moz-range-thumb {
   right: 0;
   height: calc(60px + env(safe-area-inset-bottom, 0px));
   padding-bottom: env(safe-area-inset-bottom, 0px);
-  background: rgba(10, 9, 13, 0.94);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: #000000 !important;
+  background-color: #000000 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-top: 1px solid #1c1c1c !important;
   z-index: 8500;
   align-items: center;
   justify-content: space-around;
@@ -2216,11 +2229,13 @@ body.modal-open {
   }
 
   body {
-    padding-top: env(safe-area-inset-top, 0px) !important;
+    padding-top: 0 !important;
   }
 
   .topnav-header {
     background: #000000 !important;
+    background-color: #000000 !important;
+    padding-top: env(safe-area-inset-top, 0px) !important;
     border-bottom: 1px solid #1c1c1c !important;
   }
 
@@ -2348,6 +2363,10 @@ body.modal-open {
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
     padding-bottom: 6px !important;
+    scrollbar-width: none !important;
+  }
+  .calendar-heatmap-scroll::-webkit-scrollbar {
+    display: none !important;
   }
 
   /* ── STATS TAB MOBILE REVAMP ── */
@@ -2359,6 +2378,24 @@ body.modal-open {
   }
 
   /* ── SOCIAL TAB MOBILE REVAMP ── */
+  .social-subtabs-bar {
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    display: flex !important;
+    gap: 6px !important;
+    padding: 4px !important;
+  }
+  .social-subtabs-bar::-webkit-scrollbar {
+    display: none !important;
+  }
+  .social-subtabs-bar button {
+    flex-shrink: 0 !important;
+    padding: 7px 14px !important;
+    font-size: 12px !important;
+  }
+
   .social-feed-card {
     padding: 12px 14px !important;
   }
