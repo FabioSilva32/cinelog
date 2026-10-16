@@ -1533,17 +1533,17 @@ input[type='range']::-moz-range-thumb {
     box-sizing: border-box !important;
   }
 
-  /* ── EXPLORE TAB: NATIVE FULL-BLEED MOBILE HERO BANNER ── */
+  /* ── EXPLORE TAB: LETTERBOXD-STYLE SLIM CINEMATIC SPOTLIGHT ── */
   .explore-hero-card {
     flex-direction: column !important;
-    height: auto !important;
-    min-height: 460px !important;
-    max-height: none !important;
-    border-radius: 16px !important;
+    height: 220px !important;
+    min-height: 220px !important;
+    max-height: 220px !important;
+    border-radius: 12px !important;
     position: relative !important;
     overflow: hidden !important;
-    box-shadow: 0 12px 36px rgba(0,0,0,0.85) !important;
-    margin-bottom: 6px !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.8) !important;
+    margin-bottom: 8px !important;
   }
 
   .explore-hero-media {
@@ -1558,7 +1558,7 @@ input[type='range']::-moz-range-thumb {
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
-    object-position: center top !important;
+    object-position: center 25% !important;
   }
 
   .explore-hero-content {
@@ -1566,43 +1566,49 @@ input[type='range']::-moz-range-thumb {
     z-index: 3 !important;
     width: 100% !important;
     margin-top: auto !important;
-    padding: 24px 16px 18px !important;
-    background: linear-gradient(to top, #101014 0%, rgba(16,16,20,0.94) 50%, rgba(16,16,20,0.4) 80%, transparent 100%) !important;
+    padding: 12px 14px 10px !important;
+    background: linear-gradient(to top, #0c0b10 0%, rgba(12,11,16,0.92) 55%, rgba(12,11,16,0.3) 85%, transparent 100%) !important;
   }
 
   .explore-hero-title {
-    font-size: 20px !important;
+    font-size: 16px !important;
     min-height: auto !important;
     max-height: none !important;
     line-height: 1.2 !important;
-    margin-bottom: 6px !important;
+    margin-bottom: 4px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
   }
 
   .explore-hero-content p {
-    font-size: 12px !important;
-    height: auto !important;
-    -webkit-line-clamp: 2 !important;
-    margin-bottom: 12px !important;
-    line-height: 1.4 !important;
+    display: none !important; /* Hide long overview on mobile to keep proportions tight like Letterboxd */
   }
 
   .explore-hero-actions {
     display: flex !important;
     gap: 8px !important;
-    margin-bottom: 14px !important;
+    margin-bottom: 6px !important;
   }
 
   .explore-hero-actions button {
     flex: 1 !important;
     justify-content: center !important;
-    padding: 10px 12px !important;
-    font-size: 12px !important;
-    border-radius: 8px !important;
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    border-radius: 6px !important;
+    height: 32px !important;
   }
 
-  /* ── POSTER CAROUSELS & SWIPING ON MOBILE ── */
+  /* ── POSTER CAROUSELS & SWIPING (LETTERBOXD PROPORTIONS) ── */
   .sharp-poster-card {
-    width: 136px !important;
+    width: 108px !important;
+    gap: 4px !important;
+  }
+
+  .sharp-poster-card img {
+    border-radius: 6px !important;
   }
 
   .carousel-arrow-controls button {
