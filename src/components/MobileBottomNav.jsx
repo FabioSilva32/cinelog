@@ -39,7 +39,7 @@ export default function MobileBottomNav({
 
   const secondaryTabs = [
     { id: 'profile', label: 'My Profile', icon: User, badge: currentUser ? (currentUser.username || 'User') : 'Guest' },
-    { id: 'tierlist', label: 'Tier List & Rankings', icon: Trophy, badge: 'Popular' },
+    { id: 'collections', label: 'Custom Lists & Collections', icon: FolderHeart, badge: 'Lists' },
     { id: 'stats', label: 'Cinema Analytics', icon: BarChart3 },
     { id: 'calendar', label: 'Watch Calendar', icon: Calendar },
     { id: 'constellation', label: 'Film Constellation', icon: Sparkles },
@@ -50,7 +50,7 @@ export default function MobileBottomNav({
 
   const isMoreActive = [
     'profile',
-    'tierlist',
+    'collections',
     'stats',
     'calendar',
     'constellation',
@@ -104,16 +104,16 @@ export default function MobileBottomNav({
           <span className="mobile-nav-label" style={{ color: 'var(--accent)', fontWeight: 800 }}>Log</span>
         </button>
 
-        {/* 4. Lists / Collections Tab */}
+        {/* 4. Tier List & Rankings Tab */}
         <button
-          className={`mobile-nav-item ${activeTab === 'collections' ? 'active' : ''}`}
-          onClick={() => handleTabClick('collections')}
-          aria-label="Collections"
+          className={`mobile-nav-item ${activeTab === 'tierlist' ? 'active' : ''}`}
+          onClick={() => handleTabClick('tierlist')}
+          aria-label="Tier List"
         >
           <div className="mobile-nav-icon-wrap">
-            <FolderHeart size={21} strokeWidth={activeTab === 'collections' ? 2.5 : 1.8} />
+            <Trophy size={21} strokeWidth={activeTab === 'tierlist' ? 2.5 : 1.8} />
           </div>
-          <span className="mobile-nav-label">Lists</span>
+          <span className="mobile-nav-label">Tier List</span>
         </button>
 
         {/* 5. More / Menu Drawer */}

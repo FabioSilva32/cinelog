@@ -501,22 +501,37 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
               <Search size={16} />
             </button>
 
-            {/* Grid vs List Mode Toggle */}
-            <button
-              onClick={() => setMobileView(p => p === 'grid' ? 'list' : 'grid')}
-              style={{
-                background: '#141414',
-                color: '#FFFFFF',
-                border: '1px solid #242424',
-                borderRadius: '8px',
-                width: '36px', height: '36px',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer'
-              }}
-              title={mobileView === 'grid' ? 'Switch to Diary List View' : 'Switch to 3-Column Cinema Wall'}
-            >
-              {mobileView === 'grid' ? <List size={16} /> : <LayoutGrid size={16} />}
-            </button>
+            {/* Segmented View Switcher: Cinema Wall vs Diary */}
+            <div style={{ display: 'flex', background: '#121214', padding: '2px', borderRadius: '8px', border: '1px solid #242426' }}>
+              <button
+                onClick={() => setMobileView('grid')}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '4px',
+                  background: mobileView === 'grid' ? 'var(--accent)' : 'transparent',
+                  color: mobileView === 'grid' ? '#FFFFFF' : '#8E8E93',
+                  border: 'none', borderRadius: '6px', padding: '5px 8px',
+                  fontSize: '11px', fontWeight: 800, cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+                title="3-Column Cinema Wall Grid"
+              >
+                <LayoutGrid size={13} /> Wall
+              </button>
+              <button
+                onClick={() => setMobileView('list')}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '4px',
+                  background: mobileView === 'list' ? 'var(--accent)' : 'transparent',
+                  color: mobileView === 'list' ? '#FFFFFF' : '#8E8E93',
+                  border: 'none', borderRadius: '6px', padding: '5px 8px',
+                  fontSize: '11px', fontWeight: 800, cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+                title="Diary Journal Stream"
+              >
+                <List size={13} /> Diary
+              </button>
+            </div>
 
             {/* Filter Bottom Sheet Trigger */}
             <button
@@ -723,7 +738,38 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
 
       {/* ── MOBILE VIEW: DIARY STREAM (LIST) ─────────────────────────── */}
       {mobileView === 'list' && (
-        <div className="mobile-only-library-list" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div className="mobile-only-library-list" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {/* Milestone Quick Stats Bar */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '2px' }}>
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(245,158,11,0.1) 0%, #111016 100%)',
+              border: '1px solid rgba(245,158,11,0.25)',
+              borderRadius: '12px',
+              padding: '10px 14px'
+            }}>
+              <div style={{ fontSize: '10px', fontWeight: 800, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                🎬 LOGGED
+              </div>
+              <div style={{ fontSize: '19px', fontWeight: 900, color: '#FFFFFF', marginTop: '2px' }}>
+                {stats.watched} <span style={{ fontSize: '12px', fontWeight: 600, color: '#888' }}>films</span>
+              </div>
+            </div>
+
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(229,9,20,0.1) 0%, #111016 100%)',
+              border: '1px solid rgba(229,9,20,0.25)',
+              borderRadius: '12px',
+              padding: '10px 14px'
+            }}>
+              <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                ⏳ WATCH TIME
+              </div>
+              <div style={{ fontSize: '19px', fontWeight: 900, color: '#FFFFFF', marginTop: '2px' }}>
+                ~{Math.round(stats.watched * 1.9)}h <span style={{ fontSize: '12px', fontWeight: 600, color: '#888' }}>runtime</span>
+              </div>
+            </div>
+          </div>
+
           {filtered.length === 0 ? (
             <div style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--text-dim)' }}>
               <div style={{ fontSize: '36px', marginBottom: '8px' }}>🎬</div>
@@ -748,44 +794,50 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
                   style={{
                     display: 'flex',
                     gap: '12px',
-                    padding: '10px',
-                    background: '#121212',
-                    borderRadius: '10px',
-                    border: '1px solid #1f1f1f',
+                    padding: '10px 12px',
+                    background: '#111015',
+                    borderRadius: '12px',
+                    border: '1px solid #1e1d24',
                     cursor: 'pointer',
                     transition: 'border-color 0.15s, background 0.15s'
                   }}
                 >
                   {/* Poster Thumbnail */}
-                  <div style={{ width: '52px', height: '78px', borderRadius: '6px', overflow: 'hidden', flexShrink: 0, background: '#1c1c1c', position: 'relative' }}>
+                  <div style={{ width: '58px', height: '87px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0, background: '#1c1c1c', position: 'relative', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
                     {movie.poster_path ? (
                       <img src={`https://image.tmdb.org/t/p/w185${movie.poster_path}`} alt={movie.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
                     ) : (
-                      <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>🎬</div>
+                      <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>🎬</div>
                     )}
                     {movie.favorite && (
-                      <div style={{ position: 'absolute', top: '3px', left: '3px', fontSize: '10px', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.8))' }}>❤️</div>
+                      <div style={{ position: 'absolute', top: '3px', left: '3px', fontSize: '11px', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.9))' }}>❤️</div>
                     )}
                   </div>
 
                   {/* Info Column */}
                   <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                        <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#FFFFFF', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '6px' }}>
+                        <h4 style={{ fontSize: '14.5px', fontWeight: 800, color: '#FFFFFF', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
                           {movie.title}
                         </h4>
-                        {movie.release_year && (
-                          <span style={{ fontSize: '11px', color: 'var(--text-dim)', flexShrink: 0 }}>
-                            {movie.release_year}
+                        {formattedDate && (
+                          <span style={{ fontSize: '10px', fontWeight: 700, color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.4px', flexShrink: 0, marginTop: '2px' }}>
+                            {formattedDate}
                           </span>
                         )}
                       </div>
 
-                      {/* Rating & Status Row */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px' }}>
+                      {/* Year & Rating Row */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                        {movie.release_year && (
+                          <span style={{ fontSize: '11.5px', color: 'var(--text-dim)', fontWeight: 600 }}>
+                            {movie.release_year}
+                          </span>
+                        )}
+
                         {movie.rating > 0 ? (
-                          <span style={{ color: 'var(--gold)', fontSize: '12px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '2px' }}>
+                          <span style={{ color: 'var(--gold)', fontSize: '12px', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '2px' }}>
                             ★ {Number(movie.rating).toFixed(1)}
                           </span>
                         ) : (
@@ -793,8 +845,8 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
                         )}
 
                         <span style={{
-                          fontSize: '10px',
-                          fontWeight: 700,
+                          fontSize: '9.5px',
+                          fontWeight: 800,
                           padding: '1px 6px',
                           borderRadius: '4px',
                           background: isWatched ? 'rgba(16,185,129,0.15)' : isPlan ? 'rgba(59,130,246,0.15)' : 'rgba(229,9,20,0.15)',
@@ -804,7 +856,7 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
                         </span>
 
                         {(movie.media_type === 'tv' || movie.type === 'tv') && (
-                          <span style={{ fontSize: '9px', fontWeight: 800, color: '#60A5FA', border: '1px solid rgba(96,165,250,0.4)', borderRadius: '3px', padding: '0 3px' }}>
+                          <span style={{ fontSize: '9px', fontWeight: 900, color: '#60A5FA', border: '1px solid rgba(96,165,250,0.4)', borderRadius: '3px', padding: '0 3.5px' }}>
                             TV
                           </span>
                         )}
@@ -812,18 +864,23 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
 
                       {/* Review snippet if available */}
                       {cleanReview && (
-                        <p style={{ fontSize: '11.5px', color: '#B3B3B3', margin: '4px 0 0 0', lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontStyle: 'italic' }}>
+                        <p style={{
+                          fontSize: '11.5px',
+                          color: '#C4C4C8',
+                          margin: '6px 0 0 0',
+                          lineHeight: 1.4,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          fontStyle: 'italic',
+                          borderLeft: '2px solid rgba(229,9,20,0.5)',
+                          paddingLeft: '6px'
+                        }}>
                           "{cleanReview}"
                         </p>
                       )}
                     </div>
-
-                    {/* Date Footer */}
-                    {formattedDate && (
-                      <div style={{ fontSize: '10px', color: 'var(--text-dim)', marginTop: '4px' }}>
-                        {isWatched ? 'Logged' : 'Added'} {formattedDate}
-                      </div>
-                    )}
                   </div>
                 </div>
               );
