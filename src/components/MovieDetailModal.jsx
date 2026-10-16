@@ -742,7 +742,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '26px', padding: '4px 0 8px' }}>
 
               {/* Row 1: Rating + Date watched */}
-              {status === 'watched' && (
+              {(status === 'watched' || status === 'watching') && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 230px', gap: '40px', alignItems: 'start' }}>
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '10px' }}>
@@ -755,22 +755,43 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                       </div>
                     </div>
 
-                    <div style={{ position: 'relative', padding: '8px 0' }}>
+                    <div style={{ position: 'relative', padding: '4px 0' }}>
                       <input
-                        type="range" min="0" max="10" step="0.1" value={rating}
-                        onChange={e => setRating(parseFloat(e.target.value))}
+                        type="range"
+                        min="0"
+                        max="10"
+                        step="0.1"
+                        value={Number(rating) || 0}
+                        onChange={e => setRating(parseFloat(e.target.value) || 0)}
+                        onInput={e => setRating(parseFloat(e.target.value) || 0)}
+                        className="cinelog-rating-slider"
                         style={{
-                          '--thumb': ratingColor,
-                          width: '100%', height: '6px', appearance: 'none',
-                          background: rating > 0
+                          '--track-fill': rating > 0
                             ? `linear-gradient(to right, ${ratingColor} 0%, ${ratingColor} ${rating * 10}%, rgba(255,255,255,0.08) ${rating * 10}%, rgba(255,255,255,0.08) 100%)`
                             : 'rgba(255,255,255,0.08)',
-                          borderRadius: '3px', outline: 'none', cursor: 'pointer', accentColor: ratingColor,
+                          '--thumb-color': ratingColor,
+                          '--thumb-glow': rating > 0 ? `${ratingColor}88` : 'rgba(255,255,255,0.2)',
                         }}
                       />
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
                         {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
-                          <span key={n} style={{ fontSize: '9px', color: Math.abs(rating - n) < 0.6 ? ratingColor : 'var(--text-dim)', fontWeight: Math.abs(rating - n) < 0.6 ? 800 : 400, transition: 'color 0.2s' }}>{n}</span>
+                          <button
+                            key={n}
+                            type="button"
+                            onClick={() => setRating(n)}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              padding: '2px 4px',
+                              cursor: 'pointer',
+                              fontSize: '10px',
+                              color: Math.abs(rating - n) < 0.6 ? ratingColor : 'var(--text-dim)',
+                              fontWeight: Math.abs(rating - n) < 0.6 ? 800 : 400,
+                              transition: 'color 0.15s'
+                            }}
+                          >
+                            {n}
+                          </button>
                         ))}
                       </div>
                     </div>
@@ -782,12 +803,30 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                         { label: '👍 7', val: 7 },
                         { label: '🔥 8.5', val: 8.5 },
                         { label: '⭐ 10', val: 10 },
-                      ].map(q => (
-                        <button key={q.label} type="button" onClick={() => setRating(q.val)}
-                          style={{ background: Math.abs(rating - q.val) < 0.2 ? 'var(--accent)' : 'rgba(255,255,255,0.05)', border: `1px solid ${Math.abs(rating - q.val) < 0.2 ? 'var(--accent)' : 'var(--border)'}`, borderRadius: '20px', padding: '4px 12px', fontSize: '12px', color: Math.abs(rating - q.val) < 0.2 ? '#fff' : 'var(--text-muted)', cursor: 'pointer', transition: 'all 0.15s', fontWeight: 700 }}>
-                          {q.label}
-                        </button>
-                      ))}
+                      ].map(q => {
+                        const chipColor = getRatingColor(q.val);
+                        const isActive = Math.abs(rating - q.val) < 0.2;
+                        return (
+                          <button
+                            key={q.label}
+                            type="button"
+                            onClick={() => setRating(q.val)}
+                            style={{
+                              background: isActive ? `${chipColor}26` : 'rgba(255,255,255,0.05)',
+                              border: `1px solid ${isActive ? chipColor : 'var(--border)'}`,
+                              borderRadius: '20px',
+                              padding: '4px 12px',
+                              fontSize: '12px',
+                              color: isActive ? chipColor : 'var(--text-muted)',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s',
+                              fontWeight: 700
+                            }}
+                          >
+                            {q.label}
+                          </button>
+                        );
+                      })}
                       {rating > 0 && (
                         <button type="button" onClick={() => setRating(0)}
                           style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: '20px', padding: '4px 12px', fontSize: '12px', color: 'var(--text-muted)', cursor: 'pointer', fontWeight: 700 }}>
@@ -1106,14 +1145,15 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                       const directSeasonRating = seasonRatings[String(s.season_number)];
                       const seasonAvg = getSeasonAverage(s.season_number);
                       const isSel = selectedSeason === s.season_number;
+                      const sRatingColor = directSeasonRating > 0 ? getRatingColor(directSeasonRating) : seasonAvg !== null ? getRatingColor(seasonAvg) : null;
                       return (
                         <button
                           key={s.season_number}
                           type="button"
                           onClick={() => setSelectedSeason(s.season_number)}
                           style={{
-                            background: isSel ? accentColor : 'rgba(255,255,255,0.03)',
-                            border: `1px solid ${isSel ? accentColor : 'var(--border)'}`,
+                            background: isSel ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.03)',
+                            border: `1px solid ${isSel ? (sRatingColor || accentColor) : 'var(--border)'}`,
                             color: isSel ? '#fff' : 'var(--text)',
                             borderRadius: '8px', padding: '7px 14px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s',
                             display: 'flex', alignItems: 'center', gap: '6px'
@@ -1124,11 +1164,11 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                           <span>{s.name || `Season ${s.season_number}`}</span>
                           <span style={{ fontSize: '11px', opacity: 0.7 }}>({s.episode_count} eps)</span>
                           {directSeasonRating > 0 ? (
-                            <span style={{ background: isSel ? 'rgba(0,0,0,0.25)' : 'rgba(255,215,0,0.12)', border: '1px solid rgba(255,215,0,0.3)', color: 'var(--gold)', padding: '1px 6px', borderRadius: '10px', fontSize: '11px', fontWeight: 900 }}>
+                            <span style={{ background: `${getRatingColor(directSeasonRating)}22`, border: `1px solid ${getRatingColor(directSeasonRating)}55`, color: getRatingColor(directSeasonRating), padding: '1px 7px', borderRadius: '10px', fontSize: '11px', fontWeight: 900 }}>
                               ★ {Number(directSeasonRating).toFixed(1)}
                             </span>
                           ) : seasonAvg !== null ? (
-                            <span style={{ background: isSel ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--gold)', padding: '1px 6px', borderRadius: '10px', fontSize: '10.5px', fontWeight: 700 }} title="Average of rated episodes">
+                            <span style={{ background: `${getRatingColor(seasonAvg)}18`, border: `1px solid ${getRatingColor(seasonAvg)}40`, color: getRatingColor(seasonAvg), padding: '1px 7px', borderRadius: '10px', fontSize: '10.5px', fontWeight: 800 }} title="Average of rated episodes">
                               ★ {seasonAvg.toFixed(1)} <span style={{ fontSize: '9px', opacity: 0.75 }}>avg</span>
                             </span>
                           ) : null}
@@ -1151,6 +1191,10 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                 const ratedEpCount = getSeasonRatedEpCount(selectedSeason);
                 const hasSeasonReviewOrDate = Boolean(currentSeasonNote || currentSeasonDate);
                 const curSeasonInfo = details?.seasons?.find(s => s.season_number === selectedSeason);
+                const seasonColor = currentSeasonRating > 0 ? getRatingColor(currentSeasonRating) : 'var(--text-dim)';
+                const seasonTrackFill = currentSeasonRating > 0
+                  ? `linear-gradient(to right, ${seasonColor} 0%, ${seasonColor} ${currentSeasonRating * 10}%, rgba(255,255,255,0.08) ${currentSeasonRating * 10}%, rgba(255,255,255,0.08) 100%)`
+                  : 'rgba(255,255,255,0.08)';
 
                 return (
                   <div
@@ -1177,10 +1221,13 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                         </span>
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span style={{ fontSize: '12px', color: 'var(--text-dim)', fontWeight: 600 }}>
+                          {ratingLabel(currentSeasonRating)}
+                        </span>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                          <span style={{ fontSize: '22px', fontWeight: 900, color: currentSeasonRating > 0 ? 'var(--gold)' : 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
-                            {currentSeasonRating > 0 ? `★ ${currentSeasonRating.toFixed(1)}` : '—'}
+                          <span style={{ fontSize: '30px', fontWeight: 900, color: seasonColor, fontFamily: 'var(--font-heading)', letterSpacing: '-0.5px', lineHeight: 1 }}>
+                            {currentSeasonRating > 0 ? currentSeasonRating.toFixed(1) : '—'}
                           </span>
                           <span style={{ fontSize: '12px', color: 'var(--text-dim)' }}>/ 10</span>
                         </div>
@@ -1208,39 +1255,41 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                     </div>
 
                     {/* Season Rating Slider */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ position: 'relative', padding: '4px 0' }}>
                       <input
                         type="range"
                         min="0"
                         max="10"
                         step="0.1"
-                        value={currentSeasonRating}
-                        onChange={e => updateSeasonRating(selectedSeason, parseFloat(e.target.value))}
+                        value={Number(currentSeasonRating) || 0}
+                        onChange={e => updateSeasonRating(selectedSeason, parseFloat(e.target.value) || 0)}
+                        onInput={e => updateSeasonRating(selectedSeason, parseFloat(e.target.value) || 0)}
+                        className="cinelog-rating-slider"
                         style={{
-                          width: '100%',
-                          height: '6px',
-                          appearance: 'none',
-                          background: currentSeasonRating > 0
-                            ? `linear-gradient(to right, ${accentColor} 0%, ${accentColor} ${currentSeasonRating * 10}%, rgba(255,255,255,0.08) ${currentSeasonRating * 10}%, rgba(255,255,255,0.08) 100%)`
-                            : 'rgba(255,255,255,0.08)',
-                          borderRadius: '4px',
-                          outline: 'none',
-                          cursor: 'pointer',
-                          accentColor: accentColor
+                          '--track-fill': seasonTrackFill,
+                          '--thumb-color': seasonColor,
+                          '--thumb-glow': currentSeasonRating > 0 ? `${seasonColor}88` : 'rgba(255,255,255,0.2)',
                         }}
                       />
-                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 2px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
                         {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
-                          <span
+                          <button
                             key={n}
+                            type="button"
+                            onClick={() => updateSeasonRating(selectedSeason, n)}
                             style={{
-                              fontSize: '9px',
-                              color: Math.abs(currentSeasonRating - n) < 0.6 ? accentColor : 'var(--text-dim)',
-                              fontWeight: Math.abs(currentSeasonRating - n) < 0.6 ? 800 : 400
+                              background: 'none',
+                              border: 'none',
+                              padding: '2px 4px',
+                              cursor: 'pointer',
+                              fontSize: '10px',
+                              color: Math.abs(currentSeasonRating - n) < 0.6 ? seasonColor : 'var(--text-dim)',
+                              fontWeight: Math.abs(currentSeasonRating - n) < 0.6 ? 800 : 400,
+                              transition: 'color 0.15s'
                             }}
                           >
                             {n}
-                          </span>
+                          </button>
                         ))}
                       </div>
                     </div>
@@ -1255,26 +1304,30 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                           { label: '👍 7', val: 7.0 },
                           { label: '🔥 8.5', val: 8.5 },
                           { label: '⭐ 10', val: 10.0 }
-                        ].map(chip => (
-                          <button
-                            key={chip.val}
-                            type="button"
-                            onClick={() => updateSeasonRating(selectedSeason, chip.val)}
-                            style={{
-                              background: currentSeasonRating === chip.val ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.04)',
-                              border: `1px solid ${currentSeasonRating === chip.val ? accentColor : 'rgba(255,255,255,0.08)'}`,
-                              color: currentSeasonRating === chip.val ? '#fff' : 'var(--text-muted)',
-                              borderRadius: '6px',
-                              padding: '3px 8px',
-                              fontSize: '11px',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              transition: 'all 0.15s'
-                            }}
-                          >
-                            {chip.label}
-                          </button>
-                        ))}
+                        ].map(chip => {
+                          const chipColor = getRatingColor(chip.val);
+                          const isActive = Math.abs(currentSeasonRating - chip.val) < 0.2;
+                          return (
+                            <button
+                              key={chip.val}
+                              type="button"
+                              onClick={() => updateSeasonRating(selectedSeason, chip.val)}
+                              style={{
+                                background: isActive ? `${chipColor}26` : 'rgba(255,255,255,0.04)',
+                                border: `1px solid ${isActive ? chipColor : 'rgba(255,255,255,0.08)'}`,
+                                color: isActive ? chipColor : 'var(--text-muted)',
+                                borderRadius: '6px',
+                                padding: '4px 10px',
+                                fontSize: '11.5px',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                transition: 'all 0.15s'
+                              }}
+                            >
+                              {chip.label}
+                            </button>
+                          );
+                        })}
                       </div>
 
                       {/* If user rated episodes in this season, offer to adopt the average */}
@@ -1283,9 +1336,9 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                           type="button"
                           onClick={() => updateSeasonRating(selectedSeason, epAvg)}
                           style={{
-                            background: 'rgba(255,215,0,0.08)',
-                            border: '1px solid rgba(255,215,0,0.25)',
-                            color: 'var(--gold)',
+                            background: `${getRatingColor(epAvg)}18`,
+                            border: `1px solid ${getRatingColor(epAvg)}45`,
+                            color: getRatingColor(epAvg),
                             borderRadius: '6px',
                             padding: '4px 10px',
                             fontSize: '11.5px',
@@ -1296,8 +1349,8 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                             gap: '5px',
                             transition: 'all 0.15s'
                           }}
-                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,215,0,0.15)'}
-                          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,215,0,0.08)'}
+                          onMouseEnter={e => e.currentTarget.style.background = `${getRatingColor(epAvg)}28`}
+                          onMouseLeave={e => e.currentTarget.style.background = `${getRatingColor(epAvg)}18`}
                           title={`Set season score to the average of your ${ratedEpCount} rated episode(s)`}
                         >
                           <span>★ Set to Episode Avg ({epAvg.toFixed(1)})</span>
@@ -1533,52 +1586,81 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                                       {/* Controls row: rating slider & logs toggle */}
                                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap', borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '12px' }}>
                                         {/* Left side: Rating slider */}
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: '220px' }}>
-                                          <span style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Rating:</span>
-                                          <div style={{ flex: 1, position: 'relative', padding: '6px 0' }}>
-                                            <input
-                                              type="range" min="0" max="10" step="0.1" value={epRating}
-                                              onChange={e => updateEpisodeRating(epKey, parseFloat(e.target.value))}
-                                              style={{
-                                                width: '100%', height: '5px', appearance: 'none',
-                                                background: epRating > 0
-                                                  ? `linear-gradient(to right, ${accentColor} 0%, ${accentColor} ${epRating * 10}%, rgba(255,255,255,0.06) ${epRating * 10}%, rgba(255,255,255,0.06) 100%)`
-                                                  : 'rgba(255,255,255,0.06)',
-                                                borderRadius: '3px', outline: 'none', cursor: 'pointer', accentColor: accentColor,
-                                              }}
-                                            />
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
-                                              {[0, 2, 4, 6, 8, 10].map(n => (
-                                                <span key={n} style={{ fontSize: '8px', color: Math.abs(epRating - n) < 0.6 ? accentColor : 'var(--text-dim)', fontWeight: Math.abs(epRating - n) < 0.6 ? 800 : 400 }}>{n}</span>
-                                              ))}
+                                        {(() => {
+                                          const epColor = epRating > 0 ? getRatingColor(epRating) : 'var(--text-dim)';
+                                          const epTrackFill = epRating > 0
+                                            ? `linear-gradient(to right, ${epColor} 0%, ${epColor} ${epRating * 10}%, rgba(255,255,255,0.06) ${epRating * 10}%, rgba(255,255,255,0.06) 100%)`
+                                            : 'rgba(255,255,255,0.06)';
+
+                                          return (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: '220px' }}>
+                                              <span style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Rating:</span>
+                                              <div style={{ flex: 1, position: 'relative', padding: '4px 0' }}>
+                                                <input
+                                                  type="range"
+                                                  min="0"
+                                                  max="10"
+                                                  step="0.1"
+                                                  value={Number(epRating) || 0}
+                                                  onChange={e => updateEpisodeRating(epKey, parseFloat(e.target.value) || 0)}
+                                                  onInput={e => updateEpisodeRating(epKey, parseFloat(e.target.value) || 0)}
+                                                  className="cinelog-rating-slider cinelog-rating-slider-sm"
+                                                  style={{
+                                                    '--track-fill': epTrackFill,
+                                                    '--thumb-color': epColor,
+                                                    '--thumb-glow': epRating > 0 ? `${epColor}88` : 'rgba(255,255,255,0.2)',
+                                                  }}
+                                                />
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '3px' }}>
+                                                  {[0, 2, 4, 6, 8, 10].map(n => (
+                                                    <button
+                                                      key={n}
+                                                      type="button"
+                                                      onClick={() => updateEpisodeRating(epKey, n)}
+                                                      style={{
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        padding: '1px 3px',
+                                                        cursor: 'pointer',
+                                                        fontSize: '9px',
+                                                        color: Math.abs(epRating - n) < 0.6 ? epColor : 'var(--text-dim)',
+                                                        fontWeight: Math.abs(epRating - n) < 0.6 ? 800 : 400,
+                                                        transition: 'color 0.15s'
+                                                      }}
+                                                    >
+                                                      {n}
+                                                    </button>
+                                                  ))}
+                                                </div>
+                                              </div>
+                                              <span style={{ fontSize: '13px', fontWeight: 900, color: epColor, minWidth: '48px', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
+                                                {epRating > 0 ? `★ ${epRating.toFixed(1)}` : '—'}
+                                              </span>
+                                              <button
+                                                type="button"
+                                                onClick={() => updateEpisodeRating(epKey, 0)}
+                                                disabled={epRating === 0}
+                                                style={{
+                                                  background: 'rgba(239,68,68,0.08)',
+                                                  border: '1px solid rgba(239,68,68,0.15)',
+                                                  color: 'var(--red)',
+                                                  fontSize: '10.5px',
+                                                  fontWeight: 800,
+                                                  cursor: 'pointer',
+                                                  padding: '3px 8px',
+                                                  borderRadius: '4px',
+                                                  transition: 'opacity 0.15s, background-color 0.15s',
+                                                  opacity: epRating > 0 ? 1 : 0,
+                                                  pointerEvents: epRating > 0 ? 'auto' : 'none',
+                                                }}
+                                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.15)'}
+                                                onMouseLeave={e => e.currentTarget.style.background = 'rgba(239,68,68,0.08)'}
+                                              >
+                                                Clear
+                                              </button>
                                             </div>
-                                          </div>
-                                          <span style={{ fontSize: '13px', fontWeight: 900, color: epRating > 0 ? 'var(--gold)' : 'var(--text-dim)', minWidth: '48px', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
-                                            {epRating > 0 ? `★ ${epRating.toFixed(1)}` : '—'}
-                                          </span>
-                                          <button
-                                            type="button"
-                                            onClick={() => updateEpisodeRating(epKey, 0)}
-                                            disabled={epRating === 0}
-                                            style={{
-                                              background: 'rgba(239,68,68,0.08)',
-                                              border: '1px solid rgba(239,68,68,0.15)',
-                                              color: 'var(--red)',
-                                              fontSize: '10.5px',
-                                              fontWeight: 800,
-                                              cursor: 'pointer',
-                                              padding: '3px 8px',
-                                              borderRadius: '4px',
-                                              transition: 'opacity 0.15s, background-color 0.15s',
-                                              opacity: epRating > 0 ? 1 : 0,
-                                              pointerEvents: epRating > 0 ? 'auto' : 'none',
-                                            }}
-                                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.15)'}
-                                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(239,68,68,0.08)'}
-                                          >
-                                            Clear
-                                          </button>
-                                        </div>
+                                          );
+                                        })()}
 
                                         {/* Right side: Log toggler */}
                                         <button
