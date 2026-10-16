@@ -57,30 +57,30 @@ export const CINEMATIC_PRESET_BANNERS = [
   { name: 'Spider-Man: No Way Home: Liberty Shield Perch', movie: 'Spider-Man: No Way Home', tag: 'Statue of Liberty Shield (Film Scene)', category: 'Superhero', url: '/film_frames/nwh/nwh_48.jpg' },
   { name: 'Spider-Verse: Inverted Skyscraper Dive', movie: 'Spider-Man: Across the Spider-Verse', tag: 'What\'s Up Danger (Film Scene)', category: 'Superhero', url: '/film_frames/atsv/atsv_30.jpg' },
 
-  // Sci-Fi & Cosmic Odyssey — 1080p StillsLab Masters (Project Hail Mary, Interstellar, Dune, Star Wars)
+  // Sci-Fi & Cosmic Odyssey — 1080p StillsLab Masters (Project Hail Mary, Interstellar, Dune, Star Wars, Matrix, Blade Runner)
   { name: 'Project Hail Mary: Red & Green Energy Sequence', movie: 'Project Hail Mary', tag: '1080p StillsLab Master', category: 'Sci-Fi', url: '/film_frames/stillslab/phm_red_green_energy.webp' },
   { name: 'Project Hail Mary: Deep Space Orbit', movie: 'Project Hail Mary', tag: '1080p StillsLab Master', category: 'Sci-Fi', url: '/film_frames/stillslab/phm_deep_space_orbit.webp' },
   { name: 'Project Hail Mary: Spacecraft Cosmic Approach', movie: 'Project Hail Mary', tag: '1080p StillsLab Master', category: 'Sci-Fi', url: '/film_frames/stillslab/phm_spacecraft_approach.webp' },
   { name: 'Interstellar: Deep Space Cosmic Odyssey', movie: 'Interstellar', tag: '1080p StillsLab Master', category: 'Sci-Fi', url: '/film_frames/stillslab/interstellar_space_odyssey.webp' },
   { name: 'Dune: Part Two: Arrakis Desert Vista', movie: 'Dune: Part Two', tag: '1080p StillsLab Master', category: 'Sci-Fi', url: '/film_frames/stillslab/dune2_desert_vista.webp' },
+  { name: 'Blade Runner 2049: Las Vegas Amber', movie: 'Blade Runner 2049', tag: '1080p StillsLab Master', category: 'Sci-Fi', url: '/film_frames/stillslab/br2049_amber_1080p.webp' },
+  { name: 'The Matrix: Digital Green Corridor', movie: 'The Matrix', tag: '1080p StillsLab Master', category: 'Sci-Fi', url: '/film_frames/stillslab/the_matrix_green_1080p.webp' },
   { name: 'Star Wars: Binary Sunset on Tatooine', movie: 'Star Wars: A New Hope', tag: 'Twin Suns of Tatooine (Film Scene)', category: 'Sci-Fi', url: '/film_frames/starwars/binary_sunset.jpg' },
-  { name: 'Blade Runner 2049: Las Vegas Amber', movie: 'Blade Runner 2049', tag: 'Deakins Amber Dust', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/gNdLJU9TxrpGx4dkZidjys3fyy0.jpg' },
-  { name: 'Blade Runner 2049: Sea Wall Spinner', movie: 'Blade Runner 2049', tag: 'Cyberpunk Sea Wall', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/mVr0UiqyltcfqxbAUcLl9zWL8ah.jpg' },
   { name: '2001: A Space Odyssey: Worlds Alignment', movie: '2001: A Space Odyssey', tag: 'Kubrick Cosmic Stargate', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/9yTOU2SvTfAEHDPEG5qraLoe4MI.jpg' },
   { name: 'TRON: Legacy: The Grid Neon Horizon', movie: 'TRON: Legacy', tag: 'Daft Punk Cyber Grid', category: 'Sci-Fi', url: 'https://image.tmdb.org/t/p/original/uUa6jgSr5BQpcBhhaz1PV1JhSa4.jpg' },
 
   // Epic Action & Fantasy (LOTR, Gladiator, Mad Max)
   { name: 'LOTR: Return of the King: Epic Battle Vista', movie: 'The Lord of the Rings: The Return of the King', tag: '1080p StillsLab Master', category: 'Action', url: '/film_frames/stillslab/lotr_rotk_1080p.webp' },
+  { name: 'LOTR: Fellowship of the Ring: Argonath', movie: 'The Lord of the Rings: The Fellowship of the Ring', tag: '1080p StillsLab Master', category: 'Action', url: '/film_frames/stillslab/lotr_fotr_1080p.webp' },
   { name: 'LOTR: Return of the King: Pelennor Fields', movie: 'The Lord of the Rings: The Return of the King', tag: 'White City Citadel', category: 'Action', url: 'https://image.tmdb.org/t/p/original/ctiw6FZK4N36LmkjSklWEbuvlq9.jpg' },
-  { name: 'LOTR: Fellowship of the Ring: Argonath', movie: 'The Lord of the Rings: The Fellowship of the Ring', tag: 'Pillars of the Kings', category: 'Action', url: 'https://image.tmdb.org/t/p/original/oiwc338EoBgS4sEI2ixAny4KQKg.jpg' },
   { name: 'Mad Max: Fury Road: Citadel Chase', movie: 'Mad Max: Fury Road', tag: 'Wasteland Desolation', category: 'Action', url: 'https://image.tmdb.org/t/p/original/l0eIS009XtEO80aC6zjM3o3AkEl.jpg' },
   { name: 'Gladiator: Colosseum Glory', movie: 'Gladiator', tag: 'Roman Empire Epic', category: 'Action', url: 'https://image.tmdb.org/t/p/original/Ar7QuJ7sJEiC0oP3I8fKBKIQD9u.jpg' },
 
   // Auteur, Drama & Thriller (Drive 2011, Oppenheimer, Taxi Driver)
   { name: 'Drive: LA Magic Hour Night Driver', movie: 'Drive (2011)', tag: '1080p StillsLab Master', category: 'Crime & Noir', url: '/film_frames/stillslab/drive_2011_1080p.webp' },
+  { name: 'Oppenheimer: 70mm Trinity Wave', movie: 'Oppenheimer', tag: '1080p StillsLab Master', category: 'Drama', url: '/film_frames/stillslab/oppenheimer_70mm_1080p.webp' },
+  { name: 'Taxi Driver: 42nd Street Rain', movie: 'Taxi Driver', tag: '1080p StillsLab Master', category: 'Crime & Noir', url: '/film_frames/stillslab/taxi_driver_neon_1080p.webp' },
   { name: 'Drive: LA Riverbed Sunset', movie: 'Drive (2011)', tag: 'Refn Neo-Noir Magic Hour', category: 'Crime & Noir', url: 'https://image.tmdb.org/t/p/original/hoyAALgfmjMEK7O1wZ4r8wT91RP.jpg' },
-  { name: 'Oppenheimer: Trinity Firestorm', movie: 'Oppenheimer', tag: '70mm Atomic Wave', category: 'Drama', url: 'https://image.tmdb.org/t/p/original/cUIqZd6jJCbO94Txt1CkTs7MSeP.jpg' },
-  { name: 'Taxi Driver: 42nd Street Rain', movie: 'Taxi Driver', tag: 'Neon Rain Nocturne', category: 'Crime & Noir', url: 'https://image.tmdb.org/t/p/original/9uddYYTNcLWpzUkl5iw1RUYhLhY.jpg' },
   { name: 'La La Land: Griffith Park Twilight', movie: 'La La Land', tag: 'Magic Hour Twilight', category: 'Drama', url: 'https://image.tmdb.org/t/p/original/nlPCdZlHtRNcF6C9hzUH4ebmV1w.jpg' },
   { name: 'Pulp Fiction: Jack Rabbit Slims', movie: 'Pulp Fiction', tag: 'Tarantino Cult', category: 'Crime & Noir', url: 'https://image.tmdb.org/t/p/original/suaEOtk1N1sgg2MTM7oZd2cfVp3.jpg' },
 
