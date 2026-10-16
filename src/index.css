@@ -2323,11 +2323,13 @@ body.modal-open {
 
   /* ── TIER LIST TAB MOBILE REVAMP ── */
   .tier-row {
-    min-height: 90px !important;
+    min-height: 84px !important;
   }
 
   .tier-label-box {
     width: 52px !important;
+    min-width: 52px !important;
+    max-width: 52px !important;
     font-size: 20px !important;
     padding: 6px 2px !important;
     letter-spacing: 0 !important;
@@ -2335,25 +2337,43 @@ body.modal-open {
 
   .tier-label-box > span {
     font-size: 18px !important;
+    max-width: 48px !important;
   }
 
   .tier-posters-scroll {
-    flex-wrap: nowrap !important;
-    overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
-    padding: 8px 10px !important;
-    min-height: 90px !important;
-    gap: 8px !important;
-    scrollbar-width: none !important;
+    padding: 6px 8px !important;
+    min-height: 84px !important;
+    gap: 6px !important;
+    scrollbar-width: thin !important;
   }
 
   .tier-posters-scroll::-webkit-scrollbar {
-    display: none !important;
+    height: 3px !important;
   }
 
-  .tier-posters-scroll img {
+  .tier-posters-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.25) !important;
+    border-radius: 4px !important;
+  }
+
+  /* CRITICAL: Guarantee posters keep 52px x 78px dimensions without shrinking on mobile */
+  .tier-poster-item,
+  .tier-posters-scroll > .glass-card,
+  .tier-posters-scroll > div[draggable] {
+    flex-shrink: 0 !important;
     width: 52px !important;
+    min-width: 52px !important;
+    max-width: 52px !important;
     height: 78px !important;
+    min-height: 78px !important;
+  }
+
+  .tier-poster-item img,
+  .tier-posters-scroll img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
   }
 
   /* ── ACHIEVEMENTS TAB MOBILE REVAMP ── */

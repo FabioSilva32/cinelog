@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { RefreshCw, GripVertical, Settings2, Trash2, Plus, ChevronUp, ChevronDown, Heart, Star, Check, X, Sparkles, Tag, Cloud, Smartphone, Copy, Download, Upload, ShieldCheck } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { RefreshCw, GripVertical, Settings2, Trash2, Plus, ChevronUp, ChevronDown, Heart, Star, Check, X, Sparkles, Tag, Cloud, Smartphone, Copy, Download, Upload, ShieldCheck, MoveHorizontal, Grid3X3 } from 'lucide-react';
 import ConfirmModal from './ConfirmModal';
 import { FRANCHISE_COLLECTIONS, GENRE_LIST, matchesCollection } from '../utils/collections';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
@@ -31,6 +32,22 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
   const [transferCodeInput, setTransferCodeInput] = useState('');
   const [transferMsg, setTransferMsg] = useState('');
   const [cloudManualSyncing, setCloudManualSyncing] = useState(false);
+  const [rowLayoutMode, setRowLayoutMode] = useState(() => {
+    try {
+      return localStorage.getItem('cinelog_tier_layout_mode') || 'scroll';
+    } catch {
+      return 'scroll';
+    }
+  });
+
+  const toggleRowLayoutMode = () => {
+    setRowLayoutMode(prev => {
+      const next = prev === 'scroll' ? 'wrap' : 'scroll';
+      try { localStorage.setItem('cinelog_tier_layout_mode', next); } catch {}
+      return next;
+    });
+  };
+
   const [lists, setLists] = useState(() => {
     try {
       const stored = localStorage.getItem('cinelog_saved_tier_lists_v4');
@@ -428,8 +445,17 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
     });
   };
 
-  const getMovie = (id) =>
-    library.find(m => String(m.id) === id || String(m.tmdb_id) === id);
+  // O(1) high-speed movie lookup map (prevents thousands of O(N) array finds during render)
+  const movieMap = useMemo(() => {
+    const map = new Map();
+    library.forEach(m => {
+      if (m.id) map.set(String(m.id), m);
+      if (m.tmdb_id) map.set(String(m.tmdb_id), m);
+    });
+    return map;
+  }, [library]);
+
+  const getMovie = (id) => movieMap.get(String(id));
 
   const createNewList = (name) => {
     if (!name.trim()) return;
@@ -765,6 +791,19 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
 
           <button
             className="btn btn-ghost"
+            onClick={toggleRowLayoutMode}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', height: '34px', padding: '0 12px',
+              border: '1px solid var(--border)', background: '#141414', color: '#fff', borderRadius: '6px'
+            }}
+            title="Toggle between horizontal swiping rows and wrapping grid"
+          >
+            {rowLayoutMode === 'scroll' ? <MoveHorizontal size={13} color="var(--accent)" /> : <Grid3X3 size={13} color="var(--accent)" />}
+            <span>{rowLayoutMode === 'scroll' ? 'Swipe Rows' : 'Wrap Grid'}</span>
+          </button>
+
+          <button
+            className="btn btn-ghost"
             onClick={() => setShowSyncModal(true)}
             style={{
               display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', height: '34px', padding: '0 12px',
@@ -875,12 +914,14 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
                   className="tier-posters-scroll"
                   style={{
                     flex: 1,
-                    padding: '12px 16px',
+                    padding: '10px 14px',
                     display: 'flex',
-                    gap: '12px',
-                    flexWrap: 'wrap',
+                    gap: '10px',
+                    flexWrap: rowLayoutMode === 'scroll' ? 'nowrap' : 'wrap',
+                    overflowX: rowLayoutMode === 'scroll' ? 'auto' : 'visible',
+                    WebkitOverflowScrolling: 'touch',
                     alignItems: 'center',
-                    minHeight: '130px',
+                    minHeight: '96px',
                   }}>
                   {moviesList.map(id => {
                     const movie = getMovie(id);
@@ -897,26 +938,30 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
                         onDragEnter={e => { if (dragInfo && dragInfo.movieId !== id) setHoveredCardId(id); }}
                         onDragLeave={() => setHoveredCardId(null)}
                         onDrop={e => { setHoveredCardId(null); handleDropOnCard(e, tier.id, id); }}
-                        className="glass-card"
+                        className="tier-poster-item glass-card"
                         style={{
                           position: 'relative',
                           cursor: 'grab',
                           opacity: isDragging ? 0.4 : 1,
                           transform: isDragging ? 'scale(0.95)' : 'scale(1)',
-                          transition: 'all 0.2s ease',
+                          transition: 'all 0.15s ease',
                           borderRadius: '6px',
                           border: `2px solid ${isDragging ? 'var(--accent)' : 'transparent'}`,
                           borderLeft: hoveredCardId === id ? '4px solid var(--accent)' : (isDragging ? '2px solid var(--accent)' : '2px solid transparent'),
-                          paddingLeft: hoveredCardId === id ? '4px' : '0px',
                           width: '74px',
                           height: '110px',
-                          boxShadow: '0 8px 16px rgba(0,0,0,0.4)',
-                          overflow: 'hidden'
+                          flexShrink: 0,
+                          boxShadow: '0 6px 14px rgba(0,0,0,0.4)',
+                          overflow: 'visible'
                         }}
-                        title={`Drag to reorder • ${movie.title}`}
+                        title={`Tap to move or drag • ${movie.title}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setQuickAssignId(quickAssignId === id ? null : id);
+                        }}
                       >
                         <img
-                          src={`https://image.tmdb.org/t/p/w200${movie.poster_path}`}
+                          src={`https://image.tmdb.org/t/p/w185${movie.poster_path}`}
                           alt={movie.title}
                           style={{
                             width: '100%',
@@ -924,31 +969,34 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
                             objectFit: 'cover',
                             userSelect: 'none',
                             pointerEvents: 'none',
+                            borderRadius: '4px'
                           }}
+                          loading="lazy"
+                          decoding="async"
                           draggable={false}
                         />
 
                         {/* Top-Left Favorite Badge (Red Heart) */}
                         {movie.favorite && (
                           <div style={{
-                            position: 'absolute', top: '4px', left: '4px',
-                            background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)',
-                            borderRadius: '50%', width: '18px', height: '18px',
+                            position: 'absolute', top: '3px', left: '3px',
+                            background: 'rgba(0,0,0,0.85)',
+                            borderRadius: '50%', width: '16px', height: '16px',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            boxShadow: '0 2px 5px rgba(0,0,0,0.5)'
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.5)'
                           }}>
-                            <Heart size={10} fill="var(--red)" color="var(--red)" />
+                            <Heart size={9} fill="var(--red)" color="var(--red)" />
                           </div>
                         )}
 
                         {/* Bottom-Right Rating Badge */}
                         {movie.rating != null && (
                           <div style={{
-                            position: 'absolute', bottom: '4px', right: '4px',
-                            background: 'rgba(10,8,19,0.9)', backdropFilter: 'blur(4px)',
+                            position: 'absolute', bottom: '3px', right: '3px',
+                            background: 'rgba(10,8,19,0.95)',
                             border: '1px solid rgba(255,255,255,0.08)',
-                            borderRadius: '4px', padding: '1px 4px',
-                            fontSize: '9px', fontWeight: 800, color: 'var(--gold)',
+                            borderRadius: '3px', padding: '1px 3px',
+                            fontSize: '8px', fontWeight: 800, color: 'var(--gold)',
                             display: 'flex', alignItems: 'center', gap: '1px',
                             boxShadow: '0 2px 4px rgba(0,0,0,0.6)'
                           }}>
@@ -957,27 +1005,49 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
                           </div>
                         )}
 
-                        {/* Hover Clear Overlay */}
-                        <div
-                          className="tier-item-remove"
-                          onClick={() => setTierData(prev => {
-                            const u = { ...prev };
-                            u[tier.id] = (u[tier.id] || []).filter(i => i !== id);
-                            return u;
-                          })}
-                          title="Remove from tier"
-                          style={{
-                            position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.75)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: 'var(--red)', fontSize: '10px', fontWeight: 900,
-                            opacity: 0, transition: 'opacity 0.15s',
-                            cursor: 'pointer',
-                          }}
-                          onMouseEnter={e => e.currentTarget.style.opacity = 1}
-                          onMouseLeave={e => e.currentTarget.style.opacity = 0}
-                        >
-                          ✕ Remove
-                        </div>
+                        {/* Quick Assign / Move Menu on Mobile Tap */}
+                        {quickAssignId === id && (
+                          <div style={{
+                            position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
+                            marginTop: '4px', background: '#121020', border: '1px solid var(--accent)',
+                            borderRadius: '8px', padding: '6px', zIndex: 110, boxShadow: '0 10px 25px rgba(0,0,0,0.85)',
+                            display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '120px'
+                          }} onClick={e => e.stopPropagation()}>
+                            <div style={{ fontSize: '9px', color: 'var(--text-dim)', fontWeight: 800, textAlign: 'center', paddingBottom: '2px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>Move to Tier:</div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px' }}>
+                              {tiers.map(t => (
+                                <button
+                                  key={t.id}
+                                  onClick={() => handleQuickAssign(id, t.id)}
+                                  style={{
+                                    background: t.color, color: '#000', border: 'none', borderRadius: '4px',
+                                    padding: '4px 6px', fontSize: '11px', fontWeight: 900, cursor: 'pointer',
+                                    textAlign: 'center'
+                                  }}
+                                >
+                                  {t.label}
+                                </button>
+                              ))}
+                            </div>
+                            <button
+                              onClick={() => {
+                                setTierData(prev => {
+                                  const u = { ...prev };
+                                  tiers.forEach(t => { u[t.id] = (u[t.id] || []).filter(item => item !== id); });
+                                  return u;
+                                });
+                                setQuickAssignId(null);
+                              }}
+                              style={{
+                                background: 'rgba(239,68,68,0.15)', color: 'var(--red)', border: '1px solid rgba(239,68,68,0.3)',
+                                borderRadius: '4px', padding: '3px 6px', fontSize: '10px', fontWeight: 800, cursor: 'pointer',
+                                textAlign: 'center', marginTop: '2px'
+                              }}
+                            >
+                              ✕ Remove
+                            </button>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -1347,21 +1417,43 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
         )}
       </div>
       
-      {/* ── SYNC & DEVICE TRANSFER MODAL ────────────────────────── */}
-      {showSyncModal && (
+      {/* ── SYNC & DEVICE TRANSFER MODAL (Centered via Portal directly in document.body) ── */}
+      {showSyncModal && typeof document !== 'undefined' && createPortal(
         <div
           className="modal-backdrop"
           style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)',
-            zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0,0,0,0.85)',
+            backdropFilter: 'blur(10px)',
+            zIndex: 999999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            overscrollBehavior: 'contain'
           }}
           onClick={e => e.target === e.currentTarget && setShowSyncModal(false)}
         >
           <div
             className="glass animate-fade-in"
             style={{
-              width: '100%', maxWidth: '520px', borderRadius: '16px', border: '1px solid #2a2a2e',
-              background: '#111015', padding: '26px', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.8)'
+              width: '100%',
+              maxWidth: '520px',
+              borderRadius: '16px',
+              border: '1px solid #2a2a2e',
+              background: '#111015',
+              padding: '26px',
+              position: 'relative',
+              boxShadow: '0 20px 48px rgba(0,0,0,0.9)',
+              margin: 'auto',
+              maxHeight: '90vh',
+              overflowY: 'auto'
             }}
           >
             <button
@@ -1494,7 +1586,8 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <ConfirmModal
