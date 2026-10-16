@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { RefreshCw, GripVertical, Settings2, Trash2, Plus, ChevronUp, ChevronDown, Heart, Star, Check, X, Sparkles, Tag, Cloud, CloudCheck } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { RefreshCw, GripVertical, Settings2, Trash2, Plus, ChevronUp, ChevronDown, Heart, Star, Check, X, Sparkles, Tag, Cloud, Smartphone, Copy, Download, Upload, ShieldCheck } from 'lucide-react';
 import ConfirmModal from './ConfirmModal';
 import { FRANCHISE_COLLECTIONS, GENRE_LIST, matchesCollection } from '../utils/collections';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
@@ -24,8 +24,13 @@ const COLOR_PRESETS = [
   { name: 'Slate', value: '#64748b' }
 ];
 
-export default function TierListTab({ library = [], currentUser = null }) {
-  // ── SAVE/LOAD MULTIPLE LISTS STATE ────────────────────────────────
+export default function TierListTab({ library = [], currentUser = null, onOpenAuth = null }) {
+  // Flag to prevent overwriting cloud data on initial mount
+  const isInitialSyncDone = useRef(false);
+  const [showSyncModal, setShowSyncModal] = useState(false);
+  const [transferCodeInput, setTransferCodeInput] = useState('');
+  const [transferMsg, setTransferMsg] = useState('');
+  const [cloudManualSyncing, setCloudManualSyncing] = useState(false);
   const [lists, setLists] = useState(() => {
     try {
       const stored = localStorage.getItem('cinelog_saved_tier_lists_v4');
@@ -138,6 +143,24 @@ export default function TierListTab({ library = [], currentUser = null }) {
     isDanger: true,
   });
 
+  // Listen for background tier list updates from other tabs or session load
+  useEffect(() => {
+    const handleTierSync = (e) => {
+      if (e.detail && typeof e.detail === 'object') {
+        setLists(e.detail);
+        const active = localStorage.getItem('cinelog_active_tier_list_id_v4') || 'default';
+        if (e.detail[active]) {
+          setTiers(e.detail[active].tiers || DEFAULT_TIERS);
+          setTierData(e.detail[active].tierData || {});
+          if (e.detail[active].poolFilter) setPoolFilter(e.detail[active].poolFilter);
+        }
+        setCloudSyncStatus('synced');
+      }
+    };
+    window.addEventListener('cinelog_tier_lists_updated', handleTierSync);
+    return () => window.removeEventListener('cinelog_tier_lists_updated', handleTierSync);
+  }, []);
+
   // Debounced cloud save
   const saveToCloud = useMemo(() => {
     let timer = null;
@@ -164,7 +187,10 @@ export default function TierListTab({ library = [], currentUser = null }) {
 
   // Two-way initial sync on mount with Supabase user_metadata
   useEffect(() => {
-    if (!currentUser?.id || !supabase || !isSupabaseConfigured) return;
+    if (!currentUser?.id || !supabase || !isSupabaseConfigured) {
+      isInitialSyncDone.current = true;
+      return;
+    }
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user?.user_metadata?.cinelog_tier_lists) {
         const cloudLists = user.user_metadata.cinelog_tier_lists;
@@ -180,6 +206,7 @@ export default function TierListTab({ library = [], currentUser = null }) {
             if (cloudLists[cloudActiveId].poolFilter) setPoolFilter(cloudLists[cloudActiveId].poolFilter);
           }
           setCloudSyncStatus('synced');
+          isInitialSyncDone.current = true;
           return;
         }
       }
@@ -191,8 +218,117 @@ export default function TierListTab({ library = [], currentUser = null }) {
           saveToCloud(local, activeListId);
         }
       } catch {}
-    }).catch(e => console.warn('Failed to load cloud tier lists:', e));
+      isInitialSyncDone.current = true;
+    }).catch(e => {
+      console.warn('Failed to load cloud tier lists:', e);
+      isInitialSyncDone.current = true;
+    });
   }, [currentUser?.id]);
+
+  // Copy transfer code to clipboard
+  const copyTransferCode = () => {
+    try {
+      const code = btoa(unescape(encodeURIComponent(JSON.stringify(lists))));
+      navigator.clipboard.writeText(code);
+      setTransferMsg('✅ Transfer code copied to clipboard! Paste it on your phone/other device.');
+      setTimeout(() => setTransferMsg(''), 6000);
+    } catch (err) {
+      setTransferMsg('Failed to copy: ' + err.message);
+    }
+  };
+
+  // Import transfer code
+  const importTransferCode = () => {
+    if (!transferCodeInput.trim()) return;
+    try {
+      const jsonStr = decodeURIComponent(escape(atob(transferCodeInput.trim())));
+      const parsed = JSON.parse(jsonStr);
+      if (parsed && typeof parsed === 'object') {
+        setLists(parsed);
+        localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(parsed));
+        const firstId = Object.keys(parsed)[0] || 'default';
+        setActiveListId(firstId);
+        localStorage.setItem('cinelog_active_tier_list_id_v4', firstId);
+        if (parsed[firstId]) {
+          setTiers(parsed[firstId].tiers || DEFAULT_TIERS);
+          setTierData(parsed[firstId].tierData || {});
+          if (parsed[firstId].poolFilter) setPoolFilter(parsed[firstId].poolFilter);
+        }
+        saveToCloud(parsed, firstId);
+        setTransferMsg('🎉 Successfully imported and synced your tier lists!');
+        setTransferCodeInput('');
+        setTimeout(() => setTransferMsg(''), 5000);
+      } else {
+        setTransferMsg('❌ Invalid tier list code.');
+      }
+    } catch (e) {
+      setTransferMsg('❌ Invalid or corrupted transfer code.');
+    }
+  };
+
+  // Force Push to Supabase Cloud
+  const handleForcePushCloud = async () => {
+    if (!currentUser?.id || !supabase) return;
+    setCloudManualSyncing(true);
+    try {
+      const currentSaved = {
+        ...lists,
+        [activeListId]: {
+          ...lists[activeListId],
+          id: activeListId,
+          tiers,
+          tierData,
+          poolFilter
+        }
+      };
+      await supabase.auth.updateUser({
+        data: {
+          cinelog_tier_lists: currentSaved,
+          cinelog_active_tier_list_id: activeListId
+        }
+      });
+      setCloudSyncStatus('synced');
+      setTransferMsg('☁️ Successfully uploaded tier lists to your cloud account!');
+    } catch (err) {
+      setCloudSyncStatus('error');
+      setTransferMsg('Cloud upload error: ' + err.message);
+    } finally {
+      setCloudManualSyncing(false);
+      setTimeout(() => setTransferMsg(''), 5000);
+    }
+  };
+
+  // Force Pull from Supabase Cloud
+  const handleForcePullCloud = async () => {
+    if (!currentUser?.id || !supabase) return;
+    setCloudManualSyncing(true);
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) throw error;
+      const cloudLists = user?.user_metadata?.cinelog_tier_lists;
+      const cloudActiveId = user?.user_metadata?.cinelog_active_tier_list_id || 'default';
+      if (cloudLists && Object.keys(cloudLists).length > 0) {
+        setLists(cloudLists);
+        localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(cloudLists));
+        if (cloudLists[cloudActiveId]) {
+          setActiveListId(cloudActiveId);
+          localStorage.setItem('cinelog_active_tier_list_id_v4', cloudActiveId);
+          setTiers(cloudLists[cloudActiveId].tiers || DEFAULT_TIERS);
+          setTierData(cloudLists[cloudActiveId].tierData || {});
+          if (cloudLists[cloudActiveId].poolFilter) setPoolFilter(cloudLists[cloudActiveId].poolFilter);
+        }
+        setCloudSyncStatus('synced');
+        setTransferMsg('⬇️ Loaded tier lists from cloud!');
+      } else {
+        setTransferMsg('ℹ️ No saved tier lists found in your cloud account.');
+      }
+    } catch (err) {
+      setTransferMsg('Cloud download error: ' + err.message);
+    } finally {
+      setCloudManualSyncing(false);
+      setTimeout(() => setTransferMsg(''), 5000);
+    }
+  };
 
   // Helper to switch list safely
   const selectList = (listId) => {
@@ -223,6 +359,7 @@ export default function TierListTab({ library = [], currentUser = null }) {
 
   // Sync tiers/tierData/filter of active list to localStorage & Supabase on modifications
   useEffect(() => {
+    if (!isInitialSyncDone.current) return;
     const updated = {
       ...lists,
       [activeListId]: {
@@ -625,6 +762,19 @@ export default function TierListTab({ library = [], currentUser = null }) {
               ✕ Delete
             </button>
           )}
+
+          <button
+            className="btn btn-ghost"
+            onClick={() => setShowSyncModal(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', height: '34px', padding: '0 12px',
+              border: '1px solid rgba(229,9,20,0.35)', background: 'rgba(229,9,20,0.08)', color: '#fff', borderRadius: '6px'
+            }}
+            title="Transfer or sync tier lists between PC and Phone"
+          >
+            <Cloud size={14} color="var(--accent)" />
+            <span>Sync / Transfer</span>
+          </button>
 
           <button className="btn btn-ghost" onClick={handleReset} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', height: '34px' }}>
             <RefreshCw size={13} />
@@ -1197,6 +1347,156 @@ export default function TierListTab({ library = [], currentUser = null }) {
         )}
       </div>
       
+      {/* ── SYNC & DEVICE TRANSFER MODAL ────────────────────────── */}
+      {showSyncModal && (
+        <div
+          className="modal-backdrop"
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)',
+            zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
+          }}
+          onClick={e => e.target === e.currentTarget && setShowSyncModal(false)}
+        >
+          <div
+            className="glass animate-fade-in"
+            style={{
+              width: '100%', maxWidth: '520px', borderRadius: '16px', border: '1px solid #2a2a2e',
+              background: '#111015', padding: '26px', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.8)'
+            }}
+          >
+            <button
+              onClick={() => setShowSyncModal(false)}
+              style={{ position: 'absolute', right: '16px', top: '16px', background: 'none', border: 'none', color: '#888', cursor: 'pointer' }}
+            >
+              <X size={20} />
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+              <div style={{
+                width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(229,9,20,0.15)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(229,9,20,0.3)'
+              }}>
+                <Smartphone size={18} color="var(--accent)" />
+              </div>
+              <h3 style={{ margin: 0, fontSize: '19px', fontWeight: 900, color: '#fff' }}>Sync & Transfer Tier Lists</h3>
+            </div>
+            <p style={{ fontSize: '12.5px', color: '#9E9E9E', margin: '0 0 18px 0', lineHeight: 1.45 }}>
+              Effortlessly move your tier lists between your PC browser and mobile phone app.
+            </p>
+
+            {transferMsg && (
+              <div style={{
+                padding: '10px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700,
+                marginBottom: '16px', background: transferMsg.startsWith('❌') ? 'rgba(239,68,68,0.12)' : 'rgba(16,185,129,0.12)',
+                color: transferMsg.startsWith('❌') ? '#ef4444' : '#10b981',
+                border: `1px solid ${transferMsg.startsWith('❌') ? 'rgba(239,68,68,0.25)' : 'rgba(16,185,129,0.25)'}`
+              }}>
+                {transferMsg}
+              </div>
+            )}
+
+            {/* METHOD 1: 1-TAP TRANSFER CODE */}
+            <div style={{ background: '#16151c', border: '1px solid #26252e', borderRadius: '12px', padding: '16px', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  ⚡ Method 1: Instant Transfer Code
+                </div>
+                <span style={{ fontSize: '10px', color: '#888', fontWeight: 600 }}>No login required</span>
+              </div>
+              <p style={{ fontSize: '12px', color: '#A1A1AA', margin: '0 0 12px 0', lineHeight: 1.4 }}>
+                1-tap export from PC, then paste on your phone to instantly load your lists:
+              </p>
+
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                <button
+                  className="btn btn-primary"
+                  onClick={copyTransferCode}
+                  style={{ flex: 1, height: '36px', fontSize: '12.5px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                >
+                  <Copy size={14} /> Copy Transfer Code
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  type="text"
+                  placeholder="Paste transfer code here..."
+                  value={transferCodeInput}
+                  onChange={e => setTransferCodeInput(e.target.value)}
+                  className="form-input"
+                  style={{ flex: 1, height: '36px', fontSize: '12px', background: '#0e0d12', border: '1px solid #282732', borderRadius: '6px' }}
+                />
+                <button
+                  className="btn btn-secondary"
+                  onClick={importTransferCode}
+                  disabled={!transferCodeInput.trim()}
+                  style={{ height: '36px', fontSize: '12px', padding: '0 14px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                >
+                  <Download size={13} /> Import
+                </button>
+              </div>
+            </div>
+
+            {/* METHOD 2: SUPABASE CLOUD ACCOUNT SYNC */}
+            <div style={{ background: '#16151c', border: '1px solid #26252e', borderRadius: '12px', padding: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <div style={{ fontSize: '12px', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  ☁️ Method 2: Cloud Account Auto-Sync
+                </div>
+                {currentUser?.id ? (
+                  <span style={{ fontSize: '10.5px', color: '#10b981', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <ShieldCheck size={13} /> Signed In
+                  </span>
+                ) : (
+                  <span style={{ fontSize: '10.5px', color: '#f59e0b', fontWeight: 800 }}>Guest Mode</span>
+                )}
+              </div>
+
+              {currentUser?.id ? (
+                <>
+                  <p style={{ fontSize: '12px', color: '#A1A1AA', margin: '0 0 12px 0' }}>
+                    Logged in as <strong style={{ color: '#fff' }}>{currentUser.displayName || currentUser.username}</strong>. Your tier lists automatically sync across devices when signed into the same account.
+                  </p>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={handleForcePushCloud}
+                      disabled={cloudManualSyncing}
+                      style={{ flex: 1, height: '36px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                    >
+                      <Upload size={13} /> {cloudManualSyncing ? 'Syncing...' : 'Force Push to Cloud'}
+                    </button>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={handleForcePullCloud}
+                      disabled={cloudManualSyncing}
+                      style={{ flex: 1, height: '36px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                    >
+                      <Download size={13} /> Force Pull from Cloud
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p style={{ fontSize: '12px', color: '#A1A1AA', margin: '0 0 12px 0', lineHeight: 1.4 }}>
+                    You are currently using CineLog in <strong>Guest Mode</strong>. Sign in on both your PC and phone app to automatically sync all your tier lists and library continuously.
+                  </p>
+                  {onOpenAuth && (
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => { setShowSyncModal(false); onOpenAuth(); }}
+                      style={{ width: '100%', height: '36px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', color: 'var(--accent)', border: '1px solid rgba(229,9,20,0.3)' }}
+                    >
+                      👤 Sign In / Create Account
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <ConfirmModal
         isOpen={confirmConfig.isOpen}
         title={confirmConfig.title}

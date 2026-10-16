@@ -306,6 +306,7 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
   const [filterGenre, setFilterGenre] = useState('all');
   const [filterType, setFilterType] = useState('all'); // 'all', 'movie', 'tv', 'anime'
   const [mobileView, setMobileView] = useState('grid'); // 'grid' | 'list'
+  const [diaryFilter, setDiaryFilter] = useState('all'); // 'all' | 'this_month' | 'this_year' | 'with_review' | 'top_rated' | 'favorites' | 'rewatches'
   const [showMobileFilterSheet, setShowMobileFilterSheet] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [showImport, setShowImport] = useState(false);
@@ -398,6 +399,95 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
       favs: library.filter(m => m.favorite).length
     };
   }, [library]);
+
+  // ── Literal Watched Diary Computations ─────────────────────────────
+  const watchedEntries = useMemo(() => {
+    return library.filter(m => m.status === 'watched');
+  }, [library]);
+
+  const reviewedCount = useMemo(() => {
+    return watchedEntries.filter(m => Boolean((m.review || '').replace(/__EPISODE_DATA__:.+$/s, '').replace(/__EPISODE_RATINGS__:.+$/s, '').trim())).length;
+  }, [watchedEntries]);
+
+  const watchedThisYearCount = useMemo(() => {
+    const curYear = new Date().getFullYear();
+    return watchedEntries.filter(m => {
+      const dStr = m.watch_date || m.date_added;
+      if (!dStr) return false;
+      const d = new Date(dStr);
+      return !isNaN(d.getTime()) && d.getFullYear() === curYear;
+    }).length;
+  }, [watchedEntries]);
+
+  const topRatedCount = useMemo(() => {
+    return watchedEntries.filter(m => Number(m.rating) >= 8).length;
+  }, [watchedEntries]);
+
+  const favoriteWatchedCount = useMemo(() => {
+    return watchedEntries.filter(m => m.favorite).length;
+  }, [watchedEntries]);
+
+  const rewatchCount = useMemo(() => {
+    return watchedEntries.filter(m => m.is_rewatch).length;
+  }, [watchedEntries]);
+
+  const diaryFiltered = useMemo(() => {
+    let list = watchedEntries;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(m => m.title?.toLowerCase().includes(q));
+    }
+    const now = new Date();
+    const curYear = now.getFullYear();
+    const curMonth = now.getMonth();
+
+    if (diaryFilter === 'this_month') {
+      list = list.filter(m => {
+        const dStr = m.watch_date || m.date_added;
+        if (!dStr) return false;
+        const d = new Date(dStr);
+        return !isNaN(d.getTime()) && d.getFullYear() === curYear && d.getMonth() === curMonth;
+      });
+    } else if (diaryFilter === 'this_year') {
+      list = list.filter(m => {
+        const dStr = m.watch_date || m.date_added;
+        if (!dStr) return false;
+        const d = new Date(dStr);
+        return !isNaN(d.getTime()) && d.getFullYear() === curYear;
+      });
+    } else if (diaryFilter === 'with_review') {
+      list = list.filter(m => Boolean((m.review || '').replace(/__EPISODE_DATA__:.+$/s, '').replace(/__EPISODE_RATINGS__:.+$/s, '').trim()));
+    } else if (diaryFilter === 'top_rated') {
+      list = list.filter(m => Number(m.rating) >= 8);
+    } else if (diaryFilter === 'favorites') {
+      list = list.filter(m => m.favorite);
+    } else if (diaryFilter === 'rewatches') {
+      list = list.filter(m => m.is_rewatch);
+    }
+
+    return [...list].sort((a, b) => {
+      const dateA = new Date(a.watch_date || a.date_added || 0).getTime();
+      const dateB = new Date(b.watch_date || b.date_added || 0).getTime();
+      return dateB - dateA;
+    });
+  }, [watchedEntries, searchQuery, diaryFilter]);
+
+  const diaryGroups = useMemo(() => {
+    const groups = {};
+    diaryFiltered.forEach(movie => {
+      const dStr = movie.watch_date || movie.date_added;
+      let groupKey = 'Recent Logs';
+      if (dStr) {
+        const d = new Date(dStr);
+        if (!isNaN(d.getTime())) {
+          groupKey = d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+        }
+      }
+      if (!groups[groupKey]) groups[groupKey] = [];
+      groups[groupKey].push(movie);
+    });
+    return groups;
+  }, [diaryFiltered]);
 
   const handleExportJSON = () => {
     try {
@@ -599,45 +689,79 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
 
         {/* Swipeable Status & Type Pills */}
         <div className="mobile-library-chips" style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none' }}>
-          {[
-            { id: 'all', label: `All (${library.length})` },
-            { id: 'watched', label: `✓ Watched (${stats.watched})` },
-            { id: 'plan_to_watch', label: `⏳ Watchlist (${stats.watchlist})` },
-            { id: 'favorites', label: `❤️ Favs (${stats.favs})` },
-            { id: 'movie', label: `🎬 Movies (${movies.length})`, isType: true },
-            { id: 'tv', label: `📺 Series (${series.length})`, isType: true },
-            { id: 'watched_this_month', label: `📅 This Month (${stats.thisMonth})` },
-            { id: 'watching', label: '▶ Watching' }
-          ].map(chip => {
-            const isActive = chip.isType ? filterType === chip.id : (filterType === 'all' && filterStatus === chip.id);
-            return (
-              <button
-                key={chip.id}
-                onClick={() => {
-                  if (chip.isType) {
-                    setFilterType(prev => prev === chip.id ? 'all' : chip.id);
-                  } else {
-                    setFilterType('all');
-                    setFilterStatus(chip.id);
-                  }
-                }}
-                style={{
-                  background: isActive ? 'var(--accent)' : '#141414',
-                  color: isActive ? '#FFFFFF' : '#A1A1AA',
-                  border: `1px solid ${isActive ? 'var(--accent)' : '#242424'}`,
-                  borderRadius: '20px',
-                  padding: '6px 13px',
-                  fontSize: '11.5px',
-                  fontWeight: isActive ? 800 : 600,
-                  whiteSpace: 'nowrap',
-                  cursor: 'pointer',
-                  flexShrink: 0
-                }}
-              >
-                {chip.label}
-              </button>
-            );
-          })}
+          {mobileView === 'list' ? (
+            [
+              { id: 'all', label: `📖 All Logs (${watchedEntries.length})` },
+              { id: 'this_month', label: `📅 This Month (${stats.thisMonth})` },
+              { id: 'this_year', label: `📅 ${new Date().getFullYear()} (${watchedThisYearCount})` },
+              { id: 'with_review', label: `✍️ With Notes (${reviewedCount})` },
+              { id: 'top_rated', label: `★ Top Rated (${topRatedCount})` },
+              { id: 'favorites', label: `❤️ Favorites (${favoriteWatchedCount})` },
+              { id: 'rewatches', label: `🔄 Rewatches (${rewatchCount})` }
+            ].map(chip => {
+              const isActive = diaryFilter === chip.id;
+              return (
+                <button
+                  key={chip.id}
+                  onClick={() => setDiaryFilter(chip.id)}
+                  style={{
+                    background: isActive ? 'var(--accent)' : '#141414',
+                    color: isActive ? '#FFFFFF' : '#A1A1AA',
+                    border: `1px solid ${isActive ? 'var(--accent)' : '#242424'}`,
+                    borderRadius: '20px',
+                    padding: '6px 13px',
+                    fontSize: '11.5px',
+                    fontWeight: isActive ? 800 : 600,
+                    whiteSpace: 'nowrap',
+                    cursor: 'pointer',
+                    flexShrink: 0
+                  }}
+                >
+                  {chip.label}
+                </button>
+              );
+            })
+          ) : (
+            [
+              { id: 'all', label: `All (${library.length})` },
+              { id: 'watched', label: `✓ Watched (${stats.watched})` },
+              { id: 'plan_to_watch', label: `⏳ Watchlist (${stats.watchlist})` },
+              { id: 'favorites', label: `❤️ Favs (${stats.favs})` },
+              { id: 'movie', label: `🎬 Movies (${movies.length})`, isType: true },
+              { id: 'tv', label: `📺 Series (${series.length})`, isType: true },
+              { id: 'watched_this_month', label: `📅 This Month (${stats.thisMonth})` },
+              { id: 'watching', label: '▶ Watching' }
+            ].map(chip => {
+              const isActive = chip.isType ? filterType === chip.id : (filterType === 'all' && filterStatus === chip.id);
+              return (
+                <button
+                  key={chip.id}
+                  onClick={() => {
+                    if (chip.isType) {
+                      setFilterType(prev => prev === chip.id ? 'all' : chip.id);
+                    } else {
+                      setFilterType('all');
+                      setFilterStatus(chip.id);
+                    }
+                  }}
+                  style={{
+                    background: isActive ? 'var(--accent)' : '#141414',
+                    color: isActive ? '#FFFFFF' : '#A1A1AA',
+                    border: `1px solid ${isActive ? 'var(--accent)' : '#242424'}`,
+                    borderRadius: '20px',
+                    padding: '6px 13px',
+                    fontSize: '11.5px',
+                    fontWeight: isActive ? 800 : 600,
+                    whiteSpace: 'nowrap',
+                    cursor: 'pointer',
+                    flexShrink: 0
+                  }}
+                >
+                  {chip.label}
+                </button>
+              );
+            })
+          )}
         </div>
       </div>
 
@@ -736,155 +860,230 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
         </button>
       </div>
 
-      {/* ── MOBILE VIEW: DIARY STREAM (LIST) ─────────────────────────── */}
+      {/* ── MOBILE VIEW: DIARY STREAM (LITERAL WATCHED JOURNAL) ──────── */}
       {mobileView === 'list' && (
-        <div className="mobile-only-library-list" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div className="mobile-only-library-list" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {/* Milestone Quick Stats Bar */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '2px' }}>
-            <div style={{
-              background: 'linear-gradient(135deg, rgba(245,158,11,0.1) 0%, #111016 100%)',
-              border: '1px solid rgba(245,158,11,0.25)',
-              borderRadius: '12px',
-              padding: '10px 14px'
-            }}>
-              <div style={{ fontSize: '10px', fontWeight: 800, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                🎬 LOGGED
+          <div style={{
+            background: 'linear-gradient(135deg, #181520 0%, #0d0c11 100%)',
+            border: '1px solid #282534',
+            borderRadius: '14px',
+            padding: '14px 16px',
+            marginBottom: '4px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.5)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '18px' }}>📖</span>
+                <div>
+                  <div style={{ fontSize: '14px', fontWeight: 900, color: '#fff', letterSpacing: '-0.3px' }}>Personal Film Diary</div>
+                  <div style={{ fontSize: '10.5px', color: '#888' }}>Chronological journal of every watched title</div>
+                </div>
               </div>
-              <div style={{ fontSize: '19px', fontWeight: 900, color: '#FFFFFF', marginTop: '2px' }}>
-                {stats.watched} <span style={{ fontSize: '12px', fontWeight: 600, color: '#888' }}>films</span>
+              <div style={{ fontSize: '11px', fontWeight: 800, padding: '3px 8px', borderRadius: '12px', background: 'rgba(229,9,20,0.15)', color: 'var(--accent)', border: '1px solid rgba(229,9,20,0.3)' }}>
+                {stats.watched} Logged
               </div>
             </div>
 
-            <div style={{
-              background: 'linear-gradient(135deg, rgba(229,9,20,0.1) 0%, #111016 100%)',
-              border: '1px solid rgba(229,9,20,0.25)',
-              borderRadius: '12px',
-              padding: '10px 14px'
-            }}>
-              <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                ⏳ WATCH TIME
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+              <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '7px 8px', textAlign: 'center' }}>
+                <div style={{ fontSize: '9px', fontWeight: 800, color: '#888', textTransform: 'uppercase' }}>Runtime</div>
+                <div style={{ fontSize: '14px', fontWeight: 900, color: '#fff', marginTop: '2px' }}>~{Math.round(stats.watched * 1.9)}h</div>
               </div>
-              <div style={{ fontSize: '19px', fontWeight: 900, color: '#FFFFFF', marginTop: '2px' }}>
-                ~{Math.round(stats.watched * 1.9)}h <span style={{ fontSize: '12px', fontWeight: 600, color: '#888' }}>runtime</span>
+              <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '7px 8px', textAlign: 'center' }}>
+                <div style={{ fontSize: '9px', fontWeight: 800, color: '#888', textTransform: 'uppercase' }}>Avg Rating</div>
+                <div style={{ fontSize: '14px', fontWeight: 900, color: 'var(--gold)', marginTop: '2px' }}>★ {stats.avg}</div>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '7px 8px', textAlign: 'center' }}>
+                <div style={{ fontSize: '9px', fontWeight: 800, color: '#888', textTransform: 'uppercase' }}>Reviews</div>
+                <div style={{ fontSize: '14px', fontWeight: 900, color: '#10b981', marginTop: '2px' }}>{reviewedCount}</div>
               </div>
             </div>
           </div>
 
-          {filtered.length === 0 ? (
-            <div style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--text-dim)' }}>
-              <div style={{ fontSize: '36px', marginBottom: '8px' }}>🎬</div>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: '#FFFFFF' }}>No titles match your filter</div>
-              <div style={{ fontSize: '12px', marginTop: '4px' }}>Try resetting filters or adding titles from Explore</div>
+          {diaryFiltered.length === 0 ? (
+            <div style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--text-dim)', background: '#0e0d13', borderRadius: '14px', border: '1px dashed #24242c' }}>
+              <div style={{ fontSize: '42px', marginBottom: '10px' }}>📖</div>
+              <div style={{ fontSize: '16px', fontWeight: 800, color: '#FFFFFF' }}>No Watched Entries Found</div>
+              <div style={{ fontSize: '12.5px', marginTop: '6px', color: '#8E8E93', maxWidth: '300px', margin: '6px auto 0', lineHeight: 1.45 }}>
+                {watchedEntries.length === 0
+                  ? 'Your film diary is empty. Mark films as Watched to automatically add them to your chronological journal!'
+                  : 'No watched films match this specific diary filter. Try selecting "All Logs" above.'}
+              </div>
             </div>
           ) : (
-            filtered.map(movie => {
-              const isWatched = movie.status === 'watched';
-              const isPlan = movie.status === 'plan_to_watch';
-              const cleanReview = (movie.review || '').replace(/__EPISODE_DATA__:.+$/s, '').replace(/__EPISODE_RATINGS__:.+$/s, '').trim();
-              const formattedDate = movie.watch_date
-                ? new Date(movie.watch_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-                : movie.date_added
-                ? new Date(movie.date_added).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-                : null;
-
-              return (
-                <div
-                  key={movie.id || movie.tmdb_id}
-                  onClick={() => onEditClick(movie)}
-                  style={{
-                    display: 'flex',
-                    gap: '12px',
-                    padding: '10px 12px',
-                    background: '#111015',
-                    borderRadius: '12px',
-                    border: '1px solid #1e1d24',
-                    cursor: 'pointer',
-                    transition: 'border-color 0.15s, background 0.15s'
-                  }}
-                >
-                  {/* Poster Thumbnail */}
-                  <div style={{ width: '58px', height: '87px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0, background: '#1c1c1c', position: 'relative', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
-                    {movie.poster_path ? (
-                      <img src={`https://image.tmdb.org/t/p/w185${movie.poster_path}`} alt={movie.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
-                    ) : (
-                      <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>🎬</div>
-                    )}
-                    {movie.favorite && (
-                      <div style={{ position: 'absolute', top: '3px', left: '3px', fontSize: '11px', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.9))' }}>❤️</div>
-                    )}
-                  </div>
-
-                  {/* Info Column */}
-                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '6px' }}>
-                        <h4 style={{ fontSize: '14.5px', fontWeight: 800, color: '#FFFFFF', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
-                          {movie.title}
-                        </h4>
-                        {formattedDate && (
-                          <span style={{ fontSize: '10px', fontWeight: 700, color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.4px', flexShrink: 0, marginTop: '2px' }}>
-                            {formattedDate}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Year & Rating Row */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-                        {movie.release_year && (
-                          <span style={{ fontSize: '11.5px', color: 'var(--text-dim)', fontWeight: 600 }}>
-                            {movie.release_year}
-                          </span>
-                        )}
-
-                        {movie.rating > 0 ? (
-                          <span style={{ color: 'var(--gold)', fontSize: '12px', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '2px' }}>
-                            ★ {Number(movie.rating).toFixed(1)}
-                          </span>
-                        ) : (
-                          <span style={{ color: 'var(--text-dim)', fontSize: '11px' }}>Unrated</span>
-                        )}
-
-                        <span style={{
-                          fontSize: '9.5px',
-                          fontWeight: 800,
-                          padding: '1px 6px',
-                          borderRadius: '4px',
-                          background: isWatched ? 'rgba(16,185,129,0.15)' : isPlan ? 'rgba(59,130,246,0.15)' : 'rgba(229,9,20,0.15)',
-                          color: isWatched ? '#10B981' : isPlan ? '#60A5FA' : 'var(--accent)'
-                        }}>
-                          {isWatched ? 'Watched' : isPlan ? 'Watchlist' : 'Watching'}
-                        </span>
-
-                        {(movie.media_type === 'tv' || movie.type === 'tv') && (
-                          <span style={{ fontSize: '9px', fontWeight: 900, color: '#60A5FA', border: '1px solid rgba(96,165,250,0.4)', borderRadius: '3px', padding: '0 3.5px' }}>
-                            TV
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Review snippet if available */}
-                      {cleanReview && (
-                        <p style={{
-                          fontSize: '11.5px',
-                          color: '#C4C4C8',
-                          margin: '6px 0 0 0',
-                          lineHeight: 1.4,
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                          fontStyle: 'italic',
-                          borderLeft: '2px solid rgba(229,9,20,0.5)',
-                          paddingLeft: '6px'
-                        }}>
-                          "{cleanReview}"
-                        </p>
-                      )}
-                    </div>
-                  </div>
+            Object.entries(diaryGroups).map(([monthLabel, items]) => (
+              <div key={monthLabel} style={{ marginBottom: '14px' }}>
+                {/* Month Timeline Header */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '8px 6px 6px',
+                  borderBottom: '1px solid rgba(255,255,255,0.08)',
+                  marginBottom: '10px'
+                }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 900, letterSpacing: '0.06em', color: 'var(--accent)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>📅</span> {monthLabel}
+                  </span>
+                  <span style={{ fontSize: '11px', color: '#71717A', fontWeight: 700 }}>
+                    {items.length} {items.length === 1 ? 'film' : 'films'}
+                  </span>
                 </div>
-              );
-            })
+
+                {/* Diary Cards in Month */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {items.map(movie => {
+                    const cleanReview = (movie.review || '').replace(/__EPISODE_DATA__:.+$/s, '').replace(/__EPISODE_RATINGS__:.+$/s, '').trim();
+                    const dObj = movie.watch_date ? new Date(movie.watch_date) : (movie.date_added ? new Date(movie.date_added) : null);
+                    const dayNum = dObj && !isNaN(dObj.getTime()) ? dObj.getDate() : '—';
+                    const dayName = dObj && !isNaN(dObj.getTime()) ? dObj.toLocaleDateString(undefined, { weekday: 'short' }) : '';
+                    const fullDateStr = dObj && !isNaN(dObj.getTime()) ? dObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+
+                    return (
+                      <div
+                        key={movie.id || movie.tmdb_id}
+                        onClick={() => onEditClick(movie)}
+                        style={{
+                          display: 'flex',
+                          gap: '12px',
+                          padding: '12px',
+                          background: '#121118',
+                          borderRadius: '12px',
+                          border: '1px solid #23212b',
+                          cursor: 'pointer',
+                          alignItems: 'flex-start',
+                          boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
+                          transition: 'border-color 0.15s ease'
+                        }}
+                      >
+                        {/* Calendar Date Leaf (Left) */}
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '42px',
+                          height: '52px',
+                          background: '#17161f',
+                          border: '1px solid #2c2a38',
+                          borderRadius: '8px',
+                          flexShrink: 0,
+                          position: 'relative',
+                          overflow: 'hidden',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                          marginTop: '2px'
+                        }}>
+                          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'var(--accent)' }} />
+                          <span style={{ fontSize: '16px', fontWeight: 900, color: '#FFFFFF', lineHeight: 1, marginTop: '4px' }}>{dayNum}</span>
+                          <span style={{ fontSize: '8px', fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', marginTop: '2px', letterSpacing: '0.4px' }}>{dayName}</span>
+                        </div>
+
+                        {/* Poster Thumbnail */}
+                        <div style={{ width: '56px', height: '84px', borderRadius: '6px', overflow: 'hidden', flexShrink: 0, background: '#1c1c1c', position: 'relative', boxShadow: '0 6px 14px rgba(0,0,0,0.65)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                          {movie.poster_path ? (
+                            <img src={`https://image.tmdb.org/t/p/w185${movie.poster_path}`} alt={movie.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+                          ) : (
+                            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>🎬</div>
+                          )}
+                          {movie.favorite && (
+                            <div style={{ position: 'absolute', top: '3px', left: '3px', fontSize: '11px', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.9))' }}>❤️</div>
+                          )}
+                          {movie.rating > 0 && (
+                            <div style={{ position: 'absolute', bottom: '3px', right: '3px', background: 'rgba(0,0,0,0.85)', borderRadius: '3px', padding: '1px 3px', fontSize: '8.5px', fontWeight: 900, color: 'var(--gold)', letterSpacing: '-0.2px' }}>
+                              ★{Number(movie.rating).toFixed(1)}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Info Column & Journal Book Entry */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                            <h4 style={{ fontSize: '14.5px', fontWeight: 800, color: '#FFFFFF', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                              {movie.title}
+                            </h4>
+                            {movie.release_year && (
+                              <span style={{ fontSize: '11.5px', color: 'var(--text-dim)', flexShrink: 0 }}>
+                                ({movie.release_year})
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Logged Date & Star Ratings */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px', flexWrap: 'wrap' }}>
+                            {fullDateStr && (
+                              <span style={{ fontSize: '10.5px', color: '#8E8E93' }}>
+                                Logged {fullDateStr}
+                              </span>
+                            )}
+
+                            {movie.rating > 0 && (
+                              <span style={{ color: 'var(--gold)', fontSize: '11.5px', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '2px' }}>
+                                ★ {Number(movie.rating).toFixed(1)}/10
+                              </span>
+                            )}
+
+                            {movie.is_rewatch && (
+                              <span style={{ fontSize: '9px', fontWeight: 800, color: '#A78BFA', background: 'rgba(167,139,250,0.15)', padding: '1px 5px', borderRadius: '3px' }}>
+                                🔄 Rewatch
+                              </span>
+                            )}
+
+                            {(movie.media_type === 'tv' || movie.type === 'tv') && (
+                              <span style={{ fontSize: '9px', fontWeight: 900, color: '#60A5FA', border: '1px solid rgba(96,165,250,0.4)', borderRadius: '3px', padding: '0 3px' }}>
+                                TV
+                              </span>
+                            )}
+                          </div>
+
+                          {/* The Literal Journal Note Block */}
+                          {cleanReview ? (
+                            <div style={{
+                              marginTop: '7px',
+                              background: '#17161f',
+                              border: '1px solid #282635',
+                              borderLeft: '3px solid var(--accent)',
+                              borderRadius: '6px',
+                              padding: '7px 10px',
+                              boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.3)'
+                            }}>
+                              <div style={{ fontSize: '9.5px', fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '3px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                ✍️ Journal Note
+                              </div>
+                              <p style={{
+                                fontSize: '11.5px',
+                                color: '#E4E4E7',
+                                margin: 0,
+                                lineHeight: 1.45,
+                                fontStyle: 'italic'
+                              }}>
+                                "{cleanReview}"
+                              </p>
+                            </div>
+                          ) : (
+                            <div style={{
+                              marginTop: '7px',
+                              background: 'rgba(255,255,255,0.015)',
+                              border: '1px dashed #282736',
+                              borderRadius: '6px',
+                              padding: '6px 10px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              fontSize: '11px',
+                              color: '#636270'
+                            }}>
+                              <span style={{ fontStyle: 'italic' }}>No written thoughts logged yet…</span>
+                              <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--accent)' }}>+ Pen notes</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))
           )}
         </div>
       )}

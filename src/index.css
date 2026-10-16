@@ -1611,14 +1611,38 @@ input[type='range']::-moz-range-thumb {
     height: 32px !important;
   }
 
-  /* ── POSTER CAROUSELS & SWIPING (LETTERBOXD PROPORTIONS) ── */
+  /* ── POSTER CAROUSELS & SWIPING (GENEROUS CINEMATIC MOBILE PROPORTIONS) ── */
   .sharp-poster-card {
-    width: 108px !important;
-    gap: 4px !important;
+    width: 138px !important;
+    gap: 6px !important;
+  }
+
+  .sharp-poster-inner {
+    border-radius: 8px !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6) !important;
   }
 
   .sharp-poster-card img {
-    border-radius: 6px !important;
+    border-radius: 8px !important;
+  }
+
+  .sharp-poster-title {
+    font-size: 12.5px !important;
+    font-weight: 700 !important;
+    text-transform: none !important;
+    line-height: 1.25 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    white-space: normal !important;
+    overflow: hidden !important;
+    height: 32px !important;
+  }
+
+  .sharp-poster-meta {
+    font-size: 11px !important;
+    color: #8E8E93 !important;
+    gap: 4px !important;
   }
 
   .carousel-arrow-controls button {
@@ -2030,28 +2054,9 @@ body.modal-open {
     border-radius: 6px !important;
   }
 
-  /* Letterboxd 3-Poster Row proportions */
+  /* Letterboxd Carousel controls */
   .carousel-arrow-controls {
     display: none !important;
-  }
-
-  .sharp-poster-card {
-    width: 106px !important;
-    gap: 4px !important;
-  }
-
-  .sharp-poster-inner {
-    border-radius: 6px !important;
-  }
-
-  .sharp-poster-title {
-    font-size: 11px !important;
-    line-height: 1.2 !important;
-  }
-
-  .sharp-poster-meta {
-    font-size: 10px !important;
-    gap: 4px !important;
   }
 
   /* ── LIBRARY TAB: CLEAN LETTERBOXD 3-COLUMN GRID ── */
@@ -2419,6 +2424,15 @@ body.modal-open {
     display: none !important;
   }
 }
+
+@media (min-width: 769px) {
+  .mobile-only-library-controls,
+  .mobile-only-library-grid,
+  .mobile-only-library-list {
+    display: none !important;
+  }
+}
+
 
 
 

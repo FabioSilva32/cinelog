@@ -456,6 +456,7 @@ function AppInner() {
             if (session.user.user_metadata?.cinelog_active_tier_list_id) {
               localStorage.setItem('cinelog_active_tier_list_id_v4', session.user.user_metadata.cinelog_active_tier_list_id);
             }
+            window.dispatchEvent(new CustomEvent('cinelog_tier_lists_updated', { detail: cloudTierLists }));
           } else if (localTierListsStr) {
             const parsedLocal = JSON.parse(localTierListsStr);
             if (parsedLocal && Object.keys(parsedLocal).length > 0) {
@@ -1159,7 +1160,7 @@ function AppInner() {
           <CollectionsTab library={library} onMovieClick={handleMovieClick} onSaveMovie={handleSaveMovie} />
         )}
         {activeTab === 'tierlist' && (
-          <TierListTab library={library} currentUser={currentUser} />
+          <TierListTab library={library} currentUser={currentUser} onOpenAuth={() => setShowAuth(true)} />
         )}
         {activeTab === 'constellation' && (
           <ConstellationTab library={library} onMovieClick={handleMovieClick} />

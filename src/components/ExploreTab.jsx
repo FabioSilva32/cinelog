@@ -206,7 +206,7 @@ function SharpPosterRow({ title, items = [], onCardClick, inLib, onAdd, actionBu
                   </div>
                 )}
 
-                {/* Subtle Add Quick Button on hover corner */}
+                {/* Subtle Add Quick Button in top-right corner to leave poster art pristine */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -217,53 +217,60 @@ function SharpPosterRow({ title, items = [], onCardClick, inLib, onAdd, actionBu
                   title={isSaved ? 'In Library' : 'Add to Library'}
                   style={{
                     position: 'absolute',
-                    bottom: '8px',
+                    top: '8px',
                     right: '8px',
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: '6px',
-                    background: isSaved ? '#10b981' : 'rgba(0,0,0,0.75)',
-                    border: '1px solid rgba(255,255,255,0.15)',
+                    width: '26px',
+                    height: '26px',
+                    borderRadius: '50%',
+                    background: isSaved ? '#10b981' : 'rgba(0,0,0,0.65)',
+                    backdropFilter: 'blur(6px)',
+                    WebkitBackdropFilter: 'blur(6px)',
+                    border: '1px solid rgba(255,255,255,0.2)',
                     color: '#FFFFFF',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: isSaved ? 'default' : 'pointer',
-                    transition: 'all 0.15s'
+                    transition: 'all 0.15s',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                    zIndex: 3
                   }}
                   onMouseEnter={e => {
                     if (!isSaved) e.currentTarget.style.background = 'var(--accent)';
                   }}
                   onMouseLeave={e => {
-                    if (!isSaved) e.currentTarget.style.background = 'rgba(0,0,0,0.75)';
+                    if (!isSaved) e.currentTarget.style.background = 'rgba(0,0,0,0.65)';
                   }}
                 >
-                  {isSaved ? <Check size={13} strokeWidth={3} /> : <Plus size={13} strokeWidth={3} />}
+                  {isSaved ? <Check size={12} strokeWidth={3} /> : <Plus size={12} strokeWidth={3} />}
                 </button>
               </div>
 
               {/* Title & Release Year / Rating */}
-              <div className="sharp-poster-text-wrap">
+              <div className="sharp-poster-text-wrap" style={{ marginTop: '2px' }}>
                 <div
                   className="sharp-poster-title"
                   style={{
                     fontSize: '13px',
-                    fontWeight: 800,
+                    fontWeight: 700,
                     color: '#FFFFFF',
-                    textTransform: 'uppercase',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    lineHeight: 1.3
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    lineHeight: 1.25,
+                    minHeight: '32px'
                   }}
+                  title={movie.title || movie.name}
                 >
                   {movie.title || movie.name}
                 </div>
                 <div
                   className="sharp-poster-meta"
                   style={{
-                    fontSize: '12px',
-                    color: '#777777',
+                    fontSize: '11.5px',
+                    color: '#8E8E93',
                     marginTop: '2px',
                     fontWeight: 500,
                     display: 'flex',
@@ -273,7 +280,7 @@ function SharpPosterRow({ title, items = [], onCardClick, inLib, onAdd, actionBu
                 >
                   <span>{year || '2024'}</span>
                   {movie.vote_average > 0 && (
-                    <span style={{ color: '#888888', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                    <span style={{ color: 'var(--gold)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '2px' }}>
                       · ★ {movie.vote_average.toFixed(1)}
                     </span>
                   )}
