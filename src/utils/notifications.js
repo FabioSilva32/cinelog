@@ -225,6 +225,13 @@ export function useNotifications(library = [], currentUser = null) {
     });
   }, [activeNotifications]);
 
+  const resetNotifications = useCallback(() => {
+    localStorage.removeItem(DISMISSED_KEY);
+    localStorage.removeItem(READ_KEY);
+    setDismissedIds([]);
+    setReadIds([]);
+  }, []);
+
   return {
     notifications: activeNotifications,
     unreadCount,
@@ -232,6 +239,7 @@ export function useNotifications(library = [], currentUser = null) {
     markAsRead,
     markAllAsRead,
     dismissNotification,
-    clearAll
+    clearAll,
+    resetNotifications
   };
 }

@@ -49,7 +49,8 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
     markAsRead,
     markAllAsRead,
     dismissNotification,
-    clearAll
+    clearAll,
+    resetNotifications
   } = useNotifications(library, currentUser);
 
   const handleNotificationClick = (item) => {
@@ -346,6 +347,25 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
                         <div style={{ fontSize: '11px', color: '#777777', marginTop: '4px', maxWidth: '240px', lineHeight: 1.4 }}>
                           No new notifications right now. Check back soon for trending releases and diary alerts!
                         </div>
+                        <button
+                          onClick={resetNotifications}
+                          style={{
+                            marginTop: '12px',
+                            background: 'rgba(255,255,255,0.04)',
+                            border: '1px solid #282828',
+                            borderRadius: '6px',
+                            padding: '5px 12px',
+                            color: 'var(--text-muted)',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            transition: 'all 0.15s'
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.borderColor = 'var(--accent)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.borderColor = '#282828'; }}
+                        >
+                          Check for updates
+                        </button>
                       </div>
                     ) : (
                       notifications.map(item => {
