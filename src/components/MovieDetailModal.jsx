@@ -621,18 +621,21 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
 
   return (
     <div
-      className="modal-backdrop"
+      className="modal-backdrop movie-detail-modal-backdrop"
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px', paddingTop: '3vh', overscrollBehavior: 'contain' }}
       onClick={e => e.target === e.currentTarget && onClose()}
       onWheel={e => e.stopPropagation()}
     >
       <div
-        className="animate-fade-in-scale"
+        className="movie-detail-modal-dialog animate-fade-in-scale"
         style={{ width: '100%', maxWidth: '1120px', maxHeight: '94vh', borderRadius: 'var(--radius-xl)', overflow: 'hidden', border: '1px solid var(--border)', position: 'relative', display: 'flex', flexDirection: 'column', background: '#121212', overscrollBehavior: 'contain' }}
         onWheel={e => e.stopPropagation()}
       >
+        {/* Mobile Grabber Handle */}
+        <div className="mobile-modal-grabber" />
+
         {/* ── BACKDROP HERO ── */}
-        <div style={{ position: 'relative', height: '220px', flexShrink: 0, overflow: 'hidden' }}>
+        <div className="movie-detail-hero" style={{ position: 'relative', height: '220px', flexShrink: 0, overflow: 'hidden' }}>
           {backdropUrl ? (
             <img src={backdropUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.45 }} />
           ) : (
@@ -652,9 +655,9 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
 
 
           {/* Movie info overlay */}
-          <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', padding: '0 28px 18px', display: 'flex', alignItems: 'flex-end', gap: '20px' }}>
+          <div className="movie-detail-header-overlay" style={{ position: 'absolute', bottom: '0', left: '0', right: '0', padding: '0 28px 18px', display: 'flex', alignItems: 'flex-end', gap: '20px' }}>
             {/* Poster */}
-            <div style={{ width: '100px', height: '150px', borderRadius: '10px', overflow: 'hidden', flexShrink: 0, border: '2px solid var(--border)', boxShadow: '0 8px 24px rgba(0,0,0,0.7)', marginBottom: '-30px' }}>
+            <div className="movie-detail-poster-wrap" style={{ width: '100px', height: '150px', borderRadius: '10px', overflow: 'hidden', flexShrink: 0, border: '2px solid var(--border)', boxShadow: '0 8px 24px rgba(0,0,0,0.7)', marginBottom: '-30px' }}>
               {movie.poster_path ? (
                 <img src={`https://image.tmdb.org/t/p/w300${movie.poster_path}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
@@ -689,7 +692,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
         </div>
 
         {/* ── SYNOPSIS + ACTION ROW (fixed) ── */}
-        <div style={{ flexShrink: 0, padding: '38px 28px 0' }}>
+        <div className="movie-detail-actions-row" style={{ flexShrink: 0, padding: '38px 28px 0' }}>
           {(details?.overview || movie.overview) && (
             <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', lineHeight: 1.65, margin: '0 0 18px', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
               {details?.overview || movie.overview}
@@ -738,7 +741,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
         </div>
 
         {/* ── SCROLLABLE BODY ── */}
-        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', padding: '0 28px 28px', display: 'flex', flexDirection: 'column', gap: '22px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+        <div className="movie-detail-scroll-body" style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', padding: '0 28px 28px', display: 'flex', flexDirection: 'column', gap: '22px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
           {/* Underlined tabs */}
           <div style={{ display: 'flex', flexShrink: 0, gap: '26px', borderBottom: '1px solid var(--border)' }}>
             {SECTIONS.map(s => (
