@@ -3,8 +3,7 @@ import { useEffect } from 'react';
 /**
  * Universal scroll-locking hook for modals, drawers, and overlay menus.
  * Maintains an active lock count on document.body so stacked modals
- * (e.g., Profile Studio -> Choose Film Slot) cleanly keep the background
- * frozen until ALL active overlays have closed.
+ * cleanly keep the background frozen until ALL active overlays have closed.
  */
 export function useBodyScrollLock(isLocked = true) {
   useEffect(() => {
@@ -15,9 +14,7 @@ export function useBodyScrollLock(isLocked = true) {
 
     if (count === 0) {
       document.body.classList.add('modal-open');
-      document.documentElement.classList.add('modal-open');
       document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
     }
 
     return () => {

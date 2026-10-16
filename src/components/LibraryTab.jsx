@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Search, Heart, Star, Edit, Trash, Plus, Upload, Download, Dices, X, Check, AlertCircle, ChevronRight, LayoutGrid, List } from 'lucide-react';
+import { Search, Heart, Star, Edit, Trash, Plus, Upload, Download, Dices, X, Check, AlertCircle, ChevronRight, LayoutGrid, List, SlidersHorizontal, Film, Tv, Clock, RotateCcw } from 'lucide-react';
 import { triggerBackdropHover } from '../utils/backdrop';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
