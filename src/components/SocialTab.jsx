@@ -17,6 +17,8 @@ function timeAgo(ts) {
 const STATUS_EMOJI = { watched: "✅", plan_to_watch: "📋", watching: "▶️", dropped: "❌" };
 const STATUS_LABEL = { watched: "watched", plan_to_watch: "added to watchlist", watching: "is watching", dropped: "dropped" };
 
+const isUUID = (str) => typeof str === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+
 export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -28,69 +30,79 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
   const [loadingFeed, setLoadingFeed] = useState(false);
   const [activeTab, setActiveTab] = useState("feed"); // feed | following | discover
   const [suggestedUsers, setSuggestedUsers] = useState([]);
+  const [loadingSuggested, setLoadingSuggested] = useState(false);
   const [dbError, setDbError] = useState(null);
-
 
   // Load who the current user follows
   useEffect(() => {
-    if (!currentUser?.id) return;
+    if (!currentUser?.id || !isUUID(currentUser.id)) return;
     supabase.from("follows").select("following_id").eq("follower_id", currentUser.id)
       .then(({ data, error }) => {
         if (error) {
-          console.warn("Follows table query failed:", error.message);
-          setDbError("Social features require the 'follows' table in your database. Follow/feed features are unavailable.");
+          if (error.code === "42P01") {
+            setDbError("Social features require the 'follows' table in your database.");
+          } else {
+            console.warn("Follows query note:", error.message);
+          }
           return;
         }
         if (data) setFollowing(new Set(data.map(r => r.following_id)));
       })
       .catch(err => {
         console.warn("Follows query exception:", err);
-        setDbError("Could not connect to social features. The database may be unavailable.");
       });
   }, [currentUser?.id]);
 
-  // Load activity feed
+  // Load activity feed (following users, or rich community feed if not following anyone yet)
   const loadFeed = useCallback(async () => {
-    if (!currentUser?.id || following.size === 0) return;
     setLoadingFeed(true);
     try {
-      const followingIds = [...following];
-      const { data } = await supabase
+      const followingIds = [...following].filter(isUUID);
+      let query = supabase
         .from("library")
         .select("user_id, title, poster_path, status, rating, review, date_added, tmdb_id, media_type, profiles!library_user_id_fkey(username, display_name, avatar_url)")
-        .in("user_id", followingIds)
         .order("date_added", { ascending: false })
         .limit(40);
 
-      let combinedFeed = data || [];
-      if (following.has(TESTER_PROFILE.id)) {
-        const testerFeedItems = TESTER_LIBRARY.filter(m => m.review).map(m => ({
-          user_id: TESTER_PROFILE.id,
-          title: m.title,
-          poster_path: m.poster_path,
-          status: m.status,
-          rating: m.rating,
-          review: m.review,
-          date_added: m.date_added,
-          tmdb_id: m.tmdb_id,
-          media_type: m.media_type,
-          profiles: {
-            username: TESTER_PROFILE.username,
-            display_name: TESTER_PROFILE.displayName,
-            avatar_url: TESTER_PROFILE.avatar
-          }
-        }));
-        combinedFeed = [...combinedFeed, ...testerFeedItems].sort(
-          (a, b) => new Date(b.date_added || 0) - new Date(a.date_added || 0)
-        );
+      if (followingIds.length > 0) {
+        query = query.in("user_id", followingIds);
+      } else {
+        // Show community activity feed when following is empty
+        query = query.not("review", "is", null).neq("review", "");
       }
-      setFeed(combinedFeed);
+
+      const { data, error } = await query;
+      if (!error && data) {
+        setFeed(data);
+      } else if (error) {
+        console.warn("Feed query join note, executing resilient fallback:", error.message);
+        let fallbackQuery = supabase
+          .from("library")
+          .select("user_id, title, poster_path, status, rating, review, date_added, tmdb_id, media_type")
+          .order("date_added", { ascending: false })
+          .limit(40);
+        if (followingIds.length > 0) {
+          fallbackQuery = fallbackQuery.in("user_id", followingIds);
+        } else {
+          fallbackQuery = fallbackQuery.not("review", "is", null).neq("review", "");
+        }
+        const { data: rawLib } = await fallbackQuery;
+        if (rawLib) {
+          const uids = [...new Set(rawLib.map(r => r.user_id).filter(isUUID))];
+          let pMap = {};
+          if (uids.length > 0) {
+            const { data: profs } = await supabase.from("profiles").select("id, username, display_name, avatar_url").in("id", uids);
+            (profs || []).forEach(p => { pMap[p.id] = p; });
+          }
+          setFeed(rawLib.map(item => ({ ...item, profiles: pMap[item.user_id] })));
+        }
+      }
     } catch (err) {
       console.error("Feed load error:", err);
     } finally {
       setLoadingFeed(false);
     }
-  }, [currentUser?.id, following]);
+  }, [following]);
 
   useEffect(() => { loadFeed(); }, [loadFeed]);
 
@@ -101,152 +113,97 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
       return;
     }
     setLoadingFollowing(true);
-    const ids = [...following];
+    const ids = [...following].filter(isUUID);
+    if (ids.length === 0) {
+      setFollowingUsers([]);
+      setLoadingFollowing(false);
+      return;
+    }
     supabase.from("profiles")
       .select("id, username, display_name, avatar_url, bio")
       .in("id", ids)
       .then(({ data, error }) => {
         if (error) console.warn("Failed to load following users from profiles:", error.message);
-        
-        const fetchedMap = {};
-        (data || []).forEach(p => { fetchedMap[p.id] = p; });
-
-        // Map every followed ID to either a fetched profile or a clean fallback user object
-        const list = ids.map(id => {
-          if (id === TESTER_PROFILE.id) {
-            return {
-              id: TESTER_PROFILE.id,
-              username: TESTER_PROFILE.username,
-              display_name: TESTER_PROFILE.displayName,
-              avatar_url: TESTER_PROFILE.avatar,
-              bio: TESTER_PROFILE.bio
-            };
-          }
-          const p = fetchedMap[id];
-          return {
-            id,
-            username: p?.username || `user_${String(id).slice(0, 6)}`,
-            display_name: p?.display_name || p?.username || 'CineLog Member',
-            avatar_url: p?.avatar_url || null,
-            bio: p?.bio || ''
-          };
-        });
-
-        setFollowingUsers(list);
+        setFollowingUsers(data || []);
       })
       .catch(err => {
         console.warn("Failed to load following users:", err);
-        const fallbackList = ids.map(id => {
-          if (id === TESTER_PROFILE.id) {
-            return {
-              id: TESTER_PROFILE.id,
-              username: TESTER_PROFILE.username,
-              display_name: TESTER_PROFILE.displayName,
-              avatar_url: TESTER_PROFILE.avatar,
-              bio: TESTER_PROFILE.bio
-            };
-          }
-          return {
-            id,
-            username: `user_${String(id).slice(0, 6)}`,
-            display_name: 'CineLog Member',
-            avatar_url: null,
-            bio: ''
-          };
-        });
-        setFollowingUsers(fallbackList);
       })
       .finally(() => setLoadingFollowing(false));
   }, [currentUser?.id, following]);
 
-  // Load suggested users (people not yet followed)
+  // Load suggested users from real profiles table
   useEffect(() => {
-    if (!currentUser?.id) return;
-    supabase.from("profiles").select("id, username, display_name, avatar_url, bio")
-      .neq("id", currentUser.id)
-      .limit(12)
+    setLoadingSuggested(true);
+    supabase.from("profiles")
+      .select("id, username, display_name, avatar_url, bio")
+      .limit(30)
       .then(({ data, error }) => {
-        let list = (data || []).filter(u => !following.has(u.id));
-        const isCurrentTester = currentUser?.username === 'tester' || currentUser?.id === TESTER_PROFILE.id;
-        const hasTester = list.some(u => u.username === 'tester' || u.id === TESTER_PROFILE.id);
-        if (!hasTester && !isCurrentTester && !following.has(TESTER_PROFILE.id)) {
-          list.unshift({
-            id: TESTER_PROFILE.id,
-            username: TESTER_PROFILE.username,
-            display_name: TESTER_PROFILE.displayName,
-            avatar_url: TESTER_PROFILE.avatar,
-            bio: TESTER_PROFILE.bio
-          });
+        if (error) {
+          console.warn("Profiles query error:", error.message);
+          return;
         }
-        setSuggestedUsers(list);
+        if (data) {
+          const myId = currentUser?.id;
+          const myUsername = (currentUser?.username || '').toLowerCase();
+          const filtered = data.filter(u =>
+            u.id !== myId &&
+            (u.username || '').toLowerCase() !== myUsername &&
+            !following.has(u.id)
+          );
+          setSuggestedUsers(filtered);
+        }
       })
       .catch(err => {
         console.warn("Profiles query exception:", err);
-        if (!following.has(TESTER_PROFILE.id) && currentUser?.id !== TESTER_PROFILE.id) {
-          setSuggestedUsers([{
-            id: TESTER_PROFILE.id,
-            username: TESTER_PROFILE.username,
-            display_name: TESTER_PROFILE.displayName,
-            avatar_url: TESTER_PROFILE.avatar,
-            bio: TESTER_PROFILE.bio
-          }]);
-        }
-      });
-  }, [currentUser?.id, following]);
+      })
+      .finally(() => setLoadingSuggested(false));
+  }, [currentUser?.id, currentUser?.username, following]);
 
   // Search users
   useEffect(() => {
     if (!searchQuery.trim()) { setSearchResults([]); return; }
     setSearching(true);
     const t = setTimeout(async () => {
+      const q = searchQuery.trim();
       const { data } = await supabase
         .from("profiles")
         .select("id, username, display_name, avatar_url, bio")
-        .ilike("username", "%" + searchQuery + "%")
-        .neq("id", currentUser?.id || "")
-        .limit(8);
-      let results = [...(data || [])];
-      const q = searchQuery.toLowerCase();
-      if ('tester'.includes(q) || 'alex vance'.includes(q)) {
-        if (!results.some(u => u.username === 'tester' || u.id === TESTER_PROFILE.id) && currentUser?.id !== TESTER_PROFILE.id) {
-          results.unshift({
-            id: TESTER_PROFILE.id,
-            username: TESTER_PROFILE.username,
-            display_name: TESTER_PROFILE.displayName,
-            avatar_url: TESTER_PROFILE.avatar,
-            bio: TESTER_PROFILE.bio
-          });
-        }
-      }
-      setSearchResults(results);
+        .or(`username.ilike.%${q}%,display_name.ilike.%${q}%`)
+        .limit(10);
+      
+      const filtered = (data || []).filter(u => u.id !== currentUser?.id && (u.username || '').toLowerCase() !== (currentUser?.username || '').toLowerCase());
+      setSearchResults(filtered);
       setSearching(false);
-    }, 350);
+    }, 300);
     return () => clearTimeout(t);
-  }, [searchQuery, currentUser?.id]);
+  }, [searchQuery, currentUser?.id, currentUser?.username]);
 
   const handleFollow = async (userId) => {
-    if (!currentUser?.id) return;
     const isFollowing = following.has(userId);
     setFollowing(prev => {
       const next = new Set(prev);
       if (isFollowing) { next.delete(userId); } else { next.add(userId); }
       return next;
     });
-    try {
-      if (isFollowing) {
-        await supabase.from("follows").delete()
-          .eq("follower_id", currentUser.id).eq("following_id", userId);
-      } else {
-        await supabase.from("follows").upsert({ follower_id: currentUser.id, following_id: userId }, { onConflict: "follower_id,following_id" });
+
+    if (currentUser?.id && isUUID(currentUser.id) && isUUID(userId)) {
+      try {
+        if (isFollowing) {
+          await supabase.from("follows").delete()
+            .eq("follower_id", currentUser.id).eq("following_id", userId);
+        } else {
+          await supabase.from("follows").upsert({ follower_id: currentUser.id, following_id: userId }, { onConflict: "follower_id,following_id" });
+        }
+      } catch (err) {
+        console.warn("Follow action failed:", err);
+        // Revert optimistic update
+        setFollowing(prev => {
+          const next = new Set(prev);
+          if (isFollowing) { next.add(userId); } else { next.delete(userId); }
+          return next;
+        });
       }
-    } catch (err) {
-      console.warn("Follow action failed:", err);
-      // Revert optimistic update
-      setFollowing(prev => {
-        const next = new Set(prev);
-        if (isFollowing) { next.add(userId); } else { next.delete(userId); }
-        return next;
-      });
     }
   };
 
@@ -489,8 +446,19 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
           {!searchQuery && <div style={{ fontSize: "12px", fontWeight: 800, color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Suggested People</div>}
 
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            {displayUsers.length === 0 && searchQuery ? (
-              <div style={{ textAlign: "center", padding: "40px 0", color: "var(--text-dim)", fontSize: "14px" }}>No users found for "{searchQuery}"</div>
+            {loadingSuggested && !searchQuery ? (
+              <div style={{ textAlign: "center", padding: "40px 0", color: "var(--text-dim)", fontSize: "14px" }}>
+                <div style={{ display: "inline-block", animation: "spin 1s linear infinite", fontSize: "20px", marginBottom: "8px" }}>⟳</div>
+                <div>Finding CineLog members…</div>
+              </div>
+            ) : displayUsers.length === 0 && searchQuery ? (
+              <div style={{ textAlign: "center", padding: "40px 0", color: "var(--text-dim)", fontSize: "14px" }}>
+                No users found for "{searchQuery}"
+              </div>
+            ) : displayUsers.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "40px 0", color: "var(--text-dim)", fontSize: "14px" }}>
+                No other suggested members right now.
+              </div>
             ) : displayUsers.map(user => {
               const isFollowed = following.has(user.id);
               return (

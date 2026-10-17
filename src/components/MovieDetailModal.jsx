@@ -345,7 +345,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
             .neq('review', '');
 
           if (isValidNum) {
-            dbQuery = dbQuery.eq('tmdb_id', tmdbIdNum);
+            dbQuery = dbQuery.or(`tmdb_id.eq.${tmdbIdNum},tmdb_id.eq.${targetTmdbId}`);
           } else {
             dbQuery = dbQuery.eq('title', movie.title);
           }
@@ -359,7 +359,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
               .select('id, rating, review, date_added, user_id')
               .not('review', 'is', null)
               .neq('review', '');
-            if (isValidNum) fallbackQuery = fallbackQuery.eq('tmdb_id', tmdbIdNum);
+            if (isValidNum) fallbackQuery = fallbackQuery.or(`tmdb_id.eq.${tmdbIdNum},tmdb_id.eq.${targetTmdbId}`);
             else fallbackQuery = fallbackQuery.eq('title', movie.title);
             const res = await fallbackQuery;
             data = res.data;
@@ -383,8 +383,8 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
             }
 
             data.forEach(item => {
-              // Skip if this is the current user's review (already added at top)
-              if (currentUser?.id && item.user_id === currentUser.id) return;
+              // Only skip if the current user review was already added at top
+              if (userReviewObj && currentUser?.id && item.user_id === currentUser.id) return;
 
               let cleanReview = (item.review || '')
                 .replace(/__EPISODE_DATA__:.+$/s, '')
@@ -613,7 +613,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
     { id: 'episodes', label: 'Seasons & Episodes', hidden: movie.media_type !== 'tv' },
     { id: 'details', label: 'Details' },
     { id: 'cast', label: 'Cast' },
-    { id: 'reviews', label: 'Reviews' },
+    { id: 'reviews', label: publicReviews.length > 0 ? `Reviews (${publicReviews.length})` : 'Reviews' },
     { id: 'trailer', label: 'Trailer', hidden: !trailerKey },
     { id: 'similar', label: 'Similar', hidden: similar.length === 0 },
   ].filter(s => !s.hidden);
@@ -1986,6 +1986,104 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                   </div>
                 </>
               )}
+
+              {/* ── Community Reviews Spotlight on Overview ── */}
+              <div style={{
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid var(--border)',
+                borderRadius: '12px',
+                padding: '18px 20px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '14px',
+                marginTop: '6px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--accent)' }}>💬 Community Reviews</span>
+                    {publicReviews.length > 0 && (
+                      <span style={{ fontSize: '11px', fontWeight: 800, background: 'rgba(var(--accent-rgb, 229,9,20), 0.15)', color: 'var(--accent)', padding: '2px 8px', borderRadius: '12px' }}>
+                        {publicReviews.length}
+                      </span>
+                    )}
+                  </div>
+                  {publicReviews.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveSection('reviews')}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--accent)',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        padding: '4px 6px'
+                      }}
+                    >
+                      View all ({publicReviews.length}) →
+                    </button>
+                  )}
+                </div>
+
+                {loadingReviews ? (
+                  <div style={{ fontSize: '12px', color: 'var(--text-dim)', textAlign: 'center', padding: '16px 0' }}>
+                    Loading community reviews…
+                  </div>
+                ) : publicReviews.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {publicReviews.slice(0, 2).map(r => (
+                      <div
+                        key={r.id}
+                        onClick={() => setActiveSection('reviews')}
+                        style={{
+                          background: 'rgba(0,0,0,0.3)',
+                          border: '1px solid rgba(255,255,255,0.06)',
+                          borderRadius: '8px',
+                          padding: '12px 14px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          gap: '12px',
+                          alignItems: 'flex-start',
+                          transition: 'border-color 0.15s'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.18)'}
+                        onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'}
+                      >
+                        <img
+                          src={r.avatar}
+                          alt={r.displayName}
+                          style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                        />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#fff' }}>{r.displayName}</span>
+                            {r.rating && (
+                              <span style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--gold)' }}>★ {Number(r.rating).toFixed(1)}</span>
+                            )}
+                          </div>
+                          <p style={{
+                            fontSize: '12px',
+                            color: 'var(--text-muted)',
+                            lineHeight: 1.45,
+                            margin: '4px 0 0',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden'
+                          }}>
+                            {r.review}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '12.5px', color: 'var(--text-dim)', textAlign: 'center', padding: '12px 0' }}>
+                    No reviews yet · Share your thoughts on this title above!
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

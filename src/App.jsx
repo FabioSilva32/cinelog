@@ -1680,7 +1680,67 @@ function AppInner() {
             paddingBottom: '90px'
           }}
         >
-          <div style={{ maxWidth: '820px', margin: '0 auto', padding: '16px 16px 40px' }}>
+          {/* Top navigation bar for desktop & mobile so profile can always be navigated back from */}
+          <div style={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 100,
+            background: 'rgba(9, 7, 15, 0.94)',
+            backdropFilter: 'blur(16px)',
+            borderBottom: '1px solid var(--border)',
+            padding: '12px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            maxWidth: '1280px',
+            margin: '0 auto',
+            width: '100%',
+            boxSizing: 'border-box'
+          }}>
+            <button
+              onClick={() => closeModal('user')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid var(--border)',
+                borderRadius: '8px',
+                padding: '7px 16px',
+                color: '#fff',
+                fontSize: '13px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s'
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.14)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+            >
+              ← Back to Social
+            </button>
+            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-dim)' }}>
+              Viewing {viewingUserProfile.display_name || viewingUserProfile.displayName || viewingUserProfile.username || 'Profile'}
+            </div>
+            <button
+              onClick={() => closeModal('user')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-muted)',
+                fontSize: '18px',
+                cursor: 'pointer',
+                padding: '4px 8px',
+                borderRadius: '6px'
+              }}
+              onMouseEnter={e => e.currentTarget.style.color = '#fff'}
+              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+              title="Close Profile"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '16px 20px 40px' }}>
             <ProfileTab
               targetUser={viewingUserProfile}
               currentUser={currentUser}

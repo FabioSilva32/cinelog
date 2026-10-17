@@ -292,30 +292,34 @@ export default function ProfileTab({
     }
     setViewedLoading(true);
 
-    const isTester = (targetUser?.username?.toLowerCase() === 'tester') ||
-      (targetUser?.username?.toLowerCase() === 'alex vance') ||
-      (targetUser?.displayName?.toLowerCase() === 'alex vance') ||
-      (targetUser?.display_name?.toLowerCase() === 'alex vance') ||
-      (targetUser?.id === TESTER_PROFILE.id);
-    if (isTester) {
-      setViewedProfile(TESTER_PROFILE);
-      setViewedLibrary(TESTER_LIBRARY);
-      setViewedLoading(false);
-      return;
-    }
+    const isUUID = (str) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(str || ''));
+    const targetId = targetUser?.id;
+    const targetUsername = targetUser?.username;
 
     if (supabase) {
-      // Load profile and library in parallel; follow check is separate so it never blocks
-      Promise.all([
-        supabase.from('profiles').select('*').eq('id', targetUser.id).single(),
-        supabase.from('library').select('*').eq('user_id', targetUser.id),
-      ]).then(([{ data: prof, error: profErr }, { data: lib }]) => {
+      let profPromise;
+      if (isUUID(targetId)) {
+        profPromise = supabase.from('profiles').select('*').eq('id', targetId).maybeSingle();
+      } else if (targetUsername) {
+        profPromise = supabase.from('profiles').select('*').eq('username', targetUsername).maybeSingle();
+      } else {
+        profPromise = Promise.resolve({ data: null, error: null });
+      }
+
+      profPromise.then(async ({ data: prof }) => {
+        const resolvedUserId = prof?.id || (isUUID(targetId) ? targetId : null);
+        let lib = [];
+        if (resolvedUserId) {
+          const { data: libData } = await supabase.from('library').select('*').eq('user_id', resolvedUserId);
+          lib = libData || [];
+        }
+
         if (prof) {
           setViewedProfile({
             id: prof.id,
-            username: prof.username || targetUser.username,
-            displayName: prof.display_name || targetUser.displayName || targetUser.username,
-            avatar: prof.avatar_url || targetUser.avatar || DEFAULT_GREY_AVATAR,
+            username: prof.username || targetUser?.username,
+            displayName: prof.display_name || prof.username || targetUser?.displayName || targetUser?.username,
+            avatar: prof.avatar_url || targetUser?.avatar || DEFAULT_GREY_AVATAR,
             bio: prof.bio || '',
             favorites: prof.favorites || [],
             followersCount: prof.followers_count || 0,
@@ -329,7 +333,7 @@ export default function ProfileTab({
         } else {
           setViewedProfile(targetUser);
         }
-        // Strip episode data blob from reviews before storing
+
         const cleanLib = (lib || []).map(row => ({
           ...row,
           review: (row.review || '').replace(/__EPISODE_DATA__:.+$/s, '').replace(/__EPISODE_RATINGS__:.+$/s, '').trim()
@@ -343,11 +347,13 @@ export default function ProfileTab({
         setViewedLoading(false);
       });
 
-      // Follow status checked independently so a missing 'follows' table doesn't crash profile load
-      if (currentUser?.id) {
-        supabase.from('follows').select('*').match({ follower_id: currentUser.id, following_id: targetUser.id }).maybeSingle()
+      // Follow status checked independently with UUID safety
+      if (currentUser?.id && isUUID(currentUser.id) && isUUID(targetId)) {
+        supabase.from('follows').select('*').match({ follower_id: currentUser.id, following_id: targetId }).maybeSingle()
           .then(({ data: followRel }) => setIsFollowing(!!followRel))
           .catch(() => setIsFollowing(false));
+      } else {
+        setIsFollowing(false);
       }
     } else {
       setViewedProfile(targetUser);
@@ -778,7 +784,7 @@ export default function ProfileTab({
               <div
                 className="profile-banner"
                 style={{
-                  height: '520px',
+                  height: 'clamp(200px, 28vw, 360px)',
                   width: '100%',
                   borderRadius: '24px 24px 0 0',
                   overflow: 'hidden',
@@ -944,7 +950,7 @@ export default function ProfileTab({
                       { label: 'Reviews', val: viewedLibrary.filter(m => m.review && m.review.trim().length > 0).length, color: 'var(--accent)' },
                       { label: 'Favorites', val: (viewedProfile?.favorites || []).filter(Boolean).length, color: 'var(--red)' },
                       { label: 'Watchlist', val: viewedLibrary.filter(m => m.status === 'plan_to_watch').length, color: '#60a5fa' },
-                      { label: 'Followers', val: viewedProfile?.followersCount || 142, color: '#fbbf24' },
+                      { label: 'Followers', val: viewedProfile?.followersCount || 0, color: '#fbbf24' },
                       {
                         label: 'Avg Rating',
                         val: (() => {
@@ -1189,7 +1195,7 @@ export default function ProfileTab({
           <div
             className="profile-banner"
             style={{
-              height: '520px',
+              height: 'clamp(200px, 28vw, 360px)',
               width: '100%',
               borderRadius: '24px 24px 0 0',
               overflow: 'hidden',
