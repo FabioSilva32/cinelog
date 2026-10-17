@@ -95,15 +95,26 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
   };
 
   // ── CINEMATIC TOP-NAV BAR (RED RENDER STYLE) ──
-  if (layoutMode === 'top-nav') {
+  // Always active for top-nav mode and on all mobile/tablet screens <= 1024px
+  const isMobileScreen = typeof window !== 'undefined' && window.innerWidth <= 1024;
+  if (layoutMode === 'top-nav' || isMobileScreen) {
     return (
       <header className="app-header topnav-header" style={{
         position: 'sticky',
         top: 0,
+        left: 0,
+        right: 0,
+        bottom: 'auto',
+        transform: 'none',
         zIndex: 500,
         background: '#000000',
-        borderBottom: '1px solid var(--border)',
-        width: '100%'
+        backgroundColor: '#000000',
+        borderBottom: '1px solid #1c1c1c',
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        opacity: 1,
+        visibility: 'visible'
       }}>
         <div className="topnav-inner" style={{
           maxWidth: '1440px',
@@ -113,14 +124,25 @@ export default function Header({ activeTab, setActiveTab, currentUser, onLogout,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: '24px'
+          gap: '24px',
+          width: '100%',
+          boxSizing: 'border-box'
         }}>
           {/* Left: Brand + Sleek Clean Nav Links */}
-          <div className="topnav-left" style={{ display: 'flex', alignItems: 'center', gap: '36px' }}>
+          <div className="topnav-left" style={{ display: 'flex', alignItems: 'center', gap: '36px', flexShrink: 0 }}>
             <div
               className="logo-wrapper"
               onClick={() => handleNavClick('explore')}
-              style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', userSelect: 'none', flexShrink: 0 }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                cursor: 'pointer',
+                userSelect: 'none',
+                flexShrink: 0,
+                opacity: 1,
+                visibility: 'visible'
+              }}
               title="CineLog — Go to Explore"
             >
               <div style={{
