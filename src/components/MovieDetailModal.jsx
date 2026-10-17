@@ -621,16 +621,36 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
   const STATUS_ICONS = { watched: Eye, plan_to_watch: Bookmark, watching: Play, dropped: XCircle };
   const STATUS_SHORT = { watched: 'Watched', plan_to_watch: 'Watchlist', watching: 'Watching', dropped: 'Dropped' };
 
+  const touchStartRef = useRef(null);
+
   return (
     <div
       className="modal-backdrop movie-detail-modal-backdrop"
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px', paddingTop: '3vh', overscrollBehavior: 'contain' }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px', paddingTop: '3vh', overscrollBehaviorY: 'contain' }}
       onClick={e => e.target === e.currentTarget && onClose()}
       onWheel={e => e.stopPropagation()}
+      onTouchStart={e => {
+        if (e.touches.length === 1) {
+          touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, time: Date.now() };
+        }
+      }}
+      onTouchEnd={e => {
+        if (!touchStartRef.current) return;
+        const start = touchStartRef.current;
+        touchStartRef.current = null;
+        const touch = e.changedTouches[0];
+        const deltaX = touch.clientX - start.x;
+        const deltaY = Math.abs(touch.clientY - start.y);
+        const duration = Date.now() - start.time;
+        // Edge swipe right to go back / close modal
+        if (start.x < 120 && deltaX > 50 && deltaX > deltaY * 1.2 && duration < 600) {
+          onClose();
+        }
+      }}
     >
       <div
         className="movie-detail-modal-dialog animate-fade-in-scale"
-        style={{ width: '100%', maxWidth: '1120px', maxHeight: '94vh', borderRadius: 'var(--radius-xl)', overflow: 'hidden', border: '1px solid var(--border)', position: 'relative', display: 'flex', flexDirection: 'column', background: '#121212', overscrollBehavior: 'contain' }}
+        style={{ width: '100%', maxWidth: '1120px', maxHeight: '94vh', borderRadius: 'var(--radius-xl)', overflow: 'hidden', border: '1px solid var(--border)', position: 'relative', display: 'flex', flexDirection: 'column', background: '#121212', overscrollBehaviorY: 'contain' }}
         onWheel={e => e.stopPropagation()}
       >
         {/* Mobile Grabber Handle */}

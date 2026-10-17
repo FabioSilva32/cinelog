@@ -239,11 +239,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Prevent scroll chaining from any modal/dialog to background window */
+/* Prevent scroll chaining from any modal/dialog to background window vertically while allowing edge swipes */
 .modal-backdrop,
 .animate-fade-in-scale,
 [role="dialog"] {
-  overscroll-behavior: contain !important;
+  overscroll-behavior-y: contain !important;
+  overscroll-behavior-x: auto !important;
 }
 
 /* No blurry glowing ambient background orbs */
@@ -1928,7 +1929,8 @@ body.modal-open {
 .modal-overlay,
 [role="dialog"],
 .animate-fade-in-scale {
-  overscroll-behavior: contain !important;
+  overscroll-behavior-y: contain !important;
+  overscroll-behavior-x: auto !important;
 }
 
 /* ── NATIVE MOBILE MOVIE DETAIL BOTTOM SHEET ── */
@@ -2342,7 +2344,8 @@ body.modal-open {
     animation: slideUpSheet 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
     display: flex !important;
     flex-direction: column !important;
-    overscroll-behavior: contain !important;
+    overscroll-behavior-y: contain !important;
+    overscroll-behavior-x: auto !important;
   }
 
   .mobile-modal-grabber {
@@ -2968,7 +2971,8 @@ body.modal-open {
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
     touch-action: pan-y !important;
-    overscroll-behavior: contain !important;
+    overscroll-behavior-y: contain !important;
+    overscroll-behavior-x: auto !important;
     padding: 16px 14px 100px !important;
   }
 
