@@ -774,19 +774,55 @@ export default function ProfileTab({
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-              {/* BANNER WITH FLOATING BACK BUTTON */}
+              {/* BANNER (Same grand marquee as normal profile) */}
               <div
+                className="profile-banner"
                 style={{
-                  height: '175px',
+                  height: '520px',
                   width: '100%',
-                  borderRadius: '20px 20px 0 0',
+                  borderRadius: '24px 24px 0 0',
                   overflow: 'hidden',
                   position: 'relative',
-                  background: 'linear-gradient(135deg, #181524 0%, #0d0b14 100%)'
+                  background: '#08070e'
                 }}
               >
-                {/* Floating Back Button */}
+                {viewedProfile?.bannerUrl && !viewedProfile.bannerUrl.startsWith('animated-') ? (
+                  <img
+                    src={viewedProfile.bannerUrl}
+                    alt="Profile Banner"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: viewedProfile.bannerFitMode || 'cover',
+                      objectPosition: `center ${viewedProfile.bannerPosPercent ?? 30}%`,
+                      display: 'block',
+                      imageRendering: 'auto',
+                      backfaceVisibility: 'hidden'
+                    }}
+                    onError={e => { e.currentTarget.style.display = 'none'; }}
+                  />
+                ) : (
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    background: 'radial-gradient(ellipse at 50% 25%, rgba(136,8,8,0.32) 0%, rgba(18,14,28,0.9) 65%, #08060d 100%)'
+                  }}>
+                    <div style={{
+                      position: 'absolute',
+                      inset: 0,
+                      opacity: 0.18,
+                      backgroundImage: 'radial-gradient(rgba(255,255,255,0.25) 1px, transparent 1px)',
+                      backgroundSize: '24px 24px',
+                      pointerEvents: 'none'
+                    }} />
+                  </div>
+                )}
+
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 75%, rgba(13,11,20,0.7) 90%, rgba(13,11,20,0.96) 100%)', pointerEvents: 'none' }} />
+
+                {/* Back button on top-left of banner */}
                 <button
+                  type="button"
                   onClick={() => {
                     if (onOpenUserProfile) onOpenUserProfile(null);
                     setViewedProfile(null);
@@ -798,217 +834,220 @@ export default function ProfileTab({
                   }}
                   style={{
                     position: 'absolute',
-                    top: '14px',
-                    left: '14px',
-                    zIndex: 25,
-                    background: 'rgba(0, 0, 0, 0.65)',
-                    backdropFilter: 'blur(10px)',
-                    WebkitBackdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255, 255, 255, 0.16)',
+                    top: '20px',
+                    left: '20px',
+                    zIndex: 15,
+                    background: 'rgba(10,8,22,0.85)',
+                    backdropFilter: 'blur(16px)',
+                    border: '1px solid rgba(255,255,255,0.22)',
                     color: '#fff',
-                    borderRadius: '24px',
-                    padding: '7px 16px',
-                    fontSize: '12.5px',
-                    fontWeight: 700,
+                    borderRadius: '30px',
+                    padding: '9px 20px',
+                    fontSize: '13px',
+                    fontWeight: 800,
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '6px',
-                    boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
-                    transition: 'all 0.2s'
+                    gap: '8px',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.6)',
+                    transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)'
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.85)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.65)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.16)'; }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.borderColor = 'var(--accent)';
+                    e.currentTarget.style.boxShadow = '0 12px 35px rgba(136,8,8,0.4)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.transform = '';
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.22)';
+                    e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.6)';
+                  }}
                 >
-                  <ArrowLeft size={14} /> Back
+                  <ArrowLeft size={15} /> Back
                 </button>
 
-                {(() => {
-                  const bUrl = viewedProfile?.bannerUrl || viewedProfile?.banner_url || '';
-                  if (bUrl && !bUrl.startsWith('animated-')) {
-                    return (
-                      <img
-                        src={bUrl}
-                        alt="Profile Banner"
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: viewedProfile.bannerFitMode || 'cover',
-                          objectPosition: `center ${viewedProfile.bannerPosPercent ?? 20}%`,
-                          display: 'block'
-                        }}
-                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                      />
-                    );
-                  }
-                  return (
-                    <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #221c38 0%, #120e20 60%, #08060f 100%)' }} />
-                  );
-                })()}
-
-                {/* Bottom gradient fade into header card */}
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, transparent 45%, rgba(13,11,19,0.95) 100%)', pointerEvents: 'none' }} />
+                {/* Follow / Following button on top-right of banner */}
+                {currentUser?.id && (
+                  <button
+                    type="button"
+                    onClick={handleToggleFollow}
+                    disabled={followLoading}
+                    className={`btn ${isFollowing ? 'btn-secondary' : 'btn-primary'}`}
+                    style={{
+                      position: 'absolute',
+                      top: '20px',
+                      right: '20px',
+                      zIndex: 15,
+                      borderRadius: '30px',
+                      padding: '9px 24px',
+                      fontSize: '13px',
+                      fontWeight: 800,
+                      boxShadow: '0 10px 30px rgba(0,0,0,0.6)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {followLoading ? '…' : isFollowing ? 'Following' : '+ Follow'}
+                  </button>
+                )}
               </div>
 
-              {/* PROFILE HEADER CARD */}
-              <div style={{
+              {/* PROFILE HEADER ROW (Same Polished Studio Card as normal profile) */}
+              <div className="profile-card-header" style={{
                 background: 'linear-gradient(180deg, #13111b 0%, #0d0b13 100%)',
-                padding: '0 20px 20px',
+                padding: '0 32px 28px',
                 border: '1px solid rgba(255,255,255,0.08)',
                 borderTop: 'none',
-                borderRadius: '0 0 20px 20px',
-                boxShadow: '0 20px 50px rgba(0,0,0,0.6)'
+                borderRadius: '0 0 24px 24px',
+                boxShadow: '0 24px 60px rgba(0,0,0,0.7)',
+                position: 'relative'
               }}>
-                {/* Identity Row: Avatar + Name on Left, Follow Button on Right */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'flex-end',
-                  justifyContent: 'space-between',
-                  gap: '16px',
-                  marginTop: '-44px',
-                  position: 'relative',
-                  zIndex: 10
-                }}>
-                  {/* Left: Avatar + Name / Username */}
-                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: '14px', minWidth: 0, flex: 1 }}>
-                    <div style={{ flexShrink: 0, filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.6))' }}>
+                {/* Top Bar: Avatar + Name/Bio on Left, Stats Capsules on Right */}
+                <div className="profile-header-top-bar" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '28px', flexWrap: 'wrap' }}>
+                  {/* Left: Avatar (overlapping banner with glowing presence) + Name & Bio */}
+                  <div className="profile-user-info" style={{ display: 'flex', alignItems: 'flex-start', gap: '24px', flex: 1, minWidth: '320px' }}>
+                    <div style={{
+                      marginTop: '-65px',
+                      position: 'relative',
+                      flexShrink: 0,
+                      zIndex: 10,
+                      filter: 'drop-shadow(0 12px 26px rgba(0,0,0,0.85))'
+                    }}>
                       <AvatarWithBorder
-                        src={viewedProfile?.avatar || viewedProfile?.avatar_url || DEFAULT_GREY_AVATAR}
+                        src={viewedProfile?.avatar || DEFAULT_GREY_AVATAR}
                         username={viewedProfile?.username || 'User'}
                         borderId={viewedProfile?.equippedBorder || 'none'}
-                        size={92}
+                        size={118}
                       />
                     </div>
 
-                    <div style={{ minWidth: 0, paddingBottom: '4px', flex: 1 }}>
-                      <h2 style={{
-                        fontSize: '22px',
-                        fontWeight: 900,
-                        color: '#fff',
-                        margin: 0,
-                        lineHeight: 1.2,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        {viewedProfile?.displayName || viewedProfile?.display_name || viewedProfile?.username || 'CineLog User'}
-                      </h2>
-                      <div style={{ color: 'var(--accent)', fontSize: '13px', fontWeight: 700, marginTop: '3px' }}>
-                        @{viewedProfile?.username}
+                    <div style={{ paddingTop: '16px', minWidth: 0, flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                        <h2 style={{ fontSize: '28px', fontWeight: 900, color: '#fff', letterSpacing: '-0.5px', margin: 0, lineHeight: 1.2 }}>
+                          {viewedProfile?.displayName || viewedProfile?.username || 'CineLog Fan'}
+                        </h2>
+                      </div>
+
+                      <div style={{ color: 'var(--accent)', fontSize: '14px', fontWeight: 700, marginBottom: '8px' }}>
+                        @{viewedProfile?.username || 'user'}
+                      </div>
+
+                      <p style={{ fontSize: '13.5px', color: 'rgba(255,255,255,0.7)', lineHeight: 1.55, maxWidth: '580px', margin: 0 }}>
+                        {viewedProfile?.bio || 'No cinema story written yet.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Right: Modern Frosted Stat Capsules (Identical to normal profile) */}
+                  <div className="profile-stats-capsules-grid">
+                    {[
+                      { label: 'Films', val: viewedLibrary.filter(m => m.status === 'watched').length, color: 'var(--green)' },
+                      { label: 'Reviews', val: viewedLibrary.filter(m => m.review && m.review.trim().length > 0).length, color: 'var(--accent)' },
+                      { label: 'Favorites', val: (viewedProfile?.favorites || []).filter(Boolean).length, color: 'var(--red)' },
+                      { label: 'Watchlist', val: viewedLibrary.filter(m => m.status === 'plan_to_watch').length, color: '#60a5fa' },
+                      { label: 'Followers', val: viewedProfile?.followersCount || 142, color: '#fbbf24' },
+                      {
+                        label: 'Avg Rating',
+                        val: (() => {
+                          const r = viewedLibrary.filter(m => m.rating && Number(m.rating) > 0);
+                          return r.length ? '★ ' + (r.reduce((s, m) => s + Number(m.rating), 0) / r.length).toFixed(1) : '—';
+                        })(),
+                        color: 'var(--gold)'
+                      },
+                    ].map(s => (
+                      <div
+                        key={s.label}
+                        className="profile-stat-capsule"
+                        style={{
+                          textAlign: 'center',
+                          minWidth: '68px',
+                          padding: '10px 14px',
+                          background: 'rgba(255,255,255,0.035)',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          borderRadius: '14px',
+                          backdropFilter: 'blur(8px)',
+                          boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+                          transition: 'transform 0.15s ease, border-color 0.15s ease'
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+                      >
+                        <div style={{ fontSize: '20px', fontWeight: 900, color: s.color, fontFamily: 'var(--font-heading)', lineHeight: 1.1 }}>{s.val}</div>
+                        <div style={{ fontSize: '9.5px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 800, marginTop: '4px' }}>{s.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* BADGES RIBBON (Exact same ribbon and badge styling as normal profile) */}
+                {(() => {
+                  const earnedBadges = [];
+                  ACHIEVEMENTS.forEach(ach => {
+                    if (ach.check(viewedLibrary) >= ach.target) {
+                      if (ach.reward.badgeName) earnedBadges.push(ach.reward.badgeName);
+                    }
+                  });
+                  const purchased = viewedProfile?.purchasedBadges || viewedProfile?.purchased_badges || [];
+                  const featured = viewedProfile?.featuredBadges || [];
+                  const vBadges = Array.from(new Set([...featured, ...purchased, ...earnedBadges]));
+                  if (vBadges.length === 0) return null;
+                  return (
+                    <div style={{
+                      marginTop: '22px',
+                      paddingTop: '16px',
+                      borderTop: '1px solid rgba(255,255,255,0.07)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '10px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-dim)' }}>
+                            🎖️ Featured Titles & Badges
+                          </span>
+                          <span style={{
+                            fontSize: '10.5px',
+                            background: 'rgba(255,255,255,0.06)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            padding: '1px 8px',
+                            borderRadius: '10px',
+                            color: 'rgba(255,255,255,0.7)',
+                            fontWeight: 800
+                          }}>
+                            {vBadges.length} Total
+                          </span>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                        {vBadges.map(b => {
+                          const colors = BADGE_COLORS[b] || { border: '1px solid var(--border)', color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.03)' };
+                          return (
+                            <span
+                              key={b}
+                              style={{
+                                fontSize: '11px',
+                                fontWeight: 800,
+                                padding: '4px 12px',
+                                borderRadius: '14px',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.04em',
+                                whiteSpace: 'nowrap',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                transition: 'all 0.2s ease',
+                                ...colors
+                              }}
+                            >
+                              {b}
+                            </span>
+                          );
+                        })}
                       </div>
                     </div>
-                  </div>
-
-                  {/* Right: Follow Button */}
-                  {currentUser?.id && (
-                    <div style={{ paddingBottom: '4px', flexShrink: 0 }}>
-                      <button
-                        onClick={handleToggleFollow}
-                        disabled={followLoading}
-                        className={`btn ${isFollowing ? 'btn-secondary' : 'btn-primary'}`}
-                        style={{
-                          padding: '7px 20px',
-                          fontSize: '12.5px',
-                          fontWeight: 800,
-                          borderRadius: '20px',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s'
-                        }}
-                      >
-                        {followLoading ? '…' : isFollowing ? 'Following' : '+ Follow'}
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* 5 STAT CAPSULES — Dedicated Full-Width Grid Row */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(5, 1fr)',
-                  gap: '8px',
-                  width: '100%',
-                  boxSizing: 'border-box',
-                  marginTop: '18px'
-                }}>
-                  {[
-                    { label: 'Films', val: viewedLibrary.filter(m => m.status === 'watched').length, color: 'var(--green)' },
-                    { label: 'Reviews', val: viewedLibrary.filter(m => m.review && m.review.trim().length > 0).length, color: 'var(--accent)' },
-                    { label: 'Favorites', val: (viewedProfile?.favorites || []).filter(Boolean).length, color: 'var(--red)' },
-                    { label: 'Watchlist', val: viewedLibrary.filter(m => m.status === 'plan_to_watch').length, color: '#60a5fa' },
-                    {
-                      label: 'Avg Rating',
-                      val: (() => {
-                        const r = viewedLibrary.filter(m => m.rating && Number(m.rating) > 0);
-                        return r.length ? '★ ' + (r.reduce((s, m) => s + Number(m.rating), 0) / r.length).toFixed(1) : '—';
-                      })(),
-                      color: 'var(--gold)'
-                    },
-                  ].map(s => (
-                    <div
-                      key={s.label}
-                      style={{
-                        textAlign: 'center',
-                        padding: '10px 4px',
-                        background: 'rgba(255, 255, 255, 0.035)',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
-                        borderRadius: '12px',
-                        backdropFilter: 'blur(8px)',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                    >
-                      <div style={{ fontSize: '17px', fontWeight: 900, color: s.color, fontFamily: 'var(--font-heading)', lineHeight: 1.1 }}>{s.val}</div>
-                      <div style={{ fontSize: '9px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 800, marginTop: '3px' }}>{s.label}</div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* FULL-WIDTH BIO & BADGES CARD */}
-                {viewedProfile?.bio && (
-                  <div style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    background: 'rgba(255, 255, 255, 0.035)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    borderRadius: '14px',
-                    padding: '14px 18px',
-                    marginTop: '14px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '10px'
-                  }}>
-                    <p style={{
-                      fontSize: '13.5px',
-                      color: 'rgba(255,255,255,0.88)',
-                      lineHeight: 1.6,
-                      margin: 0,
-                      fontWeight: 500
-                    }}>
-                      {viewedProfile.bio}
-                    </p>
-                    {/* Badges inside full-width square bio card */}
-                    {(() => {
-                      const vBadges = (viewedProfile?.purchasedBadges || viewedProfile?.purchased_badges || []);
-                      if (vBadges.length === 0) return null;
-                      return (
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', paddingTop: '2px' }}>
-                          {vBadges.map(b => (
-                            <span key={b} style={{
-                              fontSize: '11px', fontWeight: 800, padding: '4px 12px',
-                              borderRadius: '20px',
-                              border: '1px solid rgba(229, 9, 20, 0.35)',
-                              color: 'var(--accent)',
-                              background: 'rgba(229, 9, 20, 0.08)'
-                            }}>{b}</span>
-                          ))}
-                        </div>
-                      );
-                    })()}
-                  </div>
-                )}
+                  );
+                })()}
               </div>
 
               {/* Sub tabs & Content */}

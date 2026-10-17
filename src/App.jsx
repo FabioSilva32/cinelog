@@ -426,12 +426,13 @@ function AppInner() {
 
   const lastBackPressRef = useRef(0);
   const lastBackActionTimeRef = useRef(0);
+  const touchSwipeStartRef = useRef(null);
 
   // Universal back handler (handles Capacitor native back, document backbutton event from Android, and browser popstate edge gestures)
   const handleUniversalBack = useCallback((fromPopState = false) => {
     const now = Date.now();
     // Guard against duplicate / re-entrant back invocations (e.g. native bridge + capacitor app + popstate)
-    if (now - lastBackActionTimeRef.current < 350) {
+    if (now - lastBackActionTimeRef.current < 200) {
       return 'throttled';
     }
     lastBackActionTimeRef.current = now;
@@ -578,6 +579,10 @@ function AppInner() {
       handleUniversalBack(false);
     };
     const popStateHandler = () => {
+      // Re-arm history guard immediately so Android OS never runs out of history
+      try {
+        window.history.pushState({ guard: true, tab: activeTabRef.current }, '', window.location.href);
+      } catch (err) {}
       handleUniversalBack(true);
     };
 
@@ -1102,6 +1107,10 @@ function AppInner() {
   };
 
   const handleOpenUserProfile = useCallback((userObjOrUsername) => {
+    if (!userObjOrUsername) {
+      setViewingUserProfile(null);
+      return;
+    }
     let target = userObjOrUsername;
     if (typeof userObjOrUsername === 'string') {
       target = { username: userObjOrUsername };
@@ -1429,10 +1438,23 @@ function AppInner() {
         )}
       </main>
 
-      {/* Viewed Other User Profile Modal Overlay */}
+      {/* Viewed Other User Profile Modal Overlay with Touch Swipe Back */}
       {viewingUserProfile && (
         <div
           className="viewed-profile-modal-overlay"
+          onTouchStart={(e) => {
+            touchSwipeStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+          }}
+          onTouchEnd={(e) => {
+            if (!touchSwipeStartRef.current) return;
+            const deltaX = e.changedTouches[0].clientX - touchSwipeStartRef.current.x;
+            const deltaY = e.changedTouches[0].clientY - touchSwipeStartRef.current.y;
+            touchSwipeStartRef.current = null;
+            // Detect horizontal swipe to the right (drag back gesture)
+            if (deltaX > 45 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
+              handleUniversalBack(false);
+            }
+          }}
           style={{
             position: 'fixed',
             inset: 0,
