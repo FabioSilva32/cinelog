@@ -8,57 +8,48 @@ const GENRE_MAP = {28:'Action',12:'Adventure',16:'Animation',35:'Comedy',80:'Cri
 function getRatingStyle(r) {
   if (!r) return { color: 'var(--text-dim)', bg: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.1)', star: 'var(--text-dim)' };
   const n = Number(r);
-  if (n >= 9.0) {
+  if (n >= 8.0) {
     return {
-      color: '#10b981', // Emerald green for masterpieces (9.0+)
+      color: '#fbbf24', // Yellow is the best (8.0 - 10.0)
+      bg: 'rgba(251, 191, 36, 0.14)',
+      border: 'rgba(251, 191, 36, 0.38)',
+      star: '#fbbf24',
+      glow: 'rgba(251, 191, 36, 0.25)'
+    };
+  }
+  if (n >= 7.0) {
+    return {
+      color: '#10b981', // Green (7.0 - 7.9) [swapped with yellow]
       bg: 'rgba(16, 185, 129, 0.14)',
       border: 'rgba(16, 185, 129, 0.38)',
       star: '#10b981',
       glow: 'rgba(16, 185, 129, 0.25)'
     };
   }
-  if (n >= 8.0) {
+  if (n >= 5.5) {
     return {
-      color: '#34d399', // Mint / Light green (8.0 - 8.9)
-      bg: 'rgba(52, 211, 153, 0.13)',
-      border: 'rgba(52, 211, 153, 0.35)',
-      star: '#34d399',
-      glow: 'rgba(52, 211, 153, 0.2)'
+      color: '#a855f7', // Purple (5.5 - 6.9) [replaces gold/amber]
+      bg: 'rgba(168, 85, 247, 0.14)',
+      border: 'rgba(168, 85, 247, 0.38)',
+      star: '#a855f7',
+      glow: 'rgba(168, 85, 247, 0.25)'
     };
   }
-  if (n >= 7.0) {
+  if (n >= 4.0) {
     return {
-      color: '#38bdf8', // Cyan / Sky blue (7.0 - 7.9)
-      bg: 'rgba(56, 189, 248, 0.13)',
-      border: 'rgba(56, 189, 248, 0.35)',
-      star: '#38bdf8',
-      glow: 'rgba(56, 189, 248, 0.2)'
-    };
-  }
-  if (n >= 6.0) {
-    return {
-      color: '#fbbf24', // Warm gold / amber (6.0 - 6.9)
-      bg: 'rgba(251, 191, 36, 0.13)',
-      border: 'rgba(251, 191, 36, 0.35)',
-      star: '#fbbf24',
-      glow: 'rgba(251, 191, 36, 0.2)'
-    };
-  }
-  if (n >= 4.5) {
-    return {
-      color: '#f97316', // Orange (4.5 - 5.9)
-      bg: 'rgba(249, 115, 22, 0.13)',
-      border: 'rgba(249, 115, 22, 0.35)',
+      color: '#f97316', // Orange (4.0 - 5.4)
+      bg: 'rgba(249, 115, 22, 0.14)',
+      border: 'rgba(249, 115, 22, 0.38)',
       star: '#f97316',
-      glow: 'rgba(249, 115, 22, 0.2)'
+      glow: 'rgba(249, 115, 22, 0.25)'
     };
   }
   return {
-    color: '#ef4444', // Red (< 4.5)
-    bg: 'rgba(239, 68, 68, 0.13)',
-    border: 'rgba(239, 68, 68, 0.35)',
+    color: '#ef4444', // Red (< 4.0)
+    bg: 'rgba(239, 68, 68, 0.14)',
+    border: 'rgba(239, 68, 68, 0.38)',
     star: '#ef4444',
-    glow: 'rgba(239, 68, 68, 0.2)'
+    glow: 'rgba(239, 68, 68, 0.25)'
   };
 }
 

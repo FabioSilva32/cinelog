@@ -14,11 +14,13 @@ const POPULAR_CINE_TAGS = [
 ];
 
 function getRatingColor(r) {
+  if (!r) return 'var(--text-dim)';
   const n = Number(r);
-  if (n >= 8.5) return '#10b981';
-  if (n >= 7) return '#fbbf24';
-  if (n >= 5) return '#f97316';
-  return '#ef4444';
+  if (n >= 8.0) return '#fbbf24'; // Yellow is the best (8.0 - 10.0)
+  if (n >= 7.0) return '#10b981'; // Green (7.0 - 7.9) [swapped with yellow]
+  if (n >= 5.5) return '#a855f7'; // Purple (5.5 - 6.9) [replaces gold/amber]
+  if (n >= 4.0) return '#f97316'; // Orange (4.0 - 5.4)
+  return '#ef4444'; // Red (< 4.0)
 }
 
 const STATUS_OPTS = [
