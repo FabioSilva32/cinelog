@@ -601,163 +601,173 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
             </div>
           </div>
 
-          {/* Movie Main Info Block (incorporates sharp official poster thumbnail on mobile) */}
-          <div className="explore-hero-info-wrapper">
-            {currentHero.poster_path && (
-              <div
-                className="explore-hero-poster-thumb"
-                onClick={() => onMovieClick && onMovieClick(currentHero.id, currentHero.media_type || (currentHero.first_air_date || currentHero.name ? 'tv' : 'movie'))}
-                title="View film details"
-              >
-                <img
-                  src={`https://image.tmdb.org/t/p/w185${currentHero.poster_path}`}
-                  alt=""
-                  loading="lazy"
-                />
-              </div>
-            )}
-            <div className="explore-hero-text-block">
-              {/* Movie Title */}
-              <h1
-                className="explore-hero-title"
-                style={{
-                  fontSize: '26px',
-                  fontWeight: 900,
-                  letterSpacing: '-0.5px',
-                  color: '#FFFFFF',
-                  margin: '0 0 8px 0',
-                  textTransform: 'uppercase',
-                  lineHeight: 1.15,
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                  minHeight: '60px',
-                  maxHeight: '60px',
-                  cursor: 'pointer'
-                }}
-                onClick={() => onMovieClick && onMovieClick(currentHero.id, currentHero.media_type || (currentHero.first_air_date || currentHero.name ? 'tv' : 'movie'))}
-              >
-                {currentHero.title || currentHero.name}
-              </h1>
+          {/* Center Spacer: Ensures middle 60% of cinematic artwork remains completely unobstructed on mobile */}
+          <div className="explore-hero-spacer" style={{ flex: 1, minHeight: '60px', pointerEvents: 'none' }} />
 
-              {/* Rating & Metadata */}
-              <div
-                className="explore-hero-meta"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  fontSize: '13px',
-                  color: '#9E9E9E',
-                  marginBottom: '10px',
-                  fontWeight: 600
-                }}
-              >
-                {currentHero.vote_average > 0 && (
-                  <span style={{ color: '#FFB800', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '3px' }}>
-                    ★ {(currentHero.vote_average).toFixed(1)}
+          {/* Bottom Cluster: Docks official poster, title, rating, actions and dots together at the bottom */}
+          <div className="explore-hero-bottom-cluster">
+            {/* Overview text (desktop only) */}
+            <p
+              className="explore-hero-overview"
+              style={{
+                fontSize: '13px',
+                color: '#A0A0A0',
+                lineHeight: 1.6,
+                margin: '0 0 16px 0',
+                maxWidth: '520px',
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                height: '62px'
+              }}
+            >
+              {currentHero.overview}
+            </p>
+
+            {/* Movie Main Info Block (incorporates sharp official poster thumbnail on mobile) */}
+            <div className="explore-hero-info-wrapper">
+              {currentHero.poster_path && (
+                <div
+                  className="explore-hero-poster-thumb"
+                  onClick={() => onMovieClick && onMovieClick(currentHero.id, currentHero.media_type || (currentHero.first_air_date || currentHero.name ? 'tv' : 'movie'))}
+                  title="View film details"
+                >
+                  <img
+                    src={`https://image.tmdb.org/t/p/w185${currentHero.poster_path}`}
+                    alt=""
+                    loading="lazy"
+                  />
+                </div>
+              )}
+              <div className="explore-hero-text-block">
+                {/* Movie Title */}
+                <h1
+                  className="explore-hero-title"
+                  style={{
+                    fontSize: '26px',
+                    fontWeight: 900,
+                    letterSpacing: '-0.5px',
+                    color: '#FFFFFF',
+                    margin: '0 0 8px 0',
+                    textTransform: 'uppercase',
+                    lineHeight: 1.15,
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                    minHeight: '60px',
+                    maxHeight: '60px',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => onMovieClick && onMovieClick(currentHero.id, currentHero.media_type || (currentHero.first_air_date || currentHero.name ? 'tv' : 'movie'))}
+                >
+                  {currentHero.title || currentHero.name}
+                </h1>
+
+                {/* Rating & Metadata */}
+                <div
+                  className="explore-hero-meta"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    fontSize: '13px',
+                    color: '#9E9E9E',
+                    marginBottom: '10px',
+                    fontWeight: 600
+                  }}
+                >
+                  {currentHero.vote_average > 0 && (
+                    <span style={{ color: '#FFB800', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                      ★ {(currentHero.vote_average).toFixed(1)}
+                    </span>
+                  )}
+                  <span>
+                    {(currentHero.release_date || currentHero.first_air_date || '').slice(0, 4)}
+                    {(currentHero.genre_ids || []).length > 0 && ` · ${(currentHero.genre_ids || []).map(g => GENRE_MAP[g]).filter(Boolean).slice(0, 2).join(' · ')}`}
                   </span>
-                )}
-                <span>
-                  {(currentHero.release_date || currentHero.first_air_date || '').slice(0, 4)}
-                  {(currentHero.genre_ids || []).length > 0 && ` · ${(currentHero.genre_ids || []).map(g => GENRE_MAP[g]).filter(Boolean).slice(0, 2).join(' · ')}`}
-                </span>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Overview text */}
-          <p style={{
-            fontSize: '13px',
-            color: '#A0A0A0',
-            lineHeight: 1.6,
-            margin: '0 0 16px 0',
-            maxWidth: '520px',
-            display: '-webkit-box',
-            WebkitLineClamp: 3,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-            height: '62px'
-          }}>
-            {currentHero.overview}
-          </p>
-
-          {/* Action buttons */}
-          <div
-            className="explore-hero-actions"
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}>
-            <button
-              onClick={() => quickAdd(currentHero, currentHero.media_type || (currentHero.first_air_date || currentHero.name ? 'tv' : 'movie'))}
-              style={{
-                background: inLib(currentHero.id) ? '#10b981' : 'var(--accent)',
-                border: 'none',
-                color: '#FFFFFF',
-                padding: '10px 20px',
-                borderRadius: '8px',
-                fontSize: '12px',
-                fontWeight: 800,
-                letterSpacing: '0.04em',
-                textTransform: 'uppercase',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                transition: 'transform 0.15s, opacity 0.15s',
-                boxShadow: '0 4px 14px rgba(229,9,20,0.35)'
-              }}
-              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
-              onMouseLeave={e => e.currentTarget.style.transform = 'none'}
+            {/* Action buttons */}
+            <div
+              className="explore-hero-actions"
+              style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}
             >
-              {inLib(currentHero.id) ? <Check size={15} strokeWidth={3} /> : <Plus size={15} strokeWidth={3} />}
-              {inLib(currentHero.id) ? 'In Library' : 'Add to Library'}
-            </button>
-
-            <button
-              onClick={() => onMovieClick(currentHero.id, currentHero.media_type || (currentHero.first_air_date || currentHero.name ? 'tv' : 'movie'))}
-              style={{
-                background: '#1A1A1A',
-                border: '1px solid #333333',
-                color: '#FFFFFF',
-                padding: '10px 20px',
-                borderRadius: '8px',
-                fontSize: '12px',
-                fontWeight: 800,
-                letterSpacing: '0.04em',
-                textTransform: 'uppercase',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                transition: 'all 0.15s'
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#555555'; e.currentTarget.style.background = '#222222'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#333333'; e.currentTarget.style.background = '#1A1A1A'; }}
-            >
-              <Star size={14} color="#FFB800" />
-              Log / Rate
-            </button>
-          </div>
-
-          {/* Slide Indicator Pills */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            {heroMovies.map((m, idx) => (
               <button
-                key={m.id || idx}
-                onClick={() => setHeroIndex(idx)}
+                onClick={() => quickAdd(currentHero, currentHero.media_type || (currentHero.first_air_date || currentHero.name ? 'tv' : 'movie'))}
                 style={{
-                  height: '4px',
-                  width: idx === heroIndex ? '28px' : '8px',
-                  borderRadius: '2px',
-                  background: idx === heroIndex ? 'var(--accent)' : '#2e2e2e',
+                  background: inLib(currentHero.id) ? '#10b981' : 'var(--accent)',
                   border: 'none',
-                  padding: 0,
+                  color: '#FFFFFF',
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  fontWeight: 800,
+                  letterSpacing: '0.04em',
+                  textTransform: 'uppercase',
                   cursor: 'pointer',
-                  transition: 'all 0.25s ease'
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'transform 0.15s, opacity 0.15s',
+                  boxShadow: '0 4px 14px rgba(229,9,20,0.35)'
                 }}
-                title={m.title}
-              />
-            ))}
+                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'none'}
+              >
+                {inLib(currentHero.id) ? <Check size={15} strokeWidth={3} /> : <Plus size={15} strokeWidth={3} />}
+                {inLib(currentHero.id) ? 'In Library' : 'Add to Library'}
+              </button>
+
+              <button
+                onClick={() => onMovieClick(currentHero.id, currentHero.media_type || (currentHero.first_air_date || currentHero.name ? 'tv' : 'movie'))}
+                style={{
+                  background: '#1A1A1A',
+                  border: '1px solid #333333',
+                  color: '#FFFFFF',
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  fontWeight: 800,
+                  letterSpacing: '0.04em',
+                  textTransform: 'uppercase',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.15s'
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#555555'; e.currentTarget.style.background = '#222222'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#333333'; e.currentTarget.style.background = '#1A1A1A'; }}
+              >
+                <Star size={14} color="#FFB800" />
+                Log / Rate
+              </button>
+            </div>
+
+            {/* Slide Indicator Pills */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              {heroMovies.map((m, idx) => (
+                <button
+                  key={m.id || idx}
+                  onClick={() => setHeroIndex(idx)}
+                  style={{
+                    height: '4px',
+                    width: idx === heroIndex ? '28px' : '8px',
+                    borderRadius: '2px',
+                    background: idx === heroIndex ? 'var(--accent)' : '#2e2e2e',
+                    border: 'none',
+                    padding: 0,
+                    cursor: 'pointer',
+                    transition: 'all 0.25s ease'
+                  }}
+                  title={m.title}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </div>

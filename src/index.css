@@ -1968,6 +1968,40 @@ body.modal-open {
     display: none !important;
   }
 
+  /* ── EXPLORE TAB: ULTRA-PREMIUM CINEMATIC SPOTLIGHT (AIRY & VISIBLE) ── */
+  .explore-hero-card {
+    height: 340px !important;
+    min-height: 340px !important;
+    max-height: 340px !important;
+    flex-direction: column !important;
+    position: relative !important;
+    border-radius: 14px !important;
+    overflow: hidden !important;
+    margin-bottom: 8px !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85) !important;
+  }
+
+  .explore-hero-media {
+    width: 100% !important;
+    height: 100% !important;
+    position: absolute !important;
+    inset: 0 !important;
+    z-index: 1 !important;
+  }
+
+  .explore-hero-media img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    object-position: center 20% !important;
+  }
+
+  /* Clear out any inline backdrop gradients on mobile that darken the whole scene */
+  .explore-hero-media > div {
+    display: none !important;
+  }
+
   /* Spotlight container: gentle vignette at top, 100% CRYSTAL CLEAR OPEN ARTWORK in center, sleek dark fade at bottom */
   .explore-hero-content {
     position: absolute !important;
@@ -1983,17 +2017,34 @@ body.modal-open {
     background: linear-gradient(
       to bottom,
       rgba(0, 0, 0, 0.72) 0%,
-      rgba(0, 0, 0, 0.25) 15%,
-      transparent 26%,
-      transparent 48%,
-      rgba(8, 7, 11, 0.78) 68%,
+      rgba(0, 0, 0, 0.22) 14%,
+      transparent 24%,
+      transparent 50%,
+      rgba(8, 7, 11, 0.82) 70%,
       #08070b 100%
     ) !important;
   }
 
-  /* Header row with badge & arrows stays neat at top */
+  /* Top bar with badge & arrows stays neat at top */
   .explore-hero-content > div:first-child {
     margin-bottom: 0 !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Spacer pushes bottom cluster down, leaving middle 60% of backdrop completely clear */
+  .explore-hero-spacer {
+    display: block !important;
+    flex: 1 !important;
+    min-height: 80px !important;
+  }
+
+  /* Bottom cluster docks poster, title, buttons, and dots tightly at the bottom */
+  .explore-hero-bottom-cluster {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    margin-top: auto !important;
+    flex-shrink: 0 !important;
   }
 
   /* Mobile info wrapper: shows official vertical poster alongside movie title */
@@ -2057,7 +2108,8 @@ body.modal-open {
   }
 
   /* Hide long synopsis in mobile hero card so picture isn't choked */
-  .explore-hero-content > p {
+  .explore-hero-overview,
+  .explore-hero-content p {
     display: none !important;
   }
 
@@ -2476,7 +2528,8 @@ body.modal-open {
   .mobile-only-library-controls,
   .mobile-only-library-grid,
   .mobile-only-library-list,
-  .explore-hero-poster-thumb {
+  .explore-hero-poster-thumb,
+  .explore-hero-spacer {
     display: none !important;
   }
 }
