@@ -1048,14 +1048,19 @@ export default function ProfileTab({
                           onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.04)'; e.currentTarget.style.borderColor = 'var(--accent)'; }}
                           onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.borderColor = 'rgba(229, 9, 20, 0.35)'; }}
                         >
-                          <div style={{ aspectRatio: '2/3', position: 'relative', background: '#120d1c' }}>
-                            {fav.poster_path ? (
-                              <img src={`https://image.tmdb.org/t/p/w300${fav.poster_path}`} alt={fav.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
-                            ) : (
-                              <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🎬</div>
+                          <div style={{ aspectRatio: '2/3', position: 'relative', background: '#120d1c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>🎬</div>
+                            {fav.poster_path && (
+                              <img
+                                src={`https://image.tmdb.org/t/p/w300${fav.poster_path}`}
+                                alt={fav.title}
+                                style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', objectFit: 'cover' }}
+                                loading="lazy"
+                                onError={e => { e.currentTarget.onerror = null; e.currentTarget.style.display = 'none'; }}
+                              />
                             )}
                             {fav.score && (
-                              <div style={{ position: 'absolute', bottom: '4px', right: '4px', background: 'rgba(0,0,0,0.85)', color: 'var(--gold)', fontSize: '10px', fontWeight: 900, padding: '2px 5px', borderRadius: '4px' }}>
+                              <div style={{ position: 'absolute', zIndex: 2, bottom: '4px', right: '4px', background: 'rgba(0,0,0,0.85)', color: 'var(--gold)', fontSize: '10px', fontWeight: 900, padding: '2px 5px', borderRadius: '4px' }}>
                                 ★ {Number(fav.score).toFixed(1)}
                               </div>
                             )}
@@ -1090,11 +1095,17 @@ export default function ProfileTab({
                           onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.borderColor = 'rgba(136,8,8,0.5)'; }}
                           onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.borderColor = 'var(--border)'; }}
                         >
-                          <div style={{ aspectRatio: '2/3', position: 'relative', background: '#1a1030' }}>
-                            {m.poster_path
-                              ? <img src={`https://image.tmdb.org/t/p/w300${m.poster_path}`} alt={m.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
-                              : <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>🎬</div>
-                            }
+                          <div style={{ aspectRatio: '2/3', position: 'relative', background: '#1a1030', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>🎬</div>
+                            {m.poster_path && (
+                              <img
+                                src={`https://image.tmdb.org/t/p/w300${m.poster_path}`}
+                                alt={m.title}
+                                style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', objectFit: 'cover' }}
+                                loading="lazy"
+                                onError={e => { e.currentTarget.onerror = null; e.currentTarget.style.display = 'none'; }}
+                              />
+                            )}
                             {m.rating > 0 && <div style={{ position: 'absolute', bottom: '4px', right: '4px', background: 'rgba(0,0,0,0.85)', color: 'var(--gold)', fontSize: '10px', fontWeight: 900, padding: '2px 6px', borderRadius: '4px' }}>★ {Number(m.rating).toFixed(1)}</div>}
                           </div>
                           <div style={{ padding: '6px 8px' }}>

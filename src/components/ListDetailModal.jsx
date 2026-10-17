@@ -395,17 +395,61 @@ export default function ListDetailModal({
                     }}
                   >
                     {/* Poster with Rank Badge Overlaid */}
-                    <div style={{ position: 'relative', width: '100%', aspectRatio: '2/3', background: '#1c1926' }}>
-                      {entry.poster_path ? (
+                    <div style={{
+                      position: 'relative',
+                      width: '100%',
+                      aspectRatio: '2/3',
+                      background: 'linear-gradient(145deg, #1f1b2e 0%, #120f1c 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      overflow: 'hidden'
+                    }}>
+                      {/* Underlay fallback placeholder */}
+                      <div style={{
+                        position: 'absolute',
+                        inset: 0,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '10px 8px',
+                        textAlign: 'center',
+                        gap: '6px',
+                        background: 'linear-gradient(145deg, #1d1929 0%, #110e19 100%)'
+                      }}>
+                        <span style={{ fontSize: '24px', opacity: 0.85 }}>🎬</span>
+                        <span style={{
+                          fontSize: '10.5px',
+                          fontWeight: 700,
+                          color: 'rgba(255, 255, 255, 0.75)',
+                          lineHeight: 1.25,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 3,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden'
+                        }}>
+                          {entry.title}
+                        </span>
+                      </div>
+
+                      {entry.poster_path && (
                         <img
                           src={`https://image.tmdb.org/t/p/w342${entry.poster_path}`}
                           alt={entry.title}
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          loading="lazy"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.style.display = 'none';
+                          }}
+                          style={{
+                            position: 'relative',
+                            zIndex: 1,
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover'
+                          }}
                         />
-                      ) : (
-                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>
-                          🎬
-                        </div>
                       )}
 
                       {/* Prominent Ranked Number Badge #1..N */}

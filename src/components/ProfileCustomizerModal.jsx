@@ -688,7 +688,12 @@ export default function ProfileCustomizerModal({
                           border: '2px solid #fff',
                           background: '#1a1a1a'
                         }}>
-                          <img src={avatar || DEFAULT_GREY_AVATAR} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <img
+                            src={avatar || DEFAULT_GREY_AVATAR}
+                            alt="Avatar"
+                            onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = DEFAULT_GREY_AVATAR; }}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
                         </div>
                         <div style={{ textShadow: '0 2px 4px rgba(0,0,0,0.9)' }}>
                           <div style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>{displayName || username || 'Profile'}</div>

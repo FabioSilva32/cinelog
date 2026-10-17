@@ -659,18 +659,21 @@ function MediaPosterCard({ movie, onEditClick, layout = 'shelf' }) {
       onMouseEnter={() => triggerBackdropHover(movie.backdrop_path || movie.details?.backdrop_path)}
       onMouseLeave={() => triggerBackdropHover(null)}
     >
-      {movie.poster_path ? (
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontSize: '24px', background: 'linear-gradient(145deg, #181822, #101016)', padding: '12px', textAlign: 'center' }}>
+        <span>{isAnime ? '⛩️' : isTv ? '📺' : '🎬'}</span>
+        <span style={{ fontSize: '10px', color: '#999', marginTop: '6px', fontWeight: 600 }}>{movie.title}</span>
+      </div>
+      {movie.poster_path && (
         <img
           src={`https://image.tmdb.org/t/p/w300${movie.poster_path}`}
           alt={movie.title}
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', objectFit: 'cover' }}
           loading="lazy"
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.style.display = 'none';
+          }}
         />
-      ) : (
-        <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontSize: '24px', background: 'linear-gradient(145deg, #181822, #101016)', padding: '12px', textAlign: 'center' }}>
-          <span>{isAnime ? '⛩️' : isTv ? '📺' : '🎬'}</span>
-          <span style={{ fontSize: '10px', color: '#999', marginTop: '6px', fontWeight: 600 }}>{movie.title}</span>
-        </div>
       )}
 
       {/* Title & metadata gradient overlay */}
@@ -1770,7 +1773,16 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
                         {/* Poster Thumbnail */}
                         <div style={{ width: '56px', height: '84px', borderRadius: '6px', overflow: 'hidden', flexShrink: 0, background: '#1c1c1c', position: 'relative', boxShadow: '0 6px 14px rgba(0,0,0,0.65)', border: '1px solid rgba(255,255,255,0.08)' }}>
                           {movie.poster_path ? (
-                            <img src={`https://image.tmdb.org/t/p/w185${movie.poster_path}`} alt={movie.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+                            <img
+                              src={`https://image.tmdb.org/t/p/w185${movie.poster_path}`}
+                              alt={movie.title}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              loading="lazy"
+                              onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
                           ) : (
                             <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>🎬</div>
                           )}

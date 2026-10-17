@@ -572,6 +572,11 @@ export default function CollectionsTab({
                         <img
                           src={`https://image.tmdb.org/t/p/w185${movie.poster_path}`}
                           alt=""
+                          loading="lazy"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.style.display = 'none';
+                          }}
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         />
                         {list.isRanked && (

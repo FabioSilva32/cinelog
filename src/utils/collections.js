@@ -7,7 +7,7 @@ export const MCU_CANON_IDS = new Set([
   1726, 1724, 10138, 10195, 1771, 24428, 68721, 76338, 100402, 118340,
   99861, 102899, 271110, 284052, 283995, 315635, 284053, 284054, 299536,
   363088, 299537, 299534, 429617, 497698, 566525, 524434, 634649, 453395,
-  616037, 505642, 640146, 447365, 609681, 533535, 927833, 774752, 823464,
+  616037, 505642, 640146, 447365, 609681, 533535, 894205, 927833, 774752, 823464,
   986056, 617126, 1003596, 1003598, 1024535, 969681,
   // MCU Disney+ Series (Marvel Studios Canonical)
   85271, 88396, 84958, 91363, 88329, 92749, 92782, 92783, 114479, 138501, 138505, 202250, 114473
@@ -79,8 +79,8 @@ export const MCU_FULL_CATALOGUE = [
   { id: 609681, tmdb_id: 609681, title: 'The Marvels', release_year: '2023', poster_path: '/9GBhzXMFjgcZ3FdR9w3bUMMTps5.jpg', rating: 5.9, phase: 'Phase 5' },
   { id: 533535, tmdb_id: 533535, title: 'Deadpool & Wolverine', release_year: '2024', poster_path: '/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg', rating: 7.6, phase: 'Phase 5' },
   // Official Marvel Studios Special Presentations
-  { id: 927833, tmdb_id: 927833, title: 'Werewolf by Night', release_year: '2022', poster_path: '/mvIvNKQIzhFH0nR9BTnFsU7Kprm.jpg', rating: 7.0, phase: 'Special' },
-  { id: 774752, tmdb_id: 774752, title: 'The Guardians of the Galaxy Holiday Special', release_year: '2022', poster_path: '/8dqXJ3mxQl97bOOMqq3ioUmQIbd.jpg', rating: 6.8, phase: 'Special' }
+  { id: 894205, tmdb_id: 894205, title: 'Werewolf by Night', release_year: '2022', poster_path: '/mvIvNKRIJPPS7WSFarFhOAGIVnU.jpg', rating: 7.0, phase: 'Special' },
+  { id: 774752, tmdb_id: 774752, title: 'The Guardians of the Galaxy Holiday Special', release_year: '2022', poster_path: '/8dqXyslZ2hv49Oiob9UjlGSHSTR.jpg', rating: 6.8, phase: 'Special' }
 ];
 
 // Complete Marvel Multiverse & Legacy Movie and Series Catalogue (76 Films & Shows)

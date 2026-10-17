@@ -430,8 +430,8 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
       list.push({
         id: 693134,
         title: 'Dune: Part Two',
-        backdrop_path: '/xOMo8BRK7PfcJv9JCnx7s520bvw.jpg',
-        poster_path: '/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg',
+        backdrop_path: '/eZ239CUp1d6OryZEBPnO2n87gMG.jpg',
+        poster_path: '/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg',
         overview: 'Follow the mythic journey of Paul Atreides as he unites with Chani and the Fremen while seeking vengeance against the conspirators who destroyed his family, facing a choice between the love of his life and the fate of the known universe.',
         release_date: '2024-03-01',
         vote_average: 8.2,
