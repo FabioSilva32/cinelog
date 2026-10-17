@@ -86,12 +86,20 @@ export function ToastProvider({ children }) {
     setToasts(prev => prev.filter(t => t.id !== id));
   }, []);
 
-  const toast = {
-    success: (title, message, opts = {}) => addToast({ type: 'success', title, message, ...opts }),
-    error: (title, message, opts = {}) => addToast({ type: 'error', title, message, ...opts }),
-    info: (title, message, opts = {}) => addToast({ type: 'info', title, message, ...opts }),
-    warning: (title, message, opts = {}) => addToast({ type: 'warning', title, message, ...opts }),
-  };
+  const toast = Object.assign(
+    (title, typeOrMsg = 'info') => {
+      if (typeof typeOrMsg === 'string' && ['success', 'error', 'info', 'warning'].includes(typeOrMsg)) {
+        return addToast({ type: typeOrMsg, title, message: '' });
+      }
+      return addToast({ type: 'info', title, message: typeOrMsg });
+    },
+    {
+      success: (title, message, opts = {}) => addToast({ type: 'success', title, message, ...opts }),
+      error: (title, message, opts = {}) => addToast({ type: 'error', title, message, ...opts }),
+      info: (title, message, opts = {}) => addToast({ type: 'info', title, message, ...opts }),
+      warning: (title, message, opts = {}) => addToast({ type: 'warning', title, message, ...opts }),
+    }
+  );
 
   return (
     <ToastContext.Provider value={toast}>
