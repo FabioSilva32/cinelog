@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { X, Heart, Film, Tag, Star, Clock, Users, ExternalLink, Play, FolderHeart, Plus, Check, Eye, Bookmark, XCircle, ChevronDown, Repeat, EyeOff } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
 import { MOCK_REVIEWS } from '../mockData';
