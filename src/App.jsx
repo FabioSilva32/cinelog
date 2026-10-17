@@ -499,6 +499,57 @@ function AppInner() {
     }
   }, []);
 
+  // ── Native Android CloseWatcher Integration (Official W3C standard for Android edge swipe) ──
+  useEffect(() => {
+    const isAnyModalOpen = Boolean(
+      activeEditMovie ||
+      showSettings ||
+      showCommandCenter ||
+      showQuickAdd ||
+      showAuth ||
+      showRecoveryModal ||
+      viewingUserProfile ||
+      confirmConfig?.isOpen
+    );
+
+    if (!isAnyModalOpen) return;
+
+    if (typeof window !== 'undefined' && 'CloseWatcher' in window) {
+      try {
+        const watcher = new window.CloseWatcher();
+        watcher.onclose = () => {
+          if (showQuickAdd) { setShowQuickAdd(false); return; }
+          if (showCommandCenter) { setShowCommandCenter(false); return; }
+          if (showSettings) { setShowSettings(false); return; }
+          if (showAuth) { setShowAuth(false); return; }
+          if (showRecoveryModal) { setShowRecoveryModal(false); return; }
+          if (confirmConfig?.isOpen) { setConfirmConfig(p => ({ ...p, isOpen: false })); return; }
+          if (activeEditMovie) { setActiveEditMovie(null); return; }
+          if (viewingUserProfile) { setViewingUserProfile(null); return; }
+        };
+        return () => {
+          try { watcher.destroy(); } catch (e) {}
+        };
+      } catch (err) {}
+    }
+  }, [activeEditMovie, showSettings, showCommandCenter, showQuickAdd, showAuth, showRecoveryModal, viewingUserProfile, confirmConfig?.isOpen]);
+
+  // ── Arm History Guard on First User Touch (Overcomes Chrome's History Manipulation Intervention) ──
+  useEffect(() => {
+    const armHistoryOnUserTouch = () => {
+      try {
+        window.history.pushState({ cinelogGuard: true, tab: activeTabRef.current }, '', window.location.href);
+      } catch (e) {}
+    };
+
+    window.addEventListener('pointerdown', armHistoryOnUserTouch, { once: true, passive: true });
+    window.addEventListener('touchstart', armHistoryOnUserTouch, { once: true, passive: true });
+    return () => {
+      window.removeEventListener('pointerdown', armHistoryOnUserTouch);
+      window.removeEventListener('touchstart', armHistoryOnUserTouch);
+    };
+  }, []);
+
   // ── Universal Back Handler (for Capacitor, Android hardware back & WebView) ──
   const handleUniversalBack = useCallback(() => {
     const now = Date.now();
@@ -514,6 +565,16 @@ function AppInner() {
       return 'handled';
     }
 
+    // 1. Close open modals directly (guarantees app never closes while a modal is up)
+    if (showQuickAddRef.current) { setShowQuickAdd(false); return 'handled'; }
+    if (showCommandCenterRef.current) { setShowCommandCenter(false); return 'handled'; }
+    if (showSettingsRef.current) { setShowSettings(false); return 'handled'; }
+    if (showAuthRef.current) { setShowAuth(false); return 'handled'; }
+    if (showRecoveryModalRef.current) { setShowRecoveryModal(false); return 'handled'; }
+    if (activeEditMovieRef.current) { setActiveEditMovie(null); return 'handled'; }
+    if (viewingUserProfileRef.current) { setViewingUserProfile(null); return 'handled'; }
+    if (confirmConfigRef.current?.isOpen) { setConfirmConfig(p => ({ ...p, isOpen: false })); return 'handled'; }
+
     // Check if an open custom modal close button exists in DOM
     const openModalCloseBtn = document.querySelector('.profile-studio-card button.btn-ghost') ||
       document.querySelector('.modal-backdrop button.btn-ghost');
@@ -522,10 +583,36 @@ function AppInner() {
       return 'handled';
     }
 
-    // Standard behavior: pop the browser history step!
-    window.history.back();
-    return 'handled';
-  }, []);
+    // 2. Subtab or tab navigation
+    if (activeTabRef.current === 'profile' && profileSubTabRef.current !== 'overview') {
+      setProfileSubTab('overview');
+      return 'handled';
+    }
+    if (tabHistoryRef.current.length > 1) {
+      const nextHistory = [...tabHistoryRef.current];
+      nextHistory.pop();
+      const prevTab = nextHistory[nextHistory.length - 1];
+      setTabHistory(nextHistory);
+      handleTabChange(prevTab, true);
+      return 'handled';
+    }
+    if (activeTabRef.current !== 'explore') {
+      handleTabChange('explore', true);
+      return 'handled';
+    }
+
+    // 3. At root (explore tab, no modals, no subtabs): Double-tap back to exit
+    if (now - lastBackPressRef.current < 2000) {
+      try {
+        CapApp.minimizeApp();
+      } catch (err) {}
+      return 'exit';
+    } else {
+      lastBackPressRef.current = now;
+      toast('Swipe back again to exit', 'info');
+      return 'warned';
+    }
+  }, [handleTabChange, toast]);
 
   // Expose directly to window for Android WebView evaluateJavascript invocation
   useEffect(() => {
@@ -535,82 +622,85 @@ function AppInner() {
     };
   }, [handleUniversalBack]);
 
-  // ── Synchronized PopState Routing Handler ──
+  // ── Synchronized PopState Routing Handler with Infinite Buffer Re-Arming ──
   useEffect(() => {
     const onPopState = (e) => {
-      const hash = window.location.hash || '';
-      const params = new URLSearchParams(window.location.search);
-      const urlTab = params.get('tab') || 'explore';
-      const urlSub = params.get('sub') || 'overview';
+      // CRITICAL: Immediately re-push history guard so Android NEVER runs out of history and closes the app!
+      try {
+        window.history.pushState({ cinelogGuard: true, tab: activeTabRef.current }, '', window.location.href);
+      } catch (err) {}
 
-      let modalWasClosed = false;
-
-      // Close open modals if the new URL hash no longer matches them
-      if (activeEditMovieRef.current && !hash.startsWith('#movie-')) {
-        setActiveEditMovie(null);
-        modalWasClosed = true;
-      }
-      if (showSettingsRef.current && hash !== '#settings') {
-        setShowSettings(false);
-        modalWasClosed = true;
-      }
-      if (showCommandCenterRef.current && hash !== '#search') {
-        setShowCommandCenter(false);
-        modalWasClosed = true;
-      }
-      if (showQuickAddRef.current && hash !== '#quickadd') {
+      // 1. Close open overlay modals first
+      if (showQuickAddRef.current) {
         setShowQuickAdd(false);
-        modalWasClosed = true;
+        return;
       }
-      if (showAuthRef.current && hash !== '#auth') {
+      if (showCommandCenterRef.current) {
+        setShowCommandCenter(false);
+        return;
+      }
+      if (showSettingsRef.current) {
+        setShowSettings(false);
+        return;
+      }
+      if (showAuthRef.current) {
         setShowAuth(false);
-        modalWasClosed = true;
+        return;
       }
-      if (showRecoveryModalRef.current && hash !== '#recovery') {
+      if (showRecoveryModalRef.current) {
         setShowRecoveryModal(false);
-        modalWasClosed = true;
+        return;
       }
-      if (viewingUserProfileRef.current && !hash.startsWith('#user-')) {
+      if (activeEditMovieRef.current) {
+        setActiveEditMovie(null);
+        return;
+      }
+      if (viewingUserProfileRef.current) {
         setViewingUserProfile(null);
-        modalWasClosed = true;
+        return;
       }
       if (confirmConfigRef.current?.isOpen) {
-        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-        modalWasClosed = true;
-      }
-
-      if (modalWasClosed) {
+        setConfirmConfig(p => ({ ...p, isOpen: false }));
         return;
       }
 
-      // If no modals were closed, synchronize tabs & subtabs
-      if (urlTab !== activeTabRef.current) {
-        setActiveTab(urlTab);
-      }
-      if (urlTab === 'profile' && urlSub !== profileSubTabRef.current) {
-        setProfileSubTab(urlSub);
+      // 2. If on a Profile subtab, return to Profile Overview
+      if (activeTabRef.current === 'profile' && profileSubTabRef.current !== 'overview') {
+        setProfileSubTab('overview');
+        return;
       }
 
-      // Root exit prevention guard (when user pops to the bottom level 0)
-      if (e?.state?.root || e?.state?.level === 0) {
-        const now = Date.now();
-        if (now - lastBackPressRef.current < 2000) {
-          try {
-            CapApp.minimizeApp();
-          } catch (err) {}
-        } else {
-          lastBackPressRef.current = now;
-          try {
-            window.history.pushState({ level: 1, tab: 'explore' }, '', window.location.href);
-          } catch (err) {}
-          toast('Swipe or press back again to exit', 'info');
-        }
+      // 3. Tab navigation history (pop previous tab)
+      if (tabHistoryRef.current.length > 1) {
+        const nextHistory = [...tabHistoryRef.current];
+        nextHistory.pop();
+        const prevTab = nextHistory[nextHistory.length - 1];
+        setTabHistory(nextHistory);
+        handleTabChange(prevTab, true);
+        return;
+      }
+
+      // 4. Return to explore if currently on another tab
+      if (activeTabRef.current !== 'explore') {
+        handleTabChange('explore', true);
+        return;
+      }
+
+      // 5. At root (explore tab, no modals, no subtabs): Double back to exit
+      const now = Date.now();
+      if (now - lastBackPressRef.current < 2000) {
+        try {
+          CapApp.minimizeApp();
+        } catch (err) {}
+      } else {
+        lastBackPressRef.current = now;
+        toast('Swipe back again to exit', 'info');
       }
     };
 
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
-  }, [toast]);
+  }, [handleTabChange, toast]);
 
   // ── Universal Mobile Left-Edge Touch Swipe Listener ──
   useEffect(() => {
@@ -654,7 +744,7 @@ function AppInner() {
 
       // Swipe right gesture: moved > 45px right, mostly horizontal, under 500ms
       if (deltaX > 45 && deltaX > deltaY * 1.2 && elapsed < 500) {
-        window.history.back();
+        handleUniversalBack();
       }
     };
 
@@ -667,7 +757,7 @@ function AppInner() {
       window.removeEventListener('touchmove', onTouchMove);
       window.removeEventListener('touchend', onTouchEnd);
     };
-  }, []);
+  }, [handleUniversalBack]);
 
   // ── Hardware Back Listener for Capacitor & Android WebView ──
   useEffect(() => {
