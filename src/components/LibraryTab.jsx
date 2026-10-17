@@ -318,62 +318,21 @@ function LibraryColumn({ label, icon, color, movies, onEditClick, onRemove, sear
                     🎬
                   </div>
                 )}
-                {movie.rating > 0 && (
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '4px',
-                    left: '4px',
-                    background: 'rgba(0, 0, 0, 0.88)',
-                    border: '1px solid rgba(251, 191, 36, 0.4)',
-                    borderRadius: '4px',
-                    padding: '1px 5px',
-                    fontSize: '10px',
-                    fontWeight: 900,
-                    color: 'var(--gold)',
-                    lineHeight: 1.1
-                  }}>
-                    ★ {Number(movie.rating).toFixed(1)}
-                  </div>
-                )}
               </div>
 
               {/* Title, Badges & Meta */}
               <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '6px' }}>
-                  <div style={{
-                    fontSize: '15.5px',
-                    fontWeight: 900,
-                    color: '#FFFFFF',
-                    lineHeight: 1.25,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    letterSpacing: '-0.3px',
-                    flex: 1
-                  }}>
-                    {movie.title}
-                  </div>
-
-                  {/* Remove button */}
-                  <button
-                    onClick={e => { e.stopPropagation(); onRemove(movie.id); }}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: 'var(--text-dim)',
-                      cursor: 'pointer',
-                      padding: '2px',
-                      opacity: 0.45,
-                      transition: 'opacity 0.15s',
-                      display: 'flex',
-                      flexShrink: 0
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.opacity = 1}
-                    onMouseLeave={e => e.currentTarget.style.opacity = 0.45}
-                    title="Remove title"
-                  >
-                    <X size={14} />
-                  </button>
+                <div style={{
+                  fontSize: '15.5px',
+                  fontWeight: 900,
+                  color: '#FFFFFF',
+                  lineHeight: 1.25,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  letterSpacing: '-0.3px'
+                }}>
+                  {movie.title}
                 </div>
 
                 {/* Subtitle: Year, runtime, director or episode progress */}
@@ -487,6 +446,77 @@ function LibraryColumn({ label, icon, color, movies, onEditClick, onRemove, sear
                   </div>
                 )}
               </div>
+
+              {/* Right Side: Big, Easy-to-See Rating Badge Centered in the Box */}
+              {movie.rating > 0 && (
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  alignSelf: 'center',
+                  flexShrink: 0,
+                  padding: '8px 12px',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.16) 0%, rgba(217, 119, 6, 0.08) 100%)',
+                  border: '1px solid rgba(251, 191, 36, 0.45)',
+                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12)',
+                  minWidth: '64px',
+                  textAlign: 'center',
+                  marginRight: '6px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '3px', lineHeight: 1 }}>
+                    <Star size={17} fill="var(--gold)" color="var(--gold)" style={{ filter: 'drop-shadow(0 2px 5px rgba(251, 191, 36, 0.6))' }} />
+                    <span style={{
+                      fontSize: '22px',
+                      fontWeight: 900,
+                      color: 'var(--gold)',
+                      letterSpacing: '-0.5px',
+                      lineHeight: 1,
+                      fontFeatureSettings: '"tnum"'
+                    }}>
+                      {Number(movie.rating).toFixed(1)}
+                    </span>
+                  </div>
+                  <span style={{
+                    fontSize: '9.5px',
+                    fontWeight: 800,
+                    color: 'rgba(255, 255, 255, 0.5)',
+                    marginTop: '3px',
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase'
+                  }}>
+                    / 10
+                  </span>
+                </div>
+              )}
+
+              {/* Remove (✕) Button in Top-Right Corner of the Box */}
+              <button
+                onClick={e => { e.stopPropagation(); onRemove(movie.id); }}
+                style={{
+                  position: 'absolute',
+                  top: '8px',
+                  right: '8px',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-dim)',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  opacity: 0.35,
+                  transition: 'all 0.15s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '4px',
+                  zIndex: 2
+                }}
+                onMouseEnter={e => { e.currentTarget.style.opacity = 1; e.currentTarget.style.color = '#ef4444'; }}
+                onMouseLeave={e => { e.currentTarget.style.opacity = 0.35; e.currentTarget.style.color = 'var(--text-dim)'; }}
+                title="Remove title"
+              >
+                <X size={13} />
+              </button>
             </div>
           );
         })}
