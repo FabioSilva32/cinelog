@@ -8,6 +8,6 @@
   },
   "server": {
     "url": "https://cinelog-phi.vercel.app",
-    "cleartext": true
+    "cleartext": false
   }
 }
