@@ -609,7 +609,9 @@ function AppInner() {
       return 'exit';
     } else {
       lastBackPressRef.current = now;
-      toast('Swipe back again to exit', 'info');
+      if (toast?.info) {
+        toast.info('Exit CineLog', 'Swipe back again to exit');
+      }
       return 'warned';
     }
   }, [handleTabChange, toast]);
@@ -694,7 +696,9 @@ function AppInner() {
         } catch (err) {}
       } else {
         lastBackPressRef.current = now;
-        toast('Swipe back again to exit', 'info');
+        if (toast?.info) {
+          toast.info('Exit CineLog', 'Swipe back again to exit');
+        }
       }
     };
 
