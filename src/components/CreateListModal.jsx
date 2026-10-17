@@ -16,17 +16,41 @@ const FRANCHISE_PACKS = [
     id: 'mcu',
     name: 'Marvel Cinematic Universe (MCU)',
     emoji: '⚡',
-    badge: '10 Essential Films',
+    badge: '34 Complete MCU Films',
     movies: [
-      { id: 1726, tmdb_id: 1726, title: 'Iron Man', release_year: '2008', poster_path: '/78lPtwv72eTNqFW9COBYI0dWDJa.jpg', rating: 7.6 },
+      { id: 1726, tmdb_id: 1726, title: 'Iron Man', release_year: '2008', poster_path: '/78lPtwv72eTNqFW9COBYI0dWDJa.jpg', rating: 7.7 },
+      { id: 1724, tmdb_id: 1724, title: 'The Incredible Hulk', release_year: '2008', poster_path: '/gKzYx79y0AQTL4UAk1cBQJ3nvrm.jpg', rating: 6.3 },
+      { id: 10138, tmdb_id: 10138, title: 'Iron Man 2', release_year: '2010', poster_path: '/6WBeq4fCfn7AN0o21W9qNcRF2l9.jpg', rating: 6.9 },
+      { id: 10195, tmdb_id: 10195, title: 'Thor', release_year: '2011', poster_path: '/prSfAi1xGrhLQNxVSUFh61xQ4Qy.jpg', rating: 6.8 },
+      { id: 1771, tmdb_id: 1771, title: 'Captain America: The First Avenger', release_year: '2011', poster_path: '/vSNxAJTlD0r02V9sPYpOjqDZXUK.jpg', rating: 7.0 },
       { id: 24428, tmdb_id: 24428, title: 'The Avengers', release_year: '2012', poster_path: '/RYMX2wcKCBAr24UyPD7xwmjaTn.jpg', rating: 8.1 },
+      { id: 68721, tmdb_id: 68721, title: 'Iron Man 3', release_year: '2013', poster_path: '/qhPtAc1TKbMPqNvcdXSOn9Bn7hZ.jpg', rating: 6.9 },
+      { id: 76338, tmdb_id: 76338, title: 'Thor: The Dark World', release_year: '2013', poster_path: '/wp6OxE4poJ4G7c0U2ZIXasTSMR7.jpg', rating: 6.5 },
       { id: 100402, tmdb_id: 100402, title: 'Captain America: The Winter Soldier', release_year: '2014', poster_path: '/tVFRpFw3xTedgPGqxW0AOI8Qhh0.jpg', rating: 7.7 },
       { id: 118340, tmdb_id: 118340, title: 'Guardians of the Galaxy', release_year: '2014', poster_path: '/r7vmZjiyZw9rpJMQJdXpjgiCOk9.jpg', rating: 7.9 },
+      { id: 99861, tmdb_id: 99861, title: 'Avengers: Age of Ultron', release_year: '2015', poster_path: '/4ssDuvEDkSArWEdyBl2X5EHvYKU.jpg', rating: 7.3 },
+      { id: 102899, tmdb_id: 102899, title: 'Ant-Man', release_year: '2015', poster_path: '/rQRnQfUl3kfp78nCWq8Ks04vnq1.jpg', rating: 7.1 },
       { id: 271110, tmdb_id: 271110, title: 'Captain America: Civil War', release_year: '2016', poster_path: '/rAGiXaUfPzY7CDEyNKUofk3Kw2e.jpg', rating: 7.5 },
+      { id: 284052, tmdb_id: 284052, title: 'Doctor Strange', release_year: '2016', poster_path: '/uGBVj3bEbCoZbDjjl9wTxcygko1.jpg', rating: 7.4 },
+      { id: 283995, tmdb_id: 283995, title: 'Guardians of the Galaxy Vol. 2', release_year: '2017', poster_path: '/y4MBh0EjBlMuOzv9axM4qJlmhzz.jpg', rating: 7.6 },
+      { id: 315635, tmdb_id: 315635, title: 'Spider-Man: Homecoming', release_year: '2017', poster_path: '/c24sv2weTHPsmDa7jEMN0m2P3RT.jpg', rating: 7.3 },
       { id: 284053, tmdb_id: 284053, title: 'Thor: Ragnarok', release_year: '2017', poster_path: '/rzRwTcFvttcN1ZpX2xv4j3tSdJu.jpg', rating: 7.6 },
+      { id: 284054, tmdb_id: 284054, title: 'Black Panther', release_year: '2018', poster_path: '/uxzzxijgPIY7slzFvMotPv8wjKA.jpg', rating: 7.4 },
       { id: 299536, tmdb_id: 299536, title: 'Avengers: Infinity War', release_year: '2018', poster_path: '/7WsyChQLEftFiDOVTGkv3hFpyyt.jpg', rating: 8.2 },
+      { id: 363088, tmdb_id: 363088, title: 'Ant-Man and the Wasp', release_year: '2018', poster_path: '/cFQEO687n1K6umXbInzocxcnAQz.jpg', rating: 6.9 },
+      { id: 299537, tmdb_id: 299537, title: 'Captain Marvel', release_year: '2019', poster_path: '/AtsgWhDnHTq68L0lLsUrCnM7TjG.jpg', rating: 6.8 },
       { id: 299534, tmdb_id: 299534, title: 'Avengers: Endgame', release_year: '2019', poster_path: '/bR8ISy1O9XQxqiy0fQFw2BX72RQ.jpg', rating: 8.2 },
+      { id: 429617, tmdb_id: 429617, title: 'Spider-Man: Far From Home', release_year: '2019', poster_path: '/4q2NNj4S5dG2RLF9CpXsej7yXl.jpg', rating: 7.4 },
+      { id: 497698, tmdb_id: 497698, title: 'Black Widow', release_year: '2021', poster_path: '/qAZ0pzat24kLdO3o8ejmbLxyOac.jpg', rating: 7.1 },
+      { id: 566525, tmdb_id: 566525, title: 'Shang-Chi and the Legend of the Ten Rings', release_year: '2021', poster_path: '/9f2Q0U3IOsLgrI2HkvldwSABZy5.jpg', rating: 7.5 },
+      { id: 524434, tmdb_id: 524434, title: 'Eternals', release_year: '2021', poster_path: '/lFByFSLV5WDJEv3KabbdAF959F2.jpg', rating: 6.7 },
       { id: 634649, tmdb_id: 634649, title: 'Spider-Man: No Way Home', release_year: '2021', poster_path: '/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg', rating: 7.9 },
+      { id: 453395, tmdb_id: 453395, title: 'Doctor Strange in the Multiverse of Madness', release_year: '2022', poster_path: '/ddJcSKbcp4rKZTmuyWaMhuwcfMz.jpg', rating: 7.2 },
+      { id: 616037, tmdb_id: 616037, title: 'Thor: Love and Thunder', release_year: '2022', poster_path: '/pIkRyD18kl4FhoCNQuWxWu5cBLM.jpg', rating: 6.4 },
+      { id: 505642, tmdb_id: 505642, title: 'Black Panther: Wakanda Forever', release_year: '2022', poster_path: '/sv1xJUazXeYqALzczSZ3O6nkH75.jpg', rating: 7.0 },
+      { id: 640146, tmdb_id: 640146, title: 'Ant-Man and the Wasp: Quantumania', release_year: '2023', poster_path: '/qnqGbB22YJ7dSs4o6M7exTpNxPz.jpg', rating: 6.2 },
+      { id: 447365, tmdb_id: 447365, title: 'Guardians of the Galaxy Vol. 3', release_year: '2023', poster_path: '/r2J02Z2OpNTctfOSN1Ydgii51I3.jpg', rating: 7.9 },
+      { id: 609681, tmdb_id: 609681, title: 'The Marvels', release_year: '2023', poster_path: '/9GBhzXMFjgcZ3FdR9w3bUMMTps5.jpg', rating: 5.9 },
       { id: 533535, tmdb_id: 533535, title: 'Deadpool & Wolverine', release_year: '2024', poster_path: '/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg', rating: 7.6 }
     ]
   },
@@ -50,14 +74,18 @@ const FRANCHISE_PACKS = [
     id: 'batman',
     name: 'Batman & Gotham City',
     emoji: '🦇',
-    badge: '6 Definitive Films',
+    badge: '10 Definitive Films',
     movies: [
       { id: 414906, tmdb_id: 414906, title: 'The Batman', release_year: '2022', poster_path: '/74xTEgt7R36Fpooo50r9T25onhq.jpg', rating: 7.7 },
       { id: 155, tmdb_id: 155, title: 'The Dark Knight', release_year: '2008', poster_path: '/qJ2tW6WMUDux911r6m7haRef0WH.jpg', rating: 8.5 },
       { id: 272, tmdb_id: 272, title: 'Batman Begins', release_year: '2005', poster_path: '/sPX89Td70IDDjVr85jdSBb4rWGr.jpg', rating: 7.7 },
       { id: 49026, tmdb_id: 49026, title: 'The Dark Knight Rises', release_year: '2012', poster_path: '/hr0L2aueqlP2BYUblTTjmtn0hw4.jpg', rating: 7.8 },
       { id: 475557, tmdb_id: 475557, title: 'Joker', release_year: '2019', poster_path: '/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg', rating: 8.1 },
-      { id: 268, tmdb_id: 268, title: 'Batman', release_year: '1989', poster_path: '/cij4dd21v2Rk2YtUQbV5kW69WB2.jpg', rating: 7.2 }
+      { id: 209112, tmdb_id: 209112, title: 'Batman v Superman: Dawn of Justice', release_year: '2016', poster_path: '/5UsK3grJvtQrtzEgqNlDljJW96w.jpg', rating: 6.0 },
+      { id: 268, tmdb_id: 268, title: 'Batman', release_year: '1989', poster_path: '/cij4dd21v2Rk2YtUQbV5kW69WB2.jpg', rating: 7.2 },
+      { id: 364, tmdb_id: 364, title: 'Batman Returns', release_year: '1992', poster_path: '/jKBjeXM7iBBV9UkUcOXx3m7FSHY.jpg', rating: 7.0 },
+      { id: 414, tmdb_id: 414, title: 'Batman Forever', release_year: '1995', poster_path: '/i0fJS8M5UKoETjjJ0zwUiKaR8tr.jpg', rating: 5.5 },
+      { id: 415, tmdb_id: 415, title: 'Batman & Robin', release_year: '1997', poster_path: '/i7hEUpDuMN2LOrCEifFyGSHZQSY.jpg', rating: 4.4 }
     ]
   },
   {
@@ -78,26 +106,35 @@ const FRANCHISE_PACKS = [
     id: 'spiderman',
     name: 'Spider-Man Multiverse',
     emoji: '🕷️',
-    badge: '5 Web-Slingers',
+    badge: '8 Web-Slingers',
     movies: [
       { id: 324857, tmdb_id: 324857, title: 'Spider-Man: Into the Spider-Verse', release_year: '2018', poster_path: '/iiZZdoQBEYBv6id8su7ImL0oCbD.jpg', rating: 8.4 },
       { id: 569094, tmdb_id: 569094, title: 'Spider-Man: Across the Spider-Verse', release_year: '2023', poster_path: '/8Vt6mWEReuy4Of61Lnj5Xj704m8.jpg', rating: 8.3 },
       { id: 634649, tmdb_id: 634649, title: 'Spider-Man: No Way Home', release_year: '2021', poster_path: '/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg', rating: 7.9 },
+      { id: 429617, tmdb_id: 429617, title: 'Spider-Man: Far From Home', release_year: '2019', poster_path: '/4q2NNj4S5dG2RLF9CpXsej7yXl.jpg', rating: 7.4 },
+      { id: 315635, tmdb_id: 315635, title: 'Spider-Man: Homecoming', release_year: '2017', poster_path: '/c24sv2weTHPsmDa7jEMN0m2P3RT.jpg', rating: 7.3 },
       { id: 558, tmdb_id: 558, title: 'Spider-Man 2', release_year: '2004', poster_path: '/aGuvNAaaZuWXYQQ6N2v7DeuP6mB.jpg', rating: 7.3 },
-      { id: 557, tmdb_id: 557, title: 'Spider-Man', release_year: '2002', poster_path: '/or6XJBVpcEbIkma0V9zshnbEtx4.jpg', rating: 7.4 }
+      { id: 557, tmdb_id: 557, title: 'Spider-Man', release_year: '2002', poster_path: '/or6XJBVpcEbIkma0V9zshnbEtx4.jpg', rating: 7.4 },
+      { id: 559, tmdb_id: 559, title: 'Spider-Man 3', release_year: '2007', poster_path: '/qFmwhVUoUSXjkKRmca5yGDEXBIj.jpg', rating: 6.5 }
     ]
   },
   {
     id: 'starwars',
     name: 'Star Wars Saga',
     emoji: '⚔️',
-    badge: '5 Galactic Hits',
+    badge: '11 Galactic Sagas',
     movies: [
       { id: 11, tmdb_id: 11, title: 'Star Wars: A New Hope', release_year: '1977', poster_path: '/fai0rspsNeJCS69wHNjOdWxcI7P.jpg', rating: 8.2 },
       { id: 1891, tmdb_id: 1891, title: 'The Empire Strikes Back', release_year: '1980', poster_path: '/nNAeTmF4CtdSgMDplXTDPOpYzsX.jpg', rating: 8.4 },
       { id: 1892, tmdb_id: 1892, title: 'Return of the Jedi', release_year: '1983', poster_path: '/jQYlydvHm3kUix1f8prMucrplhm.jpg', rating: 7.9 },
+      { id: 1893, tmdb_id: 1893, title: 'Star Wars: Episode I - The Phantom Menace', release_year: '1999', poster_path: '/6wkfovpn7Eq8dYNKaG5PY3q2oq6.jpg', rating: 6.6 },
+      { id: 1894, tmdb_id: 1894, title: 'Star Wars: Episode II - Attack of the Clones', release_year: '2002', poster_path: '/oZNPzxqM2s5DyVWab09NTQScDQt.jpg', rating: 6.6 },
       { id: 1895, tmdb_id: 1895, title: 'Star Wars: Revenge of the Sith', release_year: '2005', poster_path: '/xfSAoBEm9MNBjmlNcDYLvLSMlnq.jpg', rating: 7.5 },
-      { id: 330459, tmdb_id: 330459, title: 'Rogue One: A Star Wars Story', release_year: '2016', poster_path: '/i0yw1mFbB7sNGHCs7EXZPzFkdA1.jpg', rating: 7.5 }
+      { id: 140607, tmdb_id: 140607, title: 'Star Wars: The Force Awakens', release_year: '2015', poster_path: '/wqnLdwVXoBjKibFRR5U3y0aDUhs.jpg', rating: 7.2 },
+      { id: 181808, tmdb_id: 181808, title: 'Star Wars: The Last Jedi', release_year: '2017', poster_path: '/kOVEVeg59E0wsnXmF9nrh6OmWII.jpg', rating: 6.7 },
+      { id: 181812, tmdb_id: 181812, title: 'Star Wars: The Rise of Skywalker', release_year: '2019', poster_path: '/db32LaOibwEliAmSL2jjDF6oDdj.jpg', rating: 6.2 },
+      { id: 330459, tmdb_id: 330459, title: 'Rogue One: A Star Wars Story', release_year: '2016', poster_path: '/i0yw1mFbB7sNGHCs7EXZPzFkdA1.jpg', rating: 7.5 },
+      { id: 348350, tmdb_id: 348350, title: 'Solo: A Star Wars Story', release_year: '2018', poster_path: '/4oD6VEccFkorEBTEDXtpLAaz0Rl.jpg', rating: 6.6 }
     ]
   },
   {
