@@ -818,12 +818,19 @@ export default function ProfileTab({
               </div>
 
               {/* PROFILE HEADER ROW */}
-              <div style={{ background: '#121212', padding: '0 28px 20px', border: '1px solid var(--border)', borderTop: 'none' }}>
-                {/* Avatar overlapping banner, then text & stats side by side */}
+              <div style={{
+                background: 'linear-gradient(180deg, #13111b 0%, #0d0b13 100%)',
+                padding: '0 28px 24px',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderTop: 'none',
+                borderRadius: '0 0 24px 24px',
+                boxShadow: '0 24px 60px rgba(0,0,0,0.7)'
+              }}>
+                {/* Top Row: Avatar + Name on Left, Stats Capsules on Right */}
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '20px', flexWrap: 'wrap' }}>
 
-                  {/* Left: avatar + name/bio */}
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '20px', flex: 1, minWidth: '260px' }}>
+                  {/* Left: Avatar + Name / Handle / Follow */}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '20px', minWidth: '240px' }}>
                     <div style={{ marginTop: '-55px', flexShrink: 0, zIndex: 10, position: 'relative' }}>
                       <AvatarWithBorder
                         src={viewedProfile?.avatar || DEFAULT_GREY_AVATAR}
@@ -833,7 +840,7 @@ export default function ProfileTab({
                       />
                     </div>
 
-                    <div style={{ paddingTop: '14px', minWidth: 0, flex: 1 }}>
+                    <div style={{ paddingTop: '14px', minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                         <h2 style={{ fontSize: '24px', fontWeight: 900, color: '#fff', margin: 0, lineHeight: 1.2 }}>
                           {viewedProfile?.displayName || viewedProfile?.username || 'CineLog User'}
@@ -849,37 +856,18 @@ export default function ProfileTab({
                           </button>
                         )}
                       </div>
-                      <div style={{ color: 'var(--accent)', fontSize: '13px', fontWeight: 700, marginTop: '4px' }}>@{viewedProfile?.username}</div>
-                      {viewedProfile?.bio && <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '6px', maxWidth: '500px', lineHeight: 1.5, margin: '6px 0 0' }}>{viewedProfile.bio}</p>}
-                      {/* Badges */}
-                      {(() => {
-                        const vBadges = (viewedProfile?.purchasedBadges || []);
-                        if (vBadges.length === 0) return null;
-                        return (
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '10px' }}>
-                            {vBadges.map(b => {
-                              const style = (window.__BADGE_COLORS__ || {})[b] || {};
-                              return (
-                                <span key={b} style={{
-                                  fontSize: '11px', fontWeight: 800, padding: '3px 10px',
-                                  borderRadius: '20px',
-                                  border: style.border || '1px solid rgba(255,255,255,0.2)',
-                                  color: style.color || 'var(--text-muted)',
-                                  background: style.bg || 'rgba(255,255,255,0.05)',
-                                }}>{b}</span>
-                              );
-                            })}
-                          </div>
-                        );
-                      })()}
+                      <div style={{ color: 'var(--accent)', fontSize: '13px', fontWeight: 700, marginTop: '4px' }}>
+                        @{viewedProfile?.username}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Right: Stats pills */}
-                  <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'flex-end', paddingTop: '16px' }}>
+                  {/* Right: Modern Frosted Stat Capsules */}
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end', paddingTop: '14px' }}>
                     {[
                       { label: 'Films', val: viewedLibrary.filter(m => m.status === 'watched').length, color: 'var(--green)' },
                       { label: 'Reviews', val: viewedLibrary.filter(m => m.review && m.review.trim().length > 0).length, color: 'var(--accent)' },
+                      { label: 'Favorites', val: (viewedProfile?.favorites || []).filter(Boolean).length, color: 'var(--red)' },
                       { label: 'Watchlist', val: viewedLibrary.filter(m => m.status === 'plan_to_watch').length, color: '#60a5fa' },
                       {
                         label: 'Avg Rating',
@@ -890,13 +878,69 @@ export default function ProfileTab({
                         color: 'var(--gold)'
                       },
                     ].map(s => (
-                      <div key={s.label} style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '20px', fontWeight: 900, color: s.color, fontFamily: 'var(--font-heading)' }}>{s.val}</div>
-                        <div style={{ fontSize: '10px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>{s.label}</div>
+                      <div
+                        key={s.label}
+                        style={{
+                          textAlign: 'center',
+                          minWidth: '65px',
+                          padding: '8px 12px',
+                          background: 'rgba(255,255,255,0.035)',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          borderRadius: '14px',
+                          backdropFilter: 'blur(8px)',
+                          boxShadow: '0 4px 16px rgba(0,0,0,0.25)'
+                        }}
+                      >
+                        <div style={{ fontSize: '18px', fontWeight: 900, color: s.color, fontFamily: 'var(--font-heading)', lineHeight: 1.1 }}>{s.val}</div>
+                        <div style={{ fontSize: '9px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 800, marginTop: '3px' }}>{s.label}</div>
                       </div>
                     ))}
                   </div>
                 </div>
+
+                {/* Full-width Bio & Badges Card (full square box spanning whole width, no blank left side) */}
+                {viewedProfile?.bio && (
+                  <div style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    background: 'rgba(255, 255, 255, 0.035)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: '16px',
+                    padding: '16px 20px',
+                    marginTop: '20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px'
+                  }}>
+                    <p style={{
+                      fontSize: '13.5px',
+                      color: 'rgba(255,255,255,0.85)',
+                      lineHeight: 1.6,
+                      margin: 0,
+                      fontWeight: 500
+                    }}>
+                      {viewedProfile.bio}
+                    </p>
+                    {/* Badges inside the full square bio box */}
+                    {(() => {
+                      const vBadges = (viewedProfile?.purchasedBadges || []);
+                      if (vBadges.length === 0) return null;
+                      return (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', paddingTop: '2px' }}>
+                          {vBadges.map(b => (
+                            <span key={b} style={{
+                              fontSize: '11px', fontWeight: 800, padding: '4px 12px',
+                              borderRadius: '20px',
+                              border: '1px solid rgba(229, 9, 20, 0.35)',
+                              color: 'var(--accent)',
+                              background: 'rgba(229, 9, 20, 0.08)'
+                            }}>{b}</span>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
 
               {/* Sub tabs & Content */}

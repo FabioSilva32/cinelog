@@ -447,42 +447,34 @@ function AppInner() {
     // 1. Close open overlay modals first
     if (showQuickAddRef.current) {
       setShowQuickAdd(false);
-      keepAlive();
       return 'handled';
     }
     if (showCommandCenterRef.current) {
       setShowCommandCenter(false);
-      keepAlive();
       return 'handled';
     }
     if (showSettingsRef.current) {
       setShowSettings(false);
-      keepAlive();
       return 'handled';
     }
     if (showAuthRef.current) {
       setShowAuth(false);
-      keepAlive();
       return 'handled';
     }
     if (showRecoveryModalRef.current) {
       setShowRecoveryModal(false);
-      keepAlive();
       return 'handled';
     }
     if (activeEditMovieRef.current) {
       setActiveEditMovie(null);
-      keepAlive();
       return 'handled';
     }
     if (viewingUserProfileRef.current) {
       setViewingUserProfile(null);
-      keepAlive();
       return 'handled';
     }
     if (confirmConfigRef.current?.isOpen) {
       setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-      keepAlive();
       return 'handled';
     }
 
@@ -490,7 +482,6 @@ function AppInner() {
     const backEvent = new CustomEvent('cinelog-back-handled', { cancelable: true });
     window.dispatchEvent(backEvent);
     if (backEvent.defaultPrevented) {
-      keepAlive();
       return 'handled';
     }
 
@@ -499,14 +490,12 @@ function AppInner() {
       document.querySelector('.modal-backdrop button.btn-ghost');
     if (openModalCloseBtn) {
       openModalCloseBtn.click();
-      keepAlive();
       return 'handled';
     }
 
     // 3. If in Profile and on a subtab, navigate back to Profile Overview
     if (activeTabRef.current === 'profile' && profileSubTabRef.current !== 'overview') {
       setProfileSubTab('overview');
-      keepAlive();
       return 'handled';
     }
 
@@ -517,26 +506,26 @@ function AppInner() {
       const prevTab = nextHistory[nextHistory.length - 1];
       setTabHistory(nextHistory);
       handleTabChange(prevTab, true);
-      keepAlive();
       return 'handled';
     }
 
     // 5. Return to explore if currently on another tab
     if (activeTabRef.current !== 'explore') {
       handleTabChange('explore', true);
-      keepAlive();
       return 'handled';
     }
 
     // 6. At root (explore tab, no modals, no history) -> Double-tap back to exit
     if (now - lastBackPressRef.current < 2000) {
       try {
-        CapApp.exitApp();
+        CapApp.minimizeApp();
       } catch (e) {}
       return 'exit';
     } else {
       lastBackPressRef.current = now;
-      keepAlive();
+      try {
+        window.history.pushState({ tab: 'explore', guard: true }, '', '#root');
+      } catch (e) {}
       toast('Press back again to exit', 'info');
       return 'warned';
     }
@@ -1048,7 +1037,7 @@ function AppInner() {
 
   const handleMovieClick = (tmdbId, mediaType) => {
     try {
-      window.history.pushState({ modal: 'movie', id: tmdbId }, '', window.location.href);
+      window.history.pushState({ modal: 'movie', id: tmdbId }, '', '#movie-' + tmdbId);
     } catch (e) {}
 
     let resolvedType = mediaType;
@@ -1099,7 +1088,7 @@ function AppInner() {
     }
     setViewingUserProfile(target);
     try {
-      window.history.pushState({ modal: 'user_profile', user: target?.username }, '', window.location.href);
+      window.history.pushState({ modal: 'user_profile', user: target?.username }, '', '#user-' + (target?.username || 'user'));
     } catch (e) {}
     handleTabChange('profile', false, true);
   }, [handleTabChange]);
