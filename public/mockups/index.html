@@ -1,25 +1,25 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CineLog Library Redesign Options · Large Posters & High Legibility</title>
+  <title>CineLog Rating Color Palettes · Live Showcase</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: #08070d;
+      background: #09070f;
       color: #fff;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      padding: 30px 20px;
+      padding: 32px 20px 60px;
       line-height: 1.5;
     }
     .header {
-      max-width: 1240px;
-      margin: 0 auto 30px;
+      max-width: 1200px;
+      margin: 0 auto 36px;
       text-align: center;
     }
     h1 {
-      font-size: 34px;
+      font-size: 32px;
       font-weight: 900;
       letter-spacing: -0.6px;
       margin-bottom: 8px;
@@ -27,240 +27,465 @@
     h1 span { color: #e50914; }
     p.subtitle {
       color: #a1a1aa;
-      font-size: 16px;
-      max-width: 720px;
+      font-size: 15px;
+      max-width: 680px;
       margin: 0 auto;
     }
-    .feedback-callout {
-      max-width: 800px;
-      margin: 20px auto 0;
-      background: rgba(229, 9, 20, 0.08);
-      border: 1px solid rgba(229, 9, 20, 0.3);
-      padding: 12px 20px;
-      border-radius: 12px;
-      font-size: 14px;
-      color: #fca5a5;
-    }
-    .tabs {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      margin: 28px 0 36px;
-      flex-wrap: wrap;
-    }
-    .tab-btn {
-      background: #141418;
-      color: #a1a1aa;
-      border: 1px solid #27272a;
-      padding: 12px 24px;
-      border-radius: 28px;
-      font-weight: 800;
-      font-size: 14px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .tab-btn:hover {
-      border-color: rgba(255, 255, 255, 0.25);
-      color: #fff;
-    }
-    .tab-btn.active {
-      background: #e50914;
-      color: #fff;
-      border-color: #e50914;
-      box-shadow: 0 6px 24px rgba(229, 9, 20, 0.45);
-    }
-    .concepts-container {
-      max-width: 1240px;
+    .palette-grid {
+      max-width: 1200px;
       margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(540px, 1fr));
+      gap: 28px;
+    }
+    .palette-card {
+      background: #100e18;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
       display: flex;
       flex-direction: column;
-      gap: 48px;
+      gap: 18px;
     }
-    .concept-card {
-      background: #0f0d18;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 22px;
-      padding: 28px;
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85);
-    }
-    .concept-title {
+    .palette-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding-bottom: 14px;
     }
-    .concept-title-left {
+    .palette-title {
+      font-size: 18px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .palette-badge {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 12px;
+      letter-spacing: 0.05em;
+    }
+    .swatches {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .swatch {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .movie-box {
       display: flex;
       align-items: center;
       gap: 12px;
-    }
-    .concept-badge {
-      padding: 5px 14px;
+      padding: 10px;
       border-radius: 12px;
-      font-size: 11.5px;
-      font-weight: 900;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+      position: relative;
     }
-    .badge-c1 { background: rgba(229, 9, 20, 0.18); color: #e50914; border: 1px solid rgba(229, 9, 20, 0.4); }
-    .badge-c2 { background: rgba(0, 112, 243, 0.18); color: #0070f3; border: 1px solid rgba(0, 112, 243, 0.4); }
-    .badge-c3 { background: rgba(245, 158, 11, 0.18); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.4); }
-    .concept-img-wrapper {
-      width: 100%;
-      border-radius: 16px;
+    .poster {
+      width: 64px;
+      height: 94px;
+      border-radius: 8px;
       overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      background: #050408;
-      margin-bottom: 20px;
-      box-shadow: 0 12px 36px rgba(0,0,0,0.6);
+      flex-shrink: 0;
+      background: #181622;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
     }
-    .concept-img-wrapper img {
+    .poster img {
       width: 100%;
-      height: auto;
+      height: 100%;
+      object-fit: cover;
       display: block;
     }
-    .concept-desc {
-      color: #d4d4d8;
-      font-size: 14.5px;
-      line-height: 1.65;
-      background: rgba(255, 255, 255, 0.03);
-      padding: 16px 20px;
-      border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.06);
+    .info {
+      flex: 1;
+      min-width: 0;
     }
-    .feature-list {
-      margin-top: 10px;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 10px;
-      list-style: none;
+    .title {
+      font-size: 15px;
+      font-weight: 900;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .feature-list li {
-      display: flex;
+    .meta {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.6);
+      margin: 3px 0 6px;
+    }
+    .tag {
+      display: inline-block;
+      font-size: 9.5px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 5px;
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.35);
+    }
+    .score-pill {
+      display: inline-flex;
       align-items: center;
-      gap: 8px;
-      font-size: 13.5px;
-      color: #e4e4e7;
+      gap: 4px;
+      align-self: center;
+      flex-shrink: 0;
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 900;
+      line-height: 1;
+      margin-right: 6px;
     }
-    .feature-list li span { color: #22c55e; font-weight: 900; }
+    .close-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      color: rgba(255, 255, 255, 0.35);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .slider-box {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 8px;
+    }
+    .slider-header span.label {
+      font-size: 11px;
+      font-weight: 800;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .slider-header span.val {
+      font-size: 20px;
+      font-weight: 900;
+    }
+    input[type=range] {
+      width: 100%;
+      height: 6px;
+      border-radius: 4px;
+      outline: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid #fff;
+    }
   </style>
 </head>
 <body>
   <div class="header">
-    <h1>Cine<span>Log</span> Library Layout Concepts</h1>
-    <p class="subtitle">Designed specifically to solve small text and small posters while delivering maximum visual impact.</p>
-    <div class="feedback-callout">
-      🎯 <strong>Brother's Feedback Solved:</strong> Posters are 3x to 6x larger (no more tiny 32px thumbnails), titles are upgraded to bold 16px–22px, and star ratings & format badges are readable across the room.
-    </div>
-    
-    <div class="tabs">
-      <button class="tab-btn active" onclick="showConcept('all')">Compare All Layouts</button>
-      <button class="tab-btn" onclick="showConcept('c1')">Option 1: Grand Showcase Grid</button>
-      <button class="tab-btn" onclick="showConcept('c2')">Option 2: Deluxe 3-Column Studio</button>
-      <button class="tab-btn" onclick="showConcept('c3')">Option 3: Editorial Magazine Stream</button>
-    </div>
+    <h1>CineLog Rating <span>Color Combos</span></h1>
+    <p class="subtitle">Pick the palette that looks best to you. Yellow at the top felt basic, so here are 4 curated, cinema-grade alternatives for both your movie cards and slider.</p>
   </div>
 
-  <div class="concepts-container">
-    <!-- Concept 1 -->
-    <div class="concept-card" id="card-c1">
-      <div class="concept-title">
-        <div class="concept-title-left">
-          <span class="concept-badge badge-c1">Option 1 · Most Popular Style</span>
-          <h2>Grand Cinematic Showcase Grid (Letterboxd Pro)</h2>
+  <div class="palette-grid">
+    <!-- Palette 1 -->
+    <div class="palette-card">
+      <div class="palette-header">
+        <div class="palette-title">
+          <span>💠</span> Option 1: Neon Diamond & Amethyst
         </div>
+        <span class="palette-badge" style="background: rgba(6, 182, 212, 0.15); color: #06b6d4; border: 1px solid rgba(6, 182, 212, 0.35);">Cyberpunk Pro</span>
       </div>
-      <div class="concept-img-wrapper">
-        <img src="layout1_showcase_grid.png" alt="Option 1: Grand Showcase Grid">
+      <div class="swatches">
+        <div class="swatch" style="background: rgba(6, 182, 212, 0.15); border: 1px solid rgba(6, 182, 212, 0.4); color: #22d3ee;">★ 8.5–10 Cyan (Best)</div>
+        <div class="swatch" style="background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.4); color: #a855f7;">★ 7.0–8.4 Purple</div>
+        <div class="swatch" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #10b981;">★ 5.5–6.9 Green</div>
+        <div class="swatch" style="background: rgba(249, 115, 22, 0.15); border: 1px solid rgba(249, 115, 22, 0.4); color: #f97316;">★ 4.0–5.4 Orange</div>
+        <div class="swatch" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444;">★ &lt;4 Red</div>
       </div>
-      <div class="concept-desc">
-        <strong>How it works:</strong>
-        Full-bleed, high-resolution <strong>200px+ posters</strong> in a spacious 5-column grid. Bold <strong>16.5px titles</strong> with year, genre tags, gold star ratings, and watch logs. Quick filter tabs at top let you switch between All Titles, Feature Films, TV Series, and Anime instantly.
-        <ul class="feature-list">
-          <li><span>✓</span> Posters are <strong>6x larger</strong> than previous 32px thumbnails</li>
-          <li><span>✓</span> Crisp 16.5px bold typography with high contrast</li>
-          <li><span>✓</span> Large ★ 10.0 gold rating badges directly on posters</li>
-          <li><span>✓</span> Clean format tags: MOVIE, TV SERIES, ANIME</li>
-        </ul>
+
+      <!-- Preview Movie Card -->
+      <div class="movie-box">
+        <div class="poster">
+          <img src="https://image.tmdb.org/t/p/w200/xJHokMbljvjADYdit5fK5VQsXEG.jpg" alt="Interstellar">
+        </div>
+        <div class="info">
+          <div class="title">Interstellar</div>
+          <div class="meta">2014 · Adventure · Sci-Fi</div>
+          <span class="tag">✓ Watched</span>
+        </div>
+        <div class="score-pill" style="background: rgba(6, 182, 212, 0.16); border: 1px solid rgba(6, 182, 212, 0.45); color: #22d3ee; box-shadow: 0 0 12px rgba(6, 182, 212, 0.3);">
+          ★ 10.0
+        </div>
+        <span class="close-btn">✕</span>
+      </div>
+
+      <div class="movie-box">
+        <div class="poster">
+          <img src="https://image.tmdb.org/t/p/w200/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg" alt="Oppenheimer">
+        </div>
+        <div class="info">
+          <div class="title">Oppenheimer</div>
+          <div class="meta">2023 · Drama · History</div>
+          <span class="tag">✓ Watched</span>
+        </div>
+        <div class="score-pill" style="background: rgba(6, 182, 212, 0.16); border: 1px solid rgba(6, 182, 212, 0.45); color: #22d3ee; box-shadow: 0 0 12px rgba(6, 182, 212, 0.3);">
+          ★ 9.4
+        </div>
+        <span class="close-btn">✕</span>
+      </div>
+
+      <!-- Live Interactive Slider Demo -->
+      <div class="slider-box">
+        <div class="slider-header">
+          <span class="label">Live Slider Preview</span>
+          <span class="val" id="val1" style="color: #22d3ee;">★ 9.2</span>
+        </div>
+        <input type="range" id="sl1" min="1" max="10" step="0.1" value="9.2" oninput="updateP1(this.value)">
       </div>
     </div>
 
-    <!-- Concept 2 -->
-    <div class="concept-card" id="card-c2">
-      <div class="concept-title">
-        <div class="concept-title-left">
-          <span class="concept-badge badge-c2">Option 2 · Keeps Independent Columns</span>
-          <h2>Deluxe 3-Column Studio (Big Posters + Separate Column Scrolls)</h2>
+    <!-- Palette 2 -->
+    <div class="palette-card">
+      <div class="palette-header">
+        <div class="palette-title">
+          <span>👑</span> Option 2: Royal Violet Prestige
         </div>
+        <span class="palette-badge" style="background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.35);">Criterion / Mythic</span>
       </div>
-      <div class="concept-img-wrapper">
-        <img src="layout2_deluxe_3col.png" alt="Option 2: Deluxe 3-Column Studio">
+      <div class="swatches">
+        <div class="swatch" style="background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.4); color: #c084fc;">★ 8.5–10 Royal Purple (Best)</div>
+        <div class="swatch" style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8;">★ 7.0–8.4 Sky Blue</div>
+        <div class="swatch" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #10b981;">★ 5.5–6.9 Emerald</div>
+        <div class="swatch" style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #f59e0b;">★ 4.0–5.4 Amber</div>
+        <div class="swatch" style="background: rgba(244, 63, 94, 0.15); border: 1px solid rgba(244, 63, 94, 0.4); color: #f43f5e;">★ &lt;4 Carmine</div>
       </div>
-      <div class="concept-desc">
-        <strong>How it works:</strong>
-        Preserves your favorite feature — <strong>scrolling each column (Movies | TV Series | Anime) independently</strong> — but completely overhauls the cards! Replaces the tiny 32px row with <strong>large 76x104px posters, 17px bold titles, gold ratings, and review snippets</strong> in each lane.
-        <ul class="feature-list">
-          <li><span>✓</span> Keeps independent vertical scroll for Movies, Series, Anime</li>
-          <li><span>✓</span> Posters upgraded from 32px to 76px (nearly 3x larger!)</li>
-          <li><span>✓</span> 17px large titles with director / episode progress</li>
-          <li><span>✓</span> Diary notes and review quotes visible right on the card</li>
-        </ul>
+
+      <div class="movie-box">
+        <div class="poster">
+          <img src="https://image.tmdb.org/t/p/w200/xJHokMbljvjADYdit5fK5VQsXEG.jpg" alt="Interstellar">
+        </div>
+        <div class="info">
+          <div class="title">Interstellar</div>
+          <div class="meta">2014 · Adventure · Sci-Fi</div>
+          <span class="tag">✓ Watched</span>
+        </div>
+        <div class="score-pill" style="background: rgba(168, 85, 247, 0.18); border: 1px solid rgba(168, 85, 247, 0.5); color: #d8b4fe; box-shadow: 0 0 14px rgba(168, 85, 247, 0.35);">
+          ★ 10.0
+        </div>
+        <span class="close-btn">✕</span>
+      </div>
+
+      <div class="movie-box">
+        <div class="poster">
+          <img src="https://image.tmdb.org/t/p/w200/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg" alt="Oppenheimer">
+        </div>
+        <div class="info">
+          <div class="title">Oppenheimer</div>
+          <div class="meta">2023 · Drama · History</div>
+          <span class="tag">✓ Watched</span>
+        </div>
+        <div class="score-pill" style="background: rgba(168, 85, 247, 0.18); border: 1px solid rgba(168, 85, 247, 0.5); color: #d8b4fe; box-shadow: 0 0 14px rgba(168, 85, 247, 0.35);">
+          ★ 9.4
+        </div>
+        <span class="close-btn">✕</span>
+      </div>
+
+      <div class="slider-box">
+        <div class="slider-header">
+          <span class="label">Live Slider Preview</span>
+          <span class="val" id="val2" style="color: #c084fc;">★ 8.8</span>
+        </div>
+        <input type="range" id="sl2" min="1" max="10" step="0.1" value="8.8" oninput="updateP2(this.value)">
       </div>
     </div>
 
-    <!-- Concept 3 -->
-    <div class="concept-card" id="card-c3">
-      <div class="concept-title">
-        <div class="concept-title-left">
-          <span class="concept-badge badge-c3">Option 3 · Apple TV+ / Criterion Style</span>
-          <h2>Editorial Magazine Stream (Wide Cards with Reviews)</h2>
+    <!-- Palette 3 -->
+    <div class="palette-card">
+      <div class="palette-header">
+        <div class="palette-title">
+          <span>⚡</span> Option 3: Neo-Mint & Electric Indigo
         </div>
+        <span class="palette-badge" style="background: rgba(0, 245, 160, 0.15); color: #00f5a0; border: 1px solid rgba(0, 245, 160, 0.35);">OLED Neon</span>
       </div>
-      <div class="concept-img-wrapper">
-        <img src="layout3_editorial_magazine.png" alt="Option 3: Editorial Magazine Stream">
+      <div class="swatches">
+        <div class="swatch" style="background: rgba(0, 245, 160, 0.15); border: 1px solid rgba(0, 245, 160, 0.4); color: #00f5a0;">★ 8.5–10 Hyper-Mint (Best)</div>
+        <div class="swatch" style="background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.4); color: #818cf8;">★ 7.0–8.4 Indigo</div>
+        <div class="swatch" style="background: rgba(236, 72, 153, 0.15); border: 1px solid rgba(236, 72, 153, 0.4); color: #f472b6;">★ 5.5–6.9 Magenta</div>
+        <div class="swatch" style="background: rgba(251, 146, 60, 0.15); border: 1px solid rgba(251, 146, 60, 0.4); color: #fb923c;">★ 4.0–5.4 Tangerine</div>
+        <div class="swatch" style="background: rgba(220, 38, 38, 0.15); border: 1px solid rgba(220, 38, 38, 0.4); color: #f87171;">★ &lt;4 Ruby</div>
       </div>
-      <div class="concept-desc">
-        <strong>How it works:</strong>
-        A two-column editorial layout with massive <strong>122x179px posters</strong> on the left of each card and an editorial review panel on the right with <strong>22px bold headlines</strong>, director, cast, and your full personal review quotes in dedicated glass quote blocks.
-        <ul class="feature-list">
-          <li><span>✓</span> Massive 122px x 179px posters</li>
-          <li><span>✓</span> Huge 22px titles — easiest to read of all options</li>
-          <li><span>✓</span> Dedicated review snippet block showing diary quotes</li>
-          <li><span>✓</span> Elegant Apple TV+ / Criterion Channel editorial aesthetic</li>
-        </ul>
+
+      <div class="movie-box">
+        <div class="poster">
+          <img src="https://image.tmdb.org/t/p/w200/xJHokMbljvjADYdit5fK5VQsXEG.jpg" alt="Interstellar">
+        </div>
+        <div class="info">
+          <div class="title">Interstellar</div>
+          <div class="meta">2014 · Adventure · Sci-Fi</div>
+          <span class="tag">✓ Watched</span>
+        </div>
+        <div class="score-pill" style="background: rgba(0, 245, 160, 0.16); border: 1px solid rgba(0, 245, 160, 0.45); color: #00f5a0; box-shadow: 0 0 12px rgba(0, 245, 160, 0.3);">
+          ★ 10.0
+        </div>
+        <span class="close-btn">✕</span>
+      </div>
+
+      <div class="movie-box">
+        <div class="poster">
+          <img src="https://image.tmdb.org/t/p/w200/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg" alt="Oppenheimer">
+        </div>
+        <div class="info">
+          <div class="title">Oppenheimer</div>
+          <div class="meta">2023 · Drama · History</div>
+          <span class="tag">✓ Watched</span>
+        </div>
+        <div class="score-pill" style="background: rgba(0, 245, 160, 0.16); border: 1px solid rgba(0, 245, 160, 0.45); color: #00f5a0; box-shadow: 0 0 12px rgba(0, 245, 160, 0.3);">
+          ★ 9.4
+        </div>
+        <span class="close-btn">✕</span>
+      </div>
+
+      <div class="slider-box">
+        <div class="slider-header">
+          <span class="label">Live Slider Preview</span>
+          <span class="val" id="val3" style="color: #00f5a0;">★ 8.5</span>
+        </div>
+        <input type="range" id="sl3" min="1" max="10" step="0.1" value="8.5" oninput="updateP3(this.value)">
+      </div>
+    </div>
+
+    <!-- Palette 4 -->
+    <div class="palette-card">
+      <div class="palette-header">
+        <div class="palette-title">
+          <span>🔥</span> Option 4: Cinema Flame & Rose
+        </div>
+        <span class="palette-badge" style="background: rgba(244, 63, 94, 0.15); color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.35);">Signature CineLog</span>
+      </div>
+      <div class="swatches">
+        <div class="swatch" style="background: rgba(244, 63, 94, 0.15); border: 1px solid rgba(244, 63, 94, 0.4); color: #fb7185;">★ 8.5–10 Rose Flame (Best)</div>
+        <div class="swatch" style="background: rgba(251, 146, 60, 0.15); border: 1px solid rgba(251, 146, 60, 0.4); color: #fb923c;">★ 7.0–8.4 Warm Peach</div>
+        <div class="swatch" style="background: rgba(250, 204, 21, 0.15); border: 1px solid rgba(250, 204, 21, 0.4); color: #facc15;">★ 5.5–6.9 Gold</div>
+        <div class="swatch" style="background: rgba(20, 184, 166, 0.15); border: 1px solid rgba(20, 184, 166, 0.4); color: #2dd4bf;">★ 4.0–5.4 Teal</div>
+        <div class="swatch" style="background: rgba(100, 116, 139, 0.15); border: 1px solid rgba(100, 116, 139, 0.4); color: #94a3b8;">★ &lt;4 Slate</div>
+      </div>
+
+      <div class="movie-box">
+        <div class="poster">
+          <img src="https://image.tmdb.org/t/p/w200/xJHokMbljvjADYdit5fK5VQsXEG.jpg" alt="Interstellar">
+        </div>
+        <div class="info">
+          <div class="title">Interstellar</div>
+          <div class="meta">2014 · Adventure · Sci-Fi</div>
+          <span class="tag">✓ Watched</span>
+        </div>
+        <div class="score-pill" style="background: rgba(244, 63, 94, 0.18); border: 1px solid rgba(244, 63, 94, 0.45); color: #fb7185; box-shadow: 0 0 12px rgba(244, 63, 94, 0.35);">
+          ★ 10.0
+        </div>
+        <span class="close-btn">✕</span>
+      </div>
+
+      <div class="movie-box">
+        <div class="poster">
+          <img src="https://image.tmdb.org/t/p/w200/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg" alt="Oppenheimer">
+        </div>
+        <div class="info">
+          <div class="title">Oppenheimer</div>
+          <div class="meta">2023 · Drama · History</div>
+          <span class="tag">✓ Watched</span>
+        </div>
+        <div class="score-pill" style="background: rgba(244, 63, 94, 0.18); border: 1px solid rgba(244, 63, 94, 0.45); color: #fb7185; box-shadow: 0 0 12px rgba(244, 63, 94, 0.35);">
+          ★ 9.4
+        </div>
+        <span class="close-btn">✕</span>
+      </div>
+
+      <div class="slider-box">
+        <div class="slider-header">
+          <span class="label">Live Slider Preview</span>
+          <span class="val" id="val4" style="color: #fb7185;">★ 8.7</span>
+        </div>
+        <input type="range" id="sl4" min="1" max="10" step="0.1" value="8.7" oninput="updateP4(this.value)">
       </div>
     </div>
   </div>
 
   <script>
-    function showConcept(id) {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      event.target.classList.add('active');
-
-      const c1 = document.getElementById('card-c1');
-      const c2 = document.getElementById('card-c2');
-      const c3 = document.getElementById('card-c3');
-
-      if (id === 'all') {
-        c1.style.display = 'block';
-        c2.style.display = 'block';
-        c3.style.display = 'block';
-      } else if (id === 'c1') {
-        c1.style.display = 'block';
-        c2.style.display = 'none';
-        c3.style.display = 'none';
-      } else if (id === 'c2') {
-        c1.style.display = 'none';
-        c2.style.display = 'block';
-        c3.style.display = 'none';
-      } else if (id === 'c3') {
-        c1.style.display = 'none';
-        c2.style.display = 'none';
-        c3.style.display = 'block';
-      }
+    function updateP1(v) {
+      const n = Number(v);
+      const valEl = document.getElementById('val1');
+      const slEl = document.getElementById('sl1');
+      valEl.textContent = '★ ' + n.toFixed(1);
+      let c = '#ef4444';
+      if (n >= 8.5) c = '#22d3ee';
+      else if (n >= 7.0) c = '#a855f7';
+      else if (n >= 5.5) c = '#10b981';
+      else if (n >= 4.0) c = '#f97316';
+      valEl.style.color = c;
+      slEl.style.background = `linear-gradient(to right, ${c} 0%, ${c} ${n*10}%, rgba(255,255,255,0.08) ${n*10}%, rgba(255,255,255,0.08) 100%)`;
     }
+    function updateP2(v) {
+      const n = Number(v);
+      const valEl = document.getElementById('val2');
+      const slEl = document.getElementById('sl2');
+      valEl.textContent = '★ ' + n.toFixed(1);
+      let c = '#f43f5e';
+      if (n >= 8.5) c = '#c084fc';
+      else if (n >= 7.0) c = '#38bdf8';
+      else if (n >= 5.5) c = '#10b981';
+      else if (n >= 4.0) c = '#f59e0b';
+      valEl.style.color = c;
+      slEl.style.background = `linear-gradient(to right, ${c} 0%, ${c} ${n*10}%, rgba(255,255,255,0.08) ${n*10}%, rgba(255,255,255,0.08) 100%)`;
+    }
+    function updateP3(v) {
+      const n = Number(v);
+      const valEl = document.getElementById('val3');
+      const slEl = document.getElementById('sl3');
+      valEl.textContent = '★ ' + n.toFixed(1);
+      let c = '#f87171';
+      if (n >= 8.5) c = '#00f5a0';
+      else if (n >= 7.0) c = '#818cf8';
+      else if (n >= 5.5) c = '#f472b6';
+      else if (n >= 4.0) c = '#fb923c';
+      valEl.style.color = c;
+      slEl.style.background = `linear-gradient(to right, ${c} 0%, ${c} ${n*10}%, rgba(255,255,255,0.08) ${n*10}%, rgba(255,255,255,0.08) 100%)`;
+    }
+    function updateP4(v) {
+      const n = Number(v);
+      const valEl = document.getElementById('val4');
+      const slEl = document.getElementById('sl4');
+      valEl.textContent = '★ ' + n.toFixed(1);
+      let c = '#94a3b8';
+      if (n >= 8.5) c = '#fb7185';
+      else if (n >= 7.0) c = '#fb923c';
+      else if (n >= 5.5) c = '#facc15';
+      else if (n >= 4.0) c = '#2dd4bf';
+      valEl.style.color = c;
+      slEl.style.background = `linear-gradient(to right, ${c} 0%, ${c} ${n*10}%, rgba(255,255,255,0.08) ${n*10}%, rgba(255,255,255,0.08) 100%)`;
+    }
+    updateP1(9.2);
+    updateP2(8.8);
+    updateP3(8.5);
+    updateP4(8.7);
   </script>
 </body>
 </html>
