@@ -342,11 +342,11 @@ export default function ListDetailModal({
           </div>
 
           {/* SIDE-BY-SIDE POSTER GRID (Letterboxd Style, No Giant Review Blocks) */}
-          <div style={{ padding: '24px 30px' }}>
+          <div style={{ padding: 'clamp(16px, 3vw, 24px) clamp(16px, 3vw, 30px)' }}>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
-              gap: '16px'
+              gridTemplateColumns: 'repeat(auto-fill, minmax(102px, 1fr))',
+              gap: '12px'
             }}>
               {entries.map((entry, index) => {
                 const rankNum = index + 1;

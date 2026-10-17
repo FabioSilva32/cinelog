@@ -208,12 +208,12 @@ export default function CollectionDetailModal({
           </div>
 
           {/* Films Grid */}
-          <div style={{ padding: '24px 30px 32px' }}>
+          <div style={{ padding: 'clamp(16px, 3vw, 24px) clamp(16px, 3vw, 30px) 36px' }}>
             {displayedMovies.length > 0 ? (
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
-                gap: '16px'
+                gridTemplateColumns: 'repeat(auto-fill, minmax(102px, 1fr))',
+                gap: '12px'
               }}>
                 {displayedMovies.map(movie => {
                   const isWatched = movie.status === 'watched';
