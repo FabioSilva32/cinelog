@@ -6,6 +6,7 @@ import {
   ChevronLeft, ChevronRight, Zap, RefreshCw
 } from 'lucide-react';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
+import { MCU_FULL_CATALOGUE, MARVEL_COMPLETE_CATALOGUE } from '../utils/collections';
 
 const TMDB_KEY = '6a2fd6b9b1bb3befbb9f14c203732225';
 const FALLBACK_POSTER = 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=300&fit=crop&q=80';
@@ -16,43 +17,15 @@ const FRANCHISE_PACKS = [
     id: 'mcu',
     name: 'Marvel Cinematic Universe (MCU)',
     emoji: '⚡',
-    badge: '34 Complete MCU Films',
-    movies: [
-      { id: 1726, tmdb_id: 1726, title: 'Iron Man', release_year: '2008', poster_path: '/78lPtwv72eTNqFW9COBYI0dWDJa.jpg', rating: 7.7 },
-      { id: 1724, tmdb_id: 1724, title: 'The Incredible Hulk', release_year: '2008', poster_path: '/gKzYx79y0AQTL4UAk1cBQJ3nvrm.jpg', rating: 6.3 },
-      { id: 10138, tmdb_id: 10138, title: 'Iron Man 2', release_year: '2010', poster_path: '/6WBeq4fCfn7AN0o21W9qNcRF2l9.jpg', rating: 6.9 },
-      { id: 10195, tmdb_id: 10195, title: 'Thor', release_year: '2011', poster_path: '/prSfAi1xGrhLQNxVSUFh61xQ4Qy.jpg', rating: 6.8 },
-      { id: 1771, tmdb_id: 1771, title: 'Captain America: The First Avenger', release_year: '2011', poster_path: '/vSNxAJTlD0r02V9sPYpOjqDZXUK.jpg', rating: 7.0 },
-      { id: 24428, tmdb_id: 24428, title: 'The Avengers', release_year: '2012', poster_path: '/RYMX2wcKCBAr24UyPD7xwmjaTn.jpg', rating: 8.1 },
-      { id: 68721, tmdb_id: 68721, title: 'Iron Man 3', release_year: '2013', poster_path: '/qhPtAc1TKbMPqNvcdXSOn9Bn7hZ.jpg', rating: 6.9 },
-      { id: 76338, tmdb_id: 76338, title: 'Thor: The Dark World', release_year: '2013', poster_path: '/wp6OxE4poJ4G7c0U2ZIXasTSMR7.jpg', rating: 6.5 },
-      { id: 100402, tmdb_id: 100402, title: 'Captain America: The Winter Soldier', release_year: '2014', poster_path: '/tVFRpFw3xTedgPGqxW0AOI8Qhh0.jpg', rating: 7.7 },
-      { id: 118340, tmdb_id: 118340, title: 'Guardians of the Galaxy', release_year: '2014', poster_path: '/r7vmZjiyZw9rpJMQJdXpjgiCOk9.jpg', rating: 7.9 },
-      { id: 99861, tmdb_id: 99861, title: 'Avengers: Age of Ultron', release_year: '2015', poster_path: '/4ssDuvEDkSArWEdyBl2X5EHvYKU.jpg', rating: 7.3 },
-      { id: 102899, tmdb_id: 102899, title: 'Ant-Man', release_year: '2015', poster_path: '/rQRnQfUl3kfp78nCWq8Ks04vnq1.jpg', rating: 7.1 },
-      { id: 271110, tmdb_id: 271110, title: 'Captain America: Civil War', release_year: '2016', poster_path: '/rAGiXaUfPzY7CDEyNKUofk3Kw2e.jpg', rating: 7.5 },
-      { id: 284052, tmdb_id: 284052, title: 'Doctor Strange', release_year: '2016', poster_path: '/uGBVj3bEbCoZbDjjl9wTxcygko1.jpg', rating: 7.4 },
-      { id: 283995, tmdb_id: 283995, title: 'Guardians of the Galaxy Vol. 2', release_year: '2017', poster_path: '/y4MBh0EjBlMuOzv9axM4qJlmhzz.jpg', rating: 7.6 },
-      { id: 315635, tmdb_id: 315635, title: 'Spider-Man: Homecoming', release_year: '2017', poster_path: '/c24sv2weTHPsmDa7jEMN0m2P3RT.jpg', rating: 7.3 },
-      { id: 284053, tmdb_id: 284053, title: 'Thor: Ragnarok', release_year: '2017', poster_path: '/rzRwTcFvttcN1ZpX2xv4j3tSdJu.jpg', rating: 7.6 },
-      { id: 284054, tmdb_id: 284054, title: 'Black Panther', release_year: '2018', poster_path: '/uxzzxijgPIY7slzFvMotPv8wjKA.jpg', rating: 7.4 },
-      { id: 299536, tmdb_id: 299536, title: 'Avengers: Infinity War', release_year: '2018', poster_path: '/7WsyChQLEftFiDOVTGkv3hFpyyt.jpg', rating: 8.2 },
-      { id: 363088, tmdb_id: 363088, title: 'Ant-Man and the Wasp', release_year: '2018', poster_path: '/cFQEO687n1K6umXbInzocxcnAQz.jpg', rating: 6.9 },
-      { id: 299537, tmdb_id: 299537, title: 'Captain Marvel', release_year: '2019', poster_path: '/AtsgWhDnHTq68L0lLsUrCnM7TjG.jpg', rating: 6.8 },
-      { id: 299534, tmdb_id: 299534, title: 'Avengers: Endgame', release_year: '2019', poster_path: '/bR8ISy1O9XQxqiy0fQFw2BX72RQ.jpg', rating: 8.2 },
-      { id: 429617, tmdb_id: 429617, title: 'Spider-Man: Far From Home', release_year: '2019', poster_path: '/4q2NNj4S5dG2RLF9CpXsej7yXl.jpg', rating: 7.4 },
-      { id: 497698, tmdb_id: 497698, title: 'Black Widow', release_year: '2021', poster_path: '/qAZ0pzat24kLdO3o8ejmbLxyOac.jpg', rating: 7.1 },
-      { id: 566525, tmdb_id: 566525, title: 'Shang-Chi and the Legend of the Ten Rings', release_year: '2021', poster_path: '/9f2Q0U3IOsLgrI2HkvldwSABZy5.jpg', rating: 7.5 },
-      { id: 524434, tmdb_id: 524434, title: 'Eternals', release_year: '2021', poster_path: '/lFByFSLV5WDJEv3KabbdAF959F2.jpg', rating: 6.7 },
-      { id: 634649, tmdb_id: 634649, title: 'Spider-Man: No Way Home', release_year: '2021', poster_path: '/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg', rating: 7.9 },
-      { id: 453395, tmdb_id: 453395, title: 'Doctor Strange in the Multiverse of Madness', release_year: '2022', poster_path: '/ddJcSKbcp4rKZTmuyWaMhuwcfMz.jpg', rating: 7.2 },
-      { id: 616037, tmdb_id: 616037, title: 'Thor: Love and Thunder', release_year: '2022', poster_path: '/pIkRyD18kl4FhoCNQuWxWu5cBLM.jpg', rating: 6.4 },
-      { id: 505642, tmdb_id: 505642, title: 'Black Panther: Wakanda Forever', release_year: '2022', poster_path: '/sv1xJUazXeYqALzczSZ3O6nkH75.jpg', rating: 7.0 },
-      { id: 640146, tmdb_id: 640146, title: 'Ant-Man and the Wasp: Quantumania', release_year: '2023', poster_path: '/qnqGbB22YJ7dSs4o6M7exTpNxPz.jpg', rating: 6.2 },
-      { id: 447365, tmdb_id: 447365, title: 'Guardians of the Galaxy Vol. 3', release_year: '2023', poster_path: '/r2J02Z2OpNTctfOSN1Ydgii51I3.jpg', rating: 7.9 },
-      { id: 609681, tmdb_id: 609681, title: 'The Marvels', release_year: '2023', poster_path: '/9GBhzXMFjgcZ3FdR9w3bUMMTps5.jpg', rating: 5.9 },
-      { id: 533535, tmdb_id: 533535, title: 'Deadpool & Wolverine', release_year: '2024', poster_path: '/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg', rating: 7.6 }
-    ]
+    badge: '36 Canonical Films & Specials',
+    movies: MCU_FULL_CATALOGUE
+  },
+  {
+    id: 'marvel',
+    name: 'Marvel Complete Multiverse & Legacy',
+    emoji: '🦸‍♂️',
+    badge: '76 Films & Shows',
+    movies: MARVEL_COMPLETE_CATALOGUE
   },
   {
     id: 'nolan',
@@ -203,7 +176,7 @@ export default function CreateListModal({
   const [entries, setEntries] = useState([]);
 
   // Film Picker State
-  const [pickerTab, setPickerTab] = useState('franchises'); // default to franchises for instant discovery
+  const [pickerTab, setPickerTab] = useState('franchises'); // 'franchises' | 'search' | 'library'
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
@@ -232,7 +205,7 @@ export default function CreateListModal({
       const res = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=${TMDB_KEY}&query=${encodeURIComponent(q)}&page=1`);
       const data = await res.json();
       const results = (data.results || []).filter(item => item.media_type === 'movie' || item.media_type === 'tv');
-      setSearchResults(results.slice(0, 20));
+      setSearchResults(results.slice(0, 24));
     } catch {
       setSearchResults([]);
     } finally {
@@ -274,7 +247,7 @@ export default function CreateListModal({
         poster_path: m.poster_path,
         release_year: m.release_year,
         rating: m.rating,
-        media_type: 'movie',
+        media_type: m.media_type || 'movie',
         note: ''
       }));
 
@@ -388,9 +361,9 @@ export default function CreateListModal({
         className="glass"
         style={{
           width: '100%',
-          maxWidth: '880px',
-          height: 'min(92vh, 900px)',
-          maxHeight: 'min(92vh, 900px)',
+          maxWidth: '1140px',
+          height: 'min(92vh, 880px)',
+          maxHeight: 'min(92vh, 880px)',
           background: 'linear-gradient(180deg, #13101c 0%, #0d0b13 100%)',
           borderRadius: '24px',
           border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -402,6 +375,20 @@ export default function CreateListModal({
           animation: 'fadeInScale 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
         }}
       >
+        <style>{`
+          @media (max-width: 820px) {
+            .create-list-studio-grid {
+              grid-template-columns: 1fr !important;
+              overflow-y: auto !important;
+            }
+            .create-list-left-panel {
+              border-right: none !important;
+              border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+              max-height: 420px !important;
+            }
+          }
+        `}</style>
+
         {/* Toast Feedback */}
         {bannerToast && (
           <div style={{
@@ -424,7 +411,7 @@ export default function CreateListModal({
 
         {/* Top Header Bar (Pinned) */}
         <div style={{
-          padding: '14px 22px',
+          padding: '13px 22px',
           borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
           display: 'flex',
           alignItems: 'center',
@@ -450,7 +437,7 @@ export default function CreateListModal({
                 Create Custom Cinephile List
               </h2>
               <div style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
-                {entries.length} {entries.length === 1 ? 'film' : 'films'} added so far
+                {entries.length} {entries.length === 1 ? 'film' : 'films'} added so far · {isRanked ? 'Ranked List' : 'Unranked Curation'}
               </div>
             </div>
           </div>
@@ -475,97 +462,458 @@ export default function CreateListModal({
           </button>
         </div>
 
-        {/* Form Body - Single Master Smooth Scroll Container */}
-        <form
-          onSubmit={handleSubmit}
+        {/* 2-Column Studio Workspace */}
+        <div
+          className="create-list-studio-grid"
           style={{
             flex: '1 1 auto',
             minHeight: 0,
-            overflowY: 'auto',
-            WebkitOverflowScrolling: 'touch',
-            overscrollBehavior: 'contain',
-            padding: '18px 22px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px'
+            display: 'grid',
+            gridTemplateColumns: 'minmax(330px, 390px) 1fr',
+            overflow: 'hidden'
           }}
         >
-          {/* List Title & Options */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div>
-              <label className="form-label" style={{ marginBottom: '6px', display: 'block', fontSize: '12px' }}>
-                List Title *
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. Definitive Top 10 Sci-Fi Films of the 21st Century"
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                className="form-input"
-                required
-                style={{ width: '100%', fontSize: '14px', padding: '10px 14px' }}
-              />
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '12px', alignItems: 'flex-start' }}>
+          {/* ── LEFT COLUMN: List Details, Current Entries & Submit ── */}
+          <form
+            onSubmit={handleSubmit}
+            className="create-list-left-panel"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              height: '100%',
+              minHeight: 0,
+              borderRight: '1px solid rgba(255, 255, 255, 0.08)',
+              background: 'rgba(0, 0, 0, 0.2)'
+            }}
+          >
+            {/* Scrollable Left Column Body */}
+            <div
+              style={{
+                flex: '1 1 auto',
+                minHeight: 0,
+                overflowY: 'auto',
+                WebkitOverflowScrolling: 'touch',
+                padding: '16px 18px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '14px',
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgba(255,255,255,0.2) transparent'
+              }}
+            >
+              {/* Title input */}
               <div>
-                <label className="form-label" style={{ marginBottom: '6px', display: 'block', fontSize: '11.5px' }}>
-                  Description & Criteria (Optional)
+                <label className="form-label" style={{ marginBottom: '5px', display: 'block', fontSize: '11.5px' }}>
+                  List Title *
                 </label>
                 <input
                   type="text"
-                  placeholder="What is this list about? Share your criteria..."
-                  value={description}
-                  onChange={e => setDescription(e.target.value)}
+                  placeholder="e.g. Definitive Top 10 Sci-Fi Films of the 21st Century"
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
                   className="form-input"
-                  style={{ width: '100%', fontSize: '12.5px', padding: '8px 12px' }}
+                  required
+                  style={{ width: '100%', fontSize: '13.5px', padding: '9px 12px' }}
                 />
               </div>
 
-              {/* Ranked Mode Toggle */}
-              <div>
-                <label className="form-label" style={{ marginBottom: '6px', display: 'block', fontSize: '11.5px' }}>
-                  Ordering Mode
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setIsRanked(!isRanked)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '8px 14px',
-                    borderRadius: '8px',
-                    background: isRanked ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                    border: `1px solid ${isRanked ? 'rgba(245, 158, 11, 0.4)' : 'rgba(255, 255, 255, 0.1)'}`,
-                    color: isRanked ? 'var(--gold)' : 'var(--text-muted)',
-                    cursor: 'pointer',
-                    fontWeight: 700,
-                    fontSize: '12px',
-                    transition: 'all 0.15s'
-                  }}
-                >
-                  <Trophy size={14} color={isRanked ? 'var(--gold)' : 'var(--text-muted)'} />
-                  {isRanked ? 'Ranked (#1, #2...)' : 'Unranked List'}
-                </button>
-              </div>
-            </div>
-          </div>
+              {/* Description & Ordering Mode */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div>
+                  <label className="form-label" style={{ marginBottom: '5px', display: 'block', fontSize: '11px' }}>
+                    Description & Criteria (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="What is this list about? Share your criteria..."
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
+                    className="form-input"
+                    style={{ width: '100%', fontSize: '12px', padding: '7px 11px' }}
+                  />
+                </div>
 
-          {/* ───────────────────────────────────────────────────────────── */}
-          {/* TABBED FILM PICKER SECTION                                    */}
-          {/* ───────────────────────────────────────────────────────────── */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '2px' }}>
+                  <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 600 }}>Ordering Mode:</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsRanked(!isRanked)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '5px 12px',
+                      borderRadius: '7px',
+                      background: isRanked ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                      border: `1px solid ${isRanked ? 'rgba(245, 158, 11, 0.4)' : 'rgba(255, 255, 255, 0.1)'}`,
+                      color: isRanked ? 'var(--gold)' : 'var(--text-muted)',
+                      cursor: 'pointer',
+                      fontWeight: 700,
+                      fontSize: '11.5px',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    <Trophy size={13} color={isRanked ? 'var(--gold)' : 'var(--text-muted)'} />
+                    {isRanked ? 'Ranked (#1, #2...)' : 'Unranked List'}
+                  </button>
+                </div>
+              </div>
+
+              {/* List Entries Header */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingTop: '10px',
+                borderTop: '1px solid rgba(255, 255, 255, 0.07)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 900, color: '#fff' }}>
+                    List Entries ({entries.length})
+                  </span>
+                  {isRanked && entries.length > 0 && (
+                    <span style={{
+                      fontSize: '9.5px',
+                      fontWeight: 800,
+                      background: 'rgba(245, 158, 11, 0.15)',
+                      color: 'var(--gold)',
+                      borderRadius: '5px',
+                      padding: '1px 5px'
+                    }}>
+                      #1 to #{entries.length}
+                    </span>
+                  )}
+                </div>
+
+                {entries.length > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{
+                      display: 'flex',
+                      background: 'rgba(255, 255, 255, 0.06)',
+                      borderRadius: '6px',
+                      padding: '2px'
+                    }}>
+                      <button
+                        type="button"
+                        onClick={() => setEntriesViewMode('grid')}
+                        style={{
+                          background: entriesViewMode === 'grid' ? 'var(--accent)' : 'transparent',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '5px',
+                          padding: '3px 7px',
+                          fontSize: '10.5px',
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Grid
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEntriesViewMode('notes')}
+                        style={{
+                          background: entriesViewMode === 'notes' ? 'var(--accent)' : 'transparent',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '5px',
+                          padding: '3px 7px',
+                          fontSize: '10.5px',
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Notes
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleClearAll}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--text-dim)',
+                        fontSize: '11px',
+                        cursor: 'pointer',
+                        padding: '3px 5px'
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.color = 'var(--red)'}
+                      onMouseLeave={e => e.currentTarget.style.color = 'var(--text-dim)'}
+                    >
+                      Clear
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Entries Content */}
+              {entries.length > 0 ? (
+                entriesViewMode === 'grid' ? (
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))',
+                    gap: '8px',
+                    background: 'rgba(0, 0, 0, 0.25)',
+                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                    borderRadius: '12px',
+                    padding: '10px'
+                  }}>
+                    {entries.map((entry, idx) => (
+                      <div
+                        key={entry.tmdb_id || idx}
+                        style={{
+                          position: 'relative',
+                          background: '#191522',
+                          borderRadius: '8px',
+                          overflow: 'hidden',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          display: 'flex',
+                          flexDirection: 'column'
+                        }}
+                      >
+                        {isRanked && (
+                          <div style={{
+                            position: 'absolute',
+                            top: '4px',
+                            left: '4px',
+                            zIndex: 5,
+                            background: idx < 3 ? 'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)' : 'rgba(0, 0, 0, 0.8)',
+                            color: '#fff',
+                            fontSize: '9.5px',
+                            fontWeight: 900,
+                            padding: '1px 4px',
+                            borderRadius: '4px',
+                            boxShadow: '0 2px 6px rgba(0,0,0,0.6)'
+                          }}>
+                            #{idx + 1}
+                          </div>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveEntry(idx)}
+                          style={{
+                            position: 'absolute',
+                            top: '4px',
+                            right: '4px',
+                            zIndex: 5,
+                            background: 'rgba(0, 0, 0, 0.75)',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '18px',
+                            height: '18px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s'
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'var(--red)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'rgba(0, 0, 0, 0.75)'}
+                          title="Remove from list"
+                        >
+                          <X size={11} />
+                        </button>
+
+                        <div style={{ width: '100%', aspectRatio: '2/3', background: '#0a0810' }}>
+                          <img
+                            src={entry.poster_path ? `https://image.tmdb.org/t/p/w185${entry.poster_path}` : FALLBACK_POSTER}
+                            alt={entry.title}
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = FALLBACK_POSTER;
+                            }}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                        </div>
+
+                        <div style={{ padding: '5px', background: '#120f1a' }}>
+                          <div style={{ fontSize: '10px', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {entry.title}
+                          </div>
+                          <div style={{ fontSize: '9px', color: 'var(--text-dim)', marginTop: '1px' }}>
+                            {entry.release_year || '—'}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {entries.map((entry, idx) => (
+                      <div
+                        key={entry.tmdb_id || idx}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.03)',
+                          border: '1px solid rgba(255, 255, 255, 0.07)',
+                          borderRadius: '10px',
+                          padding: '8px 10px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '6px'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {isRanked && (
+                            <span style={{
+                              fontWeight: 900,
+                              fontSize: '11px',
+                              color: idx < 3 ? 'var(--gold)' : 'var(--text-dim)',
+                              width: '24px'
+                            }}>
+                              #{idx + 1}
+                            </span>
+                          )}
+
+                          <img
+                            src={entry.poster_path ? `https://image.tmdb.org/t/p/w92${entry.poster_path}` : FALLBACK_POSTER}
+                            alt=""
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = FALLBACK_POSTER;
+                            }}
+                            style={{ width: '24px', height: '36px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }}
+                          />
+
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: '12px', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {entry.title}
+                            </div>
+                            <div style={{ fontSize: '10px', color: 'var(--text-dim)' }}>
+                              {entry.release_year || '—'}
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                            <button
+                              type="button"
+                              onClick={() => handleMoveEntry(idx, idx - 1)}
+                              disabled={idx === 0}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: idx === 0 ? 'var(--text-dim)' : '#fff',
+                                cursor: idx === 0 ? 'default' : 'pointer',
+                                padding: '3px'
+                              }}
+                            >
+                              <ArrowUp size={13} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleMoveEntry(idx, idx + 1)}
+                              disabled={idx === entries.length - 1}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: idx === entries.length - 1 ? 'var(--text-dim)' : '#fff',
+                                cursor: idx === entries.length - 1 ? 'default' : 'pointer',
+                                padding: '3px'
+                              }}
+                            >
+                              <ArrowDown size={13} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveEntry(idx)}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: 'var(--red)',
+                                cursor: 'pointer',
+                                padding: '3px',
+                                marginLeft: '2px'
+                              }}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+
+                        <input
+                          type="text"
+                          placeholder="Optional commentary / note..."
+                          value={entry.note || ''}
+                          onChange={e => handleUpdateNote(idx, e.target.value)}
+                          className="form-input"
+                          style={{ fontSize: '11.5px', padding: '5px 8px', background: 'rgba(0,0,0,0.3)' }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )
+              ) : (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '24px 16px',
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  border: '1px dashed rgba(255, 255, 255, 0.1)',
+                  borderRadius: '12px',
+                  color: 'var(--text-dim)'
+                }}>
+                  <Film size={22} style={{ opacity: 0.4, marginBottom: '6px' }} />
+                  <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#fff', marginBottom: '2px' }}>
+                    Your list is currently empty
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-dim)' }}>
+                    Pick films from the right panel or 1-click import an entire franchise pack.
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Pinned Action Footer */}
+            <div style={{
+              padding: '12px 18px',
+              borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+              background: 'rgba(10, 8, 16, 0.95)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '10px',
+              flexShrink: 0
+            }}>
+              <button
+                type="button"
+                onClick={onClose}
+                className="btn btn-ghost"
+                style={{ fontSize: '12px', padding: '7px 14px' }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={!title.trim() || entries.length === 0}
+                className="btn btn-primary"
+                style={{
+                  padding: '8px 20px',
+                  fontSize: '12.5px',
+                  fontWeight: 800,
+                  opacity: (!title.trim() || entries.length === 0) ? 0.5 : 1
+                }}
+              >
+                Publish List ({entries.length})
+              </button>
+            </div>
+          </form>
+
+          {/* ── RIGHT COLUMN: Full-Height Interactive Film Picker & Poster Gallery ── */}
           <div style={{
-            background: 'rgba(255, 255, 255, 0.02)',
-            border: '1px solid rgba(255, 255, 255, 0.07)',
-            borderRadius: '16px',
-            overflow: 'hidden'
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            minHeight: 0,
+            overflow: 'hidden',
+            background: 'rgba(0, 0, 0, 0.25)'
           }}>
             {/* Picker Tab Switcher */}
             <div style={{
               display: 'flex',
               borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-              background: 'rgba(0, 0, 0, 0.25)'
+              background: 'rgba(0, 0, 0, 0.3)',
+              flexShrink: 0
             }}>
               <button
                 type="button"
@@ -581,7 +929,7 @@ export default function CreateListModal({
                   border: 'none',
                   borderBottom: pickerTab === 'franchises' ? '2px solid var(--accent)' : '2px solid transparent',
                   color: pickerTab === 'franchises' ? '#fff' : 'var(--text-muted)',
-                  fontSize: '12.5px',
+                  fontSize: '12px',
                   fontWeight: 800,
                   cursor: 'pointer',
                   transition: 'all 0.15s'
@@ -604,7 +952,7 @@ export default function CreateListModal({
                   border: 'none',
                   borderBottom: pickerTab === 'search' ? '2px solid var(--accent)' : '2px solid transparent',
                   color: pickerTab === 'search' ? '#fff' : 'var(--text-muted)',
-                  fontSize: '12.5px',
+                  fontSize: '12px',
                   fontWeight: 800,
                   cursor: 'pointer',
                   transition: 'all 0.15s'
@@ -627,7 +975,7 @@ export default function CreateListModal({
                   border: 'none',
                   borderBottom: pickerTab === 'library' ? '2px solid var(--accent)' : '2px solid transparent',
                   color: pickerTab === 'library' ? '#fff' : 'var(--text-muted)',
-                  fontSize: '12.5px',
+                  fontSize: '12px',
                   fontWeight: 800,
                   cursor: 'pointer',
                   transition: 'all 0.15s'
@@ -637,28 +985,36 @@ export default function CreateListModal({
               </button>
             </div>
 
-            {/* TAB 1: FRANCHISES & PACKS (STREAMLINED SLIM HEADER) */}
+            {/* TAB 1: FRANCHISES & PACKS */}
             {pickerTab === 'franchises' && (
-              <div style={{ padding: '14px' }}>
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                flex: '1 1 auto',
+                minHeight: 0,
+                overflow: 'hidden'
+              }}>
                 {/* Slim Franchise Selector Bar */}
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   gap: '8px',
-                  flexWrap: 'wrap',
-                  marginBottom: '12px'
+                  padding: '10px 16px',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+                  background: 'rgba(15, 12, 22, 0.85)',
+                  backdropFilter: 'blur(10px)',
+                  flexShrink: 0
                 }}>
-                  {/* Horizontal Franchise Selector Pills with Navigation Arrows & Wheel Support */}
+                  {/* Horizontal Scrollable Pills */}
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '4px',
                     flex: 1,
-                    minWidth: '220px',
+                    minWidth: '200px',
                     position: 'relative'
                   }}>
-                    {/* Left Scroll Chevron */}
                     <button
                       type="button"
                       onClick={() => franchisePillsRef.current?.scrollBy({ left: -220, behavior: 'smooth' })}
@@ -673,11 +1029,8 @@ export default function CreateListModal({
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: 'pointer',
-                        flexShrink: 0,
-                        transition: 'all 0.15s'
+                        flexShrink: 0
                       }}
-                      onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
-                      onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; }}
                       title="Scroll collections left"
                     >
                       <ChevronLeft size={14} />
@@ -694,7 +1047,7 @@ export default function CreateListModal({
                         display: 'flex',
                         gap: '6px',
                         overflowX: 'auto',
-                        paddingBottom: '4px',
+                        paddingBottom: '2px',
                         scrollbarWidth: 'thin',
                         scrollbarColor: 'rgba(255,255,255,0.2) transparent',
                         WebkitOverflowScrolling: 'touch',
@@ -711,7 +1064,7 @@ export default function CreateListModal({
                             onClick={() => setActiveFranchise(pack)}
                             style={{
                               whiteSpace: 'nowrap',
-                              padding: '6px 11px',
+                              padding: '5px 11px',
                               borderRadius: '8px',
                               background: isSelected ? 'rgba(245, 158, 11, 0.16)' : 'rgba(255,255,255,0.04)',
                               border: isSelected ? '1px solid rgba(245, 158, 11, 0.5)' : '1px solid rgba(255,255,255,0.08)',
@@ -733,7 +1086,6 @@ export default function CreateListModal({
                       })}
                     </div>
 
-                    {/* Right Scroll Chevron */}
                     <button
                       type="button"
                       onClick={() => franchisePillsRef.current?.scrollBy({ left: 220, behavior: 'smooth' })}
@@ -748,18 +1100,15 @@ export default function CreateListModal({
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: 'pointer',
-                        flexShrink: 0,
-                        transition: 'all 0.15s'
+                        flexShrink: 0
                       }}
-                      onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
-                      onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; }}
                       title="Scroll collections right"
                     >
                       <ChevronRight size={14} />
                     </button>
                   </div>
 
-                  {/* 1-Click Compact Add All Button */}
+                  {/* 1-Click Add All Button */}
                   {activeFranchise && (
                     <button
                       type="button"
@@ -786,280 +1135,25 @@ export default function CreateListModal({
                   )}
                 </div>
 
-                {/* Franchise Films Grid - Full Flow (No inner nested scroll trap) */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(105px, 1fr))',
-                  gap: '10px'
-                }}>
-                  {activeFranchise.movies.map(movie => {
-                    const inList = isMovieInList(movie.id, movie.tmdb_id);
-                    return (
-                      <div
-                        key={movie.id || movie.tmdb_id}
-                        onClick={() => handleAddMovie(movie)}
-                        style={{
-                          cursor: inList ? 'default' : 'pointer',
-                          position: 'relative',
-                          borderRadius: '8px',
-                          overflow: 'hidden',
-                          border: inList ? '1.5px solid var(--green, #10b981)' : '1px solid rgba(255,255,255,0.1)',
-                          background: '#191522',
-                          transition: 'transform 0.15s, border-color 0.15s',
-                          display: 'flex',
-                          flexDirection: 'column'
-                        }}
-                        onMouseEnter={e => { if (!inList) e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                        onMouseLeave={e => { if (!inList) e.currentTarget.style.transform = 'translateY(0)'; }}
-                      >
-                        <div style={{ width: '100%', aspectRatio: '2/3', position: 'relative', background: '#0a0810' }}>
-                          <img
-                            src={`https://image.tmdb.org/t/p/w185${movie.poster_path}`}
-                            alt={movie.title}
-                            onError={(e) => {
-                              e.currentTarget.onerror = null;
-                              e.currentTarget.src = FALLBACK_POSTER;
-                            }}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          />
-                          {inList && (
-                            <div style={{
-                              position: 'absolute',
-                              inset: 0,
-                              background: 'rgba(16, 185, 129, 0.45)',
-                              backdropFilter: 'blur(2px)',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '3px',
-                              color: '#fff',
-                              fontWeight: 900,
-                              fontSize: '10.5px'
-                            }}>
-                              <Check size={18} strokeWidth={3} />
-                              <span>IN LIST</span>
-                            </div>
-                          )}
-                          {!inList && (
-                            <button
-                              type="button"
-                              style={{
-                                position: 'absolute',
-                                bottom: '5px',
-                                right: '5px',
-                                background: 'var(--accent)',
-                                color: '#fff',
-                                border: 'none',
-                                borderRadius: '50%',
-                                width: '22px',
-                                height: '22px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                                boxShadow: '0 2px 8px rgba(0,0,0,0.6)'
-                              }}
-                            >
-                              <Plus size={13} strokeWidth={3} />
-                            </button>
-                          )}
-                        </div>
-                        <div style={{ padding: '6px', background: '#120f1a', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                          <div style={{ fontSize: '11px', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {movie.title}
-                          </div>
-                          <div style={{ fontSize: '10px', color: 'var(--text-dim)', marginTop: '2px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>{movie.release_year}</span>
-                            {movie.rating ? <span>★ {movie.rating}</span> : null}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* TAB 2: VISUAL POSTER GRID SEARCH */}
-            {pickerTab === 'search' && (
-              <div style={{ padding: '14px' }}>
-                <div style={{ position: 'relative', marginBottom: '12px' }}>
-                  <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                  <input
-                    type="text"
-                    placeholder="Search movies or TV shows across TMDB..."
-                    value={searchQuery}
-                    onChange={e => {
-                      setSearchQuery(e.target.value);
-                      handleSearchTMDB(e.target.value);
-                    }}
-                    className="form-input"
-                    style={{ width: '100%', paddingLeft: '36px', fontSize: '13px' }}
-                  />
-                  {searching && (
-                    <RefreshCw size={14} className="spin" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--accent)' }} />
-                  )}
-                </div>
-
-                {searchResults.length > 0 ? (
-                  <div>
-                    <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginBottom: '10px' }}>
-                      Found {searchResults.length} results · Click any poster to add
-                    </div>
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(105px, 1fr))',
-                      gap: '10px'
-                    }}>
-                      {searchResults.map(movie => {
-                        const inList = isMovieInList(movie.id, movie.id);
-                        return (
-                          <div
-                            key={movie.id}
-                            onClick={() => handleAddMovie(movie)}
-                            style={{
-                              cursor: inList ? 'default' : 'pointer',
-                              position: 'relative',
-                              borderRadius: '8px',
-                              overflow: 'hidden',
-                              border: inList ? '1.5px solid var(--green, #10b981)' : '1px solid rgba(255,255,255,0.1)',
-                              background: '#191522',
-                              transition: 'transform 0.15s, border-color 0.15s',
-                              display: 'flex',
-                              flexDirection: 'column'
-                            }}
-                            onMouseEnter={e => { if (!inList) e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                            onMouseLeave={e => { if (!inList) e.currentTarget.style.transform = 'translateY(0)'; }}
-                          >
-                            <div style={{ width: '100%', aspectRatio: '2/3', position: 'relative', background: '#0a0810' }}>
-                              <img
-                                src={movie.poster_path ? `https://image.tmdb.org/t/p/w185${movie.poster_path}` : FALLBACK_POSTER}
-                                alt={movie.title || movie.name}
-                                onError={(e) => {
-                                  e.currentTarget.onerror = null;
-                                  e.currentTarget.src = FALLBACK_POSTER;
-                                }}
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                              />
-                              {inList && (
-                                <div style={{
-                                  position: 'absolute',
-                                  inset: 0,
-                                  background: 'rgba(16, 185, 129, 0.45)',
-                                  backdropFilter: 'blur(2px)',
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  gap: '3px',
-                                  color: '#fff',
-                                  fontWeight: 900,
-                                  fontSize: '10.5px'
-                                }}>
-                                  <Check size={18} strokeWidth={3} />
-                                  <span>IN LIST</span>
-                                </div>
-                              )}
-                              {!inList && (
-                                <button
-                                  type="button"
-                                  style={{
-                                    position: 'absolute',
-                                    bottom: '5px',
-                                    right: '5px',
-                                    background: 'var(--accent)',
-                                    color: '#fff',
-                                    border: 'none',
-                                    borderRadius: '50%',
-                                    width: '22px',
-                                    height: '22px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    cursor: 'pointer',
-                                    boxShadow: '0 2px 8px rgba(0,0,0,0.6)'
-                                  }}
-                                >
-                                  <Plus size={13} strokeWidth={3} />
-                                </button>
-                              )}
-                            </div>
-                            <div style={{ padding: '6px', background: '#120f1a', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                              <div style={{ fontSize: '11px', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                {movie.title || movie.name}
-                              </div>
-                              <div style={{ fontSize: '10px', color: 'var(--text-dim)', marginTop: '2px', display: 'flex', justifyContent: 'space-between' }}>
-                                <span>{(movie.release_date || movie.first_air_date || '').slice(0, 4) || '—'}</span>
-                                {movie.vote_average ? <span>★ {movie.vote_average.toFixed(1)}</span> : null}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ textAlign: 'center', padding: '24px 16px', color: 'var(--text-dim)', fontSize: '12.5px' }}>
-                    {searchQuery ? 'No movies found matching that query.' : 'Type a movie title above to see instant visual poster results.'}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* TAB 3: FROM USER'S PERSONAL LIBRARY */}
-            {pickerTab === 'library' && (
-              <div style={{ padding: '14px' }}>
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
-                  <div style={{ position: 'relative', flex: 1, minWidth: '180px' }}>
-                    <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                    <input
-                      type="text"
-                      placeholder="Filter library films..."
-                      value={librarySearch}
-                      onChange={e => setLibrarySearch(e.target.value)}
-                      className="form-input"
-                      style={{ width: '100%', paddingLeft: '34px', fontSize: '12px', height: '32px' }}
-                    />
-                  </div>
-
-                  {/* Filter Pills */}
-                  <div style={{ display: 'flex', gap: '5px' }}>
-                    {[
-                      { id: 'all', label: `All (${library.length})` },
-                      { id: 'favorites', label: '⭐ Favorites' },
-                      { id: 'top_rated', label: '★ 8+ Rated' },
-                      { id: 'watched', label: 'Watched' }
-                    ].map(pill => (
-                      <button
-                        key={pill.id}
-                        type="button"
-                        onClick={() => setLibraryFilter(pill.id)}
-                        style={{
-                          padding: '3px 9px',
-                          borderRadius: '6px',
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          background: libraryFilter === pill.id ? 'var(--accent)' : 'rgba(255,255,255,0.06)',
-                          color: libraryFilter === pill.id ? '#fff' : 'var(--text-muted)',
-                          border: 'none',
-                          transition: 'all 0.15s'
-                        }}
-                      >
-                        {pill.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {filteredLibrary.length > 0 ? (
+                {/* DEDICATED FULL-HEIGHT POSTER GALLERY */}
+                <div
+                  style={{
+                    flex: '1 1 auto',
+                    minHeight: 0,
+                    overflowY: 'auto',
+                    WebkitOverflowScrolling: 'touch',
+                    touchAction: 'pan-y',
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: 'rgba(255,255,255,0.25) transparent',
+                    padding: '16px'
+                  }}
+                >
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(105px, 1fr))',
-                    gap: '10px'
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(115px, 1fr))',
+                    gap: '12px'
                   }}>
-                    {filteredLibrary.map(movie => {
+                    {activeFranchise.movies.map(movie => {
                       const inList = isMovieInList(movie.id, movie.tmdb_id);
                       return (
                         <div
@@ -1068,7 +1162,7 @@ export default function CreateListModal({
                           style={{
                             cursor: inList ? 'default' : 'pointer',
                             position: 'relative',
-                            borderRadius: '8px',
+                            borderRadius: '9px',
                             overflow: 'hidden',
                             border: inList ? '1.5px solid var(--green, #10b981)' : '1px solid rgba(255,255,255,0.1)',
                             background: '#191522',
@@ -1081,7 +1175,7 @@ export default function CreateListModal({
                         >
                           <div style={{ width: '100%', aspectRatio: '2/3', position: 'relative', background: '#0a0810' }}>
                             <img
-                              src={movie.poster_path ? `https://image.tmdb.org/t/p/w185${movie.poster_path}` : FALLBACK_POSTER}
+                              src={`https://image.tmdb.org/t/p/w185${movie.poster_path}`}
                               alt={movie.title}
                               onError={(e) => {
                                 e.currentTarget.onerror = null;
@@ -1137,398 +1231,333 @@ export default function CreateListModal({
                               {movie.title}
                             </div>
                             <div style={{ fontSize: '10px', color: 'var(--text-dim)', marginTop: '2px', display: 'flex', justifyContent: 'space-between' }}>
-                              <span>{movie.release_year || '—'}</span>
-                              {movie.user_rating ? <span style={{ color: 'var(--gold)' }}>★ {movie.user_rating}</span> : null}
+                              <span>{movie.release_year}</span>
+                              {movie.rating ? <span style={{ color: 'var(--gold)' }}>★ {movie.rating}</span> : null}
                             </div>
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                ) : (
-                  <div style={{ textAlign: 'center', padding: '24px 16px', color: 'var(--text-dim)', fontSize: '12.5px' }}>
-                    No matching films in your library with the current filter.
-                  </div>
-                )}
+                </div>
               </div>
             )}
-          </div>
 
-          {/* ───────────────────────────────────────────────────────────── */}
-          {/* CURRENT LIST ENTRIES (RANKED GRID / NOTES)                    */}
-          {/* ───────────────────────────────────────────────────────────── */}
-          <div>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: '10px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '13.5px', fontWeight: 900, color: '#fff' }}>
-                  List Entries ({entries.length})
-                </span>
-                {isRanked && (
-                  <span style={{
-                    fontSize: '10.5px',
-                    fontWeight: 800,
-                    background: 'rgba(245, 158, 11, 0.15)',
-                    color: 'var(--gold)',
-                    borderRadius: '6px',
-                    padding: '2px 6px'
-                  }}>
-                    RANKED #1 to #{entries.length || 0}
-                  </span>
-                )}
-              </div>
-
-              {entries.length > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  {/* View Mode Switcher */}
-                  <div style={{
-                    display: 'flex',
-                    background: 'rgba(255, 255, 255, 0.06)',
-                    borderRadius: '8px',
-                    padding: '2px'
-                  }}>
-                    <button
-                      type="button"
-                      onClick={() => setEntriesViewMode('grid')}
-                      style={{
-                        background: entriesViewMode === 'grid' ? 'var(--accent)' : 'transparent',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: '6px',
-                        padding: '4px 8px',
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Poster Grid
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEntriesViewMode('notes')}
-                      style={{
-                        background: entriesViewMode === 'notes' ? 'var(--accent)' : 'transparent',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: '6px',
-                        padding: '4px 8px',
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Film Notes
-                    </button>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleClearAll}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: 'var(--text-dim)',
-                      fontSize: '11.5px',
-                      cursor: 'pointer',
-                      padding: '4px 6px'
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.color = 'var(--red)'}
-                    onMouseLeave={e => e.currentTarget.style.color = 'var(--text-dim)'}
-                  >
-                    Clear All
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {entries.length > 0 ? (
-              entriesViewMode === 'grid' ? (
-                /* Compact Ranked Poster Grid */
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(105px, 1fr))',
-                  gap: '10px',
-                  background: 'rgba(0, 0, 0, 0.25)',
-                  border: '1px solid rgba(255, 255, 255, 0.06)',
-                  borderRadius: '14px',
-                  padding: '12px'
-                }}>
-                  {entries.map((entry, idx) => (
-                    <div
-                      key={entry.tmdb_id || idx}
-                      style={{
-                        position: 'relative',
-                        background: '#191522',
-                        borderRadius: '10px',
-                        overflow: 'hidden',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        display: 'flex',
-                        flexDirection: 'column'
-                      }}
-                    >
-                      {/* Ranked Badge */}
-                      {isRanked && (
-                        <div style={{
-                          position: 'absolute',
-                          top: '5px',
-                          left: '5px',
-                          zIndex: 5,
-                          background: idx < 3 ? 'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)' : 'rgba(0, 0, 0, 0.78)',
-                          color: '#fff',
-                          fontSize: '10px',
-                          fontWeight: 900,
-                          padding: '1px 5px',
-                          borderRadius: '5px',
-                          boxShadow: '0 2px 6px rgba(0,0,0,0.6)'
-                        }}>
-                          #{idx + 1}
-                        </div>
-                      )}
-
-                      {/* Remove Button */}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveEntry(idx)}
-                        style={{
-                          position: 'absolute',
-                          top: '5px',
-                          right: '5px',
-                          zIndex: 5,
-                          background: 'rgba(0, 0, 0, 0.75)',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '50%',
-                          width: '20px',
-                          height: '20px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          cursor: 'pointer',
-                          transition: 'background 0.15s'
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'var(--red)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(0, 0, 0, 0.75)'}
-                      >
-                        <X size={11} />
-                      </button>
-
-                      {/* Poster */}
-                      <div style={{ width: '100%', aspectRatio: '2/3', background: '#0a0810' }}>
-                        <img
-                          src={entry.poster_path ? `https://image.tmdb.org/t/p/w185${entry.poster_path}` : FALLBACK_POSTER}
-                          alt={entry.title}
-                          onError={(e) => {
-                            e.currentTarget.onerror = null;
-                            e.currentTarget.src = FALLBACK_POSTER;
-                          }}
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        />
-                      </div>
-
-                      {/* Title & Reorder Controls */}
-                      <div style={{ padding: '6px', background: '#120f1a' }}>
-                        <div style={{ fontSize: '11px', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {entry.title}
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '3px' }}>
-                          <span style={{ fontSize: '9.5px', color: 'var(--text-dim)' }}>{entry.release_year || '—'}</span>
-                          <div style={{ display: 'flex', gap: '2px' }}>
-                            <button
-                              type="button"
-                              onClick={() => handleMoveEntry(idx, idx - 1)}
-                              disabled={idx === 0}
-                              style={{
-                                background: 'rgba(255,255,255,0.06)',
-                                border: 'none',
-                                color: idx === 0 ? 'rgba(255,255,255,0.2)' : '#fff',
-                                borderRadius: '4px',
-                                padding: '2px 4px',
-                                cursor: idx === 0 ? 'default' : 'pointer'
-                              }}
-                            >
-                              <ArrowLeft size={10} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleMoveEntry(idx, idx + 1)}
-                              disabled={idx === entries.length - 1}
-                              style={{
-                                background: 'rgba(255,255,255,0.06)',
-                                border: 'none',
-                                color: idx === entries.length - 1 ? 'rgba(255,255,255,0.2)' : '#fff',
-                                borderRadius: '4px',
-                                padding: '2px 4px',
-                                cursor: idx === entries.length - 1 ? 'default' : 'pointer'
-                              }}
-                            >
-                              <ChevronRight size={10} />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                /* Detailed Notes View */
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {entries.map((entry, idx) => (
-                    <div
-                      key={entry.tmdb_id || idx}
-                      style={{
-                        background: 'rgba(255,255,255,0.02)',
-                        border: '1px solid rgba(255,255,255,0.07)',
-                        borderRadius: '12px',
-                        padding: '10px 12px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '6px'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        {isRanked && (
-                          <div style={{
-                            width: '24px',
-                            height: '24px',
-                            borderRadius: '6px',
-                            background: idx < 3 ? 'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)' : 'rgba(255,255,255,0.06)',
-                            color: '#fff',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '11px',
-                            fontWeight: 900
-                          }}>
-                            {idx + 1}
-                          </div>
-                        )}
-                        <img
-                          src={entry.poster_path ? `https://image.tmdb.org/t/p/w92${entry.poster_path}` : FALLBACK_POSTER}
-                          alt=""
-                          onError={(e) => {
-                            e.currentTarget.onerror = null;
-                            e.currentTarget.src = FALLBACK_POSTER;
-                          }}
-                          style={{ width: '26px', height: '39px', objectFit: 'cover', borderRadius: '4px' }}
-                        />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>
-                            {entry.title} {entry.release_year ? `(${entry.release_year})` : ''}
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <button
-                            type="button"
-                            onClick={() => handleMoveEntry(idx, idx - 1)}
-                            disabled={idx === 0}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              color: idx === 0 ? 'var(--text-dim)' : '#fff',
-                              cursor: idx === 0 ? 'default' : 'pointer',
-                              padding: '4px'
-                            }}
-                          >
-                            <ArrowUp size={14} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleMoveEntry(idx, idx + 1)}
-                            disabled={idx === entries.length - 1}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              color: idx === entries.length - 1 ? 'var(--text-dim)' : '#fff',
-                              cursor: idx === entries.length - 1 ? 'default' : 'pointer',
-                              padding: '4px'
-                            }}
-                          >
-                            <ArrowDown size={14} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveEntry(idx)}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              color: 'var(--red)',
-                              cursor: 'pointer',
-                              padding: '4px',
-                              marginLeft: '4px'
-                            }}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
-
-                      <input
-                        type="text"
-                        placeholder="Optional commentary / film note for this entry..."
-                        value={entry.note || ''}
-                        onChange={e => handleUpdateNote(idx, e.target.value)}
-                        className="form-input"
-                        style={{ fontSize: '12px', padding: '6px 10px', background: 'rgba(0,0,0,0.3)' }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )
-            ) : (
+            {/* TAB 2: VISUAL POSTER GRID SEARCH */}
+            {pickerTab === 'search' && (
               <div style={{
-                textAlign: 'center',
-                padding: '24px 20px',
-                background: 'rgba(255, 255, 255, 0.02)',
-                border: '1px dashed rgba(255, 255, 255, 0.1)',
-                borderRadius: '14px',
-                color: 'var(--text-dim)'
+                display: 'flex',
+                flexDirection: 'column',
+                flex: '1 1 auto',
+                minHeight: 0,
+                overflow: 'hidden'
               }}>
-                <Film size={24} style={{ opacity: 0.4, marginBottom: '6px' }} />
-                <div style={{ fontSize: '13px', fontWeight: 700, color: '#fff', marginBottom: '2px' }}>
-                  Your list is currently empty
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(15,12,22,0.85)', flexShrink: 0 }}>
+                  <div style={{ position: 'relative' }}>
+                    <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                    <input
+                      type="text"
+                      placeholder="Search movies or TV shows across TMDB..."
+                      value={searchQuery}
+                      onChange={e => {
+                        setSearchQuery(e.target.value);
+                        handleSearchTMDB(e.target.value);
+                      }}
+                      className="form-input"
+                      style={{ width: '100%', paddingLeft: '36px', fontSize: '12.5px' }}
+                    />
+                    {searching && (
+                      <RefreshCw size={14} className="spin" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--accent)' }} />
+                    )}
+                  </div>
                 </div>
-                <div style={{ fontSize: '11.5px' }}>
-                  Use the picker above to 1-click import a franchise pack like MCU, Nolan, Batman, or search TMDB.
+
+                <div style={{
+                  flex: '1 1 auto',
+                  minHeight: 0,
+                  overflowY: 'auto',
+                  WebkitOverflowScrolling: 'touch',
+                  padding: '16px',
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: 'rgba(255,255,255,0.25) transparent'
+                }}>
+                  {searchResults.length > 0 ? (
+                    <div>
+                      <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginBottom: '10px' }}>
+                        Found {searchResults.length} results · Click any poster to add
+                      </div>
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(115px, 1fr))',
+                        gap: '12px'
+                      }}>
+                        {searchResults.map(movie => {
+                          const inList = isMovieInList(movie.id, movie.id);
+                          return (
+                            <div
+                              key={movie.id}
+                              onClick={() => handleAddMovie(movie)}
+                              style={{
+                                cursor: inList ? 'default' : 'pointer',
+                                position: 'relative',
+                                borderRadius: '9px',
+                                overflow: 'hidden',
+                                border: inList ? '1.5px solid var(--green, #10b981)' : '1px solid rgba(255,255,255,0.1)',
+                                background: '#191522',
+                                transition: 'transform 0.15s, border-color 0.15s',
+                                display: 'flex',
+                                flexDirection: 'column'
+                              }}
+                              onMouseEnter={e => { if (!inList) e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                              onMouseLeave={e => { if (!inList) e.currentTarget.style.transform = 'translateY(0)'; }}
+                            >
+                              <div style={{ width: '100%', aspectRatio: '2/3', position: 'relative', background: '#0a0810' }}>
+                                <img
+                                  src={movie.poster_path ? `https://image.tmdb.org/t/p/w185${movie.poster_path}` : FALLBACK_POSTER}
+                                  alt={movie.title || movie.name}
+                                  onError={(e) => {
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.src = FALLBACK_POSTER;
+                                  }}
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                />
+                                {inList && (
+                                  <div style={{
+                                    position: 'absolute',
+                                    inset: 0,
+                                    background: 'rgba(16, 185, 129, 0.45)',
+                                    backdropFilter: 'blur(2px)',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '3px',
+                                    color: '#fff',
+                                    fontWeight: 900,
+                                    fontSize: '10.5px'
+                                  }}>
+                                    <Check size={18} strokeWidth={3} />
+                                    <span>IN LIST</span>
+                                  </div>
+                                )}
+                                {!inList && (
+                                  <button
+                                    type="button"
+                                    style={{
+                                      position: 'absolute',
+                                      bottom: '5px',
+                                      right: '5px',
+                                      background: 'var(--accent)',
+                                      color: '#fff',
+                                      border: 'none',
+                                      borderRadius: '50%',
+                                      width: '22px',
+                                      height: '22px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      cursor: 'pointer',
+                                      boxShadow: '0 2px 8px rgba(0,0,0,0.6)'
+                                    }}
+                                  >
+                                    <Plus size={13} strokeWidth={3} />
+                                  </button>
+                                )}
+                              </div>
+                              <div style={{ padding: '6px', background: '#120f1a', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                                <div style={{ fontSize: '11px', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {movie.title || movie.name}
+                                </div>
+                                <div style={{ fontSize: '10px', color: 'var(--text-dim)', marginTop: '2px', display: 'flex', justifyContent: 'space-between' }}>
+                                  <span>{(movie.release_date || movie.first_air_date || '').slice(0, 4) || '—'}</span>
+                                  {movie.vote_average ? <span style={{ color: 'var(--gold)' }}>★ {movie.vote_average.toFixed(1)}</span> : null}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--text-dim)', fontSize: '12.5px' }}>
+                      <Search size={24} style={{ opacity: 0.3, marginBottom: '6px' }} />
+                      <div>Type a title in the search box above to find any film or series across TMDB.</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: FROM MY LIBRARY */}
+            {pickerTab === 'library' && (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                flex: '1 1 auto',
+                minHeight: 0,
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  padding: '10px 16px',
+                  borderBottom: '1px solid rgba(255,255,255,0.06)',
+                  background: 'rgba(15,12,22,0.85)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  flexWrap: 'wrap',
+                  flexShrink: 0
+                }}>
+                  <div style={{ position: 'relative', flex: 1, minWidth: '160px' }}>
+                    <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                    <input
+                      type="text"
+                      placeholder="Filter library..."
+                      value={librarySearch}
+                      onChange={e => setLibrarySearch(e.target.value)}
+                      className="form-input"
+                      style={{ width: '100%', paddingLeft: '32px', fontSize: '12px', padding: '6px 10px 6px 32px' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    {[
+                      { id: 'all', label: 'All' },
+                      { id: 'watched', label: 'Watched' },
+                      { id: 'favorites', label: '★ Favs' },
+                      { id: 'top_rated', label: '8+' }
+                    ].map(f => (
+                      <button
+                        key={f.id}
+                        type="button"
+                        onClick={() => setLibraryFilter(f.id)}
+                        style={{
+                          background: libraryFilter === f.id ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
+                          color: libraryFilter === f.id ? '#fff' : 'var(--text-muted)',
+                          border: 'none',
+                          borderRadius: '6px',
+                          padding: '5px 10px',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{
+                  flex: '1 1 auto',
+                  minHeight: 0,
+                  overflowY: 'auto',
+                  WebkitOverflowScrolling: 'touch',
+                  padding: '16px',
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: 'rgba(255,255,255,0.25) transparent'
+                }}>
+                  {filteredLibrary.length > 0 ? (
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(115px, 1fr))',
+                      gap: '12px'
+                    }}>
+                      {filteredLibrary.map(movie => {
+                        const inList = isMovieInList(movie.id, movie.tmdb_id);
+                        return (
+                          <div
+                            key={movie.id || movie.tmdb_id}
+                            onClick={() => handleAddMovie(movie)}
+                            style={{
+                              cursor: inList ? 'default' : 'pointer',
+                              position: 'relative',
+                              borderRadius: '9px',
+                              overflow: 'hidden',
+                              border: inList ? '1.5px solid var(--green, #10b981)' : '1px solid rgba(255,255,255,0.1)',
+                              background: '#191522',
+                              transition: 'transform 0.15s, border-color 0.15s',
+                              display: 'flex',
+                              flexDirection: 'column'
+                            }}
+                            onMouseEnter={e => { if (!inList) e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                            onMouseLeave={e => { if (!inList) e.currentTarget.style.transform = 'translateY(0)'; }}
+                          >
+                            <div style={{ width: '100%', aspectRatio: '2/3', position: 'relative', background: '#0a0810' }}>
+                              <img
+                                src={movie.poster_path ? `https://image.tmdb.org/t/p/w185${movie.poster_path}` : FALLBACK_POSTER}
+                                alt={movie.title}
+                                onError={(e) => {
+                                  e.currentTarget.onerror = null;
+                                  e.currentTarget.src = FALLBACK_POSTER;
+                                }}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              />
+                              {inList && (
+                                <div style={{
+                                  position: 'absolute',
+                                  inset: 0,
+                                  background: 'rgba(16, 185, 129, 0.45)',
+                                  backdropFilter: 'blur(2px)',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '3px',
+                                  color: '#fff',
+                                  fontWeight: 900,
+                                  fontSize: '10.5px'
+                                }}>
+                                  <Check size={18} strokeWidth={3} />
+                                  <span>IN LIST</span>
+                                </div>
+                              )}
+                              {!inList && (
+                                <button
+                                  type="button"
+                                  style={{
+                                    position: 'absolute',
+                                    bottom: '5px',
+                                    right: '5px',
+                                    background: 'var(--accent)',
+                                    color: '#fff',
+                                    border: 'none',
+                                    borderRadius: '50%',
+                                    width: '22px',
+                                    height: '22px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.6)'
+                                  }}
+                                >
+                                  <Plus size={13} strokeWidth={3} />
+                                </button>
+                              )}
+                            </div>
+                            <div style={{ padding: '6px', background: '#120f1a', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                              <div style={{ fontSize: '11px', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {movie.title}
+                              </div>
+                              <div style={{ fontSize: '10px', color: 'var(--text-dim)', marginTop: '2px', display: 'flex', justifyContent: 'space-between' }}>
+                                <span>{movie.release_year || '—'}</span>
+                                {movie.user_rating ? <span style={{ color: 'var(--gold)' }}>★ {movie.user_rating}</span> : null}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--text-dim)', fontSize: '12.5px' }}>
+                      No matching films in your library with the current filter.
+                    </div>
+                  )}
                 </div>
               </div>
             )}
           </div>
-
-          {/* Action Buttons (Pinned Footer) */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            gap: '10px',
-            paddingTop: '10px',
-            borderTop: '1px solid rgba(255, 255, 255, 0.08)'
-          }}>
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn btn-ghost"
-              style={{ fontSize: '12.5px' }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={!title.trim() || entries.length === 0}
-              className="btn btn-primary"
-              style={{
-                padding: '0 22px',
-                fontSize: '12.5px',
-                fontWeight: 800,
-                opacity: (!title.trim() || entries.length === 0) ? 0.5 : 1
-              }}
-            >
-              Publish List ({entries.length} {entries.length === 1 ? 'film' : 'films'})
-            </button>
-          </div>
-        </form>
+        </div>
       </div>
     </div>,
     document.body

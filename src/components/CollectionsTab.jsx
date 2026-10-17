@@ -289,14 +289,41 @@ export default function CollectionsTab({
       library.filter(m => m.genres && m.genres.some(g => g.toLowerCase() === genreName.toLowerCase()));
 
     // Map all franchise collections with robust keyword, tag & studio matching
-    const franchiseItems = FRANCHISE_COLLECTIONS.map(f => ({
-      id: f.id,
-      title: f.title,
-      emoji: f.emoji,
-      desc: f.desc,
-      movies: library.filter(m => f.matcher(m)),
-      group: 'franchise'
-    }));
+    const franchiseItems = FRANCHISE_COLLECTIONS.map(f => {
+      const catalogue = f.catalogue || [];
+      const userMatched = library.filter(m => f.matcher(m));
+
+      let movies = [];
+      if (catalogue.length > 0) {
+        // Merge catalogue with user library items
+        movies = catalogue.map(catMovie => {
+          const found = library.find(libM =>
+            String(libM.tmdb_id || libM.id) === String(catMovie.tmdb_id || catMovie.id) ||
+            (libM.title && catMovie.title && libM.title.toLowerCase().trim() === catMovie.title.toLowerCase().trim())
+          );
+          return found ? { ...catMovie, ...found, inLibrary: true } : { ...catMovie, inLibrary: false, status: 'unwatched' };
+        });
+
+        // Also add any extra user movies that matched the franchise matcher but weren't in static catalogue
+        userMatched.forEach(userM => {
+          const already = movies.some(m => String(m.tmdb_id || m.id) === String(userM.tmdb_id || userM.id));
+          if (!already) {
+            movies.push({ ...userM, inLibrary: true });
+          }
+        });
+      } else {
+        movies = userMatched;
+      }
+
+      return {
+        id: f.id,
+        title: f.title,
+        emoji: f.emoji,
+        desc: f.desc,
+        movies,
+        group: 'franchise'
+      };
+    });
 
     const scifi = filterByGenre('sci-fi').concat(filterByGenre('science fiction'));
     const scifiUnique = scifi.filter((m, index, self) =>
