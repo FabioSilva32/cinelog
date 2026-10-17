@@ -585,10 +585,10 @@ export default function TriviaTab({ currentUser, onUpdateProfile }) {
     : 0;
 
   return (
-    <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', minHeight: 'calc(100vh - 160px)', alignItems: 'start' }}>
+    <div className="trivia-page-layout animate-fade-in">
       
       {/* Main Game Screen */}
-      <div className="glass" style={{ borderRadius: 'var(--radius-xl)', padding: '36px', border: '1px solid var(--border)', position: 'relative', display: 'flex', flexDirection: 'column', minHeight: '500px', transition: 'all 0.3s' }}>
+      <div className="glass trivia-game-card">
         
         {/* Flash overlay for feedback */}
         {flash === 'correct' && (
@@ -615,7 +615,7 @@ export default function TriviaTab({ currentUser, onUpdateProfile }) {
         {/* Game State Screens */}
         {gameState === 'start' && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, textAlign: 'center', gap: '20px' }}>
-            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(136,8,8,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(136,8,8,0.3)', boxShadow: '0 0 24px rgba(136,8,8,0.2)' }}>
+            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(var(--accent-rgb, 136,8,8), 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(var(--accent-rgb, 136,8,8), 0.35)', boxShadow: '0 0 24px rgba(var(--accent-rgb, 136,8,8), 0.25)' }}>
               <Trophy size={30} color="var(--accent)" />
             </div>
             <div>
@@ -648,7 +648,7 @@ export default function TriviaTab({ currentUser, onUpdateProfile }) {
 
             {/* Timer bar */}
             <div style={{ height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden', marginBottom: '28px', position: 'relative' }}>
-              <div style={{ height: '100%', width: `${(timer / 15) * 100}%`, background: timer > 5 ? 'linear-gradient(to right, var(--accent), #c0392b)' : 'linear-gradient(to right, var(--red), #ef4444)', transition: 'width 1s linear', borderRadius: '3px' }} />
+              <div style={{ height: '100%', width: `${(timer / 15) * 100}%`, background: timer > 5 ? 'var(--accent)' : 'linear-gradient(to right, var(--red), #ef4444)', transition: 'width 1s linear', borderRadius: '3px' }} />
             </div>
 
             {/* Question title */}
@@ -657,7 +657,7 @@ export default function TriviaTab({ currentUser, onUpdateProfile }) {
             </h3>
 
             {/* Options grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginTop: 'auto' }}>
+            <div className="trivia-options-grid">
               {currentQuestion.options.map(option => {
                 const isSelected = selectedOption === option;
                 const isCorrect = option === currentQuestion.answer;
@@ -705,7 +705,7 @@ export default function TriviaTab({ currentUser, onUpdateProfile }) {
                     onMouseEnter={e => {
                       if (!showResults) {
                         e.currentTarget.style.borderColor = 'var(--accent)';
-                        e.currentTarget.style.background = 'rgba(136,8,8,0.04)';
+                        e.currentTarget.style.background = 'rgba(var(--accent-rgb, 136,8,8), 0.1)';
                       }
                     }}
                     onMouseLeave={e => {
@@ -757,7 +757,7 @@ export default function TriviaTab({ currentUser, onUpdateProfile }) {
       </div>
 
       {/* Real Player Record & Statistics Sidebar */}
-      <div className="glass" style={{ borderRadius: 'var(--radius-xl)', padding: '24px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div className="glass trivia-sidebar-card">
         
         {/* User Card */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
@@ -780,7 +780,7 @@ export default function TriviaTab({ currentUser, onUpdateProfile }) {
 
         {/* High Score Banner */}
         <div style={{
-          background: 'linear-gradient(135deg, rgba(234,179,8,0.12), rgba(136,8,8,0.15))',
+          background: 'linear-gradient(135deg, rgba(234,179,8,0.12), rgba(var(--accent-rgb, 136,8,8), 0.18))',
           border: '1px solid rgba(234,179,8,0.3)',
           borderRadius: '12px',
           padding: '16px',

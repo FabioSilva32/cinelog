@@ -12,8 +12,10 @@
   --text-dim: #71717A;
   
   --accent: #E50914;
+  --accent-contrast: #FFFFFF;
+  --accent-rgb: 229, 9, 20;
   --accent-gradient: #E50914;
-  --accent-glow: transparent;
+  --accent-glow: rgba(229, 9, 20, 0.4);
   --accent-hover: #F40612;
   
   --gold: #F59E0B;
@@ -637,20 +639,29 @@ a {
 }
 
 .btn-primary {
-  background: var(--accent);
-  color: #FFFFFF;
-  border-color: var(--accent);
+  background: var(--accent) !important;
+  color: var(--accent-contrast, #FFFFFF) !important;
+  border-color: var(--accent) !important;
 }
 
 .btn-primary:hover {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
+  background: var(--accent-hover) !important;
+  border-color: var(--accent-hover) !important;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(229, 9, 20, 0.3);
+  box-shadow: 0 4px 12px rgba(var(--accent-rgb, 229, 9, 20), 0.35);
 }
 
 .btn-primary:active {
   transform: translateY(0);
+}
+
+.btn-primary * {
+  color: var(--accent-contrast, #FFFFFF) !important;
+}
+
+.btn-primary svg {
+  stroke: var(--accent-contrast, #FFFFFF) !important;
+  color: var(--accent-contrast, #FFFFFF) !important;
 }
 
 .btn-secondary {
@@ -2770,6 +2781,58 @@ body.modal-open {
   }
 }
 
+/* ── CINEMA TRIVIA PAGE RESPONSIVENESS ── */
+.trivia-page-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px 40px;
+}
+
+.trivia-game-card {
+  padding: 32px;
+  border-radius: var(--radius-xl);
+  min-height: 480px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.trivia-sidebar-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.trivia-options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 840px) {
+  .trivia-page-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    padding: 0 12px 32px !important;
+  }
+
+  .trivia-game-card {
+    padding: 20px 16px !important;
+    min-height: auto !important;
+  }
+
+  .trivia-options-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+}
+
 /* ── PROFILE CUSTOMIZER STUDIO RESPONSIVENESS ── */
 .profile-studio-grid {
   display: grid;
@@ -2783,8 +2846,8 @@ body.modal-open {
   .profile-studio-card {
     width: 100vw !important;
     max-width: 100vw !important;
-    height: 100vh !important;
-    max-height: 100vh !important;
+    height: 100% !important;
+    max-height: 100% !important;
     border-radius: 0 !important;
     border: none !important;
   }
@@ -2794,13 +2857,33 @@ body.modal-open {
     flex-direction: column !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch;
+    flex: 1 !important;
+    min-height: 0 !important;
   }
 
-  .profile-studio-grid > div:first-child {
+  .profile-studio-left-col {
     border-right: none !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-    max-height: 360px;
-    flex-shrink: 0;
+    padding: 12px 16px !important;
+    flex-shrink: 0 !important;
+    gap: 10px !important;
+  }
+
+  .profile-studio-card-banner {
+    height: 85px !important;
+  }
+
+  .profile-studio-badges-preview {
+    display: none !important;
+  }
+
+  .profile-studio-stats-pill {
+    display: none !important;
+  }
+
+  .profile-studio-right-col {
+    overflow: visible !important;
+    flex: 1 0 auto !important;
   }
 }
 

@@ -174,14 +174,22 @@ export default function ProfileCustomizerModal({
   // Lock background window scroll when modal is open
   useBodyScrollLock(show);
 
-  // Close modal when pressing Escape
+  // Close modal when pressing Escape or Android back gesture
   useEffect(() => {
     if (!show) return;
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') onClose?.();
     };
+    const handleBackEvent = (e) => {
+      e.preventDefault();
+      onClose?.();
+    };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('cinelog-back-handled', handleBackEvent);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('cinelog-back-handled', handleBackEvent);
+    };
   }, [show, onClose]);
 
   // TMDB backdrop search
@@ -325,13 +333,30 @@ export default function ProfileCustomizerModal({
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="btn btn-ghost"
-            style={{ width: '36px', height: '36px', borderRadius: '50%', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >
-            <X size={18} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              onClick={handleSave}
+              className="btn btn-primary"
+              style={{
+                padding: '7px 18px',
+                fontSize: '13px',
+                fontWeight: 900,
+                borderRadius: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <CheckCircle2 size={15} /> Save
+            </button>
+            <button
+              onClick={onClose}
+              className="btn btn-ghost"
+              style={{ width: '36px', height: '36px', borderRadius: '50%', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         {/* 2-COLUMN STUDIO WORKSPACE */}
@@ -340,7 +365,7 @@ export default function ProfileCustomizerModal({
           {/* ─────────────────────────────────────────────────────────────
               LEFT COLUMN: EXPANDED LIVE CARD PREVIEW & CONTROLS
               ───────────────────────────────────────────────────────────── */}
-          <div style={{
+          <div className="profile-studio-left-col" style={{
             background: 'rgba(0,0,0,0.4)',
             borderRight: '1px solid rgba(255,255,255,0.08)',
             padding: '20px',
@@ -359,7 +384,7 @@ export default function ProfileCustomizerModal({
             </div>
 
             {/* THE LIVE PROFILE CARD */}
-            <div style={{
+            <div className="profile-studio-preview-card" style={{
               borderRadius: '20px',
               overflow: 'hidden',
               background: 'linear-gradient(180deg, #161324 0%, #0d0b15 100%)',
@@ -367,8 +392,8 @@ export default function ProfileCustomizerModal({
               boxShadow: '0 16px 40px rgba(0,0,0,0.7)',
               position: 'relative'
             }}>
-              {/* Card Banner (135px tall — matches 520px profile banner aspect ratio 1:1) */}
-              <div style={{
+              {/* Card Banner (135px tall on desktop — responsive on mobile) */}
+              <div className="profile-studio-card-banner" style={{
                 height: '135px',
                 width: '100%',
                 position: 'relative',
@@ -444,7 +469,7 @@ export default function ProfileCustomizerModal({
                 </div>
 
                 {/* Live Pinned Badges Preview */}
-                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="profile-studio-badges-preview" style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                   {(featuredBadges.length > 0 ? featuredBadges : sortedBadges.slice(0, 3)).map(b => {
                     const colors = BADGE_COLORS[b] || { border: '1px solid var(--border)', color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.03)' };
                     return (
@@ -456,7 +481,7 @@ export default function ProfileCustomizerModal({
                 </div>
 
                 {/* Quick Stats Pill */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginTop: '10px', background: 'rgba(255,255,255,0.03)', padding: '7px 10px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
+                <div className="profile-studio-stats-pill" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginTop: '10px', background: 'rgba(255,255,255,0.03)', padding: '7px 10px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
                   <div>
                     <div style={{ fontSize: '8.5px', color: 'var(--text-dim)', textTransform: 'uppercase', fontWeight: 800 }}>Watched</div>
                     <div style={{ fontSize: '13px', fontWeight: 900, color: 'var(--green)' }}>{watchedCount}</div>
@@ -614,7 +639,7 @@ export default function ProfileCustomizerModal({
           {/* ─────────────────────────────────────────────────────────────
               RIGHT COLUMN: TAB NAVIGATION & WORKSPACE
               ───────────────────────────────────────────────────────────── */}
-          <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+          <div className="profile-studio-right-col" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
 
             {/* TAB SELECTOR HEADER */}
             <div style={{
@@ -637,12 +662,13 @@ export default function ProfileCustomizerModal({
                     padding: '8px 16px', borderRadius: '25px', fontSize: '12.5px',
                     fontWeight: customizerTab === tab.id ? 900 : 700,
                     background: customizerTab === tab.id ? 'var(--accent)' : 'rgba(255,255,255,0.04)',
-                    color: '#fff', border: customizerTab === tab.id ? '1px solid var(--accent)' : '1px solid rgba(255,255,255,0.08)',
+                    color: customizerTab === tab.id ? 'var(--accent-contrast, #ffffff)' : 'var(--text-muted)',
+                    border: customizerTab === tab.id ? '1px solid var(--accent)' : '1px solid rgba(255,255,255,0.08)',
                     display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
                     transition: 'all 0.15s ease', flexShrink: 0
                   }}
                 >
-                  <tab.icon size={14} />
+                  <tab.icon size={14} color={customizerTab === tab.id ? 'var(--accent-contrast, #ffffff)' : 'currentColor'} />
                   {tab.label}
                 </button>
               ))}

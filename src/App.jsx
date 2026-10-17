@@ -166,13 +166,29 @@ function AppInner() {
     localStorage.setItem('cinelog_layout_mode', layoutMode);
   }, [layoutMode]);
 
+  // Synchronize theme changes from Settings
+  useEffect(() => {
+    const handleThemeChange = (e) => {
+      if (e.detail?.id) {
+        setActiveComboId(e.detail.id);
+      }
+    };
+    window.addEventListener('cinelog-theme-change', handleThemeChange);
+    return () => window.removeEventListener('cinelog-theme-change', handleThemeChange);
+  }, []);
+
   // Apply razor-sharp solid color combo to root variables
   useEffect(() => {
     const combo = SHARP_SOLID_COMBOS.find(c => c.id === activeComboId) || SHARP_SOLID_COMBOS[0];
     const root = document.documentElement;
     root.style.setProperty('--accent', combo.accent);
+    root.style.setProperty('--accent-contrast', combo.contrast || '#ffffff');
+    root.style.setProperty('--accent-rgb', combo.rgb || '229, 9, 20');
     root.style.setProperty('--accent-gradient', combo.accent);
     root.style.setProperty('--accent-hover', combo.accent);
+    root.style.setProperty('--accent-glow', `rgba(${combo.rgb || '229, 9, 20'}, 0.4)`);
+    root.style.setProperty('--red', combo.accent);
+    root.style.setProperty('--red-glow', `rgba(${combo.rgb || '229, 9, 20'}, 0.35)`);
     root.style.setProperty('--border-focus', combo.borderFocus);
     root.style.setProperty('--bg', combo.bg);
     root.style.setProperty('--surface', combo.surface);
@@ -386,6 +402,9 @@ function AppInner() {
   const activeTabRef = useRef(activeTab);
   activeTabRef.current = activeTab;
 
+  const profileSubTabRef = useRef(profileSubTab);
+  profileSubTabRef.current = profileSubTab;
+
   const tabHistoryRef = useRef(tabHistory);
   tabHistoryRef.current = tabHistory;
 
@@ -413,75 +432,100 @@ function AppInner() {
   const confirmConfigRef = useRef(confirmConfig);
   confirmConfigRef.current = confirmConfig;
 
-  // Intercept native Android back gestures / hardware back button via @capacitor/app
+  const lastBackPressRef = useRef(0);
+
+  // Universal back handler (handles Capacitor native back & document backbutton event from Android)
+  const handleUniversalBack = useCallback(() => {
+    // 1. Close open overlay modals first
+    if (showQuickAddRef.current) {
+      setShowQuickAdd(false);
+      return;
+    }
+    if (showCommandCenterRef.current) {
+      setShowCommandCenter(false);
+      return;
+    }
+    if (showSettingsRef.current) {
+      setShowSettings(false);
+      return;
+    }
+    if (showAuthRef.current) {
+      setShowAuth(false);
+      return;
+    }
+    if (showRecoveryModalRef.current) {
+      setShowRecoveryModal(false);
+      return;
+    }
+    if (activeEditMovieRef.current) {
+      setActiveEditMovie(null);
+      return;
+    }
+    if (viewingUserProfileRef.current) {
+      setViewingUserProfile(null);
+      return;
+    }
+    if (confirmConfigRef.current?.isOpen) {
+      setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+      return;
+    }
+
+    // 2. Dispatch cancelable event for child modals (e.g. ProfileCustomizerModal)
+    const backEvent = new CustomEvent('cinelog-back-handled', { cancelable: true });
+    window.dispatchEvent(backEvent);
+    if (backEvent.defaultPrevented) {
+      return;
+    }
+
+    // 2b. Check if any custom modal close button exists in DOM
+    const openModalCloseBtn = document.querySelector('.profile-studio-card button.btn-ghost') ||
+      document.querySelector('.modal-backdrop button.btn-ghost');
+    if (openModalCloseBtn) {
+      openModalCloseBtn.click();
+      return;
+    }
+
+    // 3. If in Profile and on a subtab, navigate back to Profile Overview
+    if (activeTabRef.current === 'profile' && profileSubTabRef.current !== 'overview') {
+      setProfileSubTab('overview');
+      return;
+    }
+
+    // 4. Tab navigation history (pop previous tab)
+    if (tabHistoryRef.current.length > 1) {
+      const nextHistory = [...tabHistoryRef.current];
+      nextHistory.pop();
+      const prevTab = nextHistory[nextHistory.length - 1];
+      setTabHistory(nextHistory);
+      handleTabChange(prevTab, true);
+      return;
+    }
+
+    // 5. Return to explore if currently on another tab
+    if (activeTabRef.current !== 'explore') {
+      handleTabChange('explore', true);
+      return;
+    }
+
+    // 6. At root (explore tab, no modals, no history) -> Double-tap back to exit
+    const now = Date.now();
+    if (now - lastBackPressRef.current < 2000) {
+      try {
+        CapApp.exitApp();
+      } catch (e) {}
+    } else {
+      lastBackPressRef.current = now;
+      toast('Press back again to exit', 'info');
+    }
+  }, [handleTabChange, toast]);
+
+  // Intercept native Android back gestures / hardware back button via @capacitor/app & document event
   useEffect(() => {
     let backListener = null;
 
     const setupCapacitorBack = async () => {
       try {
-        backListener = await CapApp.addListener('backButton', () => {
-          // 1. Close open modals first
-          if (showQuickAddRef.current) {
-            setShowQuickAdd(false);
-            return;
-          }
-          if (showCommandCenterRef.current) {
-            setShowCommandCenter(false);
-            return;
-          }
-          if (showSettingsRef.current) {
-            setShowSettings(false);
-            return;
-          }
-          if (showAuthRef.current) {
-            setShowAuth(false);
-            return;
-          }
-          if (showRecoveryModalRef.current) {
-            setShowRecoveryModal(false);
-            return;
-          }
-          if (activeEditMovieRef.current) {
-            setActiveEditMovie(null);
-            return;
-          }
-          if (viewingUserProfileRef.current) {
-            setViewingUserProfile(null);
-            return;
-          }
-          if (confirmConfigRef.current?.isOpen) {
-            setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-            return;
-          }
-
-          // 2. Dispatch cancelable event for child modals (e.g. ProfileCustomizerModal)
-          const backEvent = new CustomEvent('cinelog-back-handled', { cancelable: true });
-          window.dispatchEvent(backEvent);
-          if (backEvent.defaultPrevented) {
-            return;
-          }
-
-          // 3. Tab navigation history (pop previous tab)
-          if (tabHistoryRef.current.length > 1) {
-            const nextHistory = [...tabHistoryRef.current];
-            nextHistory.pop();
-            const prevTab = nextHistory[nextHistory.length - 1];
-            setTabHistory(nextHistory);
-            handleTabChange(prevTab, true);
-            return;
-          }
-
-          // 4. Return to explore if currently on another tab
-          if (activeTabRef.current !== 'explore') {
-            handleTabChange('explore', true);
-            return;
-          }
-
-          // 5. At root (explore tab, no modals, no history) -> safely exit app
-          try {
-            CapApp.exitApp();
-          } catch (e) {}
-        });
+        backListener = await CapApp.addListener('backButton', handleUniversalBack);
       } catch (err) {
         // Web browser environment
       }
@@ -489,12 +533,19 @@ function AppInner() {
 
     setupCapacitorBack();
 
+    const docBackHandler = (e) => {
+      e?.preventDefault?.();
+      handleUniversalBack();
+    };
+    document.addEventListener('backbutton', docBackHandler);
+
     return () => {
       if (backListener && backListener.remove) {
         backListener.remove();
       }
+      document.removeEventListener('backbutton', docBackHandler);
     };
-  }, [handleTabChange]);
+  }, [handleUniversalBack]);
 
   useEffect(() => {
     localStorage.setItem('cinelog_mode', 'supabase');
@@ -1573,7 +1624,7 @@ function AppInner() {
                               padding: '1px 5px',
                               borderRadius: '3px',
                               background: isTv ? '#1e3a8a' : (isPerson ? '#2d2d2d' : 'var(--accent)'),
-                              color: isTv ? '#93c5fd' : (isPerson ? '#cccccc' : '#ffffff')
+                              color: isTv ? '#93c5fd' : (isPerson ? '#cccccc' : 'var(--accent-contrast, #ffffff)')
                             }}>
                               {isTv ? 'SERIES' : (isPerson ? 'PERSON' : 'MOVIE')}
                             </span>
@@ -1833,9 +1884,9 @@ function AppInner() {
               position: 'fixed', bottom: '90px', right: '24px',
               width: 'min(380px, calc(100vw - 48px))',
               background: 'rgba(16,13,30,0.96)',
-              border: '1px solid rgba(136,8,8,0.35)',
+              border: '1px solid rgba(var(--accent-rgb, 229,9,20), 0.35)',
               borderRadius: '20px',
-              boxShadow: '0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(136,8,8,0.12)',
+              boxShadow: '0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(var(--accent-rgb, 229,9,20), 0.15)',
               backdropFilter: 'blur(24px)',
               zIndex: 8999,
               overflow: 'hidden',
@@ -1855,7 +1906,7 @@ function AppInner() {
                     style={{
                       width: '100%', boxSizing: 'border-box',
                       background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(136,8,8,0.25)',
+                      border: '1px solid rgba(var(--accent-rgb, 229,9,20), 0.25)',
                       borderRadius: '12px',
                       padding: '10px 12px 10px 36px',
                       color: '#fff', fontSize: '14px', fontWeight: 600,
@@ -1863,8 +1914,8 @@ function AppInner() {
                       fontFamily: 'var(--font-heading)',
                       transition: 'border-color 0.2s',
                     }}
-                    onFocus={e => e.target.style.borderColor = 'rgba(136,8,8,0.6)'}
-                    onBlur={e => e.target.style.borderColor = 'rgba(136,8,8,0.25)'}
+                    onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+                    onBlur={e => e.target.style.borderColor = 'rgba(var(--accent-rgb, 229,9,20), 0.25)'}
                   />
                   {quickLoading && (
                     <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', animation: 'spin 0.8s linear infinite', display: 'inline-block' }}>⟳</span>
@@ -1901,7 +1952,7 @@ function AppInner() {
                         borderRadius: '12px', padding: '8px 10px', cursor: 'pointer',
                         color: '#fff', textAlign: 'left', transition: 'background 0.12s',
                       }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(136,8,8,0.1)'}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(var(--accent-rgb, 229,9,20), 0.12)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'none'}
                     >
                       {/* Poster */}
@@ -1919,9 +1970,9 @@ function AppInner() {
                       {/* Status badge */}
                       <div style={{ flexShrink: 0, fontSize: '11px', fontWeight: 700,
                         padding: '3px 9px', borderRadius: '20px',
-                        background: inLibrary ? 'rgba(16,185,129,0.15)' : 'rgba(136,8,8,0.15)',
-                        color: inLibrary ? '#10b981' : '#c0392b',
-                        border: `1px solid ${inLibrary ? 'rgba(16,185,129,0.3)' : 'rgba(136,8,8,0.3)'}`,
+                        background: inLibrary ? 'rgba(16,185,129,0.15)' : 'rgba(var(--accent-rgb, 229,9,20), 0.15)',
+                        color: inLibrary ? '#10b981' : 'var(--accent)',
+                        border: `1px solid ${inLibrary ? 'rgba(16,185,129,0.3)' : 'rgba(var(--accent-rgb, 229,9,20), 0.3)'}`,
                       }}>{inLibrary ? '✓ In Library' : '+ Add'}</div>
                     </button>
                   );
@@ -1930,7 +1981,7 @@ function AppInner() {
 
               {/* Footer shortcut hint */}
               <div style={{ padding: '8px 18px 12px', borderTop: '1px solid rgba(255,255,255,0.04)', fontSize: '11px', color: 'var(--text-dim)', textAlign: 'center' }}>
-                Tap a result to log it · <span style={{ color: '#c0392b' }}>Explore</span> for full search
+                Tap a result to log it · <span style={{ color: 'var(--accent)' }}>Explore</span> for full search
               </div>
             </div>
           )}
@@ -1946,13 +1997,13 @@ function AppInner() {
               borderRadius: '50%',
               background: 'var(--accent)',
               border: '1px solid rgba(255,255,255,0.18)',
-              boxShadow: '0 6px 20px rgba(0,0,0,0.8)',
+              boxShadow: '0 6px 20px rgba(var(--accent-rgb, 229,9,20), 0.45)',
               cursor: 'pointer',
               zIndex: 9000,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '24px',
               fontWeight: 400,
-              color: '#fff',
+              color: 'var(--accent-contrast, #ffffff)',
               transform: showQuickAdd ? 'rotate(45deg)' : 'rotate(0deg)',
               transition: 'transform 0.18s ease, background 0.15s ease',
             }}

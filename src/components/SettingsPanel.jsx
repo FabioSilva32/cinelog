@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { X, Palette, Gamepad2, Info, Check, RefreshCw, Database, Sparkles, Sliders, Smartphone, Trash2 } from 'lucide-react';
+import { X, Gamepad2, Info, Check, RefreshCw, Database, Sparkles, Smartphone, Trash2, Palette } from 'lucide-react';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { SHARP_SOLID_COMBOS } from '../utils/themePresets';
 
 // ── THEMES & EXPORTS (Preserved for compatibility) ───────────────────
-const THEMES = [];
-function applyTheme() {}
+export const THEMES = [];
+export function applyTheme() {}
 
 // ── TRIVIA GAME ──────────────────────────────────────────────────────
 const TRIVIA = [
@@ -112,21 +112,13 @@ export default function SettingsPanel({ onClose }) {
   }, [onClose]);
 
   const [activeSection, setActiveSection] = useState('appearance');
-  const [activeComboId, setActiveComboId] = useState(() => localStorage.getItem('cinelog_active_combo') || 'crimson');
+  const [activeTheme, setActiveTheme] = useState(() => localStorage.getItem('cinelog_active_combo') || 'crimson');
   const [clearedMsg, setClearedMsg] = useState(false);
 
   const handleSelectTheme = (combo) => {
-    setActiveComboId(combo.id);
-    const root = document.documentElement;
-    root.style.setProperty('--accent', combo.accent);
-    root.style.setProperty('--accent-gradient', combo.accent);
-    root.style.setProperty('--accent-hover', combo.accent);
-    root.style.setProperty('--border-focus', combo.borderFocus);
-    root.style.setProperty('--bg', combo.bg);
-    root.style.setProperty('--surface', combo.surface);
-    root.style.setProperty('--border', combo.border);
-    root.style.setProperty('--text', combo.text);
+    setActiveTheme(combo.id);
     localStorage.setItem('cinelog_active_combo', combo.id);
+    window.dispatchEvent(new CustomEvent('cinelog-theme-change', { detail: { id: combo.id } }));
   };
 
   const handleClearCache = () => {
@@ -138,7 +130,7 @@ export default function SettingsPanel({ onClose }) {
   };
 
   const SECTIONS = [
-    { id: 'appearance', label: 'Appearance', icon: Palette },
+    { id: 'appearance', label: 'Color Accent', icon: Palette },
     { id: 'data', label: 'Storage & Cache', icon: Database },
     { id: 'trivia', label: 'Movie Trivia', icon: Gamepad2 },
     { id: 'about', label: 'About & System', icon: Info },
@@ -230,51 +222,126 @@ export default function SettingsPanel({ onClose }) {
             </button>
           </div>
 
-          {/* ── APPEARANCE TAB ── */}
+          {/* ── APPEARANCE & THEME TAB ── */}
           {activeSection === 'appearance' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
               <div>
-                <h3 style={{ fontSize: '17px', fontWeight: 900, color: '#fff', margin: '0 0 4px 0' }}>Display & Accents</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '12.5px', margin: 0 }}>Choose your signature razor-sharp high-contrast accent tone.</p>
+                <h3 style={{ fontSize: '17px', fontWeight: 900, color: '#fff', margin: '0 0 4px 0' }}>Color Accent</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '12.5px', margin: 0 }}>
+                  Personalize buttons, badges, glowing borders, and the quick add button across CineLog.
+                </p>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                gap: '12px'
+              }}>
                 {SHARP_SOLID_COMBOS.map(combo => {
-                  const isSelected = activeComboId === combo.id;
+                  const isSelected = activeTheme === combo.id;
                   return (
                     <button
                       key={combo.id}
+                      type="button"
                       onClick={() => handleSelectTheme(combo)}
                       style={{
+                        padding: '14px 16px',
+                        borderRadius: '14px',
                         background: isSelected ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)',
                         border: isSelected ? `2px solid ${combo.accent}` : '1px solid rgba(255,255,255,0.08)',
-                        borderRadius: '12px',
-                        padding: '12px',
                         cursor: 'pointer',
                         textAlign: 'left',
                         display: 'flex',
-                        flexDirection: 'column',
-                        gap: '8px',
-                        transition: 'all 0.15s ease'
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '12px',
+                        transition: 'all 0.15s ease',
+                        boxShadow: isSelected ? `0 4px 16px rgba(${combo.rgb || '229,9,20'}, 0.25)` : 'none'
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ width: '20px', height: '20px', borderRadius: '50%', background: combo.accent, display: 'inline-block', boxShadow: isSelected ? `0 0 10px ${combo.accent}` : 'none' }} />
-                        {isSelected && <Check size={14} color={combo.accent} />}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '8px',
+                          background: combo.accent,
+                          border: combo.id === 'monochrome' ? '1px solid rgba(255,255,255,0.3)' : 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                          boxShadow: `0 2px 8px rgba(${combo.rgb || '229,9,20'}, 0.4)`
+                        }}>
+                          {isSelected && (
+                            <Check size={16} color={combo.contrast || '#ffffff'} strokeWidth={3} />
+                          )}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#fff' }}>
+                            {combo.name}
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                            {combo.hex}
+                          </div>
+                        </div>
                       </div>
-                      <span style={{ fontSize: '12.5px', fontWeight: isSelected ? 800 : 600, color: isSelected ? '#fff' : 'var(--text-muted)' }}>
-                        {combo.name}
-                      </span>
+                      {isSelected && (
+                        <span style={{
+                          fontSize: '10px',
+                          fontWeight: 900,
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          background: combo.accent,
+                          color: combo.contrast || '#ffffff',
+                          textTransform: 'uppercase'
+                        }}>
+                          Active
+                        </span>
+                      )}
                     </button>
                   );
                 })}
               </div>
 
-              <div style={{ padding: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <Smartphone size={20} color="var(--accent)" />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>OLED Pitch Black Ready</div>
-                  <div style={{ fontSize: '11.5px', color: 'var(--text-dim)', marginTop: '2px' }}>Deep pure black backgrounds configured to save battery on mobile OLED displays.</div>
+              {/* Live Preview Sample */}
+              <div style={{
+                padding: '16px',
+                borderRadius: '14px',
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                marginTop: '6px'
+              }}>
+                <div style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '10px' }}>
+                  Live Component Preview
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <button className="btn btn-primary" style={{ padding: '8px 18px', fontSize: '12.5px', fontWeight: 800 }}>
+                    Primary Button
+                  </button>
+                  <span style={{
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    background: 'var(--accent)',
+                    color: 'var(--accent-contrast, #ffffff)',
+                    fontSize: '11px',
+                    fontWeight: 800
+                  }}>
+                    Active Badge
+                  </span>
+                  <div style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '50%',
+                    background: 'var(--accent)',
+                    color: 'var(--accent-contrast, #ffffff)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '18px',
+                    fontWeight: 400
+                  }}>
+                    +
+                  </div>
                 </div>
               </div>
             </div>
@@ -365,5 +432,3 @@ export default function SettingsPanel({ onClose }) {
     </div>
   );
 }
-
-export { applyTheme, THEMES };

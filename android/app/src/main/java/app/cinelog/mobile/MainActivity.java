@@ -4,6 +4,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Window;
 import android.view.WindowManager;
+import androidx.activity.OnBackPressedCallback;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
@@ -25,5 +26,16 @@ public class MainActivity extends BridgeActivity {
             controller.setAppearanceLightStatusBars(false);
             controller.setAppearanceLightNavigationBars(false);
         }
+
+        // Intercept Android back gesture / hardware back button at the native root
+        // Ensures swiping back dispatches to Capacitor JS and NEVER closes the activity prematurely
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (getBridge() != null) {
+                    getBridge().triggerJSEvent("backbutton", "document");
+                }
+            }
+        });
     }
 }
