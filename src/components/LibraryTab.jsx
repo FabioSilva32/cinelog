@@ -150,7 +150,7 @@ function ImportModal({ onClose, onImport }) {
   );
 }
 
-// ── Library Column ────────────────────────────────────────────────────
+// ── Library Column (Deluxe 3-Column Studio) ─────────────────────────
 function LibraryColumn({ label, icon, color, movies, onEditClick, onRemove, searchQuery, sortBy }) {
   const filtered = useMemo(() => {
     let r = [...movies];
@@ -173,122 +173,319 @@ function LibraryColumn({ label, icon, color, movies, onEditClick, onRemove, sear
     : null;
 
   return (
-    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', background: 'rgba(255,255,255,0.015)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', overflow: 'hidden' }}>
-      {/* Column Header */}
-      <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-        <span style={{ fontSize: '16px' }}>{icon}</span>
-        <span style={{ fontWeight: 800, fontSize: '14px', flex: 1 }}>{label}</span>
-        <span style={{ fontSize: '11px', color: 'var(--text-dim)', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', padding: '1px 8px', borderRadius: '20px' }}>{filtered.length}</span>
+    <div style={{
+      flex: 1,
+      minWidth: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      background: 'rgba(16, 13, 24, 0.75)',
+      backdropFilter: 'blur(16px)',
+      borderRadius: '16px',
+      border: '1px solid rgba(255, 255, 255, 0.09)',
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.45)',
+      overflow: 'hidden',
+      height: '100%'
+    }}>
+      {/* Pinned Column Header */}
+      <div style={{
+        padding: '14px 18px',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+        background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0.25) 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        flexShrink: 0
+      }}>
+        <span style={{ fontSize: '18px' }}>{icon}</span>
+        <span style={{ fontWeight: 900, fontSize: '16px', color: '#FFFFFF', flex: 1, letterSpacing: '-0.3px' }}>{label}</span>
+        <span style={{
+          fontSize: '11.5px',
+          fontWeight: 800,
+          color: color,
+          background: 'rgba(255, 255, 255, 0.06)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          padding: '2px 10px',
+          borderRadius: '20px'
+        }}>
+          {filtered.length}
+        </span>
         {avgRating && (
-          <span style={{ fontSize: '13px', fontWeight: 900, color: getRatingColor(avgRating) }}>{avgRating}</span>
+          <span style={{ fontSize: '13px', fontWeight: 900, color: 'var(--gold)', letterSpacing: '-0.2px' }}>
+            ★ {avgRating}
+          </span>
         )}
-        <span style={{ display: 'inline-flex', width: '6px', height: '6px', borderRadius: '50%', background: color, flexShrink: 0 }} />
+        <span style={{ display: 'inline-flex', width: '8px', height: '8px', borderRadius: '50%', background: color, flexShrink: 0, boxShadow: `0 0 8px ${color}` }} />
       </div>
 
-      {/* Favorites sub-bar */}
-      <div style={{ padding: '4px 14px', borderBottom: '1px solid var(--border)', background: 'rgba(0,0,0,0.1)', display: 'flex', gap: '12px', fontSize: '10px', color: 'var(--text-dim)', flexShrink: 0 }}>
+      {/* Favorites / Status Sub-bar */}
+      <div style={{
+        padding: '6px 18px',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+        background: 'rgba(0, 0, 0, 0.2)',
+        display: 'flex',
+        gap: '14px',
+        fontSize: '11px',
+        color: 'var(--text-dim)',
+        flexShrink: 0
+      }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <span style={{ color: 'var(--green)', fontWeight: 700 }}>{watched.length}</span> watched
+          <span style={{ color: 'var(--green)', fontWeight: 800 }}>{watched.length}</span> watched
         </span>
         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <Heart size={9} fill="var(--red)" color="var(--red)" />
-          <span style={{ color: 'var(--red)', fontWeight: 700 }}>{filtered.filter(m => m.favorite).length}</span>
+          <Heart size={10} fill="var(--red)" color="var(--red)" />
+          <span style={{ color: 'var(--red)', fontWeight: 800 }}>{filtered.filter(m => m.favorite).length}</span> favs
         </span>
         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          ⏳ <span style={{ fontWeight: 700 }}>{filtered.filter(m => m.status === 'plan_to_watch').length}</span>
+          ⏳ <span style={{ fontWeight: 800 }}>{filtered.filter(m => m.status === 'plan_to_watch').length}</span>
         </span>
       </div>
 
-      {/* Scrollable list */}
-      <div style={{ overflowY: 'auto', flex: 1 }}>
+      {/* Independent Scrollable Column Body */}
+      <div
+        className="library-col-scroll"
+        style={{
+          overflowY: 'auto',
+          flex: 1,
+          minHeight: 0,
+          padding: '10px 12px 24px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px'
+        }}
+      >
         {filtered.length === 0 ? (
-          <div style={{ padding: '30px 16px', textAlign: 'center', color: 'var(--text-dim)', fontSize: '12px' }}>
-            {searchQuery ? 'No matches' : 'Empty – add titles from Explore'}
+          <div style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--text-dim)', fontSize: '13px' }}>
+            <div style={{ fontSize: '28px', marginBottom: '8px' }}>🎬</div>
+            {searchQuery ? 'No matching titles found' : 'Empty category – add titles from Explore'}
           </div>
         ) : filtered.map(movie => {
           const isWatched = movie.status === 'watched';
           const genres = (movie.genres || []).slice(0, 2).join(' · ');
           const isWatching = movie.status === 'watching';
+          const posterUrl = movie.poster_path
+            ? (movie.poster_path.startsWith('http') ? movie.poster_path : `https://image.tmdb.org/t/p/w200${movie.poster_path}`)
+            : null;
+
           return (
             <div
               key={movie.id || movie.tmdb_id}
               onClick={() => onEditClick(movie)}
               style={{
-                display: 'flex', alignItems: 'center', gap: '10px',
-                padding: '8px 12px', borderBottom: '1px solid rgba(255,255,255,0.04)',
-                cursor: 'pointer', transition: 'all 0.15s',
-                background: isWatching ? 'rgba(136,8,8,0.05)' : 'transparent',
-                borderLeft: isWatching ? '3px solid var(--accent)' : '3px solid transparent',
-                paddingLeft: isWatching ? '9px' : '12px'
+                display: 'flex',
+                gap: '12px',
+                padding: '10px',
+                borderRadius: '12px',
+                background: isWatching ? 'rgba(229, 9, 20, 0.07)' : 'rgba(255, 255, 255, 0.025)',
+                border: isWatching ? '1px solid rgba(229, 9, 20, 0.4)' : '1px solid rgba(255, 255, 255, 0.07)',
+                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.3)',
+                cursor: 'pointer',
+                transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)',
+                position: 'relative'
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = isWatching ? 'rgba(136,8,8,0.08)' : 'rgba(255,255,255,0.04)'; triggerBackdropHover(movie.backdrop_path || movie.details?.backdrop_path); }}
-              onMouseLeave={e => { e.currentTarget.style.background = isWatching ? 'rgba(136,8,8,0.05)' : 'transparent'; triggerBackdropHover(null); }}
+              onMouseEnter={e => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.borderColor = isWatching ? 'var(--accent)' : 'rgba(255, 255, 255, 0.2)';
+                e.currentTarget.style.background = isWatching ? 'rgba(229, 9, 20, 0.12)' : 'rgba(255, 255, 255, 0.05)';
+                triggerBackdropHover(movie.backdrop_path || movie.details?.backdrop_path);
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = '';
+                e.currentTarget.style.borderColor = isWatching ? 'rgba(229, 9, 20, 0.4)' : 'rgba(255, 255, 255, 0.07)';
+                e.currentTarget.style.background = isWatching ? 'rgba(229, 9, 20, 0.07)' : 'rgba(255, 255, 255, 0.025)';
+                triggerBackdropHover(null);
+              }}
             >
-              {/* Small poster */}
-              <div style={{ width: '32px', height: '48px', borderRadius: '3px', overflow: 'hidden', flexShrink: 0, background: 'var(--surface-solid)' }}>
-                {movie.poster_path ? (
-                  <img src={`https://image.tmdb.org/t/p/w92${movie.poster_path}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              {/* Big High-Res Poster (74px x 110px) */}
+              <div style={{
+                width: '74px',
+                height: '110px',
+                borderRadius: '8px',
+                overflow: 'hidden',
+                flexShrink: 0,
+                background: '#12101a',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                position: 'relative'
+              }}>
+                {posterUrl ? (
+                  <img
+                    src={posterUrl}
+                    alt={movie.title}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    loading="lazy"
+                  />
                 ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: '14px' }}>🎬</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: '24px' }}>
+                    🎬
+                  </div>
+                )}
+                {movie.rating > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '4px',
+                    left: '4px',
+                    background: 'rgba(0, 0, 0, 0.88)',
+                    border: '1px solid rgba(251, 191, 36, 0.4)',
+                    borderRadius: '4px',
+                    padding: '1px 5px',
+                    fontSize: '10px',
+                    fontWeight: 900,
+                    color: 'var(--gold)',
+                    lineHeight: 1.1
+                  }}>
+                    ★ {Number(movie.rating).toFixed(1)}
+                  </div>
                 )}
               </div>
 
-              {/* Title + meta */}
-              <div style={{ flex: 1, minWidth: 0 }}>
+              {/* Title, Badges & Meta */}
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '6px' }}>
+                  <div style={{
+                    fontSize: '15.5px',
+                    fontWeight: 900,
+                    color: '#FFFFFF',
+                    lineHeight: 1.25,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    letterSpacing: '-0.3px',
+                    flex: 1
+                  }}>
+                    {movie.title}
+                  </div>
+
+                  {/* Remove button */}
+                  <button
+                    onClick={e => { e.stopPropagation(); onRemove(movie.id); }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--text-dim)',
+                      cursor: 'pointer',
+                      padding: '2px',
+                      opacity: 0.45,
+                      transition: 'opacity 0.15s',
+                      display: 'flex',
+                      flexShrink: 0
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.opacity = 1}
+                    onMouseLeave={e => e.currentTarget.style.opacity = 0.45}
+                    title="Remove title"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+
+                {/* Subtitle: Year, runtime, director or episode progress */}
                 <div style={{
-                  fontSize: '12px', fontWeight: 700,
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  textDecoration: isWatched ? 'line-through' : 'none',
-                  color: isWatched ? 'var(--text-muted)' : 'var(--text)',
-                  display: 'flex', alignItems: 'center'
+                  fontSize: '12px',
+                  color: 'rgba(255, 255, 255, 0.65)',
+                  fontWeight: 600,
+                  marginTop: '4px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
                 }}>
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{movie.title}</span>
+                  {movie.release_year || '—'}{genres ? ` · ${genres}` : ''}
+                </div>
+
+                {/* Status Badges Row */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
                   {isWatching && (
-                    <span style={{ flexShrink: 0, fontSize: '8px', background: 'rgba(136,8,8,0.15)', color: 'var(--accent)', border: '1px solid rgba(136,8,8,0.3)', borderRadius: '4px', padding: '1px 5px', fontWeight: 800, marginLeft: '6px', display: 'inline-flex', alignItems: 'center', gap: '2px', animation: 'pulse 2.5s infinite' }}>
+                    <span style={{
+                      fontSize: '9.5px',
+                      background: 'rgba(229, 9, 20, 0.2)',
+                      color: 'var(--accent)',
+                      border: '1px solid rgba(229, 9, 20, 0.45)',
+                      borderRadius: '5px',
+                      padding: '2px 7px',
+                      fontWeight: 900,
+                      letterSpacing: '0.04em',
+                      textTransform: 'uppercase'
+                    }}>
                       ▶ Watching
                     </span>
                   )}
-                </div>
-                <div style={{ fontSize: '10px', color: 'var(--text-dim)', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {movie.release_year || '—'}{genres ? ` · ${genres}` : ''}
-                </div>
-              </div>
-
-              {/* Right side: rating + fav + remove */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                {movie.theater_seat && (
-                  <span
-                    title={`Theater Ticket: Row & Seat ${movie.theater_seat}`}
-                    style={{
-                      cursor: 'help',
-                      fontSize: '11px',
-                      background: 'rgba(180,83,9,0.15)',
-                      border: '1px solid rgba(180,83,9,0.3)',
-                      borderRadius: '4px',
-                      padding: '1px 3px',
+                  {isWatched && !isWatching && (
+                    <span style={{
+                      fontSize: '9.5px',
+                      background: 'rgba(34, 197, 94, 0.15)',
+                      color: '#4ade80',
+                      border: '1px solid rgba(34, 197, 94, 0.35)',
+                      borderRadius: '5px',
+                      padding: '2px 7px',
+                      fontWeight: 800
+                    }}>
+                      ✓ Watched
+                    </span>
+                  )}
+                  {movie.status === 'plan_to_watch' && (
+                    <span style={{
+                      fontSize: '9.5px',
+                      background: 'rgba(96, 165, 250, 0.15)',
+                      color: '#60a5fa',
+                      border: '1px solid rgba(96, 165, 250, 0.35)',
+                      borderRadius: '5px',
+                      padding: '2px 7px',
+                      fontWeight: 800
+                    }}>
+                      ⏳ Watchlist
+                    </span>
+                  )}
+                  {movie.favorite && (
+                    <span style={{
+                      fontSize: '9.5px',
+                      background: 'rgba(239, 68, 68, 0.15)',
+                      color: '#f87171',
+                      border: '1px solid rgba(239, 68, 68, 0.35)',
+                      borderRadius: '5px',
+                      padding: '2px 6px',
                       display: 'inline-flex',
                       alignItems: 'center',
-                      lineHeight: 1
-                    }}
-                  >
-                    🎟️
-                  </span>
+                      gap: '3px',
+                      fontWeight: 800
+                    }}>
+                      <Heart size={9} fill="currentColor" /> Favorite
+                    </span>
+                  )}
+                  {movie.theater_seat && (
+                    <span
+                      title={`Theater Ticket: Row & Seat ${movie.theater_seat}`}
+                      style={{
+                        fontSize: '9.5px',
+                        background: 'rgba(245, 158, 11, 0.15)',
+                        border: '1px solid rgba(245, 158, 11, 0.35)',
+                        color: '#fbbf24',
+                        borderRadius: '5px',
+                        padding: '2px 6px',
+                        fontWeight: 800
+                      }}
+                    >
+                      🎟️ Ticket
+                    </span>
+                  )}
+                </div>
+
+                {/* Personal Review Snippet if available */}
+                {movie.review && movie.review.trim().length > 0 && (
+                  <div style={{
+                    fontSize: '11px',
+                    color: 'rgba(255, 255, 255, 0.72)',
+                    fontStyle: 'italic',
+                    marginTop: '6px',
+                    lineHeight: 1.35,
+                    overflow: 'hidden',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    padding: '3px 8px',
+                    borderRadius: '5px',
+                    borderLeft: '2px solid rgba(255, 255, 255, 0.2)'
+                  }}>
+                    "{movie.review}"
+                  </div>
                 )}
-                {movie.favorite && <Heart size={10} fill="var(--red)" color="var(--red)" />}
-                {movie.rating && (
-                  <span style={{ fontSize: '12px', fontWeight: 900, color: getRatingColor(movie.rating), minWidth: '28px', textAlign: 'right' }}>
-                    {Number(movie.rating).toFixed(1)}
-                  </span>
-                )}
-                <button
-                  onClick={e => { e.stopPropagation(); onRemove(movie.id); }}
-                  style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: '2px', opacity: 0.5, transition: 'opacity 0.15s', display: 'flex' }}
-                  onMouseEnter={e => e.currentTarget.style.opacity = 1}
-                  onMouseLeave={e => e.currentTarget.style.opacity = 0.5}
-                  title="Remove"
-                >
-                  <X size={12} />
-                </button>
               </div>
             </div>
           );
