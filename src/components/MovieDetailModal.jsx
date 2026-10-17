@@ -741,12 +741,48 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
         </div>
 
         {/* ── SCROLLABLE BODY ── */}
-        <div className="movie-detail-scroll-body" style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', padding: '0 28px 28px', display: 'flex', flexDirection: 'column', gap: '22px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
-          {/* Underlined tabs */}
-          <div style={{ display: 'flex', flexShrink: 0, gap: '26px', borderBottom: '1px solid var(--border)' }}>
+        <div className="movie-detail-scroll-body" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', overscrollBehavior: 'contain', padding: '0 28px 28px', display: 'flex', flexDirection: 'column', gap: '22px', borderTop: '1px solid var(--border)', paddingTop: '16px', width: '100%', boxSizing: 'border-box' }}>
+          {/* Underlined tabs (smooth horizontal scroll on mobile) */}
+          <div
+            className="movie-detail-tabs-bar"
+            style={{
+              display: 'flex',
+              flexShrink: 0,
+              gap: '24px',
+              borderBottom: '1px solid var(--border)',
+              overflowX: 'auto',
+              overflowY: 'hidden',
+              WebkitOverflowScrolling: 'touch',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+              width: '100%',
+              maxWidth: '100%',
+              boxSizing: 'border-box'
+            }}
+          >
             {SECTIONS.map(s => (
-              <button key={s.id} id={`modal-tab-${s.id}`} onClick={() => setActiveSection(s.id)}
-                style={{ background: 'transparent', color: activeSection === s.id ? '#fff' : 'var(--text-muted)', border: 'none', borderBottom: `2px solid ${activeSection === s.id ? 'var(--accent)' : 'transparent'}`, marginBottom: '-1px', padding: '8px 0 11px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap' }}>
+              <button
+                key={s.id}
+                id={`modal-tab-${s.id}`}
+                onClick={(e) => {
+                  setActiveSection(s.id);
+                  e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                }}
+                style={{
+                  background: 'transparent',
+                  color: activeSection === s.id ? '#fff' : 'var(--text-muted)',
+                  border: 'none',
+                  borderBottom: `2px solid ${activeSection === s.id ? 'var(--accent)' : 'transparent'}`,
+                  marginBottom: '-1px',
+                  padding: '8px 4px 11px',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0
+                }}
+              >
                 {s.label}
               </button>
             ))}
