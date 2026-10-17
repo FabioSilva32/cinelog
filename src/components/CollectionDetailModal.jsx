@@ -54,7 +54,8 @@ export default function CollectionDetailModal({
         style={{
           width: '100%',
           maxWidth: '920px',
-          maxHeight: 'min(90vh, 880px)',
+          height: 'min(92dvh, 880px)',
+          maxHeight: 'min(92dvh, 880px)',
           background: 'linear-gradient(180deg, #13101c 0%, #0d0b13 100%)',
           borderRadius: '24px',
           border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -119,7 +120,15 @@ export default function CollectionDetailModal({
         </div>
 
         {/* Scrollable Content Container (Smooth Scroll on Wheel & Touch) */}
-        <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
+        <div style={{
+          flex: '1 1 auto',
+          minHeight: 0,
+          overflowY: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          touchAction: 'pan-y',
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'rgba(255,255,255,0.2) transparent'
+        }}>
           {/* Collection Hero */}
           <div style={{ padding: '24px 30px 20px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>

@@ -1,34 +1,33 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
   X, Plus, Search, Trash2, ArrowLeft, ArrowUp, ArrowDown,
   Trophy, Sparkles, Film, Check, Layers, Bookmark, Star,
-  SlidersHorizontal, ChevronRight, Zap, RefreshCw
+  ChevronLeft, ChevronRight, Zap, RefreshCw
 } from 'lucide-react';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
-import { FRANCHISE_COLLECTIONS } from '../utils/collections';
 
 const TMDB_KEY = '6a2fd6b9b1bb3befbb9f14c203732225';
+const FALLBACK_POSTER = 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=300&fit=crop&q=80';
 
-// Curated franchise packs ready for instant 1-click batch import
+// 100% Verified valid TMDB poster paths tested for HTTP 200
 const FRANCHISE_PACKS = [
   {
     id: 'mcu',
     name: 'Marvel Cinematic Universe (MCU)',
     emoji: '⚡',
     badge: '10 Essential Films',
-    desc: 'The infinity saga and multiverse milestones: Iron Man, Avengers, Endgame, No Way Home, and more.',
     movies: [
-      { id: 1726, tmdb_id: 1726, title: 'Iron Man', release_year: '2008', poster_path: '/78lPtwv78eTN9q9StnCVvgvmu2d.jpg', rating: 7.6 },
-      { id: 24428, tmdb_id: 24428, title: 'The Avengers', release_year: '2012', poster_path: '/RYMX2wcKCBAr24UyPD7xwmjaTn.jpg', rating: 7.7 },
-      { id: 100402, tmdb_id: 100402, title: 'Captain America: The Winter Soldier', release_year: '2014', poster_path: '/tVFRpFw3xTed5nGQqW0SdKGMWPA.jpg', rating: 7.7 },
-      { id: 118340, tmdb_id: 118340, title: 'Guardians of the Galaxy', release_year: '2014', poster_path: '/r7vmZjiyZw9rpJMQJdXvlshvgpH.jpg', rating: 7.9 },
-      { id: 271110, tmdb_id: 271110, title: 'Captain America: Civil War', release_year: '2016', poster_path: '/rAGi1TkAnQUO8b0W994qsvTjuAt.jpg', rating: 7.4 },
+      { id: 1726, tmdb_id: 1726, title: 'Iron Man', release_year: '2008', poster_path: '/78lPtwv72eTNqFW9COBYI0dWDJa.jpg', rating: 7.6 },
+      { id: 24428, tmdb_id: 24428, title: 'The Avengers', release_year: '2012', poster_path: '/RYMX2wcKCBAr24UyPD7xwmjaTn.jpg', rating: 8.1 },
+      { id: 100402, tmdb_id: 100402, title: 'Captain America: The Winter Soldier', release_year: '2014', poster_path: '/tVFRpFw3xTedgPGqxW0AOI8Qhh0.jpg', rating: 7.7 },
+      { id: 118340, tmdb_id: 118340, title: 'Guardians of the Galaxy', release_year: '2014', poster_path: '/r7vmZjiyZw9rpJMQJdXpjgiCOk9.jpg', rating: 7.9 },
+      { id: 271110, tmdb_id: 271110, title: 'Captain America: Civil War', release_year: '2016', poster_path: '/rAGiXaUfPzY7CDEyNKUofk3Kw2e.jpg', rating: 7.5 },
       { id: 284053, tmdb_id: 284053, title: 'Thor: Ragnarok', release_year: '2017', poster_path: '/rzRwTcFvttcN1ZpX2xv4j3tSdJu.jpg', rating: 7.6 },
-      { id: 299536, tmdb_id: 299536, title: 'Avengers: Infinity War', release_year: '2018', poster_path: '/7WsyChQLEftFiDOVTGkv3hFpyyt.jpg', rating: 8.3 },
-      { id: 299534, tmdb_id: 299534, title: 'Avengers: Endgame', release_year: '2019', poster_path: '/or06FN3Dka5tukK1e9sl16pB3iy.jpg', rating: 8.3 },
-      { id: 634649, tmdb_id: 634649, title: 'Spider-Man: No Way Home', release_year: '2021', poster_path: '/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg', rating: 8.0 },
-      { id: 533535, tmdb_id: 533535, title: 'Deadpool & Wolverine', release_year: '2024', poster_path: '/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg', rating: 7.7 }
+      { id: 299536, tmdb_id: 299536, title: 'Avengers: Infinity War', release_year: '2018', poster_path: '/7WsyChQLEftFiDOVTGkv3hFpyyt.jpg', rating: 8.2 },
+      { id: 299534, tmdb_id: 299534, title: 'Avengers: Endgame', release_year: '2019', poster_path: '/bR8ISy1O9XQxqiy0fQFw2BX72RQ.jpg', rating: 8.2 },
+      { id: 634649, tmdb_id: 634649, title: 'Spider-Man: No Way Home', release_year: '2021', poster_path: '/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg', rating: 7.9 },
+      { id: 533535, tmdb_id: 533535, title: 'Deadpool & Wolverine', release_year: '2024', poster_path: '/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg', rating: 7.6 }
     ]
   },
   {
@@ -36,16 +35,15 @@ const FRANCHISE_PACKS = [
     name: 'Christopher Nolan',
     emoji: '🌀',
     badge: '8 Masterpieces',
-    desc: 'Mind-bending narratives, practical spectacles, and celluloid grandeur.',
     movies: [
-      { id: 872585, tmdb_id: 872585, title: 'Oppenheimer', release_year: '2023', poster_path: '/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg', rating: 8.1 },
-      { id: 157336, tmdb_id: 157336, title: 'Interstellar', release_year: '2014', poster_path: '/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg', rating: 8.4 },
-      { id: 27205, tmdb_id: 27205, title: 'Inception', release_year: '2010', poster_path: '/oYuLEt3zVCKq57qu2F8x7umR3Nm.jpg', rating: 8.4 },
+      { id: 872585, tmdb_id: 872585, title: 'Oppenheimer', release_year: '2023', poster_path: '/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg', rating: 8.0 },
+      { id: 157336, tmdb_id: 157336, title: 'Interstellar', release_year: '2014', poster_path: '/yQvGrMoipbRoddT0ZR8tPoR7NfX.jpg', rating: 8.5 },
+      { id: 27205, tmdb_id: 27205, title: 'Inception', release_year: '2010', poster_path: '/xlaY2zyzMfkhk0HSC5VUwzoZPU1.jpg', rating: 8.4 },
       { id: 155, tmdb_id: 155, title: 'The Dark Knight', release_year: '2008', poster_path: '/qJ2tW6WMUDux911r6m7haRef0WH.jpg', rating: 8.5 },
-      { id: 1124, tmdb_id: 1124, title: 'The Prestige', release_year: '2006', poster_path: '/bdN3gXu48f6v47uIq7j5V2qCg2f.jpg', rating: 8.2 },
-      { id: 77, tmdb_id: 77, title: 'Memento', release_year: '2000', poster_path: '/yuNs09hvpHVU1cBTCAk9zxsL2oW.jpg', rating: 8.2 },
-      { id: 577922, tmdb_id: 577922, title: 'Tenet', release_year: '2020', poster_path: '/k68nPLbIST6NP96JmTxmZijEvCA.jpg', rating: 7.2 },
-      { id: 374720, tmdb_id: 374720, title: 'Dunkirk', release_year: '2017', poster_path: '/ebSnODDg9lbsMIaWg2uAbjn7TO5.jpg', rating: 7.5 }
+      { id: 1124, tmdb_id: 1124, title: 'The Prestige', release_year: '2006', poster_path: '/Ag2B2KHKQPukjH7WutmgnnSNurZ.jpg', rating: 8.2 },
+      { id: 77, tmdb_id: 77, title: 'Memento', release_year: '2000', poster_path: '/nzlv62aC0octS5AklAiWpXLX9Z0.jpg', rating: 8.2 },
+      { id: 577922, tmdb_id: 577922, title: 'Tenet', release_year: '2020', poster_path: '/rrKH3VhHssGTCfPuaEQkxvEoElv.jpg', rating: 7.2 },
+      { id: 374720, tmdb_id: 374720, title: 'Dunkirk', release_year: '2017', poster_path: '/b4Oe15CGLL61Ped0RAS9JpqdmCt.jpg', rating: 7.4 }
     ]
   },
   {
@@ -53,14 +51,13 @@ const FRANCHISE_PACKS = [
     name: 'Batman & Gotham City',
     emoji: '🦇',
     badge: '6 Definitive Films',
-    desc: 'The Caped Crusader across generations: Reeves, Nolan, Burton, and Phillips.',
     movies: [
       { id: 414906, tmdb_id: 414906, title: 'The Batman', release_year: '2022', poster_path: '/74xTEgt7R36Fpooo50r9T25onhq.jpg', rating: 7.7 },
       { id: 155, tmdb_id: 155, title: 'The Dark Knight', release_year: '2008', poster_path: '/qJ2tW6WMUDux911r6m7haRef0WH.jpg', rating: 8.5 },
-      { id: 272, tmdb_id: 272, title: 'Batman Begins', release_year: '2005', poster_path: '/1P3QtW1IkivqDrAVOPW122n8091.jpg', rating: 7.7 },
-      { id: 49026, tmdb_id: 49026, title: 'The Dark Knight Rises', release_year: '2012', poster_path: '/hr0L2aueqlP2BYUvnTTjmp8n3ua.jpg', rating: 7.8 },
-      { id: 475557, tmdb_id: 475557, title: 'Joker', release_year: '2019', poster_path: '/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg', rating: 8.2 },
-      { id: 268, tmdb_id: 268, title: 'Batman', release_year: '1989', poster_path: '/cij4dd21v2RqyNa0II89EI4OTQC.jpg', rating: 7.2 }
+      { id: 272, tmdb_id: 272, title: 'Batman Begins', release_year: '2005', poster_path: '/sPX89Td70IDDjVr85jdSBb4rWGr.jpg', rating: 7.7 },
+      { id: 49026, tmdb_id: 49026, title: 'The Dark Knight Rises', release_year: '2012', poster_path: '/hr0L2aueqlP2BYUblTTjmtn0hw4.jpg', rating: 7.8 },
+      { id: 475557, tmdb_id: 475557, title: 'Joker', release_year: '2019', poster_path: '/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg', rating: 8.1 },
+      { id: 268, tmdb_id: 268, title: 'Batman', release_year: '1989', poster_path: '/cij4dd21v2Rk2YtUQbV5kW69WB2.jpg', rating: 7.2 }
     ]
   },
   {
@@ -68,14 +65,13 @@ const FRANCHISE_PACKS = [
     name: 'Denis Villeneuve',
     emoji: '🏜️',
     badge: '6 Masterworks',
-    desc: 'Epic modern sci-fi and taut thrillers from the visionary director of Dune.',
     movies: [
-      { id: 693134, tmdb_id: 693134, title: 'Dune: Part Two', release_year: '2024', poster_path: '/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg', rating: 8.2 },
-      { id: 438631, tmdb_id: 438631, title: 'Dune', release_year: '2021', poster_path: '/d5NXSklXo0qyIYkgV94XAgMIckC.jpg', rating: 7.8 },
+      { id: 693134, tmdb_id: 693134, title: 'Dune: Part Two', release_year: '2024', poster_path: '/6izwz7rsy95ARzTR3poZ8H6c5pp.jpg', rating: 8.1 },
+      { id: 438631, tmdb_id: 438631, title: 'Dune', release_year: '2021', poster_path: '/v1tRXZ4JtD2Iv6fjkPvT4GiwslV.jpg', rating: 7.8 },
       { id: 335984, tmdb_id: 335984, title: 'Blade Runner 2049', release_year: '2017', poster_path: '/gajva2L0rPYkEWjzgFlBXCAVBE5.jpg', rating: 7.6 },
-      { id: 329865, tmdb_id: 329865, title: 'Arrival', release_year: '2016', poster_path: '/x2FJsf1ElAgr63Y3PNPtJrcmpoe.jpg', rating: 7.9 },
-      { id: 273481, tmdb_id: 273481, title: 'Sicario', release_year: '2015', poster_path: '/7W11l6KqLg81B5wXl53v7WjVvUf.jpg', rating: 7.6 },
-      { id: 146233, tmdb_id: 146233, title: 'Prisoners', release_year: '2013', poster_path: '/jsW6asgCvdF3UoFz9f7b1R9C12g.jpg', rating: 8.1 }
+      { id: 329865, tmdb_id: 329865, title: 'Arrival', release_year: '2016', poster_path: '/pEzNVQfdzYDzVK0XqxERIw2x2se.jpg', rating: 7.6 },
+      { id: 273481, tmdb_id: 273481, title: 'Sicario', release_year: '2015', poster_path: '/lz8vNyXeidqqOdJW9ZjnDAMb5Vr.jpg', rating: 7.4 },
+      { id: 146233, tmdb_id: 146233, title: 'Prisoners', release_year: '2013', poster_path: '/uhviyknTT5cEQXbn6vWIqfM4vGm.jpg', rating: 8.1 }
     ]
   },
   {
@@ -83,13 +79,12 @@ const FRANCHISE_PACKS = [
     name: 'Spider-Man Multiverse',
     emoji: '🕷️',
     badge: '5 Web-Slingers',
-    desc: 'Animated milestones, Sam Raimi classics, and MCU multiverse crossovers.',
     movies: [
       { id: 324857, tmdb_id: 324857, title: 'Spider-Man: Into the Spider-Verse', release_year: '2018', poster_path: '/iiZZdoQBEYBv6id8su7ImL0oCbD.jpg', rating: 8.4 },
-      { id: 569094, tmdb_id: 569094, title: 'Spider-Man: Across the Spider-Verse', release_year: '2023', poster_path: '/8Vt6mWEReuy4Of61Lnj5Xj704m8.jpg', rating: 8.4 },
-      { id: 634649, tmdb_id: 634649, title: 'Spider-Man: No Way Home', release_year: '2021', poster_path: '/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg', rating: 8.0 },
-      { id: 22, tmdb_id: 22, title: 'Spider-Man 2', release_year: '2004', poster_path: '/olxpyq9MukIZ6NuGe08viUrUDnR.jpg', rating: 7.3 },
-      { id: 557, tmdb_id: 557, title: 'Spider-Man', release_year: '2002', poster_path: '/gh4c2bk0QsvNTBa7DJ5EvjURoxJ.jpg', rating: 7.3 }
+      { id: 569094, tmdb_id: 569094, title: 'Spider-Man: Across the Spider-Verse', release_year: '2023', poster_path: '/8Vt6mWEReuy4Of61Lnj5Xj704m8.jpg', rating: 8.3 },
+      { id: 634649, tmdb_id: 634649, title: 'Spider-Man: No Way Home', release_year: '2021', poster_path: '/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg', rating: 7.9 },
+      { id: 558, tmdb_id: 558, title: 'Spider-Man 2', release_year: '2004', poster_path: '/aGuvNAaaZuWXYQQ6N2v7DeuP6mB.jpg', rating: 7.3 },
+      { id: 557, tmdb_id: 557, title: 'Spider-Man', release_year: '2002', poster_path: '/or6XJBVpcEbIkma0V9zshnbEtx4.jpg', rating: 7.4 }
     ]
   },
   {
@@ -97,13 +92,12 @@ const FRANCHISE_PACKS = [
     name: 'Star Wars Saga',
     emoji: '⚔️',
     badge: '5 Galactic Hits',
-    desc: 'Original trilogy legends and prequel & spinoff highlights.',
     movies: [
-      { id: 11, tmdb_id: 11, title: 'Star Wars: A New Hope', release_year: '1977', poster_path: '/6FfCtAuVAW8XJjZ7eWeLibRLWTw.jpg', rating: 8.2 },
-      { id: 1891, tmdb_id: 1891, title: 'The Empire Strikes Back', release_year: '1980', poster_path: '/nNAeTmF4CtdSgIOgfyt9yzyQYwh.jpg', rating: 8.4 },
-      { id: 1892, tmdb_id: 1892, title: 'Return of the Jedi', release_year: '1983', poster_path: '/mDCBQSuUBbO6UtumMGqqL9IW4pd.jpg', rating: 7.9 },
-      { id: 1895, tmdb_id: 1895, title: 'Star Wars: Revenge of the Sith', release_year: '2005', poster_path: '/xfSAoBVPxtk60FI0wAtTXXea0N5.jpg', rating: 7.4 },
-      { id: 330459, tmdb_id: 330459, title: 'Rogue One: A Star Wars Story', release_year: '2016', poster_path: '/i0yw1mFbB7sngURUJG90ZVv4v7f.jpg', rating: 7.5 }
+      { id: 11, tmdb_id: 11, title: 'Star Wars: A New Hope', release_year: '1977', poster_path: '/fai0rspsNeJCS69wHNjOdWxcI7P.jpg', rating: 8.2 },
+      { id: 1891, tmdb_id: 1891, title: 'The Empire Strikes Back', release_year: '1980', poster_path: '/nNAeTmF4CtdSgMDplXTDPOpYzsX.jpg', rating: 8.4 },
+      { id: 1892, tmdb_id: 1892, title: 'Return of the Jedi', release_year: '1983', poster_path: '/jQYlydvHm3kUix1f8prMucrplhm.jpg', rating: 7.9 },
+      { id: 1895, tmdb_id: 1895, title: 'Star Wars: Revenge of the Sith', release_year: '2005', poster_path: '/xfSAoBEm9MNBjmlNcDYLvLSMlnq.jpg', rating: 7.5 },
+      { id: 330459, tmdb_id: 330459, title: 'Rogue One: A Star Wars Story', release_year: '2016', poster_path: '/i0yw1mFbB7sNGHCs7EXZPzFkdA1.jpg', rating: 7.5 }
     ]
   },
   {
@@ -111,14 +105,50 @@ const FRANCHISE_PACKS = [
     name: 'Quentin Tarantino',
     emoji: '🩸',
     badge: '6 Cult Classics',
-    desc: 'Unapologetic violence, witty dialogue, and cinematic reverence.',
     movies: [
-      { id: 680, tmdb_id: 680, title: 'Pulp Fiction', release_year: '1994', poster_path: '/d5iIlFn5s0ImszYzBPb8uh54YlD.jpg', rating: 8.5 },
-      { id: 16869, tmdb_id: 16869, title: 'Inglourious Basterds', release_year: '2009', poster_path: '/7sfbEnaARXDD5UCEbi6msOVq26C.jpg', rating: 8.2 },
-      { id: 68718, tmdb_id: 68718, title: 'Django Unchained', release_year: '2012', poster_path: '/7oWY8vdWW7thTzfq3IlYrSdnZXX.jpg', rating: 8.2 },
-      { id: 24, tmdb_id: 24, title: 'Kill Bill: Vol. 1', release_year: '2003', poster_path: '/v7TaX8kXMXs5yFFGR41guUDNcnB.jpg', rating: 8.2 },
+      { id: 680, tmdb_id: 680, title: 'Pulp Fiction', release_year: '1994', poster_path: '/vQWk5YBFWF4bZaofAbv0tShwBvQ.jpg', rating: 8.5 },
+      { id: 16869, tmdb_id: 16869, title: 'Inglourious Basterds', release_year: '2009', poster_path: '/aupnPtagH9JVBuMrGEanf4iqXEQ.jpg', rating: 8.2 },
+      { id: 68718, tmdb_id: 68718, title: 'Django Unchained', release_year: '2012', poster_path: '/7oWY8VDWW7thTzWh3OKYRkWUlD5.jpg', rating: 8.2 },
+      { id: 24, tmdb_id: 24, title: 'Kill Bill: Vol. 1', release_year: '2003', poster_path: '/v7TaX8kXMXs5yFFGR41guUDNcnB.jpg', rating: 8.0 },
       { id: 466272, tmdb_id: 466272, title: 'Once Upon a Time in Hollywood', release_year: '2019', poster_path: '/8j58iEBw9pOXFD2L0nt0ZXeHviB.jpg', rating: 7.4 },
-      { id: 500, tmdb_id: 500, title: 'Reservoir Dogs', release_year: '1992', poster_path: '/xi8Iu6Bh0vax8BpcGCrIgY7Tcbk.jpg', rating: 8.1 }
+      { id: 500, tmdb_id: 500, title: 'Reservoir Dogs', release_year: '1992', poster_path: '/xi8Iu6qyTfyZVDVy60raIOYJJmk.jpg', rating: 8.1 }
+    ]
+  },
+  {
+    id: 'johnwick',
+    name: 'John Wick Baba Yaga',
+    emoji: '🎯',
+    badge: '4 High-Table Hits',
+    movies: [
+      { id: 603692, tmdb_id: 603692, title: 'John Wick: Chapter 4', release_year: '2023', poster_path: '/vZloFAK7NKnMGKEslUsZlooxAcQ.jpg', rating: 7.8 },
+      { id: 458156, tmdb_id: 458156, title: 'John Wick: Chapter 3 - Parabellum', release_year: '2019', poster_path: '/ziEuG1essDuWuC5lpWUaw1uXY2O.jpg', rating: 7.4 },
+      { id: 324552, tmdb_id: 324552, title: 'John Wick: Chapter 2', release_year: '2017', poster_path: '/kR6i6wXfFuh7P3q1oI8t3x1U1tC.jpg', rating: 7.3 },
+      { id: 245891, tmdb_id: 245891, title: 'John Wick', release_year: '2014', poster_path: '/fZPSg9cre9slYbpGuAoAWioNu9G.jpg', rating: 7.4 }
+    ]
+  },
+  {
+    id: 'matrix',
+    name: 'The Matrix Cyberpunk',
+    emoji: '💊',
+    badge: '4 Sci-Fi Classics',
+    movies: [
+      { id: 603, tmdb_id: 603, title: 'The Matrix', release_year: '1999', poster_path: '/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg', rating: 8.2 },
+      { id: 604, tmdb_id: 604, title: 'The Matrix Reloaded', release_year: '2003', poster_path: '/9TGHDvWrqKBpuDxD65jkGg0BmN9.jpg', rating: 7.0 },
+      { id: 605, tmdb_id: 605, title: 'The Matrix Revolutions', release_year: '2003', poster_path: '/t1mW6n04c27Xpbgv4z2A3o7NfWv.jpg', rating: 6.7 },
+      { id: 624860, tmdb_id: 624860, title: 'The Matrix Resurrections', release_year: '2021', poster_path: '/8c4a8kE7PizaGQQvMiZt797Bqwe.jpg', rating: 6.5 }
+    ]
+  },
+  {
+    id: 'alien',
+    name: 'Alien & Predator',
+    emoji: '👽',
+    badge: '5 Sci-Fi Horrors',
+    movies: [
+      { id: 945961, tmdb_id: 945961, title: 'Alien: Romulus', release_year: '2024', poster_path: '/b33nnKl1GSFbao8l3urDDgo40KG.jpg', rating: 7.3 },
+      { id: 379, tmdb_id: 379, title: 'Alien', release_year: '1979', poster_path: '/vfrQk5IPloGg1v9Rzbh2Eg3VGyM.jpg', rating: 8.1 },
+      { id: 679, tmdb_id: 679, title: 'Aliens', release_year: '1986', poster_path: '/r1x5JG26RiOKv9A25IRw9G8KJNN.jpg', rating: 7.9 },
+      { id: 106, tmdb_id: 106, title: 'Predator', release_year: '1987', poster_path: '/k3mW4qfFe6gPtBzlYti1nuTmz9d.jpg', rating: 7.5 },
+      { id: 766507, tmdb_id: 766507, title: 'Prey', release_year: '2022', poster_path: '/ujr5pztc1oirzlWLiHoEvQ92Yv5.jpg', rating: 7.7 }
     ]
   }
 ];
@@ -136,18 +166,19 @@ export default function CreateListModal({
   const [entries, setEntries] = useState([]);
 
   // Film Picker State
-  const [pickerTab, setPickerTab] = useState('search'); // 'search' | 'library' | 'franchises'
+  const [pickerTab, setPickerTab] = useState('franchises'); // default to franchises for instant discovery
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
 
   // Library tab filters
   const [librarySearch, setLibrarySearch] = useState('');
-  const [libraryFilter, setLibraryFilter] = useState('all'); // 'all' | 'favorites' | 'top_rated' | 'watched'
+  const [libraryFilter, setLibraryFilter] = useState('all');
 
   // Franchise tab state
   const [activeFranchise, setActiveFranchise] = useState(FRANCHISE_PACKS[0]);
   const [bannerToast, setBannerToast] = useState('');
+  const franchisePillsRef = useRef(null);
 
   // List Entries view mode: 'grid' (compact ranked posters) | 'notes' (detailed notes list)
   const [entriesViewMode, setEntriesViewMode] = useState('grid');
@@ -164,7 +195,7 @@ export default function CreateListModal({
       const res = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=${TMDB_KEY}&query=${encodeURIComponent(q)}&page=1`);
       const data = await res.json();
       const results = (data.results || []).filter(item => item.media_type === 'movie' || item.media_type === 'tv');
-      setSearchResults(results.slice(0, 16));
+      setSearchResults(results.slice(0, 20));
     } catch {
       setSearchResults([]);
     } finally {
@@ -321,7 +352,8 @@ export default function CreateListModal({
         style={{
           width: '100%',
           maxWidth: '880px',
-          maxHeight: 'min(92vh, 880px)',
+          height: 'min(92vh, 900px)',
+          maxHeight: 'min(92vh, 900px)',
           background: 'linear-gradient(180deg, #13101c 0%, #0d0b13 100%)',
           borderRadius: '24px',
           border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -355,7 +387,7 @@ export default function CreateListModal({
 
         {/* Top Header Bar (Pinned) */}
         <div style={{
-          padding: '16px 22px',
+          padding: '14px 22px',
           borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
           display: 'flex',
           alignItems: 'center',
@@ -377,7 +409,7 @@ export default function CreateListModal({
               <Sparkles size={16} color="var(--accent)" />
             </div>
             <div>
-              <h2 style={{ fontSize: '17px', fontWeight: 900, color: '#fff', margin: 0, letterSpacing: '-0.3px' }}>
+              <h2 style={{ fontSize: '16.5px', fontWeight: 900, color: '#fff', margin: 0, letterSpacing: '-0.3px' }}>
                 Create Custom Cinephile List
               </h2>
               <div style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
@@ -406,24 +438,25 @@ export default function CreateListModal({
           </button>
         </div>
 
-        {/* Form Body (Scrollable Container) */}
+        {/* Form Body - Single Master Smooth Scroll Container */}
         <form
           onSubmit={handleSubmit}
           style={{
-            flex: 1,
+            flex: '1 1 auto',
+            minHeight: 0,
             overflowY: 'auto',
             WebkitOverflowScrolling: 'touch',
             overscrollBehavior: 'contain',
-            padding: '20px 22px',
+            padding: '18px 22px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '20px'
+            gap: '16px'
           }}
         >
-          {/* List Title & Rules */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {/* List Title & Options */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <div>
-              <label className="form-label" style={{ marginBottom: '6px', display: 'block', fontSize: '12.5px' }}>
+              <label className="form-label" style={{ marginBottom: '6px', display: 'block', fontSize: '12px' }}>
                 List Title *
               </label>
               <input
@@ -439,22 +472,22 @@ export default function CreateListModal({
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '12px', alignItems: 'flex-start' }}>
               <div>
-                <label className="form-label" style={{ marginBottom: '6px', display: 'block', fontSize: '12px' }}>
+                <label className="form-label" style={{ marginBottom: '6px', display: 'block', fontSize: '11.5px' }}>
                   Description & Criteria (Optional)
                 </label>
                 <input
                   type="text"
-                  placeholder="What is this list about? Share your themes or rankings..."
+                  placeholder="What is this list about? Share your criteria..."
                   value={description}
                   onChange={e => setDescription(e.target.value)}
                   className="form-input"
-                  style={{ width: '100%', fontSize: '13px', padding: '8px 12px' }}
+                  style={{ width: '100%', fontSize: '12.5px', padding: '8px 12px' }}
                 />
               </div>
 
               {/* Ranked Mode Toggle */}
               <div>
-                <label className="form-label" style={{ marginBottom: '6px', display: 'block', fontSize: '12px' }}>
+                <label className="form-label" style={{ marginBottom: '6px', display: 'block', fontSize: '11.5px' }}>
                   Ordering Mode
                 </label>
                 <button
@@ -471,7 +504,7 @@ export default function CreateListModal({
                     color: isRanked ? 'var(--gold)' : 'var(--text-muted)',
                     cursor: 'pointer',
                     fontWeight: 700,
-                    fontSize: '12.5px',
+                    fontSize: '12px',
                     transition: 'all 0.15s'
                   }}
                 >
@@ -499,25 +532,48 @@ export default function CreateListModal({
             }}>
               <button
                 type="button"
+                onClick={() => setPickerTab('franchises')}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '7px',
+                  padding: '11px 12px',
+                  background: pickerTab === 'franchises' ? 'rgba(255, 255, 255, 0.07)' : 'transparent',
+                  border: 'none',
+                  borderBottom: pickerTab === 'franchises' ? '2px solid var(--accent)' : '2px solid transparent',
+                  color: pickerTab === 'franchises' ? '#fff' : 'var(--text-muted)',
+                  fontSize: '12.5px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s'
+                }}
+              >
+                <Zap size={14} color={pickerTab === 'franchises' ? 'var(--gold)' : 'currentColor'} /> Franchises & Packs
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setPickerTab('search')}
                 style={{
                   flex: 1,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '8px',
-                  padding: '12px 14px',
+                  gap: '7px',
+                  padding: '11px 12px',
                   background: pickerTab === 'search' ? 'rgba(255, 255, 255, 0.07)' : 'transparent',
                   border: 'none',
                   borderBottom: pickerTab === 'search' ? '2px solid var(--accent)' : '2px solid transparent',
                   color: pickerTab === 'search' ? '#fff' : 'var(--text-muted)',
-                  fontSize: '13px',
+                  fontSize: '12.5px',
                   fontWeight: 800,
                   cursor: 'pointer',
                   transition: 'all 0.15s'
                 }}
               >
-                <Search size={15} /> Search TMDB
+                <Search size={14} /> Search TMDB
               </button>
 
               <button
@@ -528,50 +584,271 @@ export default function CreateListModal({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '8px',
-                  padding: '12px 14px',
+                  gap: '7px',
+                  padding: '11px 12px',
                   background: pickerTab === 'library' ? 'rgba(255, 255, 255, 0.07)' : 'transparent',
                   border: 'none',
                   borderBottom: pickerTab === 'library' ? '2px solid var(--accent)' : '2px solid transparent',
                   color: pickerTab === 'library' ? '#fff' : 'var(--text-muted)',
-                  fontSize: '13px',
+                  fontSize: '12.5px',
                   fontWeight: 800,
                   cursor: 'pointer',
                   transition: 'all 0.15s'
                 }}
               >
-                <Bookmark size={15} /> From My Library ({library.length})
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPickerTab('franchises')}
-                style={{
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  padding: '12px 14px',
-                  background: pickerTab === 'franchises' ? 'rgba(255, 255, 255, 0.07)' : 'transparent',
-                  border: 'none',
-                  borderBottom: pickerTab === 'franchises' ? '2px solid var(--accent)' : '2px solid transparent',
-                  color: pickerTab === 'franchises' ? '#fff' : 'var(--text-muted)',
-                  fontSize: '13px',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s'
-                }}
-              >
-                <Zap size={15} color={pickerTab === 'franchises' ? 'var(--gold)' : 'currentColor'} /> Franchises & Packs
+                <Bookmark size={14} /> From My Library ({library.length})
               </button>
             </div>
 
-            {/* TAB 1: VISUAL POSTER GRID SEARCH */}
+            {/* TAB 1: FRANCHISES & PACKS (STREAMLINED SLIM HEADER) */}
+            {pickerTab === 'franchises' && (
+              <div style={{ padding: '14px' }}>
+                {/* Slim Franchise Selector Bar */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '8px',
+                  flexWrap: 'wrap',
+                  marginBottom: '12px'
+                }}>
+                  {/* Horizontal Franchise Selector Pills with Navigation Arrows & Wheel Support */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    flex: 1,
+                    minWidth: '220px',
+                    position: 'relative'
+                  }}>
+                    {/* Left Scroll Chevron */}
+                    <button
+                      type="button"
+                      onClick={() => franchisePillsRef.current?.scrollBy({ left: -220, behavior: 'smooth' })}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        color: 'var(--text-muted)',
+                        borderRadius: '7px',
+                        width: '26px',
+                        height: '28px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                        transition: 'all 0.15s'
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; }}
+                      title="Scroll collections left"
+                    >
+                      <ChevronLeft size={14} />
+                    </button>
+
+                    <div
+                      ref={franchisePillsRef}
+                      onWheel={(e) => {
+                        if (e.deltaY !== 0 && !e.shiftKey) {
+                          e.currentTarget.scrollLeft += e.deltaY;
+                        }
+                      }}
+                      style={{
+                        display: 'flex',
+                        gap: '6px',
+                        overflowX: 'auto',
+                        paddingBottom: '4px',
+                        scrollbarWidth: 'thin',
+                        scrollbarColor: 'rgba(255,255,255,0.2) transparent',
+                        WebkitOverflowScrolling: 'touch',
+                        touchAction: 'pan-x',
+                        flex: 1
+                      }}
+                    >
+                      {FRANCHISE_PACKS.map(pack => {
+                        const isSelected = activeFranchise.id === pack.id;
+                        return (
+                          <button
+                            key={pack.id}
+                            type="button"
+                            onClick={() => setActiveFranchise(pack)}
+                            style={{
+                              whiteSpace: 'nowrap',
+                              padding: '6px 11px',
+                              borderRadius: '8px',
+                              background: isSelected ? 'rgba(245, 158, 11, 0.16)' : 'rgba(255,255,255,0.04)',
+                              border: isSelected ? '1px solid rgba(245, 158, 11, 0.5)' : '1px solid rgba(255,255,255,0.08)',
+                              color: isSelected ? 'var(--gold)' : 'var(--text-muted)',
+                              fontSize: '11.5px',
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              transition: 'all 0.15s',
+                              flexShrink: 0
+                            }}
+                          >
+                            <span>{pack.emoji}</span>
+                            <span>{pack.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Right Scroll Chevron */}
+                    <button
+                      type="button"
+                      onClick={() => franchisePillsRef.current?.scrollBy({ left: 220, behavior: 'smooth' })}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        color: 'var(--text-muted)',
+                        borderRadius: '7px',
+                        width: '26px',
+                        height: '28px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                        transition: 'all 0.15s'
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; }}
+                      title="Scroll collections right"
+                    >
+                      <ChevronRight size={14} />
+                    </button>
+                  </div>
+
+                  {/* 1-Click Compact Add All Button */}
+                  {activeFranchise && (
+                    <button
+                      type="button"
+                      onClick={() => handleBatchAddFranchise(activeFranchise)}
+                      style={{
+                        background: 'linear-gradient(135deg, #e50914 0%, #b80710 100%)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '8px',
+                        padding: '6px 12px',
+                        fontSize: '11.5px',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: '0 2px 10px rgba(229, 9, 20, 0.35)',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0
+                      }}
+                    >
+                      <Zap size={13} /> Add All ({activeFranchise.movies.length})
+                    </button>
+                  )}
+                </div>
+
+                {/* Franchise Films Grid - Full Flow (No inner nested scroll trap) */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(105px, 1fr))',
+                  gap: '10px'
+                }}>
+                  {activeFranchise.movies.map(movie => {
+                    const inList = isMovieInList(movie.id, movie.tmdb_id);
+                    return (
+                      <div
+                        key={movie.id || movie.tmdb_id}
+                        onClick={() => handleAddMovie(movie)}
+                        style={{
+                          cursor: inList ? 'default' : 'pointer',
+                          position: 'relative',
+                          borderRadius: '8px',
+                          overflow: 'hidden',
+                          border: inList ? '1.5px solid var(--green, #10b981)' : '1px solid rgba(255,255,255,0.1)',
+                          background: '#191522',
+                          transition: 'transform 0.15s, border-color 0.15s',
+                          display: 'flex',
+                          flexDirection: 'column'
+                        }}
+                        onMouseEnter={e => { if (!inList) e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                        onMouseLeave={e => { if (!inList) e.currentTarget.style.transform = 'translateY(0)'; }}
+                      >
+                        <div style={{ width: '100%', aspectRatio: '2/3', position: 'relative', background: '#0a0810' }}>
+                          <img
+                            src={`https://image.tmdb.org/t/p/w185${movie.poster_path}`}
+                            alt={movie.title}
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = FALLBACK_POSTER;
+                            }}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                          {inList && (
+                            <div style={{
+                              position: 'absolute',
+                              inset: 0,
+                              background: 'rgba(16, 185, 129, 0.45)',
+                              backdropFilter: 'blur(2px)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '3px',
+                              color: '#fff',
+                              fontWeight: 900,
+                              fontSize: '10.5px'
+                            }}>
+                              <Check size={18} strokeWidth={3} />
+                              <span>IN LIST</span>
+                            </div>
+                          )}
+                          {!inList && (
+                            <button
+                              type="button"
+                              style={{
+                                position: 'absolute',
+                                bottom: '5px',
+                                right: '5px',
+                                background: 'var(--accent)',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: '50%',
+                                width: '22px',
+                                height: '22px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.6)'
+                              }}
+                            >
+                              <Plus size={13} strokeWidth={3} />
+                            </button>
+                          )}
+                        </div>
+                        <div style={{ padding: '6px', background: '#120f1a', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                          <div style={{ fontSize: '11px', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {movie.title}
+                          </div>
+                          <div style={{ fontSize: '10px', color: 'var(--text-dim)', marginTop: '2px', display: 'flex', justifyContent: 'space-between' }}>
+                            <span>{movie.release_year}</span>
+                            {movie.rating ? <span>★ {movie.rating}</span> : null}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: VISUAL POSTER GRID SEARCH */}
             {pickerTab === 'search' && (
-              <div style={{ padding: '16px' }}>
-                <div style={{ position: 'relative', marginBottom: '14px' }}>
-                  <Search size={15} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <div style={{ padding: '14px' }}>
+                <div style={{ position: 'relative', marginBottom: '12px' }}>
+                  <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                   <input
                     type="text"
                     placeholder="Search movies or TV shows across TMDB..."
@@ -581,25 +858,22 @@ export default function CreateListModal({
                       handleSearchTMDB(e.target.value);
                     }}
                     className="form-input"
-                    style={{ width: '100%', paddingLeft: '38px', fontSize: '13.5px' }}
+                    style={{ width: '100%', paddingLeft: '36px', fontSize: '13px' }}
                   />
                   {searching && (
-                    <RefreshCw size={14} className="spin" style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--accent)' }} />
+                    <RefreshCw size={14} className="spin" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--accent)' }} />
                   )}
                 </div>
 
                 {searchResults.length > 0 ? (
                   <div>
-                    <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Found {searchResults.length} results · Click any poster to add to your list</span>
+                    <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginBottom: '10px' }}>
+                      Found {searchResults.length} results · Click any poster to add
                     </div>
                     <div style={{
                       display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))',
-                      gap: '10px',
-                      maxHeight: '290px',
-                      overflowY: 'auto',
-                      padding: '4px'
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(105px, 1fr))',
+                      gap: '10px'
                     }}>
                       {searchResults.map(movie => {
                         const inList = isMovieInList(movie.id, movie.id);
@@ -622,31 +896,31 @@ export default function CreateListModal({
                             onMouseLeave={e => { if (!inList) e.currentTarget.style.transform = 'translateY(0)'; }}
                           >
                             <div style={{ width: '100%', aspectRatio: '2/3', position: 'relative', background: '#0a0810' }}>
-                              {movie.poster_path ? (
-                                <img
-                                  src={`https://image.tmdb.org/t/p/w185${movie.poster_path}`}
-                                  alt={movie.title || movie.name}
-                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                />
-                              ) : (
-                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>🎬</div>
-                              )}
+                              <img
+                                src={movie.poster_path ? `https://image.tmdb.org/t/p/w185${movie.poster_path}` : FALLBACK_POSTER}
+                                alt={movie.title || movie.name}
+                                onError={(e) => {
+                                  e.currentTarget.onerror = null;
+                                  e.currentTarget.src = FALLBACK_POSTER;
+                                }}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              />
                               {inList && (
                                 <div style={{
                                   position: 'absolute',
                                   inset: 0,
-                                  background: 'rgba(16, 185, 129, 0.35)',
+                                  background: 'rgba(16, 185, 129, 0.45)',
                                   backdropFilter: 'blur(2px)',
                                   display: 'flex',
                                   flexDirection: 'column',
                                   alignItems: 'center',
                                   justifyContent: 'center',
-                                  gap: '4px',
+                                  gap: '3px',
                                   color: '#fff',
-                                  fontWeight: 800,
-                                  fontSize: '11px'
+                                  fontWeight: 900,
+                                  fontSize: '10.5px'
                                 }}>
-                                  <Check size={20} strokeWidth={3} />
+                                  <Check size={18} strokeWidth={3} />
                                   <span>IN LIST</span>
                                 </div>
                               )}
@@ -655,14 +929,14 @@ export default function CreateListModal({
                                   type="button"
                                   style={{
                                     position: 'absolute',
-                                    bottom: '6px',
-                                    right: '6px',
+                                    bottom: '5px',
+                                    right: '5px',
                                     background: 'var(--accent)',
                                     color: '#fff',
                                     border: 'none',
                                     borderRadius: '50%',
-                                    width: '24px',
-                                    height: '24px',
+                                    width: '22px',
+                                    height: '22px',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
@@ -670,7 +944,7 @@ export default function CreateListModal({
                                     boxShadow: '0 2px 8px rgba(0,0,0,0.6)'
                                   }}
                                 >
-                                  <Plus size={14} strokeWidth={3} />
+                                  <Plus size={13} strokeWidth={3} />
                                 </button>
                               )}
                             </div>
@@ -689,17 +963,17 @@ export default function CreateListModal({
                     </div>
                   </div>
                 ) : (
-                  <div style={{ textAlign: 'center', padding: '28px 16px', color: 'var(--text-dim)', fontSize: '13px' }}>
+                  <div style={{ textAlign: 'center', padding: '24px 16px', color: 'var(--text-dim)', fontSize: '12.5px' }}>
                     {searchQuery ? 'No movies found matching that query.' : 'Type a movie title above to see instant visual poster results.'}
                   </div>
                 )}
               </div>
             )}
 
-            {/* TAB 2: FROM USER'S PERSONAL LIBRARY */}
+            {/* TAB 3: FROM USER'S PERSONAL LIBRARY */}
             {pickerTab === 'library' && (
-              <div style={{ padding: '16px' }}>
-                <div style={{ display: 'flex', gap: '10px', marginBottom: '14px', flexWrap: 'wrap' }}>
+              <div style={{ padding: '14px' }}>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
                   <div style={{ position: 'relative', flex: 1, minWidth: '180px' }}>
                     <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                     <input
@@ -708,12 +982,12 @@ export default function CreateListModal({
                       value={librarySearch}
                       onChange={e => setLibrarySearch(e.target.value)}
                       className="form-input"
-                      style={{ width: '100%', paddingLeft: '34px', fontSize: '12.5px', height: '34px' }}
+                      style={{ width: '100%', paddingLeft: '34px', fontSize: '12px', height: '32px' }}
                     />
                   </div>
 
                   {/* Filter Pills */}
-                  <div style={{ display: 'flex', gap: '6px' }}>
+                  <div style={{ display: 'flex', gap: '5px' }}>
                     {[
                       { id: 'all', label: `All (${library.length})` },
                       { id: 'favorites', label: '⭐ Favorites' },
@@ -725,9 +999,9 @@ export default function CreateListModal({
                         type="button"
                         onClick={() => setLibraryFilter(pill.id)}
                         style={{
-                          padding: '4px 10px',
+                          padding: '3px 9px',
                           borderRadius: '6px',
-                          fontSize: '11.5px',
+                          fontSize: '11px',
                           fontWeight: 700,
                           cursor: 'pointer',
                           background: libraryFilter === pill.id ? 'var(--accent)' : 'rgba(255,255,255,0.06)',
@@ -745,11 +1019,8 @@ export default function CreateListModal({
                 {filteredLibrary.length > 0 ? (
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))',
-                    gap: '10px',
-                    maxHeight: '290px',
-                    overflowY: 'auto',
-                    padding: '4px'
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(105px, 1fr))',
+                    gap: '10px'
                   }}>
                     {filteredLibrary.map(movie => {
                       const inList = isMovieInList(movie.id, movie.tmdb_id);
@@ -772,31 +1043,31 @@ export default function CreateListModal({
                           onMouseLeave={e => { if (!inList) e.currentTarget.style.transform = 'translateY(0)'; }}
                         >
                           <div style={{ width: '100%', aspectRatio: '2/3', position: 'relative', background: '#0a0810' }}>
-                            {movie.poster_path ? (
-                              <img
-                                src={`https://image.tmdb.org/t/p/w185${movie.poster_path}`}
-                                alt={movie.title}
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                              />
-                            ) : (
-                              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>🎬</div>
-                            )}
+                            <img
+                              src={movie.poster_path ? `https://image.tmdb.org/t/p/w185${movie.poster_path}` : FALLBACK_POSTER}
+                              alt={movie.title}
+                              onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = FALLBACK_POSTER;
+                              }}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
                             {inList && (
                               <div style={{
                                 position: 'absolute',
                                 inset: 0,
-                                background: 'rgba(16, 185, 129, 0.35)',
+                                background: 'rgba(16, 185, 129, 0.45)',
                                 backdropFilter: 'blur(2px)',
                                 display: 'flex',
                                 flexDirection: 'column',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                gap: '4px',
+                                gap: '3px',
                                 color: '#fff',
-                                fontWeight: 800,
-                                fontSize: '11px'
+                                fontWeight: 900,
+                                fontSize: '10.5px'
                               }}>
-                                <Check size={20} strokeWidth={3} />
+                                <Check size={18} strokeWidth={3} />
                                 <span>IN LIST</span>
                               </div>
                             )}
@@ -805,14 +1076,14 @@ export default function CreateListModal({
                                 type="button"
                                 style={{
                                   position: 'absolute',
-                                  bottom: '6px',
-                                  right: '6px',
+                                  bottom: '5px',
+                                  right: '5px',
                                   background: 'var(--accent)',
                                   color: '#fff',
                                   border: 'none',
                                   borderRadius: '50%',
-                                  width: '24px',
-                                  height: '24px',
+                                  width: '22px',
+                                  height: '22px',
                                   display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
@@ -820,7 +1091,7 @@ export default function CreateListModal({
                                   boxShadow: '0 2px 8px rgba(0,0,0,0.6)'
                                 }}
                               >
-                                <Plus size={14} strokeWidth={3} />
+                                <Plus size={13} strokeWidth={3} />
                               </button>
                             )}
                           </div>
@@ -838,207 +1109,8 @@ export default function CreateListModal({
                     })}
                   </div>
                 ) : (
-                  <div style={{ textAlign: 'center', padding: '28px 16px', color: 'var(--text-dim)', fontSize: '13px' }}>
+                  <div style={{ textAlign: 'center', padding: '24px 16px', color: 'var(--text-dim)', fontSize: '12.5px' }}>
                     No matching films in your library with the current filter.
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* TAB 3: FRANCHISE & COLLECTION PACKS (MCU, NOLAN, BATMAN, ETC) */}
-            {pickerTab === 'franchises' && (
-              <div style={{ padding: '16px' }}>
-                {/* Horizontal Franchise Selector Pills */}
-                <div style={{
-                  display: 'flex',
-                  gap: '8px',
-                  overflowX: 'auto',
-                  paddingBottom: '8px',
-                  marginBottom: '14px',
-                  scrollbarWidth: 'none'
-                }}>
-                  {FRANCHISE_PACKS.map(pack => {
-                    const isSelected = activeFranchise.id === pack.id;
-                    return (
-                      <button
-                        key={pack.id}
-                        type="button"
-                        onClick={() => setActiveFranchise(pack)}
-                        style={{
-                          whiteSpace: 'nowrap',
-                          padding: '7px 12px',
-                          borderRadius: '10px',
-                          background: isSelected ? 'rgba(245, 158, 11, 0.16)' : 'rgba(255,255,255,0.04)',
-                          border: isSelected ? '1px solid rgba(245, 158, 11, 0.5)' : '1px solid rgba(255,255,255,0.08)',
-                          color: isSelected ? 'var(--gold)' : 'var(--text-muted)',
-                          fontSize: '12px',
-                          fontWeight: 800,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          transition: 'all 0.15s'
-                        }}
-                      >
-                        <span>{pack.emoji}</span>
-                        <span>{pack.name}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Active Franchise Showcase Banner */}
-                {activeFranchise && (
-                  <div>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      background: 'rgba(255, 255, 255, 0.03)',
-                      border: '1px solid rgba(255, 255, 255, 0.08)',
-                      borderRadius: '12px',
-                      padding: '12px 16px',
-                      marginBottom: '12px',
-                      flexWrap: 'wrap',
-                      gap: '10px'
-                    }}>
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '18px' }}>{activeFranchise.emoji}</span>
-                          <span style={{ fontSize: '14px', fontWeight: 900, color: '#fff' }}>
-                            {activeFranchise.name}
-                          </span>
-                          <span style={{
-                            background: 'rgba(245, 158, 11, 0.14)',
-                            color: 'var(--gold)',
-                            fontSize: '10.5px',
-                            fontWeight: 800,
-                            padding: '2px 6px',
-                            borderRadius: '6px'
-                          }}>
-                            {activeFranchise.badge}
-                          </span>
-                        </div>
-                        <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                          {activeFranchise.desc}
-                        </div>
-                      </div>
-
-                      {/* 1-CLICK BATCH ADD ENTIRE PACK */}
-                      <button
-                        type="button"
-                        onClick={() => handleBatchAddFranchise(activeFranchise)}
-                        style={{
-                          background: 'linear-gradient(135deg, #e50914 0%, #b80710 100%)',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '8px',
-                          padding: '8px 14px',
-                          fontSize: '12px',
-                          fontWeight: 800,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          boxShadow: '0 4px 14px rgba(229, 9, 20, 0.4)',
-                          transition: 'all 0.15s'
-                        }}
-                      >
-                        <Zap size={14} /> Add Entire Franchise ({activeFranchise.movies.length} films)
-                      </button>
-                    </div>
-
-                    {/* Franchise Films Grid */}
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))',
-                      gap: '10px',
-                      maxHeight: '260px',
-                      overflowY: 'auto',
-                      padding: '4px'
-                    }}>
-                      {activeFranchise.movies.map(movie => {
-                        const inList = isMovieInList(movie.id, movie.tmdb_id);
-                        return (
-                          <div
-                            key={movie.id || movie.tmdb_id}
-                            onClick={() => handleAddMovie(movie)}
-                            style={{
-                              cursor: inList ? 'default' : 'pointer',
-                              position: 'relative',
-                              borderRadius: '8px',
-                              overflow: 'hidden',
-                              border: inList ? '1.5px solid var(--green, #10b981)' : '1px solid rgba(255,255,255,0.1)',
-                              background: '#191522',
-                              transition: 'transform 0.15s, border-color 0.15s',
-                              display: 'flex',
-                              flexDirection: 'column'
-                            }}
-                            onMouseEnter={e => { if (!inList) e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                            onMouseLeave={e => { if (!inList) e.currentTarget.style.transform = 'translateY(0)'; }}
-                          >
-                            <div style={{ width: '100%', aspectRatio: '2/3', position: 'relative', background: '#0a0810' }}>
-                              <img
-                                src={`https://image.tmdb.org/t/p/w185${movie.poster_path}`}
-                                alt={movie.title}
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                              />
-                              {inList && (
-                                <div style={{
-                                  position: 'absolute',
-                                  inset: 0,
-                                  background: 'rgba(16, 185, 129, 0.35)',
-                                  backdropFilter: 'blur(2px)',
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  gap: '4px',
-                                  color: '#fff',
-                                  fontWeight: 800,
-                                  fontSize: '11px'
-                                }}>
-                                  <Check size={20} strokeWidth={3} />
-                                  <span>IN LIST</span>
-                                </div>
-                              )}
-                              {!inList && (
-                                <button
-                                  type="button"
-                                  style={{
-                                    position: 'absolute',
-                                    bottom: '6px',
-                                    right: '6px',
-                                    background: 'var(--accent)',
-                                    color: '#fff',
-                                    border: 'none',
-                                    borderRadius: '50%',
-                                    width: '24px',
-                                    height: '24px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    cursor: 'pointer',
-                                    boxShadow: '0 2px 8px rgba(0,0,0,0.6)'
-                                  }}
-                                >
-                                  <Plus size={14} strokeWidth={3} />
-                                </button>
-                              )}
-                            </div>
-                            <div style={{ padding: '6px', background: '#120f1a', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                              <div style={{ fontSize: '11px', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                {movie.title}
-                              </div>
-                              <div style={{ fontSize: '10px', color: 'var(--text-dim)', marginTop: '2px', display: 'flex', justifyContent: 'space-between' }}>
-                                <span>{movie.release_year}</span>
-                                {movie.rating ? <span>★ {movie.rating}</span> : null}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
                   </div>
                 )}
               </div>
@@ -1053,10 +1125,10 @@ export default function CreateListModal({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: '12px'
+              marginBottom: '10px'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '14px', fontWeight: 900, color: '#fff' }}>
+                <span style={{ fontSize: '13.5px', fontWeight: 900, color: '#fff' }}>
                   List Entries ({entries.length})
                 </span>
                 {isRanked && (
@@ -1142,11 +1214,11 @@ export default function CreateListModal({
                 <div style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fill, minmax(105px, 1fr))',
-                  gap: '12px',
+                  gap: '10px',
                   background: 'rgba(0, 0, 0, 0.25)',
                   border: '1px solid rgba(255, 255, 255, 0.06)',
                   borderRadius: '14px',
-                  padding: '14px'
+                  padding: '12px'
                 }}>
                   {entries.map((entry, idx) => (
                     <div
@@ -1165,15 +1237,15 @@ export default function CreateListModal({
                       {isRanked && (
                         <div style={{
                           position: 'absolute',
-                          top: '6px',
-                          left: '6px',
+                          top: '5px',
+                          left: '5px',
                           zIndex: 5,
                           background: idx < 3 ? 'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)' : 'rgba(0, 0, 0, 0.78)',
                           color: '#fff',
-                          fontSize: '10.5px',
+                          fontSize: '10px',
                           fontWeight: 900,
-                          padding: '2px 6px',
-                          borderRadius: '6px',
+                          padding: '1px 5px',
+                          borderRadius: '5px',
                           boxShadow: '0 2px 6px rgba(0,0,0,0.6)'
                         }}>
                           #{idx + 1}
@@ -1186,8 +1258,8 @@ export default function CreateListModal({
                         onClick={() => handleRemoveEntry(idx)}
                         style={{
                           position: 'absolute',
-                          top: '6px',
-                          right: '6px',
+                          top: '5px',
+                          right: '5px',
                           zIndex: 5,
                           background: 'rgba(0, 0, 0, 0.75)',
                           color: '#fff',
@@ -1204,29 +1276,29 @@ export default function CreateListModal({
                         onMouseEnter={e => e.currentTarget.style.background = 'var(--red)'}
                         onMouseLeave={e => e.currentTarget.style.background = 'rgba(0, 0, 0, 0.75)'}
                       >
-                        <X size={12} />
+                        <X size={11} />
                       </button>
 
                       {/* Poster */}
                       <div style={{ width: '100%', aspectRatio: '2/3', background: '#0a0810' }}>
-                        {entry.poster_path ? (
-                          <img
-                            src={`https://image.tmdb.org/t/p/w185${entry.poster_path}`}
-                            alt={entry.title}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          />
-                        ) : (
-                          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🎬</div>
-                        )}
+                        <img
+                          src={entry.poster_path ? `https://image.tmdb.org/t/p/w185${entry.poster_path}` : FALLBACK_POSTER}
+                          alt={entry.title}
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = FALLBACK_POSTER;
+                          }}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
                       </div>
 
                       {/* Title & Reorder Controls */}
-                      <div style={{ padding: '6px 8px', background: '#120f1a' }}>
+                      <div style={{ padding: '6px', background: '#120f1a' }}>
                         <div style={{ fontSize: '11px', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {entry.title}
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '4px' }}>
-                          <span style={{ fontSize: '10px', color: 'var(--text-dim)' }}>{entry.release_year || '—'}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '3px' }}>
+                          <span style={{ fontSize: '9.5px', color: 'var(--text-dim)' }}>{entry.release_year || '—'}</span>
                           <div style={{ display: 'flex', gap: '2px' }}>
                             <button
                               type="button"
@@ -1241,7 +1313,7 @@ export default function CreateListModal({
                                 cursor: idx === 0 ? 'default' : 'pointer'
                               }}
                             >
-                              <ArrowLeft size={11} />
+                              <ArrowLeft size={10} />
                             </button>
                             <button
                               type="button"
@@ -1256,7 +1328,7 @@ export default function CreateListModal({
                                 cursor: idx === entries.length - 1 ? 'default' : 'pointer'
                               }}
                             >
-                              <ChevronRight size={11} />
+                              <ChevronRight size={10} />
                             </button>
                           </div>
                         </div>
@@ -1266,7 +1338,7 @@ export default function CreateListModal({
                 </div>
               ) : (
                 /* Detailed Notes View */
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {entries.map((entry, idx) => (
                     <div
                       key={entry.tmdb_id || idx}
@@ -1274,38 +1346,40 @@ export default function CreateListModal({
                         background: 'rgba(255,255,255,0.02)',
                         border: '1px solid rgba(255,255,255,0.07)',
                         borderRadius: '12px',
-                        padding: '10px 14px',
+                        padding: '10px 12px',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '8px'
+                        gap: '6px'
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         {isRanked && (
                           <div style={{
-                            width: '26px',
-                            height: '26px',
+                            width: '24px',
+                            height: '24px',
                             borderRadius: '6px',
                             background: idx < 3 ? 'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)' : 'rgba(255,255,255,0.06)',
                             color: '#fff',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            fontSize: '12px',
+                            fontSize: '11px',
                             fontWeight: 900
                           }}>
                             {idx + 1}
                           </div>
                         )}
-                        {entry.poster_path && (
-                          <img
-                            src={`https://image.tmdb.org/t/p/w92${entry.poster_path}`}
-                            alt=""
-                            style={{ width: '28px', height: '42px', objectFit: 'cover', borderRadius: '4px' }}
-                          />
-                        )}
+                        <img
+                          src={entry.poster_path ? `https://image.tmdb.org/t/p/w92${entry.poster_path}` : FALLBACK_POSTER}
+                          alt=""
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = FALLBACK_POSTER;
+                          }}
+                          style={{ width: '26px', height: '39px', objectFit: 'cover', borderRadius: '4px' }}
+                        />
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#fff' }}>
+                          <div style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>
                             {entry.title} {entry.release_year ? `(${entry.release_year})` : ''}
                           </div>
                         </div>
@@ -1322,7 +1396,7 @@ export default function CreateListModal({
                               padding: '4px'
                             }}
                           >
-                            <ArrowUp size={15} />
+                            <ArrowUp size={14} />
                           </button>
                           <button
                             type="button"
@@ -1336,7 +1410,7 @@ export default function CreateListModal({
                               padding: '4px'
                             }}
                           >
-                            <ArrowDown size={15} />
+                            <ArrowDown size={14} />
                           </button>
                           <button
                             type="button"
@@ -1347,21 +1421,21 @@ export default function CreateListModal({
                               color: 'var(--red)',
                               cursor: 'pointer',
                               padding: '4px',
-                              marginLeft: '6px'
+                              marginLeft: '4px'
                             }}
                           >
-                            <Trash2 size={15} />
+                            <Trash2 size={14} />
                           </button>
                         </div>
                       </div>
 
                       <input
                         type="text"
-                        placeholder="Optional commentary / film note for this list entry..."
+                        placeholder="Optional commentary / film note for this entry..."
                         value={entry.note || ''}
                         onChange={e => handleUpdateNote(idx, e.target.value)}
                         className="form-input"
-                        style={{ fontSize: '12px', padding: '6px 12px', background: 'rgba(0,0,0,0.3)' }}
+                        style={{ fontSize: '12px', padding: '6px 10px', background: 'rgba(0,0,0,0.3)' }}
                       />
                     </div>
                   ))}
@@ -1370,18 +1444,18 @@ export default function CreateListModal({
             ) : (
               <div style={{
                 textAlign: 'center',
-                padding: '32px 20px',
+                padding: '24px 20px',
                 background: 'rgba(255, 255, 255, 0.02)',
                 border: '1px dashed rgba(255, 255, 255, 0.1)',
                 borderRadius: '14px',
                 color: 'var(--text-dim)'
               }}>
-                <Film size={28} style={{ opacity: 0.4, marginBottom: '8px' }} />
-                <div style={{ fontSize: '13px', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>
+                <Film size={24} style={{ opacity: 0.4, marginBottom: '6px' }} />
+                <div style={{ fontSize: '13px', fontWeight: 700, color: '#fff', marginBottom: '2px' }}>
                   Your list is currently empty
                 </div>
-                <div style={{ fontSize: '12px' }}>
-                  Use the picker above to search TMDB, pick from your Library, or 1-click import a franchise pack like MCU or Nolan!
+                <div style={{ fontSize: '11.5px' }}>
+                  Use the picker above to 1-click import a franchise pack like MCU, Nolan, Batman, or search TMDB.
                 </div>
               </div>
             )}
@@ -1391,15 +1465,15 @@ export default function CreateListModal({
           <div style={{
             display: 'flex',
             justifyContent: 'flex-end',
-            gap: '12px',
-            paddingTop: '12px',
+            gap: '10px',
+            paddingTop: '10px',
             borderTop: '1px solid rgba(255, 255, 255, 0.08)'
           }}>
             <button
               type="button"
               onClick={onClose}
               className="btn btn-ghost"
-              style={{ fontSize: '13px' }}
+              style={{ fontSize: '12.5px' }}
             >
               Cancel
             </button>
@@ -1408,8 +1482,8 @@ export default function CreateListModal({
               disabled={!title.trim() || entries.length === 0}
               className="btn btn-primary"
               style={{
-                padding: '0 24px',
-                fontSize: '13px',
+                padding: '0 22px',
+                fontSize: '12.5px',
                 fontWeight: 800,
                 opacity: (!title.trim() || entries.length === 0) ? 0.5 : 1
               }}

@@ -7,7 +7,7 @@ export const FRANCHISE_COLLECTIONS = [
     id: 'mcu',
     title: 'Marvel Cinematic Universe (MCU)',
     shortTitle: 'Marvel (MCU)',
-    emoji: '',
+    emoji: '⚡',
     desc: "Earth's mightiest heroes, cosmic adventures, and the official MCU phases.",
     group: 'franchise',
     tag: 'MCU',
@@ -41,14 +41,25 @@ export const FRANCHISE_COLLECTIONS = [
       if (colName.includes('marvel cinematic universe') || colName.includes('avengers collection') || colName.includes('iron man collection') || colName.includes('captain america collection') || colName.includes('thor collection')) return true;
 
       // Keywords
-      return FRANCHISE_COLLECTIONS.find(f => f.id === 'mcu').keywords.some(k => t.includes(k));
+      const mcuKeywords = [
+        'iron man', 'the incredible hulk', 'thor', 'captain america', 'avengers',
+        'guardians of the galaxy', 'ant-man', 'doctor strange', 'spider-man',
+        'black panther', 'captain marvel', 'the marvels', 'black widow', 'shang-chi',
+        'eternals', 'deadpool & wolverine', 'deadpool and wolverine', 'loki', 'wandavision',
+        'the falcon and the winter soldier', 'winter soldier', 'hawkeye', 'moon knight',
+        'ms. marvel', 'she-hulk', 'secret invasion', 'echo', 'agatha all along',
+        'what if...?', 'daredevil: born again', 'thunderbolts', 'brave new world',
+        'quantumania', 'love and thunder', 'wakanda forever', 'multiverse of madness',
+        'ragnarok', 'civil war', 'age of ultron', 'infinity war', 'endgame'
+      ];
+      return mcuKeywords.some(k => t.includes(k));
     }
   },
   {
     id: 'marvel',
     title: 'Marvel (All / Multiverse)',
     shortTitle: 'Marvel (All / Multiverse)',
-    emoji: '',
+    emoji: '🦸‍♂️',
     desc: 'The complete Marvel multiverse: MCU, Spider-Verse, X-Men, Deadpool, and classics.',
     group: 'franchise',
     tag: 'Marvel',
@@ -133,8 +144,8 @@ export const FRANCHISE_COLLECTIONS = [
     tag: 'Batman',
     matcher: (m) => {
       const t = (m.title || '').toLowerCase();
-      if (m.tags && Array.isArray(m.tags) && m.tags.some(tg => typeof tg === 'string' && tg.toLowerCase().includes('batman'))) return true;
-      return t.includes('batman') || t.includes('dark knight') || t.includes('gotham') || t.includes('joker');
+      if (m.tags && Array.isArray(m.tags) && m.tags.some(tg => typeof tg === 'string' && (tg.toLowerCase().includes('batman') || tg.toLowerCase().includes('dark knight') || tg.toLowerCase().includes('gotham')))) return true;
+      return t.includes('batman') || t.includes('dark knight') || t.includes('gotham') || t.includes('joker') || t.includes('harley quinn') || t.includes('arkham') || t.includes('mask of the phantasm') || t.includes('caped crusader') || t.includes('batgirl') || t.includes('catwoman') || t.includes('robin');
     }
   },
   {
@@ -233,6 +244,67 @@ export const FRANCHISE_COLLECTIONS = [
         'the hateful eight', 'once upon a time in hollywood'
       ];
       return qtKeywords.some(k => t.includes(k));
+    }
+  },
+  {
+    id: 'villeneuve',
+    title: 'Denis Villeneuve Cinema',
+    shortTitle: 'Denis Villeneuve',
+    emoji: '🏜️',
+    desc: 'Visceral scale, existential tension, and cinematic world-building.',
+    group: 'franchise',
+    tag: 'Villeneuve',
+    matcher: (m) => {
+      const t = (m.title || '').toLowerCase();
+      if (m.director && m.director.toLowerCase().includes('villeneuve')) return true;
+      if (m.tags && Array.isArray(m.tags) && m.tags.some(tg => typeof tg === 'string' && (tg.toLowerCase().includes('villeneuve') || tg.toLowerCase() === 'dune'))) return true;
+      const villeneuveKeywords = [
+        'dune', 'dune: part two', 'blade runner 2049', 'arrival', 'sicario',
+        'prisoners', 'enemy', 'incendies', 'polytechnique'
+      ];
+      return villeneuveKeywords.some(k => t.includes(k));
+    }
+  },
+  {
+    id: 'johnwick',
+    title: 'John Wick Universe',
+    shortTitle: 'John Wick',
+    emoji: '🎯',
+    desc: 'The Continental, High Table mythology, and relentless neo-noir action.',
+    group: 'franchise',
+    tag: 'John Wick',
+    matcher: (m) => {
+      const t = (m.title || '').toLowerCase();
+      if (m.tags && Array.isArray(m.tags) && m.tags.some(tg => typeof tg === 'string' && (tg.toLowerCase().includes('wick') || tg.toLowerCase().includes('continental')))) return true;
+      return t.includes('john wick') || t.includes('continental') || t.includes('ballerina');
+    }
+  },
+  {
+    id: 'matrix',
+    title: 'The Matrix Saga',
+    shortTitle: 'The Matrix',
+    emoji: '💊',
+    desc: 'Red pill or blue pill: cyberpunk philosophy and mind-bending reality.',
+    group: 'franchise',
+    tag: 'Matrix',
+    matcher: (m) => {
+      const t = (m.title || '').toLowerCase();
+      if (m.tags && Array.isArray(m.tags) && m.tags.some(tg => typeof tg === 'string' && tg.toLowerCase().includes('matrix'))) return true;
+      return t.includes('matrix') || t.includes('animatrix');
+    }
+  },
+  {
+    id: 'alien',
+    title: 'Alien & Predator Universe',
+    shortTitle: 'Alien / Predator',
+    emoji: '👽',
+    desc: 'Cosmic horror, Weyland-Yutani bio-weapons, and ultimate galactic hunters.',
+    group: 'franchise',
+    tag: 'Alien',
+    matcher: (m) => {
+      const t = (m.title || '').toLowerCase();
+      if (m.tags && Array.isArray(m.tags) && m.tags.some(tg => typeof tg === 'string' && (tg.toLowerCase().includes('alien') || tg.toLowerCase().includes('predator')))) return true;
+      return t.includes('alien') || t.includes('aliens') || t.includes('predator') || t.includes('prometheus') || t.includes('covenant') || t.includes('romulus') || t.includes('prey');
     }
   },
   {

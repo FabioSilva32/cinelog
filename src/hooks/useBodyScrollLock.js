@@ -18,7 +18,8 @@ export function useBodyScrollLock(isLocked = true) {
     }
 
     return () => {
-      const remaining = Number(document.body.dataset.scrollLocks || 1) - 1;
+      const current = Number(document.body.dataset.scrollLocks || 1);
+      const remaining = Math.max(0, current - 1);
       if (remaining <= 0) {
         delete document.body.dataset.scrollLocks;
         document.body.classList.remove('modal-open');

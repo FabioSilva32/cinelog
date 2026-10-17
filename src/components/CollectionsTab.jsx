@@ -209,6 +209,7 @@ export default function CollectionsTab({
     setIsTagging(true);
     let updatedCount = 0;
     try {
+      const updates = [];
       for (const m of library) {
         const suggested = getSuggestedTags(m);
         if (suggested && suggested.length > 0) {
@@ -217,16 +218,22 @@ export default function CollectionsTab({
           const newToAdd = suggested.filter(s => !curLower.has(s.toLowerCase()));
           if (newToAdd.length > 0) {
             updatedCount++;
-            const updatedMovie = {
+            updates.push({
               ...m,
               tags: [...curTags, ...newToAdd]
-            };
-            if (onSaveMovie) {
-              await onSaveMovie(updatedMovie);
-            }
+            });
           }
         }
       }
+
+      // Save in small concurrent batches to prevent timeouts
+      for (let i = 0; i < updates.length; i += 6) {
+        const chunk = updates.slice(i, i + 6);
+        if (onSaveMovie) {
+          await Promise.all(chunk.map(item => onSaveMovie(item)));
+        }
+      }
+
       setTaggingStatus(`✅ Successfully auto-tagged ${updatedCount} films with their correct franchise collections!`);
     } catch (e) {
       setTaggingStatus('⚠️ Error auto-tagging some titles.');
@@ -822,7 +829,24 @@ export default function CollectionsTab({
 
                 {/* Posters Preview strip */}
                 {col.movies.length > 0 ? (
-                  <div style={{ display: 'flex', gap: '6px', padding: '0 16px 14px', overflowX: 'auto', marginTop: '6px' }}>
+                  <div
+                    onWheel={(e) => {
+                      if (e.shiftKey && e.deltaY !== 0) {
+                        e.currentTarget.scrollLeft += e.deltaY;
+                      }
+                    }}
+                    style={{
+                      display: 'flex',
+                      gap: '6px',
+                      padding: '0 16px 14px',
+                      overflowX: 'auto',
+                      marginTop: '6px',
+                      scrollbarWidth: 'thin',
+                      scrollbarColor: 'rgba(255,255,255,0.15) transparent',
+                      WebkitOverflowScrolling: 'touch',
+                      touchAction: 'pan-x pan-y'
+                    }}
+                  >
                     {col.movies.slice(0, 8).map(movie => (
                       <div key={movie.id || movie.tmdb_id} style={{ flexShrink: 0 }}>
                         {movie.poster_path ? (
@@ -917,7 +941,23 @@ export default function CollectionsTab({
                   </div>
                   <span style={{ fontSize: '12px', color: 'var(--text-dim)' }}>Open →</span>
                 </div>
-                <div style={{ display: 'flex', gap: '6px', padding: '0 16px 16px', overflowX: 'auto' }}>
+                <div
+                  onWheel={(e) => {
+                    if (e.shiftKey && e.deltaY !== 0) {
+                      e.currentTarget.scrollLeft += e.deltaY;
+                    }
+                  }}
+                  style={{
+                    display: 'flex',
+                    gap: '6px',
+                    padding: '0 16px 16px',
+                    overflowX: 'auto',
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: 'rgba(255,255,255,0.15) transparent',
+                    WebkitOverflowScrolling: 'touch',
+                    touchAction: 'pan-x pan-y'
+                  }}
+                >
                   {movies.slice(0, 8).map(movie => (
                     <div key={movie.id} style={{ flexShrink: 0 }}>
                       <img src={`https://image.tmdb.org/t/p/w200${movie.poster_path}`} alt={movie.title}
