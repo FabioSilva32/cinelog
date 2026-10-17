@@ -283,14 +283,13 @@ export default function ProfileCustomizerModal({
 
   return createPortal(
     <div
+      className="profile-studio-backdrop"
       style={{
         position: 'fixed', inset: 0, width: '100vw', height: '100vh',
         background: 'rgba(3,2,8,0.92)', backdropFilter: 'blur(24px)',
-        zIndex: 999999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px',
-        overscrollBehavior: 'contain'
+        zIndex: 999999, display: 'flex', alignItems: 'center', justifyContent: 'center'
       }}
       onClick={onClose}
-      onWheel={e => e.stopPropagation()}
     >
       <div
         className="profile-studio-card glass animate-fade-in-scale"
@@ -298,65 +297,34 @@ export default function ProfileCustomizerModal({
           width: '96vw', maxWidth: '1440px', height: '90vh', maxHeight: '92vh',
           borderRadius: '26px', border: '1px solid rgba(255,255,255,0.14)',
           background: '#0d0b16', display: 'flex', flexDirection: 'column',
-          boxShadow: '0 30px 90px rgba(0,0,0,0.95)', overflow: 'hidden',
-          overscrollBehavior: 'contain'
+          boxShadow: '0 30px 90px rgba(0,0,0,0.95)', overflow: 'hidden'
         }}
         onClick={e => e.stopPropagation()}
-        onWheel={e => e.stopPropagation()}
       >
-        {/* HEADER BAR */}
-        <div style={{
+        {/* SLEEK, COMPACT TOP HEADER */}
+        <div className="profile-studio-header" style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '16px 28px', borderBottom: '1px solid rgba(255,255,255,0.08)',
+          padding: '12px 20px', borderBottom: '1px solid rgba(255,255,255,0.08)',
           background: 'rgba(255,255,255,0.02)', flexShrink: 0
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <div style={{
-              width: '40px', height: '40px', borderRadius: '12px',
-              background: 'rgba(136,8,8,0.2)', border: '1px solid rgba(136,8,8,0.4)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center'
-            }}>
-              <SlidersHorizontal size={19} color="var(--accent)" />
-            </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h2 style={{ fontSize: '18px', fontWeight: 900, color: '#fff', margin: 0, letterSpacing: '-0.3px' }}>
-                  Profile Studio
-                </h2>
-                <span style={{ fontSize: '10.5px', background: 'rgba(136,8,8,0.2)', color: 'var(--accent)', border: '1px solid rgba(136,8,8,0.4)', padding: '2px 8px', borderRadius: '12px', fontWeight: 900, textTransform: 'uppercase' }}>
-                  Interactive Suite
-                </span>
-              </div>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-                Customize your cinematic banner, iconic mask avatar, border, badges, bio, and favorite film showcase.
-              </p>
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <SlidersHorizontal size={17} color="var(--accent)" />
+            <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.2px' }}>
+              Profile Studio
+            </h2>
+            <span style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 600 }}>
+              Customize Profile
+            </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <button
-              onClick={handleSave}
-              className="btn btn-primary"
-              style={{
-                padding: '7px 18px',
-                fontSize: '13px',
-                fontWeight: 900,
-                borderRadius: '10px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-            >
-              <CheckCircle2 size={15} /> Save
-            </button>
-            <button
-              onClick={onClose}
-              className="btn btn-ghost"
-              style={{ width: '36px', height: '36px', borderRadius: '50%', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <X size={18} />
-            </button>
-          </div>
+          <button
+            onClick={onClose}
+            className="btn btn-ghost"
+            style={{ width: '32px', height: '32px', borderRadius: '50%', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            aria-label="Close Profile Studio"
+          >
+            <X size={17} />
+          </button>
         </div>
 
         {/* 2-COLUMN STUDIO WORKSPACE */}
@@ -675,11 +643,99 @@ export default function ProfileCustomizerModal({
             </div>
 
             {/* TAB CONTENT PANELS (Scrollable) */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px', overscrollBehavior: 'contain' }}>
+            <div className="profile-studio-tab-content" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '20px 24px' }}>
 
               {/* ════ TAB 1: BANNERS STUDIO ════ */}
               {customizerTab === 'banner' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+                  {/* Mobile Live Banner Framing Strip */}
+                  <div className="profile-studio-mobile-banner-strip">
+                    <div style={{
+                      height: '110px',
+                      width: '100%',
+                      borderRadius: '14px',
+                      overflow: 'hidden',
+                      position: 'relative',
+                      background: '#090810',
+                      border: '1px solid rgba(255,255,255,0.1)'
+                    }}>
+                      {bannerUrl && !bannerUrl.startsWith('animated-') ? (
+                        <img
+                          src={bannerUrl.replace('/w1280/', '/original/').replace('/w500/', '/original/')}
+                          alt="Banner Preview"
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: bannerFitMode,
+                            objectPosition: `center ${bannerPosPercent}%`,
+                            display: 'block'
+                          }}
+                        />
+                      ) : (
+                        <div style={{
+                          width: '100%',
+                          height: '100%',
+                          background: 'radial-gradient(ellipse at 50% 25%, rgba(var(--accent-rgb, 229,9,20),0.4) 0%, rgba(15,12,24,0.92) 70%, #06050a 100%)'
+                        }} />
+                      )}
+                      <div style={{ position: 'absolute', bottom: '8px', left: '12px', display: 'flex', alignItems: 'center', gap: '8px', zIndex: 2 }}>
+                        <div style={{
+                          width: '38px',
+                          height: '38px',
+                          borderRadius: '50%',
+                          overflow: 'hidden',
+                          border: '2px solid #fff',
+                          background: '#1a1a1a'
+                        }}>
+                          <img src={avatar || DEFAULT_GREY_AVATAR} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        </div>
+                        <div style={{ textShadow: '0 2px 4px rgba(0,0,0,0.9)' }}>
+                          <div style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>{displayName || username || 'Profile'}</div>
+                          <div style={{ fontSize: '10.5px', color: 'rgba(255,255,255,0.7)' }}>@{username || 'user'}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Framing Slider on Mobile */}
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px',
+                      padding: '10px 14px',
+                      background: 'rgba(255,255,255,0.03)',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(255,255,255,0.07)',
+                      marginTop: '8px'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase' }}>
+                          Vertical Focus ({bannerPosPercent}%)
+                        </span>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleBannerFitChange(bannerFitMode === 'cover' ? 'contain' : 'cover')}
+                            style={{
+                              padding: '2px 8px', borderRadius: '6px', fontSize: '10.5px', fontWeight: 800,
+                              background: 'rgba(255,255,255,0.06)', color: 'var(--accent)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer'
+                            }}
+                          >
+                            Fit: {bannerFitMode}
+                          </button>
+                        </div>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value={bannerPosPercent}
+                        onChange={e => handleBannerPosChange(Number(e.target.value))}
+                        style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--accent)' }}
+                      />
+                    </div>
+                  </div>
 
                   {/* Clean 3-Mode Segmented Selector */}
                   <div style={{
@@ -1286,38 +1342,38 @@ export default function ProfileCustomizerModal({
 
             </div>
 
-            {/* STUDIO FOOTER ACTIONS */}
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '16px 28px', borderTop: '1px solid rgba(255,255,255,0.08)',
-              background: 'rgba(255,255,255,0.02)', flexShrink: 0
-            }}>
-              <span style={{ fontSize: '11px', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Sparkles size={13} color="var(--accent)" /> Changes update in real time. Click Save Changes when finished.
-              </span>
-
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={onClose}
-                  style={{ padding: '8px 20px', fontSize: '13px', fontWeight: 700 }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={handleSave}
-                  style={{ padding: '8px 24px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 900 }}
-                >
-                  <CheckCircle2 size={16} /> Save Changes
-                </button>
-              </div>
-            </div>
-
           </div>
 
+        </div>
+
+        {/* STICKY BOTTOM ACTIONS BAR */}
+        <div className="profile-studio-footer" style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '14px 24px', borderTop: '1px solid rgba(255,255,255,0.08)',
+          background: '#0d0b16', flexShrink: 0
+        }}>
+          <span className="profile-studio-footer-hint" style={{ fontSize: '11px', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Sparkles size={13} color="var(--accent)" /> Changes update in real time
+          </span>
+
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }} className="profile-studio-footer-btns">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={onClose}
+              style={{ padding: '9px 20px', fontSize: '13px', fontWeight: 700, borderRadius: '10px' }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleSave}
+              style={{ padding: '9px 24px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 900, borderRadius: '10px' }}
+            >
+              <CheckCircle2 size={16} /> Save Changes
+            </button>
+          </div>
         </div>
       </div>
     </div>,

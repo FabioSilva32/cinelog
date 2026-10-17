@@ -1,15 +1,20 @@
 package app.cinelog.mobile;
 
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.Window;
 import android.view.WindowManager;
+import android.window.OnBackInvokedCallback;
+import android.window.OnBackInvokedDispatcher;
 import androidx.activity.OnBackPressedCallback;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
+    private OnBackInvokedCallback backInvokedCallback;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -27,15 +32,42 @@ public class MainActivity extends BridgeActivity {
             controller.setAppearanceLightNavigationBars(false);
         }
 
-        // Intercept Android back gesture / hardware back button at the native root
-        // Ensures swiping back dispatches to Capacitor JS and NEVER closes the activity prematurely
+        // 1. Support modern Android 13+ (API 33+) Predictive Back Gesture navigation
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            backInvokedCallback = () -> handleUniversalBackPress();
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+                OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+                backInvokedCallback
+            );
+        }
+
+        // 2. Support AndroidX OnBackPressedDispatcher for hardware / system bar back
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                if (getBridge() != null) {
-                    getBridge().triggerJSEvent("backbutton", "document");
-                }
+                handleUniversalBackPress();
             }
         });
+    }
+
+    private void handleUniversalBackPress() {
+        if (getBridge() != null && getBridge().getWebView() != null) {
+            getBridge().getWebView().post(() -> {
+                getBridge().getWebView().evaluateJavascript(
+                    "(function(){ if (window.cinelogHandleBack) { window.cinelogHandleBack(); } else { window.dispatchEvent(new CustomEvent('cinelog-hardware-back')); } })();",
+                    null
+                );
+            });
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && backInvokedCallback != null) {
+            try {
+                getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(backInvokedCallback);
+            } catch (Exception ignored) {}
+        }
+        super.onDestroy();
     }
 }

@@ -95,8 +95,8 @@ export default function MobileBottomNav({
           aria-label="Log or Search Film"
           title="Log Film"
         >
-          <div className="mobile-fab-circle">
-            <Plus size={24} strokeWidth={2.6} color="#FFFFFF" />
+          <div className="mobile-fab-circle" style={{ background: 'var(--accent)', boxShadow: '0 6px 18px rgba(var(--accent-rgb, 229, 9, 20), 0.55), 0 2px 6px rgba(0, 0, 0, 0.7)' }}>
+            <Plus size={24} strokeWidth={2.6} color="var(--accent-contrast, #FFFFFF)" />
           </div>
           <span className="mobile-nav-label" style={{ color: 'var(--accent)', fontWeight: 800 }}>Log</span>
         </button>
@@ -159,7 +159,7 @@ export default function MobileBottomNav({
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}>
-                  <Film size={18} color="#FFFFFF" />
+                  <Film size={18} color="var(--accent-contrast, #FFFFFF)" />
                 </div>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 900, color: '#FFFFFF' }}>

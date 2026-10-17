@@ -519,6 +519,14 @@ function AppInner() {
     }
   }, [handleTabChange, toast]);
 
+  // Expose directly to window for Android WebView evaluateJavascript invocation
+  useEffect(() => {
+    window.cinelogHandleBack = handleUniversalBack;
+    return () => {
+      delete window.cinelogHandleBack;
+    };
+  }, [handleUniversalBack]);
+
   // Intercept native Android back gestures / hardware back button via @capacitor/app & document event
   useEffect(() => {
     let backListener = null;
@@ -538,12 +546,14 @@ function AppInner() {
       handleUniversalBack();
     };
     document.addEventListener('backbutton', docBackHandler);
+    window.addEventListener('cinelog-hardware-back', docBackHandler);
 
     return () => {
       if (backListener && backListener.remove) {
         backListener.remove();
       }
       document.removeEventListener('backbutton', docBackHandler);
+      window.removeEventListener('cinelog-hardware-back', docBackHandler);
     };
   }, [handleUniversalBack]);
 
