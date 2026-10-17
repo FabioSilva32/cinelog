@@ -601,46 +601,70 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
             </div>
           </div>
 
-          {/* Movie Title */}
-          <h1
-            className="explore-hero-title"
-            style={{
-              fontSize: '26px',
-              fontWeight: 900,
-            letterSpacing: '-0.5px',
-            color: '#FFFFFF',
-            margin: '0 0 8px 0',
-            textTransform: 'uppercase',
-            lineHeight: 1.15,
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-            minHeight: '60px',
-            maxHeight: '60px'
-          }}>
-            {currentHero.title || currentHero.name}
-          </h1>
-
-          {/* Rating & Metadata */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            fontSize: '13px',
-            color: '#9E9E9E',
-            marginBottom: '10px',
-            fontWeight: 600
-          }}>
-            {currentHero.vote_average > 0 && (
-              <span style={{ color: '#FFB800', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '3px' }}>
-                ★ {(currentHero.vote_average).toFixed(1)}
-              </span>
+          {/* Movie Main Info Block (incorporates sharp official poster thumbnail on mobile) */}
+          <div className="explore-hero-info-wrapper">
+            {currentHero.poster_path && (
+              <div
+                className="explore-hero-poster-thumb"
+                onClick={() => onMovieClick && onMovieClick(currentHero.id, currentHero.media_type || (currentHero.first_air_date || currentHero.name ? 'tv' : 'movie'))}
+                title="View film details"
+              >
+                <img
+                  src={`https://image.tmdb.org/t/p/w185${currentHero.poster_path}`}
+                  alt=""
+                  loading="lazy"
+                />
+              </div>
             )}
-            <span>
-              {(currentHero.release_date || currentHero.first_air_date || '').slice(0, 4)}
-              {(currentHero.genre_ids || []).length > 0 && ` · ${(currentHero.genre_ids || []).map(g => GENRE_MAP[g]).filter(Boolean).slice(0, 2).join(' · ')}`}
-            </span>
+            <div className="explore-hero-text-block">
+              {/* Movie Title */}
+              <h1
+                className="explore-hero-title"
+                style={{
+                  fontSize: '26px',
+                  fontWeight: 900,
+                  letterSpacing: '-0.5px',
+                  color: '#FFFFFF',
+                  margin: '0 0 8px 0',
+                  textTransform: 'uppercase',
+                  lineHeight: 1.15,
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  minHeight: '60px',
+                  maxHeight: '60px',
+                  cursor: 'pointer'
+                }}
+                onClick={() => onMovieClick && onMovieClick(currentHero.id, currentHero.media_type || (currentHero.first_air_date || currentHero.name ? 'tv' : 'movie'))}
+              >
+                {currentHero.title || currentHero.name}
+              </h1>
+
+              {/* Rating & Metadata */}
+              <div
+                className="explore-hero-meta"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  fontSize: '13px',
+                  color: '#9E9E9E',
+                  marginBottom: '10px',
+                  fontWeight: 600
+                }}
+              >
+                {currentHero.vote_average > 0 && (
+                  <span style={{ color: '#FFB800', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    ★ {(currentHero.vote_average).toFixed(1)}
+                  </span>
+                )}
+                <span>
+                  {(currentHero.release_date || currentHero.first_air_date || '').slice(0, 4)}
+                  {(currentHero.genre_ids || []).length > 0 && ` · ${(currentHero.genre_ids || []).map(g => GENRE_MAP[g]).filter(Boolean).slice(0, 2).join(' · ')}`}
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Overview text */}
