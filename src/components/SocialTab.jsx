@@ -32,7 +32,13 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
-  const [following, setFollowing] = useState(new Set());
+  const [following, setFollowing] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cinelog_following_ids');
+      if (saved) return new Set(JSON.parse(saved));
+    } catch {}
+    return new Set();
+  });
   const [followingUsers, setFollowingUsers] = useState([]);
   const [loadingFollowing, setLoadingFollowing] = useState(false);
   const [feed, setFeed] = useState([]);
@@ -42,7 +48,7 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
   const [loadingSuggested, setLoadingSuggested] = useState(false);
   const [dbError, setDbError] = useState(null);
 
-  // Load who the current user follows
+  // Load who the current user follows from Supabase and sync with localStorage
   useEffect(() => {
     if (!currentUser?.id || !isUUID(currentUser.id)) return;
     supabase.from("follows").select("following_id").eq("follower_id", currentUser.id)
@@ -55,7 +61,14 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
           }
           return;
         }
-        if (data) setFollowing(new Set(data.map(r => r.following_id)));
+        if (data) {
+          const dbIds = data.map(r => r.following_id);
+          setFollowing(prev => {
+            const next = new Set([...prev, ...dbIds]);
+            try { localStorage.setItem('cinelog_following_ids', JSON.stringify([...next])); } catch {}
+            return next;
+          });
+        }
       })
       .catch(err => {
         console.warn("Follows query exception:", err);
@@ -107,10 +120,10 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
         }
       }
 
-      // Filter out unwanted test accounts from feed
+      // Filter out unwanted test accounts and any database clone of elena from feed
       const cleanDbFeed = rawFeed.filter(item => {
         const u = (item.profiles?.username || '').toLowerCase();
-        return !IGNORED_USERNAMES.has(u);
+        return !IGNORED_USERNAMES.has(u) && u !== 'elena_films' && item.user_id !== ELENA_PROFILE.id;
       });
 
       // Include Elena Rodriguez's authentic reviews in feed
@@ -172,8 +185,12 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
       .select("id, username, display_name, avatar_url, bio")
       .in("id", ids)
       .then(({ data }) => {
-        const list = (data || []).filter(u => !IGNORED_USERNAMES.has((u.username || '').toLowerCase()));
-        if (hasElena && !list.some(u => u.id === ELENA_PROFILE.id)) {
+        const list = (data || []).filter(u =>
+          !IGNORED_USERNAMES.has((u.username || '').toLowerCase()) &&
+          (u.username || '').toLowerCase() !== 'elena_films' &&
+          u.id !== ELENA_PROFILE.id
+        );
+        if (hasElena) {
           list.unshift(elenaObj);
         }
         setFollowingUsers(list);
@@ -197,11 +214,13 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
           u.id !== myId &&
           (u.username || '').toLowerCase() !== myUsername &&
           !IGNORED_USERNAMES.has((u.username || '').toLowerCase()) &&
+          (u.username || '').toLowerCase() !== 'elena_films' &&
+          u.id !== ELENA_PROFILE.id &&
           !following.has(u.id)
         );
 
         // Always provide Elena Rodriguez as a rich, active community profile to follow & explore
-        if (!following.has(ELENA_PROFILE.id) && myUsername !== ELENA_PROFILE.username) {
+        if (!following.has(ELENA_PROFILE.id) && myUsername !== ELENA_PROFILE.username.toLowerCase()) {
           filtered.unshift({
             id: ELENA_PROFILE.id,
             username: ELENA_PROFILE.username,
@@ -242,7 +261,9 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
       let filtered = (data || []).filter(u =>
         u.id !== currentUser?.id &&
         (u.username || '').toLowerCase() !== (currentUser?.username || '').toLowerCase() &&
-        !IGNORED_USERNAMES.has((u.username || '').toLowerCase())
+        !IGNORED_USERNAMES.has((u.username || '').toLowerCase()) &&
+        (u.username || '').toLowerCase() !== 'elena_films' &&
+        u.id !== ELENA_PROFILE.id
       );
 
       if ('elena rodriguez elena_films'.includes(q) && currentUser?.username !== ELENA_PROFILE.username) {
@@ -268,6 +289,7 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
     setFollowing(prev => {
       const next = new Set(prev);
       if (isFollowing) { next.delete(userId); } else { next.add(userId); }
+      try { localStorage.setItem('cinelog_following_ids', JSON.stringify([...next])); } catch {}
       return next;
     });
 
@@ -284,6 +306,7 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
         setFollowing(prev => {
           const next = new Set(prev);
           if (isFollowing) { next.add(userId); } else { next.delete(userId); }
+          try { localStorage.setItem('cinelog_following_ids', JSON.stringify([...next])); } catch {}
           return next;
         });
       }

@@ -833,52 +833,6 @@ export default function ProfileTab({
 
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 75%, rgba(13,11,20,0.7) 90%, rgba(13,11,20,0.96) 100%)', pointerEvents: 'none' }} />
 
-                {/* Back button on top-left of banner */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (onOpenUserProfile) onOpenUserProfile(null);
-                    setViewedProfile(null);
-                    try {
-                      if (window.location.hash.startsWith('#user-')) {
-                        window.history.back();
-                      }
-                    } catch (e) {}
-                  }}
-                  style={{
-                    position: 'absolute',
-                    top: '20px',
-                    left: '20px',
-                    zIndex: 15,
-                    background: 'rgba(10,8,22,0.85)',
-                    backdropFilter: 'blur(16px)',
-                    border: '1px solid rgba(255,255,255,0.22)',
-                    color: '#fff',
-                    borderRadius: '30px',
-                    padding: '9px 20px',
-                    fontSize: '13px',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.6)',
-                    transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)'
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.borderColor = 'var(--accent)';
-                    e.currentTarget.style.boxShadow = '0 12px 35px rgba(136,8,8,0.4)';
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.transform = '';
-                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.22)';
-                    e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.6)';
-                  }}
-                >
-                  <ArrowLeft size={15} /> Back
-                </button>
-
                 {/* Follow / Following button on top-right of banner */}
                 {currentUser?.id && (
                   <button

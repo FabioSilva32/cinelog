@@ -1,7 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, FolderHeart, Heart, Sparkles, Trash, X, Film, List, Tag, Check, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Plus, FolderHeart, Heart, Sparkles, Trash, X, Film, List, Tag, Check, Loader2, Trophy, MessageSquare, ArrowRight, BookOpen, Layers } from 'lucide-react';
 import ConfirmModal from './ConfirmModal';
 import { FRANCHISE_COLLECTIONS, getSuggestedTags } from '../utils/collections';
+import { INITIAL_COMMUNITY_LISTS } from '../mockListsData';
+import ListDetailModal from './ListDetailModal';
+import CreateListModal from './CreateListModal';
+import CollectionDetailModal from './CollectionDetailModal';
 
 const COLLECTION_EMOJIS = ['📚','🎬','⭐','🔥','💎','🎭','🌟','🎪','🏆','🎯','🌙','❤️'];
 
@@ -101,7 +105,30 @@ function TonightPicker({ library, onMovieClick }) {
   );
 }
 
-export default function CollectionsTab({ library = [], onMovieClick, onSaveMovie }) {
+export default function CollectionsTab({
+  library = [],
+  currentUser,
+  onMovieClick,
+  onOpenUserProfile,
+  onSaveMovie
+}) {
+  // ── Letterboxd-Style Lists State ──────────────────────────────────────────
+  const [lists, setLists] = useState(() => {
+    try {
+      const stored = localStorage.getItem('cinelog_community_lists_v2');
+      if (stored) return JSON.parse(stored);
+    } catch {}
+    return INITIAL_COMMUNITY_LISTS;
+  });
+
+  const [listsTab, setListsTab] = useState('popular'); // 'popular' | 'recent' | 'my_lists'
+  const [selectedListModal, setSelectedListModal] = useState(null);
+  const [showCreateListModal, setShowCreateListModal] = useState(false);
+
+  // ── Open Collection Detail Modal State ─────────────────────────────────────
+  const [selectedCollectionModal, setSelectedCollectionModal] = useState(null);
+
+  // ── Legacy Custom Collections State ───────────────────────────────────────
   const [collections, setCollections] = useState(() => {
     try { return JSON.parse(localStorage.getItem('cinelog_collections_v1')) || {}; }
     catch { return {}; }
@@ -112,19 +139,54 @@ export default function CollectionsTab({ library = [], onMovieClick, onSaveMovie
   const [newEmoji, setNewEmoji] = useState('🎬');
   const [newIsRanked, setNewIsRanked] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
-  const [expandedCollection, setExpandedCollection] = useState(null);
   const [autoGroup, setAutoGroup] = useState('franchise');
   const [showEmpty, setShowEmpty] = useState(false);
   const [unwatchedOnlyMap, setUnwatchedOnlyMap] = useState({});
   const [taggingStatus, setTaggingStatus] = useState('');
   const [isTagging, setIsTagging] = useState(false);
 
-  // Real-time synchronization when movies are added to collections anywhere across CineLog
+  // Sync lists to localStorage
+  const handleUpdateList = (updatedList) => {
+    setLists(prev => {
+      const next = prev.map(l => l.id === updatedList.id ? updatedList : l);
+      try { localStorage.setItem('cinelog_community_lists_v2', JSON.stringify(next)); } catch {}
+      return next;
+    });
+    if (selectedListModal && selectedListModal.id === updatedList.id) {
+      setSelectedListModal(updatedList);
+    }
+  };
+
+  const handleSaveNewList = (newList) => {
+    setLists(prev => {
+      const next = [newList, ...prev];
+      try { localStorage.setItem('cinelog_community_lists_v2', JSON.stringify(next)); } catch {}
+      return next;
+    });
+    setSelectedListModal(newList);
+  };
+
+  const handleDeleteList = (listId) => {
+    setLists(prev => {
+      const next = prev.filter(l => l.id !== listId);
+      try { localStorage.setItem('cinelog_community_lists_v2', JSON.stringify(next)); } catch {}
+      return next;
+    });
+    if (selectedListModal && selectedListModal.id === listId) {
+      setSelectedListModal(null);
+    }
+  };
+
+  // Real-time synchronization when movies or collections update
   useEffect(() => {
     const handleSync = () => {
       try {
         const stored = JSON.parse(localStorage.getItem('cinelog_collections_v1')) || {};
         setCollections(stored);
+      } catch {}
+      try {
+        const storedLists = JSON.parse(localStorage.getItem('cinelog_community_lists_v2'));
+        if (storedLists) setLists(storedLists);
       } catch {}
     };
     window.addEventListener('cinelog_collections_updated', handleSync);
@@ -142,7 +204,7 @@ export default function CollectionsTab({ library = [], onMovieClick, onSaveMovie
     onConfirm: () => {}
   });
 
-  // Auto-tag library movies with their detected franchise tags (MCU, Marvel, DC, Star Wars, etc.)
+  // Auto-tag library movies with their detected franchise tags
   const handleAutoTagAll = async () => {
     setIsTagging(true);
     let updatedCount = 0;
@@ -174,22 +236,48 @@ export default function CollectionsTab({ library = [], onMovieClick, onSaveMovie
     }
   };
 
-  // Smart auto-collections from tags
-  const smartCollections = React.useMemo(() => {
+  // Known franchise tags to prevent duplicate smart collections (e.g. no 2nd MCU collection)
+  const knownFranchiseTags = useMemo(() => {
+    const s = new Set();
+    FRANCHISE_COLLECTIONS.forEach(f => {
+      if (f.tag) s.add(f.tag.toLowerCase());
+      if (f.id) s.add(f.id.toLowerCase());
+      if (f.shortTitle) s.add(f.shortTitle.toLowerCase());
+    });
+    s.add('mcu');
+    s.add('marvel');
+    s.add('marvel cinematic universe');
+    s.add('dc');
+    s.add('dceu');
+    s.add('star wars');
+    s.add('batman');
+    s.add('spider-man');
+    s.add('spiderman');
+    s.add('harry potter');
+    s.add('lord of the rings');
+    return s;
+  }, []);
+
+  // Smart auto-collections from tags, cleanly deduplicated against franchise collections
+  const smartCollections = useMemo(() => {
     const map = {};
     library.forEach(movie => {
       if (Array.isArray(movie.tags)) {
         movie.tags.forEach(tag => {
-          if (!map[tag]) map[tag] = [];
-          map[tag].push(movie);
+          const cleanTag = String(tag || '').trim();
+          if (!cleanTag) return;
+          // Merge into existing CineLog Originals rather than creating a duplicate MCU tag list
+          if (knownFranchiseTags.has(cleanTag.toLowerCase())) return;
+          if (!map[cleanTag]) map[cleanTag] = [];
+          map[cleanTag].push(movie);
         });
       }
     });
     return map;
-  }, [library]);
+  }, [library, knownFranchiseTags]);
 
   // Predefined franchise & genre automatic collections powered by centralized registry
-  const automaticCollections = React.useMemo(() => {
+  const automaticCollections = useMemo(() => {
     const filterByGenre = (genreName) =>
       library.filter(m => m.genres && m.genres.some(g => g.toLowerCase() === genreName.toLowerCase()));
 
@@ -247,343 +335,596 @@ export default function CollectionsTab({ library = [], onMovieClick, onSaveMovie
 
   const getMovie = (id) => library.find(m => String(m.id) === String(id) || String(m.tmdb_id) === String(id));
 
-  const handleCreate = (e) => {
-    e.preventDefault();
-    if (!newTitle.trim()) return;
-    const updated = {
-      ...collections,
-      [newTitle]: {
-        description: newDesc,
-        emoji: newEmoji,
-        movieIds: [],
-        isRanked: newIsRanked,
-        dateCreated: new Date().toISOString()
-      }
-    };
-    setCollections(updated);
-    localStorage.setItem('cinelog_collections_v1', JSON.stringify(updated));
-    window.dispatchEvent(new Event('cinelog_collections_updated'));
-    setNewTitle(''); setNewDesc(''); setNewEmoji('🎬'); setNewIsRanked(false); setShowCreate(false);
-  };
+  // Filtered Community / User Lists
+  const displayedLists = useMemo(() => {
+    let result = [...lists];
+    if (listsTab === 'popular') {
+      result.sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0));
+    } else if (listsTab === 'recent') {
+      result.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    } else if (listsTab === 'my_lists') {
+      result = result.filter(l =>
+        l.author?.username === currentUser?.username ||
+        l.author?.id === currentUser?.id
+      );
+    }
+    return result;
+  }, [lists, listsTab, currentUser]);
 
-  const handleToggleRanked = (title) => {
-    const list = collections[title];
-    if (!list) return;
-    const updated = {
-      ...collections,
-      [title]: { ...list, isRanked: !list.isRanked }
-    };
-    setCollections(updated);
-    localStorage.setItem('cinelog_collections_v1', JSON.stringify(updated));
-    window.dispatchEvent(new Event('cinelog_collections_updated'));
-  };
-
-  const handleMoveMovie = (title, fromIdx, toIdx) => {
-    const list = collections[title];
-    if (!list || !list.movieIds) return;
-    const ids = [...list.movieIds];
-    if (toIdx < 0 || toIdx >= ids.length) return;
-    const [moved] = ids.splice(fromIdx, 1);
-    ids.splice(toIdx, 0, moved);
-    const updated = {
-      ...collections,
-      [title]: { ...list, movieIds: ids }
-    };
-    setCollections(updated);
-    localStorage.setItem('cinelog_collections_v1', JSON.stringify(updated));
-    window.dispatchEvent(new Event('cinelog_collections_updated'));
-  };
-
-  const handleToggleUnwatched = (title) => {
-    setUnwatchedOnlyMap(prev => ({
-      ...prev,
-      [title]: !prev[title]
-    }));
-  };
-
-  const handleAddToList = (title, movieId) => {
-    const list = collections[title];
-    if (!list) return;
-    const updated = { ...collections, [title]: { ...list, movieIds: [...(list.movieIds || []), String(movieId)] } };
-    setCollections(updated);
-    localStorage.setItem('cinelog_collections_v1', JSON.stringify(updated));
-    window.dispatchEvent(new Event('cinelog_collections_updated'));
-  };
-
-  const handleRemoveFromList = (title, movieId) => {
-    const list = collections[title];
-    if (!list) return;
-    const updated = { ...collections, [title]: { ...list, movieIds: (list.movieIds || []).filter(id => String(id) !== String(movieId)) } };
-    setCollections(updated);
-    localStorage.setItem('cinelog_collections_v1', JSON.stringify(updated));
-    window.dispatchEvent(new Event('cinelog_collections_updated'));
-  };
-
-  const handleDeleteList = (title) => {
-    setConfirmConfig({
-      isOpen: true,
-      title: 'Delete Collection?',
-      message: `Are you sure you want to delete the collection "${title}"? This cannot be undone.`,
-      onConfirm: () => {
-        const updated = { ...collections };
-        delete updated[title];
-        setCollections(updated);
-        localStorage.setItem('cinelog_collections_v1', JSON.stringify(updated));
-        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-      }
-    });
-  };
+  const myListsCount = useMemo(() => {
+    return lists.filter(l =>
+      l.author?.username === currentUser?.username ||
+      l.author?.id === currentUser?.id
+    ).length;
+  }, [lists, currentUser]);
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '36px' }}>
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '42px', paddingBottom: '60px' }}>
 
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
-        <div>
-          <h2 style={{ fontSize: '26px', marginBottom: '4px' }}>Collections & Lists</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '13.5px' }}>Curate your own playlists or browse auto-generated smart collections.</p>
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {/* 1. TOP SECTION: LETTERBOXD-STYLE COMMUNITY LISTS & RANKINGS                */}
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      <div>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          flexWrap: 'wrap',
+          gap: '16px',
+          marginBottom: '20px'
+        }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+              <BookOpen size={22} color="var(--accent)" />
+              <h2 style={{ fontSize: '26px', fontWeight: 900, letterSpacing: '-0.5px', margin: 0, color: '#fff' }}>
+                Community Lists & Curations
+              </h2>
+            </div>
+            <p style={{ color: 'var(--text-muted)', fontSize: '13.5px', margin: 0 }}>
+              Browse cinephile rankings, themed lists, or build your own custom Letterboxd-style list with personal film notes.
+            </p>
+          </div>
+
+          <button
+            onClick={() => setShowCreateListModal(true)}
+            className="btn btn-primary"
+            style={{
+              padding: '10px 20px',
+              borderRadius: '50px',
+              gap: '8px',
+              fontSize: '13.5px',
+              fontWeight: 800,
+              boxShadow: '0 8px 24px rgba(136,8,8,0.35)',
+              flexShrink: 0
+            }}
+          >
+            <Plus size={16} /> Create List
+          </button>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowCreate(!showCreate)} style={{ flexShrink: 0 }}>
-          <Plus size={15} /> New Collection
-        </button>
+
+        {/* List Subtabs: Popular | Recent | My Lists */}
+        <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', flexWrap: 'wrap' }}>
+          {[
+            { id: 'popular', label: '🔥 Popular Lists' },
+            { id: 'recent', label: '✨ Recent' },
+            { id: 'my_lists', label: `👤 My Lists (${myListsCount})` },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setListsTab(tab.id)}
+              style={{
+                background: listsTab === tab.id ? 'var(--accent)' : 'rgba(255,255,255,0.04)',
+                color: listsTab === tab.id ? '#fff' : 'var(--text-muted)',
+                border: `1px solid ${listsTab === tab.id ? 'var(--accent)' : 'var(--border)'}`,
+                borderRadius: '20px',
+                padding: '7px 16px',
+                fontSize: '12.5px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s'
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Lists Grid */}
+        {displayedLists.length > 0 ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '20px' }}>
+            {displayedLists.map(list => {
+              const entries = list.entries || [];
+              const previewPosters = entries.filter(e => e.poster_path).slice(0, 5);
+
+              return (
+                <div
+                  key={list.id}
+                  onClick={() => setSelectedListModal(list)}
+                  className="glass"
+                  style={{
+                    borderRadius: '20px',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    padding: '20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
+                    background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
+                    position: 'relative'
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.borderColor = 'rgba(136,8,8,0.4)';
+                    e.currentTarget.style.transform = 'translateY(-3px)';
+                    e.currentTarget.style.boxShadow = '0 16px 36px rgba(0,0,0,0.6)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '';
+                  }}
+                >
+                  {/* Top Creator Info & Badges */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '14px' }}>
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onOpenUserProfile && list.author) {
+                          onOpenUserProfile(list.author);
+                        }
+                      }}
+                      style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: onOpenUserProfile ? 'pointer' : 'default' }}
+                    >
+                      <img
+                        src={list.author?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&fit=crop&q=80'}
+                        alt=""
+                        style={{ width: '26px', height: '26px', borderRadius: '50%', objectFit: 'cover' }}
+                      />
+                      <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#fff' }}>
+                        {list.author?.displayName || list.author?.username}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {list.isRanked && (
+                        <span style={{
+                          background: 'rgba(245, 158, 11, 0.14)',
+                          color: 'var(--gold)',
+                          border: '1px solid rgba(245, 158, 11, 0.3)',
+                          borderRadius: '6px',
+                          padding: '1px 6px',
+                          fontSize: '10px',
+                          fontWeight: 800
+                        }}>
+                          🏆 RANKED
+                        </span>
+                      )}
+                      <span style={{
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        borderRadius: '6px',
+                        padding: '1px 6px',
+                        fontSize: '10.5px',
+                        fontWeight: 700,
+                        color: 'var(--text-dim)'
+                      }}>
+                        {entries.length} films
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 5-Poster Overlapping Showcase */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    margin: '4px 0 16px',
+                    overflow: 'hidden',
+                    paddingBottom: '2px'
+                  }}>
+                    {previewPosters.map((movie, idx) => (
+                      <div
+                        key={movie.tmdb_id || idx}
+                        style={{
+                          flex: '1 1 0',
+                          minWidth: 0,
+                          aspectRatio: '2/3',
+                          borderRadius: '6px',
+                          overflow: 'hidden',
+                          border: '1px solid rgba(255, 255, 255, 0.12)',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                          background: '#191522',
+                          position: 'relative'
+                        }}
+                      >
+                        <img
+                          src={`https://image.tmdb.org/t/p/w185${movie.poster_path}`}
+                          alt=""
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                        {list.isRanked && (
+                          <div style={{
+                            position: 'absolute',
+                            top: '3px',
+                            left: '3px',
+                            background: 'rgba(0,0,0,0.85)',
+                            color: '#fff',
+                            borderRadius: '4px',
+                            padding: '1px 4px',
+                            fontSize: '9.5px',
+                            fontWeight: 900
+                          }}>
+                            #{idx + 1}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {Array.from({ length: Math.max(0, 5 - previewPosters.length) }).map((_, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          flex: '1 1 0',
+                          minWidth: 0,
+                          aspectRatio: '2/3',
+                          borderRadius: '6px',
+                          background: 'rgba(255,255,255,0.03)',
+                          border: '1px dashed rgba(255,255,255,0.08)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '14px',
+                          color: 'var(--text-dim)'
+                        }}
+                      >
+                        🎬
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* List Title & Description */}
+                  <h3 style={{
+                    fontSize: '16.5px',
+                    fontWeight: 900,
+                    color: '#fff',
+                    margin: '0 0 6px',
+                    lineHeight: 1.3
+                  }}>
+                    {list.title}
+                  </h3>
+
+                  {list.description && (
+                    <p style={{
+                      fontSize: '12.5px',
+                      color: 'rgba(255, 255, 255, 0.65)',
+                      lineHeight: 1.45,
+                      margin: '0 0 16px',
+                      overflow: 'hidden',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      flex: 1
+                    }}>
+                      {list.description}
+                    </p>
+                  )}
+
+                  {/* Bottom Stats: Likes & Comments */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginTop: 'auto',
+                    paddingTop: '12px',
+                    borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+                    fontSize: '12px',
+                    color: 'var(--text-dim)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <Heart size={13} color="var(--red)" fill="var(--red)" /> {list.likesCount || 0}
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <MessageSquare size={13} color="var(--text-dim)" /> {list.comments?.length || 0}
+                      </span>
+                    </div>
+
+                    <span style={{
+                      color: 'var(--accent)',
+                      fontWeight: 800,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}>
+                      View List →
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-muted)' }}>
+            <div style={{ fontSize: '36px', marginBottom: '12px' }}>📝</div>
+            <div style={{ fontSize: '16px', fontWeight: 800, color: '#fff', marginBottom: '6px' }}>
+              {listsTab === 'my_lists' ? 'You haven’t created any lists yet' : 'No lists found'}
+            </div>
+            <div style={{ fontSize: '13px', color: 'var(--text-dim)', marginBottom: '16px' }}>
+              Create your own ranked top 10, theme collection, or watchlist curation.
+            </div>
+            <button
+              onClick={() => setShowCreateListModal(true)}
+              className="btn btn-primary"
+              style={{ borderRadius: '50px', padding: '8px 20px' }}
+            >
+              + Create Your First List
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Create form */}
-      {showCreate && (
-        <div className="glass animate-fade-in" style={{ padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid rgba(136,8,8,0.2)', background: 'rgba(136,8,8,0.04)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
-            <Sparkles size={16} color="var(--accent)" />
-            <h3 style={{ fontSize: '16px', fontWeight: 800 }}>Create New Collection</h3>
-            <button onClick={() => setShowCreate(false)} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}>
-              <X size={18} />
-            </button>
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {/* 2. TONIGHT'S PICK INTERACTIVE ROULETTE                                    */}
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      <div className="glass" style={{ borderRadius: 'var(--radius-lg)', padding: '24px', border: '1px solid rgba(136,8,8,0.2)', background: 'linear-gradient(135deg, rgba(136,8,8,0.06) 0%, rgba(59,130,246,0.04) 100%)', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '140px', height: '140px', background: 'radial-gradient(circle, rgba(136,8,8,0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
+          <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--accent-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <span style={{ fontSize: '18px' }}>🎲</span>
           </div>
-          <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-              <div>
-                <div className="form-label" style={{ marginBottom: '8px' }}>Icon</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', maxWidth: '200px' }}>
-                  {COLLECTION_EMOJIS.map(e => (
-                    <button key={e} type="button" onClick={() => setNewEmoji(e)}
-                      style={{ width: '36px', height: '36px', background: newEmoji === e ? 'rgba(136,8,8,0.2)' : 'rgba(255,255,255,0.03)', border: `1px solid ${newEmoji === e ? 'var(--accent)' : 'var(--border)'}`, borderRadius: '8px', fontSize: '18px', cursor: 'pointer', transition: 'all 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {e}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div>
-                  <div className="form-label" style={{ marginBottom: '8px' }}>Collection Name *</div>
-                  <input type="text" placeholder="e.g. Perfect 10/10 Masterpieces" value={newTitle}
-                    onChange={e => setNewTitle(e.target.value)} className="form-input" required />
-                </div>
-                <div>
-                  <div className="form-label" style={{ marginBottom: '8px' }}>Description</div>
-                  <textarea placeholder="What makes this collection special?" value={newDesc}
-                    onChange={e => setNewDesc(e.target.value)} className="form-input" style={{ minHeight: '70px', resize: 'vertical' }} />
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
-                  <input
-                    type="checkbox"
-                    id="new-collection-ranked"
-                    checked={newIsRanked}
-                    onChange={e => setNewIsRanked(e.target.checked)}
-                    style={{ accentColor: 'var(--accent)', width: '16px', height: '16px', cursor: 'pointer' }}
-                  />
-                  <label htmlFor="new-collection-ranked" style={{ fontSize: '13px', color: '#fff', cursor: 'pointer', fontWeight: 600 }}>
-                    🏆 Ranked Mode (Show #1, #2, #3 order & reordering controls)
-                  </label>
-                </div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button type="button" className="btn btn-ghost" onClick={() => setShowCreate(false)}>Cancel</button>
-              <button type="submit" className="btn btn-primary">Create Collection</button>
-            </div>
-          </form>
+          <div>
+            <h3 style={{ fontSize: '17px', fontWeight: 800 }}>Tonight's Pick</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '1px' }}>Can't decide? We'll pick something from your watchlist!</p>
+          </div>
         </div>
-      )}
 
-      {/* Auto-Curated Franchise & Genre Collections */}
+        <TonightPicker library={library} onMovieClick={onMovieClick} />
+      </div>
+
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {/* 3. CINELOG ORIGINALS & FRANCHISES (MOVED TO BOTTOM WITH DIRECT OPENING)    */}
+      {/* ────────────────────────────────────────────────────────────────────────── */}
       <div>
-        {/* Section header with group tabs */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Sparkles size={18} color="var(--accent)" />
-            <h3 style={{ fontSize: '18px', fontWeight: 800 }}>Auto-Curated Smart Collections</h3>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px',
+          marginBottom: '18px'
+        }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Layers size={20} color="var(--accent)" />
+              <h2 style={{ fontSize: '24px', fontWeight: 900, color: '#fff', margin: 0, letterSpacing: '-0.5px' }}>
+                CineLog Originals & Franchises
+              </h2>
+            </div>
+            <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '4px 0 0' }}>
+              Official franchise timelines, genre archives, and smart studio vaults. Click any collection to explore all titles.
+            </p>
           </div>
+
           {/* Group Tabs */}
-          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '10px', padding: '3px', marginLeft: 'auto' }}>
-            {[
-              { id: 'franchise', label: '🎬 Franchises' },
-              { id: 'genre', label: '🎭 Genres' },
-              { id: 'best', label: '🏆 Your Best' },
-            ].map(g => (
-              <button key={g.id} onClick={() => setAutoGroup(g.id)}
-                style={{ background: autoGroup === g.id ? 'var(--accent)' : 'transparent', color: autoGroup === g.id ? '#fff' : 'var(--text-muted)', border: 'none', borderRadius: '8px', padding: '5px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap' }}>
-                {g.label}
-              </button>
-            ))}
-          </div>
-          <button onClick={() => setShowEmpty(p => !p)}
-            style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '8px', padding: '5px 12px', fontSize: '11px', color: 'var(--text-muted)', cursor: 'pointer' }}>
-            {showEmpty ? 'Hide empty' : 'Show empty'}
-          </button>
-          {autoGroup === 'franchise' && (
-            <button
-              onClick={handleAutoTagAll}
-              disabled={isTagging}
-              style={{
-                background: 'rgba(136,8,8,0.12)',
-                border: '1px solid rgba(136,8,8,0.3)',
-                borderRadius: '8px',
-                padding: '5px 12px',
-                fontSize: '11.5px',
-                fontWeight: 700,
-                color: 'var(--accent)',
-                cursor: isTagging ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                transition: 'all 0.2s'
-              }}
-              title="Automatically scan and tag all matching movies in your library with their franchise collections (MCU, Marvel, DC, Star Wars, etc.)"
-            >
-              {isTagging ? <Loader2 size={13} className="animate-spin" /> : <Tag size={13} />}
-              {isTagging ? 'Tagging films…' : '⚡ Auto-Tag Franchises'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '10px', padding: '3px' }}>
+              {[
+                { id: 'franchise', label: '🎬 Franchises' },
+                { id: 'genre', label: '🎭 Genres' },
+                { id: 'best', label: '🏆 Your Best' },
+              ].map(g => (
+                <button key={g.id} onClick={() => setAutoGroup(g.id)}
+                  style={{ background: autoGroup === g.id ? 'var(--accent)' : 'transparent', color: autoGroup === g.id ? '#fff' : 'var(--text-muted)', border: 'none', borderRadius: '8px', padding: '5px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap' }}>
+                  {g.label}
+                </button>
+              ))}
+            </div>
+
+            <button onClick={() => setShowEmpty(p => !p)}
+              style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '8px', padding: '5px 12px', fontSize: '11px', color: 'var(--text-muted)', cursor: 'pointer' }}>
+              {showEmpty ? 'Hide empty' : 'Show empty'}
             </button>
-          )}
+
+            {autoGroup === 'franchise' && (
+              <button
+                onClick={handleAutoTagAll}
+                disabled={isTagging}
+                style={{
+                  background: 'rgba(136,8,8,0.12)',
+                  border: '1px solid rgba(136,8,8,0.3)',
+                  borderRadius: '8px',
+                  padding: '5px 12px',
+                  fontSize: '11.5px',
+                  fontWeight: 700,
+                  color: 'var(--accent)',
+                  cursor: isTagging ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+                title="Automatically scan and tag all matching movies in your library with their franchise collections (MCU, Marvel, DC, Star Wars, etc.)"
+              >
+                {isTagging ? <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <Sparkles size={13} />}
+                {isTagging ? 'Auto-Tagging…' : '⚡ Auto-Tag Franchises'}
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Status alert if tagged */}
         {taggingStatus && (
-          <div style={{
-            background: 'rgba(136,8,8,0.12)',
-            border: '1px solid rgba(136,8,8,0.35)',
-            color: '#FFCDD2',
-            borderRadius: '10px',
-            padding: '10px 16px',
-            fontSize: '12.5px',
-            fontWeight: 600,
-            marginBottom: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}>
-            <Check size={16} color="var(--green)" />
+          <div className="animate-fade-in" style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '10px', padding: '10px 16px', fontSize: '12.5px', color: 'var(--green)', marginBottom: '16px', fontWeight: 600 }}>
             {taggingStatus}
           </div>
         )}
 
-        <div className="collections-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
-          {automaticCollections
-            .filter(col => col.group === autoGroup)
-            .filter(col => showEmpty || col.movies.length > 0)
-            .map(col => (
-            <div key={col.id} className="glass" style={{ borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', transition: 'all 0.2s', opacity: col.movies.length === 0 ? 0.55 : 1 }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(136,8,8,0.35)'; e.currentTarget.style.background = 'rgba(136,8,8,0.03)'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = ''; }}>
-              
-              <div style={{ padding: '16px 16px 8px' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                  <span style={{ fontSize: '24px', lineHeight: 1 }}>{col.emoji}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 800, fontSize: '15px' }}>{col.title}</div>
-                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px', lineHeight: 1.4 }}>{col.desc}</p>
-                    {(() => {
-                      const watchedCount = col.movies.filter(m => m.status === 'watched').length;
-                      const totalCount = col.movies.length;
-                      const pct = totalCount > 0 ? Math.round((watchedCount / totalCount) * 100) : 0;
-                      return (
-                        <div style={{ marginTop: '8px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
-                            <span style={{ color: col.movies.length > 0 ? 'var(--accent)' : 'var(--text-dim)', fontWeight: 700 }}>
-                              {col.movies.length > 0 ? `${col.movies.length} ${col.movies.length === 1 ? 'title' : 'titles'}` : 'No titles yet'}
-                            </span>
-                            {totalCount > 0 && (
-                              <span style={{ color: pct === 100 ? 'var(--green)' : 'var(--text-muted)', fontWeight: 700 }}>
-                                {watchedCount}/{totalCount} watched ({pct}%)
-                              </span>
-                            )}
-                          </div>
+        {/* Collection Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
+          {automaticCollections.filter(col => col.group === autoGroup && (showEmpty || col.movies.length > 0)).map(col => {
+            const watchedCount = col.movies.filter(m => m.status === 'watched').length;
+            const totalCount = col.movies.length;
+            const pct = totalCount > 0 ? Math.round((watchedCount / totalCount) * 100) : 0;
+
+            return (
+              <div
+                key={col.id}
+                onClick={() => setSelectedCollectionModal(col)}
+                className="glass"
+                style={{
+                  borderRadius: 'var(--radius-lg)',
+                  overflow: 'hidden',
+                  transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
+                  border: '1px solid var(--border)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = 'rgba(136,8,8,0.4)';
+                  e.currentTarget.style.background = 'rgba(136,8,8,0.03)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = 'var(--border)';
+                  e.currentTarget.style.background = '';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <div style={{ padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: '28px', lineHeight: 1, flexShrink: 0 }}>{col.emoji}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <div style={{ fontWeight: 800, fontSize: '15px', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {col.title}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {col.desc}
+                      </div>
+
+                      <div style={{ marginTop: '8px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '3px' }}>
+                          <span style={{ color: col.movies.length > 0 ? 'var(--accent)' : 'var(--text-dim)', fontWeight: 700 }}>
+                            {col.movies.length > 0 ? `${col.movies.length} ${col.movies.length === 1 ? 'title' : 'titles'}` : 'No titles yet'}
+                          </span>
                           {totalCount > 0 && (
-                            <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden', marginTop: '5px' }}>
-                              <div style={{ width: `${pct}%`, height: '100%', background: pct === 100 ? 'var(--green)' : 'linear-gradient(90deg, var(--accent), #880808)', borderRadius: '2px', transition: 'width 0.3s ease' }} />
-                            </div>
+                            <span style={{ color: pct === 100 ? 'var(--green)' : 'var(--text-muted)', fontWeight: 700 }}>
+                              {watchedCount}/{totalCount} watched ({pct}%)
+                            </span>
                           )}
                         </div>
-                      );
-                    })()}
+                        {totalCount > 0 && (
+                          <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden' }}>
+                            <div style={{ width: `${pct}%`, height: '100%', background: pct === 100 ? 'var(--green)' : 'linear-gradient(90deg, var(--accent), #880808)', borderRadius: '2px', transition: 'width 0.3s ease' }} />
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
+
+                {/* Posters Preview strip */}
+                {col.movies.length > 0 ? (
+                  <div style={{ display: 'flex', gap: '6px', padding: '0 16px 14px', overflowX: 'auto', marginTop: '6px' }}>
+                    {col.movies.slice(0, 8).map(movie => (
+                      <div key={movie.id || movie.tmdb_id} style={{ flexShrink: 0 }}>
+                        {movie.poster_path ? (
+                          <img
+                            src={`https://image.tmdb.org/t/p/w200${movie.poster_path}`}
+                            alt={movie.title}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onMovieClick(movie.tmdb_id || movie.id, movie.media_type || (movie.first_air_date || movie.name ? 'tv' : 'movie'));
+                            }}
+                            style={{ width: '42px', height: '63px', objectFit: 'cover', borderRadius: '5px', border: '1px solid var(--border)', cursor: 'pointer', transition: 'transform 0.15s' }}
+                            onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-3px)'}
+                            onMouseLeave={e => e.currentTarget.style.transform = ''}
+                            title={movie.title}
+                          />
+                        ) : (
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onMovieClick(movie.tmdb_id || movie.id, movie.media_type || (movie.first_air_date || movie.name ? 'tv' : 'movie'));
+                            }}
+                            style={{ width: '42px', height: '63px', background: 'rgba(255,255,255,0.05)', borderRadius: '5px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', cursor: 'pointer' }}
+                            title={movie.title}
+                          >
+                            🎬
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {col.movies.length > 8 && (
+                      <div style={{ width: '42px', height: '63px', background: 'rgba(255,255,255,0.06)', borderRadius: '5px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', flexShrink: 0 }}>
+                        +{col.movies.length - 8}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ padding: '0 16px 14px', fontSize: '11px', color: 'var(--text-dim)', fontStyle: 'italic', marginTop: '4px' }}>
+                    Add matching titles to unlock this collection.
+                  </div>
+                )}
+
+                <div style={{
+                  padding: '8px 16px',
+                  background: 'rgba(255,255,255,0.02)',
+                  borderTop: '1px solid rgba(255,255,255,0.04)',
+                  fontSize: '11.5px',
+                  color: 'var(--accent)',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'flex-end',
+                  gap: '4px'
+                }}>
+                  Open Collection →
+                </div>
               </div>
-
-              {col.movies.length > 0 ? (
-                <div style={{ display: 'flex', gap: '6px', padding: '0 16px 16px', overflowX: 'auto', marginTop: '10px' }}>
-                  {col.movies.slice(0, 8).map(movie => (
-                    <div key={movie.id || movie.tmdb_id} style={{ flexShrink: 0 }}>
-                      {movie.poster_path ? (
-                        <img src={`https://image.tmdb.org/t/p/w200${movie.poster_path}`} alt={movie.title}
-                          onClick={() => onMovieClick(movie.tmdb_id || movie.id, movie.media_type || (movie.first_air_date || movie.name ? 'tv' : 'movie'))}
-                          style={{ width: '42px', height: '63px', objectFit: 'cover', borderRadius: '5px', border: '1px solid var(--border)', cursor: 'pointer', transition: 'transform 0.15s' }}
-                          onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-3px)'}
-                          onMouseLeave={e => e.currentTarget.style.transform = ''}
-                          title={movie.title}
-                        />
-                      ) : (
-                        <div onClick={() => onMovieClick(movie.tmdb_id || movie.id, movie.media_type || (movie.first_air_date || movie.name ? 'tv' : 'movie'))}
-                          style={{ width: '42px', height: '63px', background: 'rgba(255,255,255,0.05)', borderRadius: '5px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', cursor: 'pointer' }}
-                          title={movie.title}>🎬</div>
-                      )}
-                    </div>
-                  ))}
-                  {col.movies.length > 8 && (
-                    <div style={{ width: '42px', height: '63px', background: 'rgba(255,255,255,0.06)', borderRadius: '5px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', flexShrink: 0 }}>
-                      +{col.movies.length - 8}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div style={{ padding: '0 16px 16px', fontSize: '11px', color: 'var(--text-dim)', fontStyle: 'italic', marginTop: '8px' }}>
-                  Add matching titles to unlock this collection.
-                </div>
-              )}
-
-            </div>
-          ))}
+            );
+          })}
         </div>
-        {automaticCollections.filter(col => col.group === autoGroup && (showEmpty || col.movies.length > 0)).length === 0 && (
-          <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-dim)', fontSize: '13px' }}>
-            <div style={{ fontSize: '36px', marginBottom: '10px' }}>🎬</div>
-            No collections have matching titles yet. Add more titles from <strong>Explore</strong> and they'll appear here automatically.
-          </div>
-        )}
       </div>
 
-      {/* Smart Auto-Tag Collections */}
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {/* 4. SMART AUTO-TAG COLLECTIONS (DEDUPLICATED AGAINST FRANCHISES)           */}
+      {/* ────────────────────────────────────────────────────────────────────────── */}
       {Object.keys(smartCollections).length > 0 && (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
             <Sparkles size={18} color="var(--accent)" />
-            <h3 style={{ fontSize: '18px', fontWeight: 800 }}>Smart Tag Lists</h3>
-            <span style={{ fontSize: '12px', color: 'var(--text-dim)', marginLeft: '4px' }}>Auto-generated from your custom tags</span>
+            <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>Smart Tag Collections</h3>
+            <span style={{ fontSize: '12px', color: 'var(--text-dim)', marginLeft: '4px' }}>Auto-grouped from your unique custom tags</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
             {Object.entries(smartCollections).map(([tag, movies]) => (
-              <div key={tag} className="glass" style={{ borderRadius: 'var(--radius-lg)', overflow: 'hidden', transition: 'all 0.2s', border: '1px solid var(--border)' }}
+              <div
+                key={tag}
+                onClick={() => setSelectedCollectionModal({
+                  id: 'tag-' + tag,
+                  title: tag,
+                  emoji: '🏷️',
+                  desc: `Films tagged with #${tag} in your library.`,
+                  movies
+                })}
+                className="glass"
+                style={{ borderRadius: 'var(--radius-lg)', overflow: 'hidden', transition: 'all 0.2s', border: '1px solid var(--border)', cursor: 'pointer' }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(136,8,8,0.35)'; e.currentTarget.style.background = 'rgba(136,8,8,0.04)'; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = ''; }}>
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = ''; }}
+              >
                 <div style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <div style={{ fontWeight: 800, fontSize: '15px' }}>🏷️ {tag}</div>
                     <div style={{ fontSize: '11.5px', color: 'var(--accent)', marginTop: '2px', fontWeight: 700 }}>{movies.length} films</div>
                   </div>
+                  <span style={{ fontSize: '12px', color: 'var(--text-dim)' }}>Open →</span>
                 </div>
                 <div style={{ display: 'flex', gap: '6px', padding: '0 16px 16px', overflowX: 'auto' }}>
                   {movies.slice(0, 8).map(movie => (
                     <div key={movie.id} style={{ flexShrink: 0 }}>
                       <img src={`https://image.tmdb.org/t/p/w200${movie.poster_path}`} alt={movie.title}
-                        onClick={() => onMovieClick(movie.tmdb_id || movie.id, movie.media_type || (movie.first_air_date || movie.name ? 'tv' : 'movie'))}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onMovieClick(movie.tmdb_id || movie.id, movie.media_type || (movie.first_air_date || movie.name ? 'tv' : 'movie'));
+                        }}
                         style={{ width: '42px', height: '63px', objectFit: 'cover', borderRadius: '5px', border: '1px solid var(--border)', cursor: 'pointer', transition: 'transform 0.15s' }}
                         onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-3px)'}
                         onMouseLeave={e => e.currentTarget.style.transform = ''}
@@ -603,308 +944,105 @@ export default function CollectionsTab({ library = [], onMovieClick, onSaveMovie
         </div>
       )}
 
-      {/* ── TONIGHT'S PICK ───────────────────────────────────────────── */}
-      <div className="glass" style={{ borderRadius: 'var(--radius-lg)', padding: '24px', border: '1px solid rgba(136,8,8,0.2)', background: 'linear-gradient(135deg, rgba(136,8,8,0.06) 0%, rgba(59,130,246,0.04) 100%)', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '140px', height: '140px', background: 'radial-gradient(circle, rgba(136,8,8,0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
-          <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--accent-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <span style={{ fontSize: '18px' }}>🎲</span>
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {/* 5. LEGACY USER COLLECTIONS                                                */}
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {Object.keys(collections).length > 0 && (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <FolderHeart size={18} color="var(--accent)" />
+            <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>Your Saved Playlists</h3>
           </div>
-          <div>
-            <h3 style={{ fontSize: '17px', fontWeight: 800 }}>Tonight's Pick</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '1px' }}>Can't decide? We'll pick something from your watchlist!</p>
-          </div>
-        </div>
 
-        <TonightPicker library={library} onMovieClick={onMovieClick} />
-      </div>
-
-      {/* Custom Collections */}
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-          <FolderHeart size={18} color="var(--accent)" />
-          <h3 style={{ fontSize: '18px', fontWeight: 800 }}>Your Collections</h3>
-        </div>
-
-        {Object.keys(collections).length > 0 ? (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
             {Object.entries(collections).map(([title, meta]) => {
               const listMovies = (meta.movieIds || []).map(id => getMovie(id)).filter(Boolean);
-              const isRanked = !!meta.isRanked;
-              const isOnlyUnwatched = !!unwatchedOnlyMap[title];
               const watchedCount = listMovies.filter(m => m.status === 'watched').length;
-              const unwatchedCount = listMovies.length - watchedCount;
               const pct = listMovies.length > 0 ? Math.round((watchedCount / listMovies.length) * 100) : 0;
-              const displayedMovies = isOnlyUnwatched
-                ? listMovies.filter(m => m.status !== 'watched')
-                : listMovies;
 
               return (
-                <div key={title} className="glass" style={{ borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1px solid var(--border)', transition: 'border-color 0.2s', display: 'flex', flexDirection: 'column' }}
+                <div
+                  key={title}
+                  onClick={() => setSelectedCollectionModal({
+                    id: 'custom-' + title,
+                    title,
+                    emoji: meta.emoji || '🎬',
+                    desc: meta.description || '',
+                    movies: listMovies
+                  })}
+                  className="glass"
+                  style={{ borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1px solid var(--border)', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
                   onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(136,8,8,0.3)'}
-                  onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}>
-
-                  {/* Header */}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+                >
                   <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--border)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                        {/* 3-Poster stack or Emoji */}
-                        {listMovies.filter(m => m.poster_path).length > 0 ? (
-                          <div style={{ position: 'relative', width: '60px', height: '44px', flexShrink: 0 }}>
-                            {listMovies.filter(m => m.poster_path).slice(0, 3).map((m, idx) => (
-                              <img
-                                key={m.id || idx}
-                                src={`https://image.tmdb.org/t/p/w92${m.poster_path}`}
-                                alt=""
-                                style={{
-                                  position: 'absolute',
-                                  top: `${idx * 2}px`,
-                                  left: `${idx * 11}px`,
-                                  width: '28px',
-                                  height: '40px',
-                                  objectFit: 'cover',
-                                  borderRadius: '4px',
-                                  border: '1px solid rgba(255,255,255,0.2)',
-                                  boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
-                                  zIndex: idx + 1
-                                }}
-                              />
-                            ))}
-                          </div>
-                        ) : (
-                          <span style={{ fontSize: '26px', lineHeight: 1 }}>{meta.emoji || '🎬'}</span>
-                        )}
-
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontWeight: 800, fontSize: '15.5px', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</span>
-                            {isRanked && (
-                              <span style={{ background: 'rgba(245,158,11,0.15)', color: 'var(--gold)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '6px', fontSize: '9.5px', fontWeight: 800, padding: '1px 5px', letterSpacing: '0.5px' }}>
-                                RANKED
-                              </span>
-                            )}
-                          </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontSize: '24px' }}>{meta.emoji || '🎬'}</span>
+                        <div>
+                          <div style={{ fontWeight: 800, fontSize: '15px', color: '#fff' }}>{title}</div>
                           {meta.description && (
-                            <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px', lineHeight: 1.4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{meta.description}</p>
+                            <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>{meta.description}</div>
                           )}
                         </div>
                       </div>
-
-                      {/* Top Action Buttons */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                        {/* Toggle Ranked Mode */}
-                        <button
-                          type="button"
-                          onClick={() => handleToggleRanked(title)}
-                          title={isRanked ? 'Switch to unranked mode' : 'Switch to ranked 1..N mode'}
-                          style={{
-                            background: isRanked ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.03)',
-                            border: `1px solid ${isRanked ? 'rgba(245,158,11,0.4)' : 'var(--border)'}`,
-                            color: isRanked ? 'var(--gold)' : 'var(--text-muted)',
-                            borderRadius: '6px', padding: '4px 8px', fontSize: '10.5px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s'
-                          }}
-                        >
-                          {isRanked ? '🏆 Ranked' : '🗂️ Unranked'}
-                        </button>
-
-                        {/* Toggle Unwatched Only Filter */}
-                        {listMovies.length > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => handleToggleUnwatched(title)}
-                            title={isOnlyUnwatched ? 'Show all titles' : 'Show unwatched titles only'}
-                            style={{
-                              background: isOnlyUnwatched ? 'rgba(136,8,8,0.2)' : 'rgba(255,255,255,0.03)',
-                              border: `1px solid ${isOnlyUnwatched ? 'var(--accent)' : 'var(--border)'}`,
-                              color: isOnlyUnwatched ? '#fff' : 'var(--text-muted)',
-                              borderRadius: '6px', padding: '4px 8px', fontSize: '10.5px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s'
-                            }}
-                          >
-                            {isOnlyUnwatched ? `👁️ Unwatched (${unwatchedCount})` : '👁️ Filter'}
-                          </button>
-                        )}
-
-                        {/* Delete button */}
-                        <button onClick={() => handleDeleteList(title)}
-                          style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: '4px', transition: 'color 0.15s' }}
-                          onMouseEnter={e => e.currentTarget.style.color = 'var(--red)'}
-                          onMouseLeave={e => e.currentTarget.style.color = 'var(--text-dim)'}
-                          title="Delete Collection">
-                          <Trash size={14} />
-                        </button>
-                      </div>
+                      <span style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: 700 }}>Open →</span>
                     </div>
 
-                    {/* Watch Progress Bar */}
-                    {listMovies.length > 0 && (
-                      <div style={{ marginTop: '12px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', marginBottom: '4px' }}>
-                          <span style={{ color: 'var(--text-dim)' }}>
-                            {listMovies.length} {listMovies.length === 1 ? 'film' : 'films'}
-                          </span>
-                          <span style={{ color: pct === 100 ? 'var(--green)' : 'var(--text-muted)', fontWeight: 700 }}>
-                            {watchedCount}/{listMovies.length} watched ({pct}%)
-                          </span>
-                        </div>
-                        <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden' }}>
-                          <div style={{ width: `${pct}%`, height: '100%', background: pct === 100 ? 'var(--green)' : 'linear-gradient(90deg, var(--accent), #880808)', borderRadius: '2px', transition: 'width 0.3s ease' }} />
-                        </div>
+                    <div style={{ marginTop: '10px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '3px' }}>
+                        <span style={{ color: 'var(--text-dim)' }}>{listMovies.length} films</span>
+                        <span style={{ color: pct === 100 ? 'var(--green)' : 'var(--text-muted)', fontWeight: 700 }}>{pct}% watched</span>
                       </div>
-                    )}
-                  </div>
-
-                  {/* Movies Row */}
-                  <div style={{ padding: '14px 18px', flex: 1 }}>
-                    {displayedMovies.length > 0 ? (
-                      <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '6px' }}>
-                        {displayedMovies.map((movie, index) => {
-                          const origIndex = (meta.movieIds || []).findIndex(id => String(id) === String(movie.id) || String(id) === String(movie.tmdb_id));
-                          const isWatched = movie.status === 'watched';
-                          return (
-                            <div key={movie.id || movie.tmdb_id || index} style={{ position: 'relative', flexShrink: 0, width: '56px' }}>
-                              {/* Rank Tag */}
-                              {isRanked && (
-                                <div style={{
-                                  position: 'absolute', top: '-4px', left: '-4px', zIndex: 3,
-                                  background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                                  color: '#000', fontWeight: 900, fontSize: '9px',
-                                  padding: '1px 5px', borderRadius: '4px',
-                                  boxShadow: '0 2px 6px rgba(0,0,0,0.6)'
-                                }}>
-                                  #{index + 1}
-                                </div>
-                              )}
-
-                              {/* Watched Indicator Dot */}
-                              {isWatched && (
-                                <div style={{
-                                  position: 'absolute', bottom: '6px', right: '4px', zIndex: 3,
-                                  background: 'var(--green)', borderRadius: '50%', width: '8px', height: '8px',
-                                  boxShadow: '0 0 6px var(--green)'
-                                }} title="Watched" />
-                              )}
-
-                              {/* TV badge if TV series */}
-                              {(movie.media_type === 'tv' || Boolean(movie.first_air_date)) && (
-                                <div style={{
-                                  position: 'absolute', top: '4px', left: '4px', zIndex: 3,
-                                  background: 'rgba(10, 10, 14, 0.85)',
-                                  border: '1px solid rgba(59, 130, 246, 0.5)',
-                                  color: '#60A5FA',
-                                  borderRadius: '3px', padding: '1px 3.5px',
-                                  fontSize: '7px', fontWeight: 900, letterSpacing: '0.04em',
-                                  textTransform: 'uppercase', pointerEvents: 'none'
-                                }}>
-                                  TV
-                                </div>
-                              )}
-
-                              {/* Poster Image */}
-                              <img src={`https://image.tmdb.org/t/p/w200${movie.poster_path}`} alt={movie.title}
-                                onClick={() => onMovieClick(movie.tmdb_id || movie.id, movie.media_type || (movie.first_air_date || movie.name ? 'tv' : 'movie'))}
-                                style={{ width: '56px', height: '84px', objectFit: 'cover', borderRadius: '6px', border: `1px solid ${isWatched ? 'rgba(16,185,129,0.4)' : 'var(--border)'}`, cursor: 'pointer', transition: 'transform 0.15s' }}
-                                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-3px)'}
-                                onMouseLeave={e => e.currentTarget.style.transform = ''}
-                                title={`${movie.title} (${movie.release_year || '—'})`}
-                              />
-
-                              {/* Remove button */}
-                              <button
-                                onClick={e => { e.stopPropagation(); handleRemoveFromList(title, movie.id || movie.tmdb_id); }}
-                                style={{
-                                  position: 'absolute', top: '-4px', right: '-4px',
-                                  background: 'rgba(239,68,68,0.9)', color: '#fff',
-                                  border: 'none', borderRadius: '50%', width: '16px', height: '16px',
-                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                  fontSize: '9px', fontWeight: 900, cursor: 'pointer',
-                                  boxShadow: '0 2px 6px rgba(0,0,0,0.4)', zIndex: 4,
-                                  opacity: 0, transition: 'opacity 0.15s'
-                                }}
-                                onMouseOver={e => e.currentTarget.style.opacity = 1}
-                                onMouseOut={e => e.currentTarget.style.opacity = 0}
-                                title="Remove from collection">✕</button>
-
-                              {/* Ranked Mode Reorder Controls (Move Left / Right) */}
-                              {isRanked && (
-                                <div style={{ display: 'flex', justifyContent: 'center', gap: '2px', marginTop: '4px' }}>
-                                  <button
-                                    type="button"
-                                    disabled={origIndex <= 0}
-                                    onClick={e => { e.stopPropagation(); handleMoveMovie(title, origIndex, origIndex - 1); }}
-                                    style={{
-                                      background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: '3px',
-                                      color: origIndex <= 0 ? 'rgba(255,255,255,0.15)' : '#fff',
-                                      fontSize: '9px', padding: '1px 4px', cursor: origIndex <= 0 ? 'default' : 'pointer'
-                                    }}
-                                    title="Move higher rank"
-                                  >
-                                    ◀
-                                  </button>
-                                  <button
-                                    type="button"
-                                    disabled={origIndex >= (meta.movieIds || []).length - 1}
-                                    onClick={e => { e.stopPropagation(); handleMoveMovie(title, origIndex, origIndex + 1); }}
-                                    style={{
-                                      background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: '3px',
-                                      color: origIndex >= (meta.movieIds || []).length - 1 ? 'rgba(255,255,255,0.15)' : '#fff',
-                                      fontSize: '9px', padding: '1px 4px', cursor: origIndex >= (meta.movieIds || []).length - 1 ? 'default' : 'pointer'
-                                    }}
-                                    title="Move lower rank"
-                                  >
-                                    ▶
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
+                      <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden' }}>
+                        <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg, var(--accent), #880808)' }} />
                       </div>
-                    ) : (
-                      <div style={{ textAlign: 'center', padding: '18px', color: 'var(--text-dim)', fontSize: '12px' }}>
-                        {isOnlyUnwatched ? '🎉 You have watched all titles in this collection!' : 'No titles in this collection yet.'}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Add movie dropdown */}
-                  <div style={{ padding: '10px 18px', borderTop: '1px solid var(--border)', background: 'rgba(0,0,0,0.1)' }}>
-                    <select
-                      onChange={e => { if (e.target.value) { handleAddToList(title, e.target.value); e.target.value = ''; } }}
-                      className="form-input"
-                      style={{ width: '100%', height: '34px', padding: '0 10px', background: 'rgba(255,255,255,0.04)', color: 'var(--text)', fontSize: '12px' }}
-                    >
-                      <option value="">+ Add title from library…</option>
-                      {library.filter(m => !(meta.movieIds || []).includes(String(m.id)) && !(meta.movieIds || []).includes(String(m.tmdb_id)))
-                        .map(m => <option key={m.id || m.tmdb_id} value={m.id || m.tmdb_id}>{m.title} ({m.release_year || '—'})</option>)}
-                    </select>
+                    </div>
                   </div>
                 </div>
               );
             })}
           </div>
-        ) : (
-          <div className="glass" style={{ padding: '48px 24px', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
-            <div style={{ fontSize: '42px', marginBottom: '12px' }}>📂</div>
-            <div style={{ fontWeight: 700, fontSize: '17px', marginBottom: '8px' }}>No Collections Yet</div>
-            <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '20px', maxWidth: '360px', margin: '0 auto 20px' }}>
-              Create your first collection to organize your favorite movies into curated playlists.
-            </p>
-            <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
-              <Plus size={15} /> Create Your First Collection
-            </button>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* ── MODALS ── */}
+      {selectedListModal && (
+        <ListDetailModal
+          list={selectedListModal}
+          currentUser={currentUser}
+          onClose={() => setSelectedListModal(null)}
+          onMovieClick={onMovieClick}
+          onOpenUserProfile={onOpenUserProfile}
+          onUpdateList={handleUpdateList}
+          onDeleteList={handleDeleteList}
+        />
+      )}
+
+      {showCreateListModal && (
+        <CreateListModal
+          currentUser={currentUser}
+          library={library}
+          onClose={() => setShowCreateListModal(false)}
+          onSaveList={handleSaveNewList}
+        />
+      )}
+
+      {selectedCollectionModal && (
+        <CollectionDetailModal
+          collection={selectedCollectionModal}
+          onClose={() => setSelectedCollectionModal(null)}
+          onMovieClick={onMovieClick}
+        />
+      )}
 
       <ConfirmModal
         isOpen={confirmConfig.isOpen}
         title={confirmConfig.title}
         message={confirmConfig.message}
         onConfirm={confirmConfig.onConfirm}
-        onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+        onCancel={() => setConfirmConfig(p => ({ ...p, isOpen: false }))}
       />
     </div>
   );
 }
-
-

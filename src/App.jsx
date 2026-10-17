@@ -1608,7 +1608,13 @@ function AppInner() {
           <ExploreTab onAddMovie={handleAddMovie} library={library} onMovieClick={handleMovieClick} />
         )}
         {activeTab === 'collections' && (
-          <CollectionsTab library={library} onMovieClick={handleMovieClick} onSaveMovie={handleSaveMovie} />
+          <CollectionsTab
+            library={library}
+            currentUser={currentUser}
+            onMovieClick={handleMovieClick}
+            onOpenUserProfile={handleOpenUserProfile}
+            onSaveMovie={handleSaveMovie}
+          />
         )}
         {activeTab === 'tierlist' && (
           <TierListTab library={library} currentUser={currentUser} onOpenAuth={openAuth} />
