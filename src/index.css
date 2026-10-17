@@ -2688,6 +2688,37 @@ body.modal-open {
   .explore-hero-spacer {
     display: none !important;
   }
+
+  /* Restore independent column scrolling on desktop */
+  .library-tab-container {
+    height: calc(100vh - 130px) !important;
+    max-height: calc(100vh - 130px) !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .desktop-only-library-stats,
+  .desktop-only-library-filter {
+    flex-shrink: 0 !important;
+  }
+
+  .desktop-only-3col-library {
+    flex: 1 !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    display: flex !important;
+    gap: 14px !important;
+  }
+
+  .desktop-only-3col-library > div {
+    height: 100% !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
 }
 
 /* ── TIER LIST HEADER BAR (PREVENTS DESKTOP LAYOUT SHIFT ACROSS LISTS) ── */
