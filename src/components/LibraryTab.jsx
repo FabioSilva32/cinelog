@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Search, Heart, Star, Edit, Trash, Plus, Upload, Download, Dices, X, Check, AlertCircle, ChevronRight, LayoutGrid, List, SlidersHorizontal, Film, Tv, Clock, RotateCcw } from 'lucide-react';
+import { Search, Heart, Star, Edit, Trash, Plus, Upload, Download, Dices, X, Check, AlertCircle, ChevronRight, ChevronLeft, LayoutGrid, List, SlidersHorizontal, Film, Tv, Clock, RotateCcw, Layers, Sparkles } from 'lucide-react';
 import { triggerBackdropHover } from '../utils/backdrop';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
@@ -298,6 +298,503 @@ function LibraryColumn({ label, icon, color, movies, onEditClick, onRemove, sear
   );
 }
 
+// ── Media Type Resolver ───────────────────────────────────────────────
+export function getMediaType(m) {
+  if (!m) return 'movie';
+  const isAnime = m.media_type === 'anime' ||
+    m.type === 'anime' ||
+    (m.tags || []).some(t => typeof t === 'string' && t.toLowerCase() === 'anime') ||
+    (m.genres || []).some(g => typeof g === 'string' && (g.toLowerCase() === 'anime' || (g.toLowerCase() === 'animation' && (m.original_language === 'ja' || (Array.isArray(m.origin_country) && m.origin_country.includes('JP'))))));
+  if (isAnime) return 'anime';
+
+  const isTv = m.media_type === 'tv' ||
+    m.type === 'tv' ||
+    m.number_of_seasons !== undefined ||
+    m.first_air_date !== undefined ||
+    Boolean(m.details && (m.details.number_of_seasons !== undefined || m.details.first_air_date));
+  if (isTv) return 'tv';
+
+  return 'movie';
+}
+
+// ── Reusable Cinema Card with High-Contrast Category Badges ───────────
+function MediaPosterCard({ movie, onEditClick, layout = 'shelf' }) {
+  const isWatching = movie.status === 'watching';
+  const mediaType = getMediaType(movie);
+  const isTv = mediaType === 'tv';
+  const isAnime = mediaType === 'anime';
+
+  let typeBadge = null;
+  if (isAnime) {
+    typeBadge = (
+      <span style={{
+        background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.95), rgba(217, 119, 6, 0.95))',
+        color: '#FFFFFF',
+        boxShadow: '0 2px 6px rgba(245, 158, 11, 0.4)',
+        borderRadius: '4px',
+        padding: '1.5px 5px',
+        fontSize: '8px',
+        fontWeight: 900,
+        letterSpacing: '0.02em',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '3px'
+      }}>
+        ⛩️ ANIME
+      </span>
+    );
+  } else if (isTv) {
+    const seasonsCount = movie.number_of_seasons || movie.details?.number_of_seasons;
+    const seasonLabel = seasonsCount ? `TV · S${seasonsCount}` : 'TV SERIES';
+    typeBadge = (
+      <span style={{
+        background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.95), rgba(30, 64, 175, 0.95))',
+        color: '#FFFFFF',
+        boxShadow: '0 2px 6px rgba(37, 99, 235, 0.4)',
+        borderRadius: '4px',
+        padding: '1.5px 5px',
+        fontSize: '8px',
+        fontWeight: 900,
+        letterSpacing: '0.02em',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '3px'
+      }}>
+        📺 {seasonLabel}
+      </span>
+    );
+  } else {
+    typeBadge = (
+      <span style={{
+        background: 'linear-gradient(135deg, rgba(229, 9, 20, 0.9), rgba(153, 27, 27, 0.9))',
+        color: '#FFFFFF',
+        borderRadius: '4px',
+        padding: '1.5px 5px',
+        fontSize: '8px',
+        fontWeight: 900,
+        letterSpacing: '0.02em',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '3px'
+      }}>
+        🎬 FILM
+      </span>
+    );
+  }
+
+  return (
+    <div
+      onClick={() => onEditClick(movie)}
+      className="library-card-interactive"
+      style={{
+        cursor: 'pointer',
+        borderRadius: '10px',
+        overflow: 'hidden',
+        border: isWatching ? '1.5px solid var(--accent)' : '1px solid rgba(255, 255, 255, 0.08)',
+        boxShadow: isWatching ? '0 0 14px rgba(229, 9, 20, 0.4)' : '0 4px 14px rgba(0, 0, 0, 0.4)',
+        position: 'relative',
+        aspectRatio: '2/3',
+        background: '#121216',
+        flexShrink: layout === 'shelf' ? 0 : 1,
+        width: layout === 'shelf' ? '124px' : 'auto'
+      }}
+      onMouseEnter={() => triggerBackdropHover(movie.backdrop_path || movie.details?.backdrop_path)}
+      onMouseLeave={() => triggerBackdropHover(null)}
+    >
+      {movie.poster_path ? (
+        <img
+          src={`https://image.tmdb.org/t/p/w300${movie.poster_path}`}
+          alt={movie.title}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          loading="lazy"
+        />
+      ) : (
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontSize: '24px', background: 'linear-gradient(145deg, #181822, #101016)', padding: '12px', textAlign: 'center' }}>
+          <span>{isAnime ? '⛩️' : isTv ? '📺' : '🎬'}</span>
+          <span style={{ fontSize: '10px', color: '#999', marginTop: '6px', fontWeight: 600 }}>{movie.title}</span>
+        </div>
+      )}
+
+      {/* Title & metadata gradient overlay */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: 'linear-gradient(to top, rgba(8, 7, 12, 0.98) 0%, rgba(8, 7, 12, 0.6) 32%, transparent 65%)',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'flex-end',
+        padding: '7px 8px'
+      }}>
+        <div style={{ fontSize: '11px', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {movie.title}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '3px' }}>
+          <span style={{ fontSize: '9.5px', color: '#A1A1AA', fontWeight: 600 }}>
+            {movie.release_year || '—'}
+          </span>
+          {movie.status === 'watched' && (
+            <span style={{ fontSize: '8.5px', color: 'var(--green)', fontWeight: 800 }}>✓ Watched</span>
+          )}
+          {movie.status === 'plan_to_watch' && (
+            <span style={{ fontSize: '8.5px', color: '#60A5FA', fontWeight: 700 }}>⏳ List</span>
+          )}
+        </div>
+      </div>
+
+      {/* Top Left: Type Pill Badge */}
+      <div style={{ position: 'absolute', top: '5px', left: '5px', zIndex: 2 }}>
+        {typeBadge}
+      </div>
+
+      {/* Top Right: Rating Pill or Favorite */}
+      <div style={{ position: 'absolute', top: '5px', right: '5px', display: 'flex', alignItems: 'center', gap: '3px', zIndex: 2 }}>
+        {movie.favorite && (
+          <div style={{ fontSize: '11px', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.9))' }}>❤️</div>
+        )}
+        {Number(movie.rating) > 0 && (
+          <div style={{
+            background: 'rgba(8, 7, 12, 0.88)',
+            backdropFilter: 'blur(6px)',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            borderRadius: '4px',
+            padding: '1.5px 5px',
+            fontSize: '9px',
+            fontWeight: 900,
+            color: getRatingColor(movie.rating),
+            letterSpacing: '-0.2px',
+            boxShadow: '0 2px 5px rgba(0,0,0,0.5)'
+          }}>
+            ★ {Number(movie.rating).toFixed(1)}
+          </div>
+        )}
+      </div>
+
+      {/* Watching status ribbon */}
+      {isWatching && (
+        <div style={{
+          position: 'absolute',
+          top: '25px',
+          left: '5px',
+          background: 'var(--accent)',
+          borderRadius: '3px',
+          padding: '1px 5px',
+          fontSize: '7.5px',
+          fontWeight: 900,
+          color: '#fff',
+          letterSpacing: '0.04em',
+          boxShadow: '0 2px 6px rgba(229, 9, 20, 0.5)',
+          zIndex: 2
+        }}>
+          ▶ WATCHING
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Categorized Shelf Section ─────────────────────────────────────────
+function LibraryShelfRow({
+  title,
+  icon,
+  badgeColor,
+  accentGlow,
+  items,
+  onSeeAll,
+  onEditClick,
+  emptyPrompt
+}) {
+  const scrollRef = useRef(null);
+
+  const scrollBy = (amount) => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: amount, behavior: 'smooth' });
+    }
+  };
+
+  return (
+    <section className="library-shelf-section" style={{
+      background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.025) 0%, rgba(255, 255, 255, 0.005) 100%)',
+      border: '1px solid rgba(255, 255, 255, 0.06)',
+      borderRadius: '16px',
+      padding: '14px 16px 16px',
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
+      {/* Decorative ambient corner glow */}
+      <div style={{
+        position: 'absolute',
+        top: '-40px',
+        left: '-40px',
+        width: '120px',
+        height: '120px',
+        borderRadius: '50%',
+        background: accentGlow,
+        opacity: 0.12,
+        filter: 'blur(35px)',
+        pointerEvents: 'none'
+      }} />
+
+      {/* Shelf Header */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: '12px',
+        position: 'relative',
+        zIndex: 1
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '18px' }}>{icon}</span>
+          <div>
+            <h3 style={{
+              fontSize: '14px',
+              fontWeight: 900,
+              color: '#FFFFFF',
+              letterSpacing: '0.03em',
+              textTransform: 'uppercase',
+              margin: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              {title}
+              <span style={{
+                fontSize: '10px',
+                fontWeight: 800,
+                color: badgeColor,
+                background: 'rgba(255, 255, 255, 0.06)',
+                border: `1px solid ${badgeColor}33`,
+                borderRadius: '12px',
+                padding: '1px 7px',
+                letterSpacing: '0'
+              }}>
+                {items.length} {items.length === 1 ? 'title' : 'titles'}
+              </span>
+            </h3>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {items.length > 3 && (
+            <div className="shelf-desktop-scroll-btns" style={{ display: 'none', gap: '4px' }}>
+              <button
+                onClick={() => scrollBy(-260)}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '6px',
+                  color: '#fff',
+                  width: '26px',
+                  height: '26px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <button
+                onClick={() => scrollBy(260)}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '6px',
+                  color: '#fff',
+                  width: '26px',
+                  height: '26px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          )}
+
+          {items.length > 0 && (
+            <button
+              onClick={onSeeAll}
+              style={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                borderRadius: '20px',
+                padding: '4px 10px',
+                fontSize: '11px',
+                fontWeight: 800,
+                color: '#E4E4E7',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = badgeColor; e.currentTarget.style.color = '#fff'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = '#E4E4E7'; }}
+            >
+              See all ({items.length}) <ChevronRight size={13} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Shelf Items Track */}
+      {items.length === 0 ? (
+        <div style={{
+          padding: '24px 16px',
+          textAlign: 'center',
+          background: 'rgba(0, 0, 0, 0.25)',
+          borderRadius: '10px',
+          border: '1px dashed rgba(255, 255, 255, 0.08)'
+        }}>
+          <div style={{ fontSize: '12px', color: '#71717A' }}>{emptyPrompt}</div>
+        </div>
+      ) : (
+        <div
+          ref={scrollRef}
+          className="library-shelf-scroll"
+          style={{
+            display: 'flex',
+            gap: '10px',
+            overflowX: 'auto',
+            paddingBottom: '6px',
+            scrollSnapType: 'x mandatory',
+            WebkitOverflowScrolling: 'touch',
+            scrollbarWidth: 'none'
+          }}
+        >
+          {items.slice(0, 15).map(item => (
+            <div key={item.id || item.tmdb_id} style={{ scrollSnapAlign: 'start' }}>
+              <MediaPosterCard movie={item} onEditClick={onEditClick} layout="shelf" />
+            </div>
+          ))}
+
+          {items.length > 15 && (
+            <div
+              onClick={onSeeAll}
+              style={{
+                width: '100px',
+                borderRadius: '10px',
+                border: '1px dashed rgba(255, 255, 255, 0.15)',
+                background: 'rgba(255, 255, 255, 0.02)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                flexShrink: 0,
+                textAlign: 'center',
+                padding: '12px',
+                scrollSnapAlign: 'start'
+              }}
+            >
+              <div style={{ fontSize: '18px', marginBottom: '4px' }}>➕</div>
+              <div style={{ fontSize: '11px', fontWeight: 800, color: '#fff' }}>+{items.length - 15} more</div>
+              <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginTop: '2px' }}>View all →</div>
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+// ── Dedicated Category Vault (Filtered Single Medium Grid) ────────────
+function DedicatedCategoryVault({
+  type,
+  items,
+  onBackToShelves,
+  onEditClick
+}) {
+  const meta = {
+    movie: { label: 'Feature Films', icon: '🎬', color: 'var(--accent)', glow: '#ef4444' },
+    tv: { label: 'Television Series', icon: '📺', color: '#3b82f6', glow: '#3b82f6' },
+    anime: { label: 'Anime & Animation', icon: '⛩️', color: '#f59e0b', glow: '#f59e0b' }
+  }[type] || { label: 'Library', icon: '🎬', color: 'var(--accent)', glow: '#ef4444' };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      {/* Category Banner with Back Button */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0.4) 100%)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: '14px',
+        padding: '12px 16px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            onClick={onBackToShelves}
+            style={{
+              background: 'rgba(255, 255, 255, 0.08)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: '8px',
+              padding: '6px 10px',
+              color: '#FFFFFF',
+              fontSize: '11.5px',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+          >
+            <ChevronLeft size={15} /> All Shelves
+          </button>
+
+          <div>
+            <h3 style={{
+              margin: 0,
+              fontSize: '16px',
+              fontWeight: 900,
+              color: '#FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              <span>{meta.icon}</span> {meta.label}
+            </h3>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+              Showing {items.length} {items.length === 1 ? 'title' : 'titles'} in this vault
+            </div>
+          </div>
+        </div>
+
+        <div style={{
+          fontSize: '11px',
+          fontWeight: 800,
+          color: meta.color,
+          background: 'rgba(255, 255, 255, 0.04)',
+          border: `1px solid ${meta.color}40`,
+          borderRadius: '14px',
+          padding: '3px 10px'
+        }}>
+          {meta.label.toUpperCase()}
+        </div>
+      </div>
+
+      {/* 3-Column Grid for this medium */}
+      {items.length === 0 ? (
+        <div style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--text-dim)' }}>
+          <div style={{ fontSize: '36px', marginBottom: '8px' }}>{meta.icon}</div>
+          <div style={{ fontSize: '14px', fontWeight: 700, color: '#FFFFFF' }}>No {meta.label} found</div>
+          <div style={{ fontSize: '12px', marginTop: '4px' }}>Try clearing search or filters</div>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+          {items.map(movie => (
+            <MediaPosterCard key={movie.id || movie.tmdb_id} movie={movie} onEditClick={onEditClick} layout="grid" />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main LibraryTab ───────────────────────────────────────────────────
 export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplore, onImportMovies }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -305,6 +802,7 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterGenre, setFilterGenre] = useState('all');
   const [filterType, setFilterType] = useState('all'); // 'all', 'movie', 'tv', 'anime'
+  const [wallMode, setWallMode] = useState('shelves'); // 'shelves' | 'grid'
   const [mobileView, setMobileView] = useState('grid'); // 'grid' | 'list'
   const [diaryFilter, setDiaryFilter] = useState('all'); // 'all' | 'this_month' | 'this_year' | 'with_review' | 'top_rated' | 'favorites' | 'rewatches'
   const [showMobileFilterSheet, setShowMobileFilterSheet] = useState(false);
@@ -321,8 +819,8 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
     return Array.from(set).sort();
   }, [library]);
 
-  // Split by type and apply status/genre/type/search filters
-  const filtered = useMemo(() => {
+  // Base filtered list before splitting into types
+  const allFilteredWithoutType = useMemo(() => {
     let list = library;
 
     if (filterStatus === 'watched_this_month') {
@@ -342,16 +840,6 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
       list = list.filter(m => m.status === filterStatus);
     }
 
-    if (filterType !== 'all') {
-      if (filterType === 'movie') {
-        list = list.filter(m => m.media_type === 'movie' || (!m.media_type && m.type !== 'anime' && m.type !== 'tv'));
-      } else if (filterType === 'tv') {
-        list = list.filter(m => m.media_type === 'tv' || m.type === 'tv');
-      } else if (filterType === 'anime') {
-        list = list.filter(m => m.media_type === 'anime' || m.type === 'anime');
-      }
-    }
-
     if (filterGenre !== 'all') list = list.filter(m => (m.genres || []).includes(filterGenre));
 
     if (searchQuery.trim()) {
@@ -367,11 +855,18 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
       if (sortBy === 'date_added-asc') return new Date(a.date_added || 0) - new Date(b.date_added || 0);
       return new Date(b.date_added || 0) - new Date(a.date_added || 0);
     });
-  }, [library, filterStatus, filterType, filterGenre, searchQuery, sortBy]);
+  }, [library, filterStatus, filterGenre, searchQuery, sortBy]);
 
-  const movies = filtered.filter(m => m.media_type === 'movie' || (!m.media_type && m.type !== 'anime' && m.type !== 'tv'));
-  const series = filtered.filter(m => m.media_type === 'tv' || m.type === 'tv');
-  const anime  = filtered.filter(m => m.media_type === 'anime' || m.type === 'anime');
+  // Dedicated media partitions
+  const movies = useMemo(() => allFilteredWithoutType.filter(m => getMediaType(m) === 'movie'), [allFilteredWithoutType]);
+  const series = useMemo(() => allFilteredWithoutType.filter(m => getMediaType(m) === 'tv'), [allFilteredWithoutType]);
+  const anime = useMemo(() => allFilteredWithoutType.filter(m => getMediaType(m) === 'anime'), [allFilteredWithoutType]);
+
+  const filtered = useMemo(() => {
+    if (filterType === 'all') return allFilteredWithoutType;
+    return allFilteredWithoutType.filter(m => getMediaType(m) === filterType);
+  }, [allFilteredWithoutType, filterType]);
+
 
   // Stats
   const stats = useMemo(() => {
@@ -603,7 +1098,7 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
                   fontSize: '11px', fontWeight: 800, cursor: 'pointer',
                   transition: 'all 0.15s ease'
                 }}
-                title="3-Column Cinema Wall Grid"
+                title="Cinema Wall"
               >
                 <LayoutGrid size={13} /> Wall
               </button>
@@ -622,6 +1117,40 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
                 <List size={13} /> Diary
               </button>
             </div>
+
+            {/* Quick Shelves vs Flat Grid Toggle (Wall Mode) */}
+            {mobileView === 'grid' && filterType === 'all' && (
+              <div style={{ display: 'flex', background: '#121214', padding: '2px', borderRadius: '8px', border: '1px solid #242426' }}>
+                <button
+                  onClick={() => setWallMode('shelves')}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '4px',
+                    background: wallMode === 'shelves' ? 'rgba(255,255,255,0.15)' : 'transparent',
+                    color: wallMode === 'shelves' ? '#FFFFFF' : '#8E8E93',
+                    border: 'none', borderRadius: '6px', padding: '5px 7px',
+                    fontSize: '11px', fontWeight: 800, cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Categorized Shelves"
+                >
+                  <Layers size={13} />
+                </button>
+                <button
+                  onClick={() => setWallMode('grid')}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '4px',
+                    background: wallMode === 'grid' ? 'rgba(255,255,255,0.15)' : 'transparent',
+                    color: wallMode === 'grid' ? '#FFFFFF' : '#8E8E93',
+                    border: 'none', borderRadius: '6px', padding: '5px 7px',
+                    fontSize: '11px', fontWeight: 800, cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Flat Wall Grid"
+                >
+                  <LayoutGrid size={13} />
+                </button>
+              </div>
+            )}
 
             {/* Filter Bottom Sheet Trigger */}
             <button
@@ -729,6 +1258,7 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
               { id: 'favorites', label: `❤️ Favs (${stats.favs})` },
               { id: 'movie', label: `🎬 Movies (${movies.length})`, isType: true },
               { id: 'tv', label: `📺 Series (${series.length})`, isType: true },
+              { id: 'anime', label: `⛩️ Anime (${anime.length})`, isType: true },
               { id: 'watched_this_month', label: `📅 This Month (${stats.thisMonth})` },
               { id: 'watching', label: '▶ Watching' }
             ].map(chip => {
@@ -1088,77 +1618,147 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
         </div>
       )}
 
-      {/* ── MOBILE VIEW: 3-COLUMN LETTERBOXD CINEMA WALL (GRID) ──────── */}
+      {/* ── MOBILE VIEW: CATEGORIZED SHELVES / VAULT / WALL ──────── */}
       {mobileView === 'grid' && (
-        <div className="mobile-only-library-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-          {filtered.length === 0 ? (
-            <div style={{ gridColumn: 'span 3', padding: '60px 20px', textAlign: 'center', color: 'var(--text-dim)' }}>
-              <div style={{ fontSize: '36px', marginBottom: '8px' }}>🎬</div>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: '#FFFFFF' }}>No titles match your filter</div>
-              <div style={{ fontSize: '12px', marginTop: '4px' }}>Try resetting filters or adding titles from Explore</div>
+        <div className="mobile-only-library-grid" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {/* If filtering by a single medium, show Dedicated Vault Grid */}
+          {filterType !== 'all' ? (
+            <DedicatedCategoryVault
+              type={filterType}
+              items={filtered}
+              onBackToShelves={() => setFilterType('all')}
+              onEditClick={onEditClick}
+            />
+          ) : wallMode === 'shelves' ? (
+            <div className="library-shelves-container">
+              {/* Quick Shelves Jump Bar */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '8px',
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(0,0,0,0.3) 100%)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: '12px',
+                padding: '8px 12px'
+              }}>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: '#A1A1AA', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Shelves
+                </span>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button
+                    onClick={() => setFilterType('movie')}
+                    style={{
+                      background: 'rgba(229,9,20,0.12)',
+                      border: '1px solid rgba(229,9,20,0.3)',
+                      color: '#fff',
+                      borderRadius: '14px',
+                      padding: '3px 9px',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    🎬 Films ({movies.length})
+                  </button>
+                  <button
+                    onClick={() => setFilterType('tv')}
+                    style={{
+                      background: 'rgba(37,99,235,0.12)',
+                      border: '1px solid rgba(37,99,235,0.3)',
+                      color: '#fff',
+                      borderRadius: '14px',
+                      padding: '3px 9px',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    📺 Series ({series.length})
+                  </button>
+                  <button
+                    onClick={() => setFilterType('anime')}
+                    style={{
+                      background: 'rgba(245,158,11,0.12)',
+                      border: '1px solid rgba(245,158,11,0.3)',
+                      color: '#fff',
+                      borderRadius: '14px',
+                      padding: '3px 9px',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    ⛩️ Anime ({anime.length})
+                  </button>
+                </div>
+              </div>
+
+              {/* 1. Feature Films Shelf */}
+              <LibraryShelfRow
+                title="Feature Films"
+                icon="🎬"
+                badgeColor="var(--accent)"
+                accentGlow="#ef4444"
+                items={movies}
+                onSeeAll={() => setFilterType('movie')}
+                onEditClick={onEditClick}
+                emptyPrompt="No feature films in this list. Explore movies →"
+              />
+
+              {/* 2. Television Series Shelf */}
+              <LibraryShelfRow
+                title="Television Series"
+                icon="📺"
+                badgeColor="#3b82f6"
+                accentGlow="#3b82f6"
+                items={series}
+                onSeeAll={() => setFilterType('tv')}
+                onEditClick={onEditClick}
+                emptyPrompt="No television series saved. Explore series →"
+              />
+
+              {/* 3. Anime & Animation Shelf */}
+              <LibraryShelfRow
+                title="Anime & Animation"
+                icon="⛩️"
+                badgeColor="#f59e0b"
+                accentGlow="#f59e0b"
+                items={anime}
+                onSeeAll={() => setFilterType('anime')}
+                onEditClick={onEditClick}
+                emptyPrompt="No anime titles saved. Explore anime →"
+              />
             </div>
           ) : (
-            filtered.map(movie => {
-              const isWatching = movie.status === 'watching';
-              return (
-                <div
-                  key={movie.id || movie.tmdb_id}
-                  onClick={() => onEditClick(movie)}
-                  style={{
-                    cursor: 'pointer',
-                    borderRadius: '8px',
-                    overflow: 'hidden',
-                    border: isWatching ? '1px solid var(--accent)' : '1px solid #222222',
-                    boxShadow: isWatching ? '0 0 10px rgba(229,9,20,0.35)' : 'none',
-                    position: 'relative',
-                    aspectRatio: '2/3',
-                    background: '#141414',
-                    transition: 'transform 0.1s ease'
-                  }}
-                >
-                  {movie.poster_path ? (
-                    <img
-                      src={`https://image.tmdb.org/t/p/w200${movie.poster_path}`}
-                      alt={movie.title}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>🎬</div>
-                  )}
-
-                  {/* Gradient Title Overlay */}
-                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.2) 40%, transparent 60%)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '6px' }}>
-                    <div style={{ fontSize: '10px', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {movie.title}
-                    </div>
-                  </div>
-
-                  {/* Badges Overlay */}
-                  {movie.rating > 0 && (
-                    <div style={{ position: 'absolute', top: '4px', right: '4px', background: 'rgba(0,0,0,0.85)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', padding: '1px 5px', fontSize: '9px', fontWeight: 900, color: 'var(--gold)', letterSpacing: '-0.2px' }}>
-                      ★{Number(movie.rating).toFixed(1)}
-                    </div>
-                  )}
-
-                  {movie.favorite && (
-                    <div style={{ position: 'absolute', top: '4px', left: '4px', fontSize: '10px', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.8))' }}>❤️</div>
-                  )}
-
-                  {isWatching && (
-                    <div style={{ position: 'absolute', top: '4px', left: movie.favorite ? '22px' : '4px', background: 'var(--accent)', borderRadius: '3px', padding: '1px 4px', fontSize: '7.5px', fontWeight: 900, color: '#fff' }}>
-                      ▶ WATCHING
-                    </div>
-                  )}
-
-                  {(movie.media_type === 'tv' || movie.type === 'tv') && (
-                    <div style={{ position: 'absolute', bottom: '22px', left: '6px', background: 'rgba(0,0,0,0.85)', border: '1px solid rgba(96,165,250,0.5)', color: '#60A5FA', borderRadius: '3px', padding: '0.5px 3.5px', fontSize: '7.5px', fontWeight: 900 }}>
-                      TV
-                    </div>
-                  )}
-                </div>
-              );
-            })
+            /* Flat Grid Mode Fallback */
+            filtered.length === 0 ? (
+              <div style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--text-dim)' }}>
+                <div style={{ fontSize: '36px', marginBottom: '8px' }}>🎬</div>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#FFFFFF' }}>No titles match your filter</div>
+                <div style={{ fontSize: '12px', marginTop: '4px' }}>Try resetting filters or adding titles from Explore</div>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                {filtered.map(movie => (
+                  <MediaPosterCard
+                    key={movie.id || movie.tmdb_id}
+                    movie={movie}
+                    onEditClick={onEditClick}
+                    layout="grid"
+                  />
+                ))}
+              </div>
+            )
           )}
         </div>
       )}
@@ -1167,21 +1767,47 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
       <div className="desktop-only-3col-library" style={{ display: 'flex', gap: '14px', flex: 1, minHeight: 0 }}>
         {compactView ? (
           <div className="library-grid-container" style={{ overflowY: 'auto', flex: 1 }}>
-            <div className="library-poster-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '12px', padding: '4px' }}>
-              {filtered.map(movie => (
-                <div key={movie.id || movie.tmdb_id} onClick={() => onEditClick(movie)}
-                  style={{ cursor: 'pointer', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)', position: 'relative', aspectRatio: '2/3', background: 'var(--surface-solid)' }}>
-                  {movie.poster_path ? (
-                    <img src={`https://image.tmdb.org/t/p/w200${movie.poster_path}`} alt={movie.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
-                  ) : (
-                    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>🎬</div>
-                  )}
-                  {movie.rating > 0 && (
-                    <div style={{ position: 'absolute', top: '4px', right: '4px', background: 'rgba(0,0,0,0.75)', borderRadius: '4px', padding: '1px 5px', fontSize: '9px', fontWeight: 900, color: 'var(--gold)' }}>★{Number(movie.rating).toFixed(1)}</div>
-                  )}
-                </div>
-              ))}
-            </div>
+            {filterType !== 'all' ? (
+              <DedicatedCategoryVault
+                type={filterType}
+                items={filtered}
+                onBackToShelves={() => setFilterType('all')}
+                onEditClick={onEditClick}
+              />
+            ) : (
+              <div className="library-shelves-container">
+                <LibraryShelfRow
+                  title="Feature Films"
+                  icon="🎬"
+                  badgeColor="var(--accent)"
+                  accentGlow="#ef4444"
+                  items={movies}
+                  onSeeAll={() => setFilterType('movie')}
+                  onEditClick={onEditClick}
+                  emptyPrompt="No feature films in this list."
+                />
+                <LibraryShelfRow
+                  title="Television Series"
+                  icon="📺"
+                  badgeColor="#3b82f6"
+                  accentGlow="#3b82f6"
+                  items={series}
+                  onSeeAll={() => setFilterType('tv')}
+                  onEditClick={onEditClick}
+                  emptyPrompt="No television series saved."
+                />
+                <LibraryShelfRow
+                  title="Anime & Animation"
+                  icon="⛩️"
+                  badgeColor="#f59e0b"
+                  accentGlow="#f59e0b"
+                  items={anime}
+                  onSeeAll={() => setFilterType('anime')}
+                  onEditClick={onEditClick}
+                  emptyPrompt="No anime titles saved."
+                />
+              </div>
+            )}
           </div>
         ) : (
           <>
@@ -1191,6 +1817,7 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
           </>
         )}
       </div>
+
 
       {/* ── MOBILE FILTER & SORT BOTTOM SHEET ────────────────────────── */}
       {showMobileFilterSheet && (

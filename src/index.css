@@ -3015,6 +3015,44 @@ body.modal-open {
   }
 }
 
+/* ── CATEGORIZED LIBRARY SHELVES (CONCEPT 1) ────────────────────────── */
+.library-shelves-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.library-shelf-section {
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.library-shelf-scroll {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.library-shelf-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.library-card-interactive {
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.library-card-interactive:hover {
+  transform: translateY(-4px) scale(1.02);
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.6) !important;
+}
+
+@media (min-width: 769px) {
+  .shelf-desktop-scroll-btns {
+    display: flex !important;
+  }
+}
+
+
 
 
 
