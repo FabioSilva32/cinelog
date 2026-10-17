@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { App as CapApp } from '@capacitor/app';
 import Header from './components/Header';
 import LandingPage from './components/LandingPage';
 import { DEFAULT_GREY_AVATAR } from './components/AvatarWithBorder';
@@ -52,6 +53,7 @@ function AppInner() {
   const toast = useToast();
   const [activeTab, setActiveTab] = useState('explore');
   const [profileSubTab, setProfileSubTab] = useState('overview');
+  const [tabHistory, setTabHistory] = useState(['explore']);
 
   // Synchronize tab navigation with browser history (enables browser Back < and Forward > buttons)
   const handleTabChange = useCallback((newTab, replace = false) => {
@@ -59,6 +61,9 @@ function AppInner() {
     if (['stats', 'calendar', 'wrapped', 'achievements', 'constellation', 'shop', 'diary', 'watchlist'].includes(newTab)) {
       setProfileSubTab(newTab);
       setActiveTab('profile');
+      if (!replace) {
+        setTabHistory(prev => (prev[prev.length - 1] === 'profile' ? prev : [...prev, 'profile']));
+      }
       try {
         const url = new URL(window.location.href);
         url.searchParams.set('tab', 'profile');
@@ -74,6 +79,9 @@ function AppInner() {
 
     const resolved = newTab === 'landing' ? 'explore' : newTab;
     setActiveTab(resolved);
+    if (!replace) {
+      setTabHistory(prev => (prev[prev.length - 1] === resolved ? prev : [...prev, resolved]));
+    }
     try {
       const url = new URL(window.location.href);
       url.searchParams.set('tab', resolved);
@@ -373,6 +381,120 @@ function AppInner() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showQuickAdd, showCommandCenter, showSettings, showAuth, showRecoveryModal, activeEditMovie, viewingUserProfile]);
+
+  // Synchronize state references for hardware / swipe back handling
+  const activeTabRef = useRef(activeTab);
+  activeTabRef.current = activeTab;
+
+  const tabHistoryRef = useRef(tabHistory);
+  tabHistoryRef.current = tabHistory;
+
+  const activeEditMovieRef = useRef(activeEditMovie);
+  activeEditMovieRef.current = activeEditMovie;
+
+  const viewingUserProfileRef = useRef(viewingUserProfile);
+  viewingUserProfileRef.current = viewingUserProfile;
+
+  const showQuickAddRef = useRef(showQuickAdd);
+  showQuickAddRef.current = showQuickAdd;
+
+  const showCommandCenterRef = useRef(showCommandCenter);
+  showCommandCenterRef.current = showCommandCenter;
+
+  const showSettingsRef = useRef(showSettings);
+  showSettingsRef.current = showSettings;
+
+  const showAuthRef = useRef(showAuth);
+  showAuthRef.current = showAuth;
+
+  const showRecoveryModalRef = useRef(showRecoveryModal);
+  showRecoveryModalRef.current = showRecoveryModal;
+
+  const confirmConfigRef = useRef(confirmConfig);
+  confirmConfigRef.current = confirmConfig;
+
+  // Intercept native Android back gestures / hardware back button via @capacitor/app
+  useEffect(() => {
+    let backListener = null;
+
+    const setupCapacitorBack = async () => {
+      try {
+        backListener = await CapApp.addListener('backButton', () => {
+          // 1. Close open modals first
+          if (showQuickAddRef.current) {
+            setShowQuickAdd(false);
+            return;
+          }
+          if (showCommandCenterRef.current) {
+            setShowCommandCenter(false);
+            return;
+          }
+          if (showSettingsRef.current) {
+            setShowSettings(false);
+            return;
+          }
+          if (showAuthRef.current) {
+            setShowAuth(false);
+            return;
+          }
+          if (showRecoveryModalRef.current) {
+            setShowRecoveryModal(false);
+            return;
+          }
+          if (activeEditMovieRef.current) {
+            setActiveEditMovie(null);
+            return;
+          }
+          if (viewingUserProfileRef.current) {
+            setViewingUserProfile(null);
+            return;
+          }
+          if (confirmConfigRef.current?.isOpen) {
+            setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+            return;
+          }
+
+          // 2. Dispatch cancelable event for child modals (e.g. ProfileCustomizerModal)
+          const backEvent = new CustomEvent('cinelog-back-handled', { cancelable: true });
+          window.dispatchEvent(backEvent);
+          if (backEvent.defaultPrevented) {
+            return;
+          }
+
+          // 3. Tab navigation history (pop previous tab)
+          if (tabHistoryRef.current.length > 1) {
+            const nextHistory = [...tabHistoryRef.current];
+            nextHistory.pop();
+            const prevTab = nextHistory[nextHistory.length - 1];
+            setTabHistory(nextHistory);
+            handleTabChange(prevTab, true);
+            return;
+          }
+
+          // 4. Return to explore if currently on another tab
+          if (activeTabRef.current !== 'explore') {
+            handleTabChange('explore', true);
+            return;
+          }
+
+          // 5. At root (explore tab, no modals, no history) -> safely exit app
+          try {
+            CapApp.exitApp();
+          } catch (e) {}
+        });
+      } catch (err) {
+        // Web browser environment
+      }
+    };
+
+    setupCapacitorBack();
+
+    return () => {
+      if (backListener && backListener.remove) {
+        backListener.remove();
+      }
+    };
+  }, [handleTabChange]);
 
   useEffect(() => {
     localStorage.setItem('cinelog_mode', 'supabase');

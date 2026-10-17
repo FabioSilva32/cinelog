@@ -488,6 +488,8 @@ export default function ProfileTab({
         if (selectingSlotIdx !== null) {
           setSelectingSlotIdx(null);
           setSearchQuery('');
+        } else if (showCustomizer) {
+          setShowCustomizer(false);
         } else if (activeShareCard !== null) {
           setActiveShareCard(null);
         } else if (viewedProfile !== null) {
@@ -495,11 +497,40 @@ export default function ProfileTab({
         }
       }
     };
-    if (selectingSlotIdx !== null || activeShareCard !== null || viewedProfile !== null) {
+    if (selectingSlotIdx !== null || showCustomizer || activeShareCard !== null || viewedProfile !== null) {
       window.addEventListener('keydown', handleKeyDown);
       return () => window.removeEventListener('keydown', handleKeyDown);
     }
-  }, [selectingSlotIdx, activeShareCard, viewedProfile]);
+  }, [selectingSlotIdx, showCustomizer, activeShareCard, viewedProfile]);
+
+  // Intercept Android swipe-to-go-back for internal ProfileTab modals
+  useEffect(() => {
+    const handleHardwareBack = (e) => {
+      if (selectingSlotIdx !== null) {
+        setSelectingSlotIdx(null);
+        setSearchQuery('');
+        e.preventDefault();
+        return;
+      }
+      if (showCustomizer) {
+        setShowCustomizer(false);
+        e.preventDefault();
+        return;
+      }
+      if (activeShareCard !== null) {
+        setActiveShareCard(null);
+        e.preventDefault();
+        return;
+      }
+      if (viewedProfile !== null) {
+        setViewedProfile(null);
+        e.preventDefault();
+        return;
+      }
+    };
+    window.addEventListener('cinelog-back-handled', handleHardwareBack);
+    return () => window.removeEventListener('cinelog-back-handled', handleHardwareBack);
+  }, [selectingSlotIdx, showCustomizer, activeShareCard, viewedProfile]);
 
   // Stats calculations
   const watchedCount = useMemo(() => library.filter(m => m.status === 'watched').length, [library]);
@@ -987,6 +1018,7 @@ export default function ProfileTab({
             {/* SINGLE UNIFIED CUSTOMIZE BUTTON */}
             <button
               type="button"
+              className="profile-banner-customize-btn"
               onClick={() => handleOpenCustomizer('banner')}
               style={{
                 position: 'absolute',
@@ -1090,7 +1122,7 @@ export default function ProfileTab({
               </div>
 
               {/* Right: Modern Frosted Stat Capsules */}
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'flex-end', paddingTop: '16px' }}>
+              <div className="profile-stats-capsules-grid">
                 {[
                   { label: 'Films', val: watchedCount, color: 'var(--green)' },
                   { label: 'Reviews', val: reviewsCount, color: 'var(--accent)' },
@@ -1101,6 +1133,7 @@ export default function ProfileTab({
                 ].map(s => (
                   <div
                     key={s.label}
+                    className="profile-stat-capsule"
                     style={{
                       textAlign: 'center',
                       minWidth: '68px',
@@ -1259,8 +1292,6 @@ export default function ProfileTab({
               { id: 'wrapped', label: 'Yearly Wrapped', icon: Award },
               { id: 'achievements', label: 'Badges & XP', icon: Trophy },
               { id: 'constellation', label: 'Stars Map', icon: Sparkles },
-              { id: 'diary', label: `Diary (${recentDiary.length})`, icon: Calendar },
-              { id: 'watchlist', label: `Watchlist (${watchlistCount})`, icon: Film },
               { id: 'shop', label: 'Shop & Quests', icon: Coins },
             ].map(tab => {
               const isActive = profileActiveSubTab === tab.id;
@@ -1472,9 +1503,9 @@ export default function ProfileTab({
                           <Calendar size={16} color="var(--accent)" />
                           <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0 }}>Recent Diary</h3>
                         </div>
-                        <button onClick={() => setProfileActiveSubTab('diary')}
+                        <button onClick={() => handleSubTabChange('calendar')}
                           style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
-                          View all →
+                          View calendar →
                         </button>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>

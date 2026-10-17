@@ -9,6 +9,7 @@ export default function WatchCalendarTab({ library = [], onMovieClick }) {
   const [hoveredCell, setHoveredCell] = useState(null);
   const [tooltip, setTooltip] = useState(null);
   const [selectedMonthOffset, setSelectedMonthOffset] = useState(0); // 0 = current month
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10));
 
   // Helper: get the best date for a movie (watch_date for watched, date_added as fallback)
   const getMovieDate = (movie) => {
@@ -111,10 +112,10 @@ export default function WatchCalendarTab({ library = [], onMovieClick }) {
 
   const getCellColor = (count) => {
     if (count === 0) return 'rgba(255,255,255,0.04)';
-    if (count === 1) return 'rgba(136,8,8,0.28)';
-    if (count === 2) return 'rgba(136,8,8,0.52)';
-    if (count === 3) return 'rgba(136,8,8,0.75)';
-    return 'rgba(136,8,8,1)';
+    if (count === 1) return 'rgba(229,9,20,0.35)';
+    if (count === 2) return 'rgba(229,9,20,0.6)';
+    if (count === 3) return 'rgba(229,9,20,0.85)';
+    return 'rgba(229,9,20,1)';
   };
 
   // Month labels for heatmap
@@ -138,47 +139,248 @@ export default function WatchCalendarTab({ library = [], onMovieClick }) {
     return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   };
 
+  // Selected date's movies
+  const selectedMovies = dateMap[selectedDate] || [];
+
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
 
       {/* Header */}
       <div>
-        <h2 style={{ fontSize: '26px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <h2 style={{ fontSize: '24px', fontWeight: 900, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
           <CalendarDays size={24} color="var(--accent)" />
           Watch Calendar
         </h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: '13.5px' }}>
-          Your personal cinema heatmap. Darker squares = more movies watched that day.
+        <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: 0 }}>
+          Your personal cinema diary heatmap & monthly screening log.
         </p>
       </div>
 
-      {/* Stats Row */}
-      <div className="stagger-children" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px' }}>
+      {/* Stats Row (Responsive Grid) */}
+      <div className="calendar-stats-grid" style={{ display: 'grid', gap: '10px' }}>
         {[
-          { label: 'Total Logged', value: stats.total, icon: <Award size={16} />, color: 'var(--accent)' },
-          { label: 'Current Streak', value: `${stats.currentStreak} days`, icon: <Flame size={16} />, color: '#f97316' },
-          { label: 'Best Streak', value: `${stats.bestStreak} days`, icon: <TrendingUp size={16} />, color: 'var(--green)' },
-          { label: 'Busiest Month', value: stats.busiestMonth, icon: <CalendarDays size={16} />, color: 'var(--gold)' },
-          { label: 'Fav Day', value: stats.favDay, icon: <Film size={16} />, color: 'var(--blue)' },
+          { label: 'Total Logged', value: stats.total, icon: <Award size={15} />, color: 'var(--accent)' },
+          { label: 'Current Streak', value: `${stats.currentStreak}d`, icon: <Flame size={15} />, color: '#f97316' },
+          { label: 'Best Streak', value: `${stats.bestStreak}d`, icon: <TrendingUp size={15} />, color: 'var(--green)' },
+          { label: 'Busiest Month', value: stats.busiestMonth, icon: <CalendarDays size={15} />, color: 'var(--gold)' },
+          { label: 'Fav Day', value: stats.favDay, icon: <Film size={15} />, color: '#38bdf8' },
         ].map(s => (
-          <div key={s.label} className="glass" style={{ padding: '16px 18px', borderRadius: 'var(--radius)', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: 0, right: 0, width: '60px', height: '60px', background: `radial-gradient(circle, ${s.color}18 0%, transparent 70%)`, pointerEvents: 'none' }} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: s.color, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
+          <div key={s.label} className="glass" style={{ padding: '12px 14px', borderRadius: '12px', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: 0, right: 0, width: '50px', height: '50px', background: `radial-gradient(circle, ${s.color}18 0%, transparent 70%)`, pointerEvents: 'none' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: s.color, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
               {s.icon} {s.label}
             </div>
-            <div style={{ fontSize: '22px', fontWeight: 900, color: s.color, fontFamily: 'var(--font-heading)', letterSpacing: '-0.5px' }}>{s.value}</div>
+            <div style={{ fontSize: '19px', fontWeight: 900, color: s.color, fontFamily: 'var(--font-heading)', letterSpacing: '-0.5px' }}>{s.value}</div>
           </div>
         ))}
       </div>
 
-      {/* GitHub-style Heatmap */}
-      <div className="glass" style={{ borderRadius: 'var(--radius-lg)', padding: '24px 28px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px' }}>
-          <BarChart3 size={16} color="var(--accent)" />
-          <h3 style={{ fontSize: '15px', fontWeight: 800 }}>Viewing Heatmap — Last 52 Weeks</h3>
+      {/* Monthly Calendar Detail (Clean, Touch-Friendly) */}
+      <div className="glass calendar-glass-card" style={{ borderRadius: '16px', padding: '20px 22px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', gap: '8px', flexWrap: 'wrap' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+            <CalendarDays size={16} color="var(--accent)" />
+            {FULL_MONTHS[monthCalendar.month]} {monthCalendar.year}
+          </h3>
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+            <button
+              onClick={() => setSelectedMonthOffset(p => p - 1)}
+              className="btn btn-ghost"
+              style={{ width: '32px', height: '32px', padding: 0, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button
+              onClick={() => {
+                setSelectedMonthOffset(0);
+                setSelectedDate(new Date().toISOString().slice(0, 10));
+              }}
+              className="btn btn-secondary"
+              style={{ padding: '5px 12px', fontSize: '12px', fontWeight: 700, borderRadius: '8px' }}
+            >
+              Today
+            </button>
+            <button
+              onClick={() => setSelectedMonthOffset(p => p + 1)}
+              disabled={selectedMonthOffset >= 0}
+              className="btn btn-ghost"
+              style={{ width: '32px', height: '32px', padding: 0, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: selectedMonthOffset >= 0 ? 0.3 : 1 }}
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
 
-        <div className="calendar-heatmap-scroll" style={{ overflowX: 'auto', paddingBottom: '4px' }}>
+        {/* 7-Column Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', width: '100%', boxSizing: 'border-box' }}>
+          {DAYS.map(d => (
+            <div key={d} style={{ textAlign: 'center', fontSize: '10px', color: 'var(--text-dim)', fontWeight: 800, textTransform: 'uppercase', padding: '2px 0 8px', letterSpacing: '0.05em' }}>
+              {d.slice(0, 2)}
+            </div>
+          ))}
+          {[...Array(monthCalendar.firstDay)].map((_, i) => <div key={`empty-${i}`} />)}
+          {[...Array(monthCalendar.daysInMonth)].map((_, i) => {
+            const day = i + 1;
+            const dateStr = getMonthDate(day);
+            const dayMovies = dateMap[dateStr] || [];
+            const isToday = dateStr === new Date().toISOString().slice(0, 10);
+            const isSelected = selectedDate === dateStr;
+            const hasMovies = dayMovies.length > 0;
+            return (
+              <div
+                key={day}
+                onClick={() => setSelectedDate(dateStr)}
+                style={{
+                  borderRadius: '8px',
+                  padding: '5px 2px',
+                  minHeight: '42px',
+                  textAlign: 'center',
+                  position: 'relative',
+                  cursor: 'pointer',
+                  background: isSelected
+                    ? 'rgba(229,9,20,0.22)'
+                    : isToday
+                      ? 'rgba(229,9,20,0.1)'
+                      : hasMovies
+                        ? 'rgba(255,255,255,0.04)'
+                        : 'rgba(255,255,255,0.015)',
+                  border: isSelected
+                    ? '1.5px solid var(--accent)'
+                    : isToday
+                      ? '1px solid rgba(229,9,20,0.5)'
+                      : hasMovies
+                        ? '1px solid rgba(255,255,255,0.12)'
+                        : '1px solid rgba(255,255,255,0.03)',
+                  transition: 'all 0.15s ease',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'space-between'
+                }}
+              >
+                <div style={{
+                  fontSize: '11px',
+                  fontWeight: isSelected || isToday ? 900 : 600,
+                  color: isSelected || isToday ? '#FFFFFF' : hasMovies ? '#FFFFFF' : 'var(--text-muted)'
+                }}>
+                  {day}
+                </div>
+
+                {/* Mobile & Desktop Dots / Badge Indicator (Never overflows!) */}
+                {hasMovies && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px', marginTop: '2px' }}>
+                    {dayMovies.length <= 3 ? (
+                      dayMovies.map((_, mi) => (
+                        <span
+                          key={mi}
+                          style={{
+                            width: '4.5px',
+                            height: '4.5px',
+                            borderRadius: '50%',
+                            background: 'var(--accent)',
+                            boxShadow: '0 0 5px rgba(229,9,20,0.8)'
+                          }}
+                        />
+                      ))
+                    ) : (
+                      <span style={{
+                        fontSize: '9px',
+                        fontWeight: 900,
+                        color: '#FFFFFF',
+                        background: 'var(--accent)',
+                        borderRadius: '6px',
+                        padding: '0 4px',
+                        lineHeight: '13px'
+                      }}>
+                        {dayMovies.length}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Selected Day Film Details */}
+        <div style={{
+          marginTop: '18px',
+          paddingTop: '16px',
+          borderTop: '1px solid rgba(255,255,255,0.08)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 800, color: '#FFFFFF' }}>
+              {selectedDate === new Date().toISOString().slice(0, 10) ? 'Today' : selectedDate}
+            </span>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>
+              {selectedMovies.length} title{selectedMovies.length === 1 ? '' : 's'} logged
+            </span>
+          </div>
+
+          {selectedMovies.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {selectedMovies.map(m => (
+                <div
+                  key={m.id || m.tmdb_id}
+                  onClick={() => onMovieClick && onMovieClick(m.tmdb_id || m.id, m.media_type || 'movie')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '8px 12px',
+                    background: 'rgba(255,255,255,0.025)',
+                    border: '1px solid rgba(255,255,255,0.07)',
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; e.currentTarget.style.background = 'rgba(255,255,255,0.025)'; }}
+                >
+                  {m.poster_path ? (
+                    <img
+                      src={`https://image.tmdb.org/t/p/w92${m.poster_path}`}
+                      alt={m.title}
+                      style={{ width: '36px', height: '52px', objectFit: 'cover', borderRadius: '5px', flexShrink: 0 }}
+                    />
+                  ) : (
+                    <div style={{ width: '36px', height: '52px', borderRadius: '5px', background: '#202020', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Film size={16} color="#666" />
+                    </div>
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#FFFFFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {m.title}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px' }}>
+                      {m.rating ? (
+                        <span style={{ fontSize: '11px', color: 'var(--gold)', fontWeight: 800 }}>★ {Number(m.rating).toFixed(1)}</span>
+                      ) : null}
+                      <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
+                        {m.release_date ? m.release_date.slice(0, 4) : (m.media_type || 'Movie')}
+                      </span>
+                    </div>
+                  </div>
+                  <ChevronRight size={15} color="var(--text-muted)" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ padding: '16px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
+              No screenings logged on this date.
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* GitHub-style Heatmap (Touch-friendly scroller) */}
+      <div className="glass calendar-glass-card" style={{ borderRadius: '16px', padding: '20px 22px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+          <BarChart3 size={15} color="var(--accent)" />
+          <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0 }}>Yearly Activity Heatmap (52 Weeks)</h3>
+        </div>
+
+        <div className="calendar-heatmap-scroll" style={{ overflowX: 'auto', paddingBottom: '6px', WebkitOverflowScrolling: 'touch' }}>
           <div style={{ position: 'relative', display: 'inline-block' }}>
             {/* Month labels */}
             <div style={{ display: 'flex', marginLeft: '32px', marginBottom: '6px', position: 'relative', height: '16px' }}>
@@ -206,6 +408,7 @@ export default function WatchCalendarTab({ library = [], onMovieClick }) {
                     {week.map(day => (
                       <div
                         key={day.dateStr}
+                        onClick={() => setSelectedDate(day.dateStr)}
                         onMouseEnter={e => {
                           if (!day.isFuture && day.movies.length > 0) {
                             const rect = e.currentTarget.getBoundingClientRect();
@@ -219,7 +422,7 @@ export default function WatchCalendarTab({ library = [], onMovieClick }) {
                           border: day.isToday ? '1px solid var(--accent)' : day.isFuture ? 'none' : `1px solid rgba(255,255,255,${day.movies.length > 0 ? '0.1' : '0.03'})`,
                           cursor: day.movies.length > 0 ? 'pointer' : 'default',
                           transition: 'transform 0.1s, filter 0.1s',
-                          boxShadow: day.movies.length > 3 ? '0 0 6px rgba(136,8,8,0.5)' : 'none',
+                          boxShadow: day.movies.length > 3 ? '0 0 6px rgba(229,9,20,0.5)' : 'none',
                         }}
                         onMouseOver={e => { if (day.movies.length > 0) e.currentTarget.style.transform = 'scale(1.3)'; }}
                         onMouseOut={e => { e.currentTarget.style.transform = ''; }}
@@ -234,74 +437,11 @@ export default function WatchCalendarTab({ library = [], onMovieClick }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '14px', justifyContent: 'flex-end' }}>
               <span style={{ fontSize: '10px', color: 'var(--text-dim)', fontWeight: 600 }}>Less</span>
               {[0, 1, 2, 3, 4].map(n => (
-                <div key={n} style={{ width: '12px', height: '12px', borderRadius: '3px', background: getCellColor(n), border: '1px solid rgba(255,255,255,0.07)' }} />
+                <div key={n} style={{ width: '11px', height: '11px', borderRadius: '3px', background: getCellColor(n), border: '1px solid rgba(255,255,255,0.07)' }} />
               ))}
               <span style={{ fontSize: '10px', color: 'var(--text-dim)', fontWeight: 600 }}>More</span>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Monthly Calendar Detail */}
-      <div className="glass" style={{ borderRadius: 'var(--radius-lg)', padding: '24px 28px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-          <h3 style={{ fontSize: '17px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <CalendarDays size={16} color="var(--accent)" />
-            {FULL_MONTHS[monthCalendar.month]} {monthCalendar.year}
-          </h3>
-          <div style={{ display: 'flex', gap: '6px' }}>
-            <button
-              onClick={() => setSelectedMonthOffset(p => p - 1)}
-              className="btn btn-ghost" style={{ padding: '6px 10px', borderRadius: '8px' }}>
-              <ChevronLeft size={16} />
-            </button>
-            <button onClick={() => setSelectedMonthOffset(0)} className="btn btn-secondary" style={{ padding: '6px 14px', fontSize: '12px' }}>Today</button>
-            <button
-              onClick={() => setSelectedMonthOffset(p => p + 1)}
-              disabled={selectedMonthOffset >= 0}
-              className="btn btn-ghost" style={{ padding: '6px 10px', borderRadius: '8px', opacity: selectedMonthOffset >= 0 ? 0.4 : 1 }}>
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px' }}>
-          {DAYS.map(d => (
-            <div key={d} style={{ textAlign: 'center', fontSize: '10px', color: 'var(--text-dim)', fontWeight: 700, textTransform: 'uppercase', padding: '4px 0 10px', letterSpacing: '0.05em' }}>
-              {d.slice(0, 2)}
-            </div>
-          ))}
-          {[...Array(monthCalendar.firstDay)].map((_, i) => <div key={`empty-${i}`} />)}
-          {[...Array(monthCalendar.daysInMonth)].map((_, i) => {
-            const day = i + 1;
-            const dateStr = getMonthDate(day);
-            const dayMovies = dateMap[dateStr] || [];
-            const isToday = dateStr === new Date().toISOString().slice(0, 10);
-            const hasMovies = dayMovies.length > 0;
-            return (
-              <div
-                key={day}
-                style={{
-                  borderRadius: '8px', padding: '6px 4px', minHeight: '50px', textAlign: 'center', position: 'relative', cursor: hasMovies ? 'pointer' : 'default',
-                  background: isToday ? 'rgba(136,8,8,0.15)' : hasMovies ? 'rgba(136,8,8,0.07)' : 'rgba(255,255,255,0.02)',
-                  border: `1px solid ${isToday ? 'rgba(136,8,8,0.5)' : hasMovies ? 'rgba(136,8,8,0.2)' : 'rgba(255,255,255,0.04)'}`,
-                  transition: 'all 0.15s',
-                }}
-                onMouseEnter={e => { if (hasMovies) { e.currentTarget.style.background = 'rgba(136,8,8,0.15)'; setHoveredCell(dateStr); } }}
-                onMouseLeave={e => { e.currentTarget.style.background = isToday ? 'rgba(136,8,8,0.15)' : hasMovies ? 'rgba(136,8,8,0.07)' : 'rgba(255,255,255,0.02)'; setHoveredCell(null); }}
-              >
-                <div style={{ fontSize: '11px', fontWeight: isToday ? 900 : 600, color: isToday ? 'var(--accent)' : hasMovies ? 'var(--text)' : 'var(--text-muted)', marginBottom: '3px' }}>{day}</div>
-                {dayMovies.slice(0, 2).map((m, mi) => (
-                  <div key={mi} style={{ fontSize: '9px', background: 'rgba(136,8,8,0.2)', borderRadius: '3px', padding: '1px 3px', marginBottom: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#c0392b', fontWeight: 600 }}>
-                    {m.title}
-                  </div>
-                ))}
-                {dayMovies.length > 2 && (
-                  <div style={{ fontSize: '8px', color: 'var(--text-dim)', fontWeight: 700 }}>+{dayMovies.length - 2} more</div>
-                )}
-              </div>
-            );
-          })}
         </div>
       </div>
 

@@ -285,7 +285,7 @@ export default function ProfileCustomizerModal({
       onWheel={e => e.stopPropagation()}
     >
       <div
-        className="glass animate-fade-in-scale"
+        className="profile-studio-card glass animate-fade-in-scale"
         style={{
           width: '96vw', maxWidth: '1440px', height: '90vh', maxHeight: '92vh',
           borderRadius: '26px', border: '1px solid rgba(255,255,255,0.14)',
@@ -335,7 +335,7 @@ export default function ProfileCustomizerModal({
         </div>
 
         {/* 2-COLUMN STUDIO WORKSPACE */}
-        <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+        <div className="profile-studio-grid">
 
           {/* ─────────────────────────────────────────────────────────────
               LEFT COLUMN: EXPANDED LIVE CARD PREVIEW & CONTROLS
