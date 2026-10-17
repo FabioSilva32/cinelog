@@ -34,16 +34,16 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
   const [cloudManualSyncing, setCloudManualSyncing] = useState(false);
   const [rowLayoutMode, setRowLayoutMode] = useState(() => {
     try {
-      return localStorage.getItem('cinelog_tier_layout_mode') || 'scroll';
+      return localStorage.getItem('cinelog_tier_layout_mode_v2') || 'wrap';
     } catch {
-      return 'scroll';
+      return 'wrap';
     }
   });
 
   const toggleRowLayoutMode = () => {
     setRowLayoutMode(prev => {
-      const next = prev === 'scroll' ? 'wrap' : 'scroll';
-      try { localStorage.setItem('cinelog_tier_layout_mode', next); } catch {}
+      const next = prev === 'wrap' ? 'scroll' : 'wrap';
+      try { localStorage.setItem('cinelog_tier_layout_mode_v2', next); } catch {}
       return next;
     });
   };
@@ -796,10 +796,10 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
               display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', height: '34px', padding: '0 12px',
               border: '1px solid var(--border)', background: '#141414', color: '#fff', borderRadius: '6px'
             }}
-            title="Toggle between horizontal swiping rows and wrapping grid"
+            title="Toggle between wrapping grid and horizontal swiping rows"
           >
-            {rowLayoutMode === 'scroll' ? <MoveHorizontal size={13} color="var(--accent)" /> : <Grid3X3 size={13} color="var(--accent)" />}
-            <span>{rowLayoutMode === 'scroll' ? 'Swipe Rows' : 'Wrap Grid'}</span>
+            {rowLayoutMode === 'wrap' ? <Grid3X3 size={13} color="var(--accent)" /> : <MoveHorizontal size={13} color="var(--accent)" />}
+            <span>{rowLayoutMode === 'wrap' ? 'Grid View' : 'Row View'}</span>
           </button>
 
           <button
