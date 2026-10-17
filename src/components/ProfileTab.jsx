@@ -292,7 +292,11 @@ export default function ProfileTab({
     }
     setViewedLoading(true);
 
-    const isTester = (targetUser?.username?.toLowerCase() === 'tester') || (targetUser?.id === TESTER_PROFILE.id);
+    const isTester = (targetUser?.username?.toLowerCase() === 'tester') ||
+      (targetUser?.username?.toLowerCase() === 'alex vance') ||
+      (targetUser?.displayName?.toLowerCase() === 'alex vance') ||
+      (targetUser?.display_name?.toLowerCase() === 'alex vance') ||
+      (targetUser?.id === TESTER_PROFILE.id);
     if (isTester) {
       setViewedProfile(TESTER_PROFILE);
       setViewedLibrary(TESTER_LIBRARY);
@@ -535,6 +539,7 @@ export default function ProfileTab({
         return;
       }
       if (viewedProfile !== null) {
+        if (onOpenUserProfile) onOpenUserProfile(null);
         setViewedProfile(null);
         e.preventDefault();
         return;
@@ -763,167 +768,230 @@ export default function ProfileTab({
           ───────────────────────────────────────────────────────────── */}
       {isViewingOther ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-          {/* Back button */}
-          <div style={{ padding: '0 0 16px 0' }}>
-            <button
-              onClick={() => { if (onOpenUserProfile) onOpenUserProfile(null); }}
-              style={{
-                background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)',
-                color: 'var(--text-muted)', borderRadius: '20px', padding: '7px 16px',
-                fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', display: 'flex',
-                alignItems: 'center', gap: '6px', transition: 'all 0.2s'
-              }}
-              onMouseEnter={e => e.currentTarget.style.color = '#fff'}
-              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
-            >
-              <ArrowLeft size={14} /> Back to my profile
-            </button>
-          </div>
-
           {viewedLoading ? (
             <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-dim)', fontSize: '14px' }}>
               Loading profile…
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-              {/* BANNER */}
+              {/* BANNER WITH FLOATING BACK BUTTON */}
               <div
                 style={{
-                  height: '320px',
+                  height: '175px',
                   width: '100%',
                   borderRadius: '20px 20px 0 0',
                   overflow: 'hidden',
                   position: 'relative',
-                  background: '#08070e'
+                  background: 'linear-gradient(135deg, #181524 0%, #0d0b14 100%)'
                 }}
               >
-                {viewedProfile?.bannerUrl && !viewedProfile.bannerUrl.startsWith('animated-') ? (
-                  <img
-                    src={(viewedProfile.bannerUrl || '').replace('/w1280/', '/original/').replace('/w500/', '/original/')}
-                    alt="Profile Banner"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: viewedProfile.bannerFitMode || 'cover',
-                      objectPosition: `center ${viewedProfile.bannerPosPercent ?? 20}%`,
-                      display: 'block',
-                      imageRendering: 'auto',
-                      backfaceVisibility: 'hidden'
-                    }}
-                  />
-                ) : (
-                  <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #181818 0%, #101010 50%, #000000 100%)' }} />
-                )}
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 80%, rgba(10,8,19,0.9) 100%)', pointerEvents: 'none' }} />
+                {/* Floating Back Button */}
+                <button
+                  onClick={() => {
+                    if (onOpenUserProfile) onOpenUserProfile(null);
+                    setViewedProfile(null);
+                    try {
+                      if (window.location.hash.startsWith('#user-')) {
+                        window.history.back();
+                      }
+                    } catch (e) {}
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: '14px',
+                    left: '14px',
+                    zIndex: 25,
+                    background: 'rgba(0, 0, 0, 0.65)',
+                    backdropFilter: 'blur(10px)',
+                    WebkitBackdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(255, 255, 255, 0.16)',
+                    color: '#fff',
+                    borderRadius: '24px',
+                    padding: '7px 16px',
+                    fontSize: '12.5px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.85)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.65)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.16)'; }}
+                >
+                  <ArrowLeft size={14} /> Back
+                </button>
+
+                {(() => {
+                  const bUrl = viewedProfile?.bannerUrl || viewedProfile?.banner_url || '';
+                  if (bUrl && !bUrl.startsWith('animated-')) {
+                    return (
+                      <img
+                        src={bUrl}
+                        alt="Profile Banner"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: viewedProfile.bannerFitMode || 'cover',
+                          objectPosition: `center ${viewedProfile.bannerPosPercent ?? 20}%`,
+                          display: 'block'
+                        }}
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                    );
+                  }
+                  return (
+                    <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #221c38 0%, #120e20 60%, #08060f 100%)' }} />
+                  );
+                })()}
+
+                {/* Bottom gradient fade into header card */}
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, transparent 45%, rgba(13,11,19,0.95) 100%)', pointerEvents: 'none' }} />
               </div>
 
-              {/* PROFILE HEADER ROW */}
+              {/* PROFILE HEADER CARD */}
               <div style={{
                 background: 'linear-gradient(180deg, #13111b 0%, #0d0b13 100%)',
-                padding: '0 28px 24px',
+                padding: '0 20px 20px',
                 border: '1px solid rgba(255,255,255,0.08)',
                 borderTop: 'none',
-                borderRadius: '0 0 24px 24px',
-                boxShadow: '0 24px 60px rgba(0,0,0,0.7)'
+                borderRadius: '0 0 20px 20px',
+                boxShadow: '0 20px 50px rgba(0,0,0,0.6)'
               }}>
-                {/* Top Row: Avatar + Name on Left, Stats Capsules on Right */}
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '20px', flexWrap: 'wrap' }}>
-
-                  {/* Left: Avatar + Name / Handle / Follow */}
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '20px', minWidth: '240px' }}>
-                    <div style={{ marginTop: '-55px', flexShrink: 0, zIndex: 10, position: 'relative' }}>
+                {/* Identity Row: Avatar + Name on Left, Follow Button on Right */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'flex-end',
+                  justifyContent: 'space-between',
+                  gap: '16px',
+                  marginTop: '-44px',
+                  position: 'relative',
+                  zIndex: 10
+                }}>
+                  {/* Left: Avatar + Name / Username */}
+                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: '14px', minWidth: 0, flex: 1 }}>
+                    <div style={{ flexShrink: 0, filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.6))' }}>
                       <AvatarWithBorder
-                        src={viewedProfile?.avatar || DEFAULT_GREY_AVATAR}
+                        src={viewedProfile?.avatar || viewedProfile?.avatar_url || DEFAULT_GREY_AVATAR}
                         username={viewedProfile?.username || 'User'}
                         borderId={viewedProfile?.equippedBorder || 'none'}
-                        size={110}
+                        size={92}
                       />
                     </div>
 
-                    <div style={{ paddingTop: '14px', minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                        <h2 style={{ fontSize: '24px', fontWeight: 900, color: '#fff', margin: 0, lineHeight: 1.2 }}>
-                          {viewedProfile?.displayName || viewedProfile?.username || 'CineLog User'}
-                        </h2>
-                        {currentUser?.id && (
-                          <button
-                            onClick={handleToggleFollow}
-                            disabled={followLoading}
-                            className={`btn ${isFollowing ? 'btn-secondary' : 'btn-primary'}`}
-                            style={{ padding: '6px 18px', fontSize: '12px', fontWeight: 800, borderRadius: '20px', flexShrink: 0 }}
-                          >
-                            {followLoading ? '…' : isFollowing ? 'Following' : '+ Follow'}
-                          </button>
-                        )}
-                      </div>
-                      <div style={{ color: 'var(--accent)', fontSize: '13px', fontWeight: 700, marginTop: '4px' }}>
+                    <div style={{ minWidth: 0, paddingBottom: '4px', flex: 1 }}>
+                      <h2 style={{
+                        fontSize: '22px',
+                        fontWeight: 900,
+                        color: '#fff',
+                        margin: 0,
+                        lineHeight: 1.2,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {viewedProfile?.displayName || viewedProfile?.display_name || viewedProfile?.username || 'CineLog User'}
+                      </h2>
+                      <div style={{ color: 'var(--accent)', fontSize: '13px', fontWeight: 700, marginTop: '3px' }}>
                         @{viewedProfile?.username}
                       </div>
                     </div>
                   </div>
 
-                  {/* Right: Modern Frosted Stat Capsules */}
-                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end', paddingTop: '14px' }}>
-                    {[
-                      { label: 'Films', val: viewedLibrary.filter(m => m.status === 'watched').length, color: 'var(--green)' },
-                      { label: 'Reviews', val: viewedLibrary.filter(m => m.review && m.review.trim().length > 0).length, color: 'var(--accent)' },
-                      { label: 'Favorites', val: (viewedProfile?.favorites || []).filter(Boolean).length, color: 'var(--red)' },
-                      { label: 'Watchlist', val: viewedLibrary.filter(m => m.status === 'plan_to_watch').length, color: '#60a5fa' },
-                      {
-                        label: 'Avg Rating',
-                        val: (() => {
-                          const r = viewedLibrary.filter(m => m.rating && Number(m.rating) > 0);
-                          return r.length ? '★ ' + (r.reduce((s, m) => s + Number(m.rating), 0) / r.length).toFixed(1) : '—';
-                        })(),
-                        color: 'var(--gold)'
-                      },
-                    ].map(s => (
-                      <div
-                        key={s.label}
+                  {/* Right: Follow Button */}
+                  {currentUser?.id && (
+                    <div style={{ paddingBottom: '4px', flexShrink: 0 }}>
+                      <button
+                        onClick={handleToggleFollow}
+                        disabled={followLoading}
+                        className={`btn ${isFollowing ? 'btn-secondary' : 'btn-primary'}`}
                         style={{
-                          textAlign: 'center',
-                          minWidth: '65px',
-                          padding: '8px 12px',
-                          background: 'rgba(255,255,255,0.035)',
-                          border: '1px solid rgba(255,255,255,0.08)',
-                          borderRadius: '14px',
-                          backdropFilter: 'blur(8px)',
-                          boxShadow: '0 4px 16px rgba(0,0,0,0.25)'
+                          padding: '7px 20px',
+                          fontSize: '12.5px',
+                          fontWeight: 800,
+                          borderRadius: '20px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s'
                         }}
                       >
-                        <div style={{ fontSize: '18px', fontWeight: 900, color: s.color, fontFamily: 'var(--font-heading)', lineHeight: 1.1 }}>{s.val}</div>
-                        <div style={{ fontSize: '9px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 800, marginTop: '3px' }}>{s.label}</div>
-                      </div>
-                    ))}
-                  </div>
+                        {followLoading ? '…' : isFollowing ? 'Following' : '+ Follow'}
+                      </button>
+                    </div>
+                  )}
                 </div>
 
-                {/* Full-width Bio & Badges Card (full square box spanning whole width, no blank left side) */}
+                {/* 5 STAT CAPSULES — Dedicated Full-Width Grid Row */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(5, 1fr)',
+                  gap: '8px',
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  marginTop: '18px'
+                }}>
+                  {[
+                    { label: 'Films', val: viewedLibrary.filter(m => m.status === 'watched').length, color: 'var(--green)' },
+                    { label: 'Reviews', val: viewedLibrary.filter(m => m.review && m.review.trim().length > 0).length, color: 'var(--accent)' },
+                    { label: 'Favorites', val: (viewedProfile?.favorites || []).filter(Boolean).length, color: 'var(--red)' },
+                    { label: 'Watchlist', val: viewedLibrary.filter(m => m.status === 'plan_to_watch').length, color: '#60a5fa' },
+                    {
+                      label: 'Avg Rating',
+                      val: (() => {
+                        const r = viewedLibrary.filter(m => m.rating && Number(m.rating) > 0);
+                        return r.length ? '★ ' + (r.reduce((s, m) => s + Number(m.rating), 0) / r.length).toFixed(1) : '—';
+                      })(),
+                      color: 'var(--gold)'
+                    },
+                  ].map(s => (
+                    <div
+                      key={s.label}
+                      style={{
+                        textAlign: 'center',
+                        padding: '10px 4px',
+                        background: 'rgba(255, 255, 255, 0.035)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        borderRadius: '12px',
+                        backdropFilter: 'blur(8px)',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <div style={{ fontSize: '17px', fontWeight: 900, color: s.color, fontFamily: 'var(--font-heading)', lineHeight: 1.1 }}>{s.val}</div>
+                      <div style={{ fontSize: '9px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 800, marginTop: '3px' }}>{s.label}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* FULL-WIDTH BIO & BADGES CARD */}
                 {viewedProfile?.bio && (
                   <div style={{
                     width: '100%',
                     boxSizing: 'border-box',
                     background: 'rgba(255, 255, 255, 0.035)',
                     border: '1px solid rgba(255, 255, 255, 0.08)',
-                    borderRadius: '16px',
-                    padding: '16px 20px',
-                    marginTop: '20px',
+                    borderRadius: '14px',
+                    padding: '14px 18px',
+                    marginTop: '14px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '12px'
+                    gap: '10px'
                   }}>
                     <p style={{
                       fontSize: '13.5px',
-                      color: 'rgba(255,255,255,0.85)',
+                      color: 'rgba(255,255,255,0.88)',
                       lineHeight: 1.6,
                       margin: 0,
                       fontWeight: 500
                     }}>
                       {viewedProfile.bio}
                     </p>
-                    {/* Badges inside the full square bio box */}
+                    {/* Badges inside full-width square bio card */}
                     {(() => {
-                      const vBadges = (viewedProfile?.purchasedBadges || []);
+                      const vBadges = (viewedProfile?.purchasedBadges || viewedProfile?.purchased_badges || []);
                       if (vBadges.length === 0) return null;
                       return (
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', paddingTop: '2px' }}>

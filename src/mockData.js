@@ -3,7 +3,7 @@ export const TESTER_PROFILE = {
   username: "tester",
   displayName: "Alex Vance",
   avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80",
-  bannerUrl: "https://image.tmdb.org/t/p/original/rAiYTsq0q2t5U0sK7ZiqX8o6Yvv.jpg",
+  bannerUrl: "https://image.tmdb.org/t/p/w1280/xJHokMbljvjADYdit5fK5VQsXEG.jpg",
   bannerFitMode: "cover",
   bannerPosPercent: 30,
   bio: "Cinema buff & animation devotee. Obsessed with Denis Villeneuve, Christopher Nolan, and Hayao Miyazaki. ⭐ 8+ means an instant classic.",

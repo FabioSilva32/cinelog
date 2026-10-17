@@ -447,34 +447,54 @@ function AppInner() {
     // 1. Close open overlay modals first
     if (showQuickAddRef.current) {
       setShowQuickAdd(false);
+      keepAlive();
       return 'handled';
     }
     if (showCommandCenterRef.current) {
       setShowCommandCenter(false);
+      keepAlive();
       return 'handled';
     }
     if (showSettingsRef.current) {
       setShowSettings(false);
+      keepAlive();
       return 'handled';
     }
     if (showAuthRef.current) {
       setShowAuth(false);
+      keepAlive();
       return 'handled';
     }
     if (showRecoveryModalRef.current) {
       setShowRecoveryModal(false);
+      keepAlive();
       return 'handled';
     }
     if (activeEditMovieRef.current) {
       setActiveEditMovie(null);
+      if (!fromPopState) {
+        try {
+          if (window.location.hash.startsWith('#movie-')) {
+            window.history.back();
+          }
+        } catch (e) {}
+      }
       return 'handled';
     }
     if (viewingUserProfileRef.current) {
       setViewingUserProfile(null);
+      if (!fromPopState) {
+        try {
+          if (window.location.hash.startsWith('#user-')) {
+            window.history.back();
+          }
+        } catch (e) {}
+      }
       return 'handled';
     }
     if (confirmConfigRef.current?.isOpen) {
       setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+      keepAlive();
       return 'handled';
     }
 
@@ -1090,8 +1110,7 @@ function AppInner() {
     try {
       window.history.pushState({ modal: 'user_profile', user: target?.username }, '', '#user-' + (target?.username || 'user'));
     } catch (e) {}
-    handleTabChange('profile', false, true);
-  }, [handleTabChange]);
+  }, []);
 
   const handleUpdateProfile = async (updatedDetails) => {
     // Immediately update local state & local storage cache
@@ -1379,9 +1398,8 @@ function AppInner() {
         {activeTab === 'stats' && (
           <StatsTab library={library} onMovieClick={handleMovieClick} />
         )}
-        {activeTab === 'profile' && (
+        {activeTab === 'profile' && !viewingUserProfile && (
           <ProfileTab
-            targetUser={viewingUserProfile}
             currentUser={currentUser}
             onUpdateProfile={handleUpdateProfile}
             library={library}
@@ -1410,6 +1428,35 @@ function AppInner() {
           <SocialTab currentUser={currentUser} onMovieClick={handleMovieClick} onOpenUserProfile={handleOpenUserProfile} />
         )}
       </main>
+
+      {/* Viewed Other User Profile Modal Overlay */}
+      {viewingUserProfile && (
+        <div
+          className="viewed-profile-modal-overlay"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 950,
+            background: 'var(--bg, #09070f)',
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            paddingBottom: '90px'
+          }}
+        >
+          <div style={{ maxWidth: '820px', margin: '0 auto', padding: '16px 16px 40px' }}>
+            <ProfileTab
+              targetUser={viewingUserProfile}
+              currentUser={currentUser}
+              onUpdateProfile={handleUpdateProfile}
+              library={library}
+              onMovieClick={handleMovieClick}
+              onOpenUserProfile={handleOpenUserProfile}
+              initialSubTab="overview"
+              onSubTabChange={() => {}}
+            />
+          </div>
+        </div>
+      )}
 
       {activeEditMovie && (
         <MovieDetailModal
