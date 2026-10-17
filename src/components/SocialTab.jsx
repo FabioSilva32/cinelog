@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "../supabaseClient";
 import { Search, UserPlus, UserMinus, UserCheck, Activity, Users } from "lucide-react";
+import { TESTER_PROFILE, TESTER_LIBRARY } from "../mockData";
 
 function timeAgo(ts) {
   const diff = Date.now() - new Date(ts).getTime();
@@ -60,7 +61,30 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
         .in("user_id", followingIds)
         .order("date_added", { ascending: false })
         .limit(40);
-      setFeed(data || []);
+
+      let combinedFeed = data || [];
+      if (following.has(TESTER_PROFILE.id)) {
+        const testerFeedItems = TESTER_LIBRARY.filter(m => m.review).map(m => ({
+          user_id: TESTER_PROFILE.id,
+          title: m.title,
+          poster_path: m.poster_path,
+          status: m.status,
+          rating: m.rating,
+          review: m.review,
+          date_added: m.date_added,
+          tmdb_id: m.tmdb_id,
+          media_type: m.media_type,
+          profiles: {
+            username: TESTER_PROFILE.username,
+            display_name: TESTER_PROFILE.displayName,
+            avatar_url: TESTER_PROFILE.avatar
+          }
+        }));
+        combinedFeed = [...combinedFeed, ...testerFeedItems].sort(
+          (a, b) => new Date(b.date_added || 0) - new Date(a.date_added || 0)
+        );
+      }
+      setFeed(combinedFeed);
     } catch (err) {
       console.error("Feed load error:", err);
     } finally {
@@ -89,6 +113,15 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
 
         // Map every followed ID to either a fetched profile or a clean fallback user object
         const list = ids.map(id => {
+          if (id === TESTER_PROFILE.id) {
+            return {
+              id: TESTER_PROFILE.id,
+              username: TESTER_PROFILE.username,
+              display_name: TESTER_PROFILE.displayName,
+              avatar_url: TESTER_PROFILE.avatar,
+              bio: TESTER_PROFILE.bio
+            };
+          }
           const p = fetchedMap[id];
           return {
             id,
@@ -103,13 +136,24 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
       })
       .catch(err => {
         console.warn("Failed to load following users:", err);
-        const fallbackList = ids.map(id => ({
-          id,
-          username: `user_${String(id).slice(0, 6)}`,
-          display_name: 'CineLog Member',
-          avatar_url: null,
-          bio: ''
-        }));
+        const fallbackList = ids.map(id => {
+          if (id === TESTER_PROFILE.id) {
+            return {
+              id: TESTER_PROFILE.id,
+              username: TESTER_PROFILE.username,
+              display_name: TESTER_PROFILE.displayName,
+              avatar_url: TESTER_PROFILE.avatar,
+              bio: TESTER_PROFILE.bio
+            };
+          }
+          return {
+            id,
+            username: `user_${String(id).slice(0, 6)}`,
+            display_name: 'CineLog Member',
+            avatar_url: null,
+            bio: ''
+          };
+        });
         setFollowingUsers(fallbackList);
       })
       .finally(() => setLoadingFollowing(false));
@@ -122,13 +166,32 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
       .neq("id", currentUser.id)
       .limit(12)
       .then(({ data, error }) => {
-        if (error) {
-          console.warn("Profiles query failed:", error.message);
-          return;
+        let list = (data || []).filter(u => !following.has(u.id));
+        const isCurrentTester = currentUser?.username === 'tester' || currentUser?.id === TESTER_PROFILE.id;
+        const hasTester = list.some(u => u.username === 'tester' || u.id === TESTER_PROFILE.id);
+        if (!hasTester && !isCurrentTester && !following.has(TESTER_PROFILE.id)) {
+          list.unshift({
+            id: TESTER_PROFILE.id,
+            username: TESTER_PROFILE.username,
+            display_name: TESTER_PROFILE.displayName,
+            avatar_url: TESTER_PROFILE.avatar,
+            bio: TESTER_PROFILE.bio
+          });
         }
-        if (data) setSuggestedUsers(data.filter(u => !following.has(u.id) && u.username !== 'tester' && u.username !== 'test'));
+        setSuggestedUsers(list);
       })
-      .catch(err => console.warn("Profiles query exception:", err));
+      .catch(err => {
+        console.warn("Profiles query exception:", err);
+        if (!following.has(TESTER_PROFILE.id) && currentUser?.id !== TESTER_PROFILE.id) {
+          setSuggestedUsers([{
+            id: TESTER_PROFILE.id,
+            username: TESTER_PROFILE.username,
+            display_name: TESTER_PROFILE.displayName,
+            avatar_url: TESTER_PROFILE.avatar,
+            bio: TESTER_PROFILE.bio
+          }]);
+        }
+      });
   }, [currentUser?.id, following]);
 
   // Search users
@@ -142,7 +205,20 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
         .ilike("username", "%" + searchQuery + "%")
         .neq("id", currentUser?.id || "")
         .limit(8);
-      setSearchResults((data || []).filter(u => u.username !== 'tester' && u.username !== 'test'));
+      let results = [...(data || [])];
+      const q = searchQuery.toLowerCase();
+      if ('tester'.includes(q) || 'alex vance'.includes(q)) {
+        if (!results.some(u => u.username === 'tester' || u.id === TESTER_PROFILE.id) && currentUser?.id !== TESTER_PROFILE.id) {
+          results.unshift({
+            id: TESTER_PROFILE.id,
+            username: TESTER_PROFILE.username,
+            display_name: TESTER_PROFILE.displayName,
+            avatar_url: TESTER_PROFILE.avatar,
+            bio: TESTER_PROFILE.bio
+          });
+        }
+      }
+      setSearchResults(results);
       setSearching(false);
     }, 350);
     return () => clearTimeout(t);

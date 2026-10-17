@@ -54,9 +54,15 @@ function AppInner() {
   const [activeTab, setActiveTab] = useState('explore');
   const [profileSubTab, setProfileSubTab] = useState('overview');
   const [tabHistory, setTabHistory] = useState(['explore']);
+  const [viewingUserProfile, setViewingUserProfile] = useState(null);
 
   // Synchronize tab navigation with browser history (enables browser Back < and Forward > buttons)
-  const handleTabChange = useCallback((newTab, replace = false) => {
+  const handleTabChange = useCallback((newTab, replace = false, keepViewedUser = false) => {
+    // Whenever changing tabs or opening stats/calendar/stars/etc., clear any viewed other user profile!
+    if (!keepViewedUser) {
+      setViewingUserProfile(null);
+    }
+
     // If navigating to a personal tracking tab that now lives inside Profile, redirect to profile sub-tab!
     if (['stats', 'calendar', 'wrapped', 'achievements', 'constellation', 'shop', 'diary', 'watchlist'].includes(newTab)) {
       setProfileSubTab(newTab);
@@ -325,7 +331,6 @@ function AppInner() {
   const [showAuth, setShowAuth] = useState(false);
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
   const [activeEditMovie, setActiveEditMovie] = useState(null);
-  const [viewingUserProfile, setViewingUserProfile] = useState(null);
 
   const [confirmConfig, setConfirmConfig] = useState({
     isOpen: false,
@@ -420,9 +425,17 @@ function AppInner() {
   confirmConfigRef.current = confirmConfig;
 
   const lastBackPressRef = useRef(0);
+  const lastBackActionTimeRef = useRef(0);
 
   // Universal back handler (handles Capacitor native back, document backbutton event from Android, and browser popstate edge gestures)
   const handleUniversalBack = useCallback((fromPopState = false) => {
+    const now = Date.now();
+    // Guard against duplicate / re-entrant back invocations (e.g. native bridge + capacitor app + popstate)
+    if (now - lastBackActionTimeRef.current < 350) {
+      return 'throttled';
+    }
+    lastBackActionTimeRef.current = now;
+
     const keepAlive = () => {
       if (fromPopState) {
         try {
@@ -435,42 +448,42 @@ function AppInner() {
     if (showQuickAddRef.current) {
       setShowQuickAdd(false);
       keepAlive();
-      return;
+      return 'handled';
     }
     if (showCommandCenterRef.current) {
       setShowCommandCenter(false);
       keepAlive();
-      return;
+      return 'handled';
     }
     if (showSettingsRef.current) {
       setShowSettings(false);
       keepAlive();
-      return;
+      return 'handled';
     }
     if (showAuthRef.current) {
       setShowAuth(false);
       keepAlive();
-      return;
+      return 'handled';
     }
     if (showRecoveryModalRef.current) {
       setShowRecoveryModal(false);
       keepAlive();
-      return;
+      return 'handled';
     }
     if (activeEditMovieRef.current) {
       setActiveEditMovie(null);
       keepAlive();
-      return;
+      return 'handled';
     }
     if (viewingUserProfileRef.current) {
       setViewingUserProfile(null);
       keepAlive();
-      return;
+      return 'handled';
     }
     if (confirmConfigRef.current?.isOpen) {
       setConfirmConfig(prev => ({ ...prev, isOpen: false }));
       keepAlive();
-      return;
+      return 'handled';
     }
 
     // 2. Dispatch cancelable event for child modals (e.g. ProfileCustomizerModal)
@@ -478,7 +491,7 @@ function AppInner() {
     window.dispatchEvent(backEvent);
     if (backEvent.defaultPrevented) {
       keepAlive();
-      return;
+      return 'handled';
     }
 
     // 2b. Check if any custom modal close button exists in DOM
@@ -487,14 +500,14 @@ function AppInner() {
     if (openModalCloseBtn) {
       openModalCloseBtn.click();
       keepAlive();
-      return;
+      return 'handled';
     }
 
     // 3. If in Profile and on a subtab, navigate back to Profile Overview
     if (activeTabRef.current === 'profile' && profileSubTabRef.current !== 'overview') {
       setProfileSubTab('overview');
       keepAlive();
-      return;
+      return 'handled';
     }
 
     // 4. Tab navigation history (pop previous tab)
@@ -505,26 +518,27 @@ function AppInner() {
       setTabHistory(nextHistory);
       handleTabChange(prevTab, true);
       keepAlive();
-      return;
+      return 'handled';
     }
 
     // 5. Return to explore if currently on another tab
     if (activeTabRef.current !== 'explore') {
       handleTabChange('explore', true);
       keepAlive();
-      return;
+      return 'handled';
     }
 
     // 6. At root (explore tab, no modals, no history) -> Double-tap back to exit
-    const now = Date.now();
     if (now - lastBackPressRef.current < 2000) {
       try {
         CapApp.exitApp();
       } catch (e) {}
+      return 'exit';
     } else {
       lastBackPressRef.current = now;
       keepAlive();
       toast('Press back again to exit', 'info');
+      return 'warned';
     }
   }, [handleTabChange, toast]);
 
@@ -1033,6 +1047,10 @@ function AppInner() {
   };
 
   const handleMovieClick = (tmdbId, mediaType) => {
+    try {
+      window.history.pushState({ modal: 'movie', id: tmdbId }, '', window.location.href);
+    } catch (e) {}
+
     let resolvedType = mediaType;
     if (!resolvedType) {
       const match = library.find(m => String(m.tmdb_id) === String(tmdbId));
@@ -1080,7 +1098,10 @@ function AppInner() {
       target = { username: userObjOrUsername };
     }
     setViewingUserProfile(target);
-    handleTabChange('profile');
+    try {
+      window.history.pushState({ modal: 'user_profile', user: target?.username }, '', window.location.href);
+    } catch (e) {}
+    handleTabChange('profile', false, true);
   }, [handleTabChange]);
 
   const handleUpdateProfile = async (updatedDetails) => {

@@ -9,6 +9,7 @@ import {
 import { ACHIEVEMENTS, BORDER_STYLES, BADGE_COLORS, isUserCreator } from '../utils/achievements';
 import AvatarWithBorder, { DEFAULT_GREY_AVATAR } from './AvatarWithBorder';
 import { supabase } from '../supabaseClient';
+import { TESTER_PROFILE, TESTER_LIBRARY } from '../mockData';
 import StatsTab from './StatsTab';
 import WatchCalendarTab from './WatchCalendarTab';
 import WrappedTab from './WrappedTab';
@@ -278,7 +279,10 @@ export default function ProfileTab({
   };
 
   // Fetch other-user profile + library when targetUser is set and is not the logged-in user
-  const isViewingOther = targetUser && targetUser.id !== currentUser?.id;
+  const isViewingOther = targetUser && (
+    (targetUser.id && targetUser.id !== currentUser?.id) ||
+    (targetUser.username && targetUser.username !== currentUser?.username)
+  );
 
   useEffect(() => {
     if (!isViewingOther) {
@@ -287,6 +291,14 @@ export default function ProfileTab({
       return;
     }
     setViewedLoading(true);
+
+    const isTester = (targetUser?.username?.toLowerCase() === 'tester') || (targetUser?.id === TESTER_PROFILE.id);
+    if (isTester) {
+      setViewedProfile(TESTER_PROFILE);
+      setViewedLibrary(TESTER_LIBRARY);
+      setViewedLoading(false);
+      return;
+    }
 
     if (supabase) {
       // Load profile and library in parallel; follow check is separate so it never blocks
@@ -889,6 +901,58 @@ export default function ProfileTab({
 
               {/* Sub tabs & Content */}
               <div style={{ padding: '24px 0' }}>
+                {/* Top Favorites row if present */}
+                {viewedProfile?.favorites && viewedProfile.favorites.filter(Boolean).length > 0 && (
+                  <div style={{ marginBottom: '28px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                      <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Heart size={16} color="var(--accent)" fill="var(--accent)" />
+                        Top Favorites
+                      </h3>
+                      <span style={{ fontSize: '12px', color: 'var(--text-dim)', fontWeight: 700 }}>
+                        {viewedProfile.favorites.filter(Boolean).length} titles
+                      </span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '12px' }}>
+                      {viewedProfile.favorites.filter(Boolean).map(fav => (
+                        <div
+                          key={fav.id || fav.tmdb_id}
+                          onClick={() => onMovieClick && onMovieClick(fav.tmdb_id || fav.id, fav.media_type || 'movie')}
+                          style={{
+                            borderRadius: '10px',
+                            overflow: 'hidden',
+                            border: '1px solid rgba(229, 9, 20, 0.35)',
+                            background: 'var(--surface-solid)',
+                            cursor: 'pointer',
+                            transition: 'transform 0.15s, border-color 0.15s',
+                            position: 'relative'
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.04)'; e.currentTarget.style.borderColor = 'var(--accent)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.borderColor = 'rgba(229, 9, 20, 0.35)'; }}
+                        >
+                          <div style={{ aspectRatio: '2/3', position: 'relative', background: '#120d1c' }}>
+                            {fav.poster_path ? (
+                              <img src={`https://image.tmdb.org/t/p/w300${fav.poster_path}`} alt={fav.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+                            ) : (
+                              <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🎬</div>
+                            )}
+                            {fav.score && (
+                              <div style={{ position: 'absolute', bottom: '4px', right: '4px', background: 'rgba(0,0,0,0.85)', color: 'var(--gold)', fontSize: '10px', fontWeight: 900, padding: '2px 5px', borderRadius: '4px' }}>
+                                ★ {Number(fav.score).toFixed(1)}
+                              </div>
+                            )}
+                          </div>
+                          <div style={{ padding: '6px 8px' }}>
+                            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {fav.title}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {viewedLibrary.filter(m => m.status === 'watched').length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-dim)', fontSize: '14px' }}>
                     <div style={{ fontSize: '40px', marginBottom: '12px' }}>🎬</div>
