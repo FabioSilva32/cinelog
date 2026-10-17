@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Plus, Search, Trash2, ArrowUp, ArrowDown, Trophy, Sparkles, Film } from 'lucide-react';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 const TMDB_KEY = '6a2fd6b9b1bb3befbb9f14c203732225';
 
@@ -9,6 +10,7 @@ export default function CreateListModal({
   onClose,
   onSaveList
 }) {
+  useBodyScrollLock(true);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [isRanked, setIsRanked] = useState(true);
@@ -106,11 +108,11 @@ export default function CreateListModal({
         zIndex: 920,
         background: 'rgba(5, 3, 10, 0.88)',
         backdropFilter: 'blur(16px)',
-        overflowY: 'auto',
-        WebkitOverflowScrolling: 'touch',
         display: 'flex',
+        alignItems: 'center',
         justifyContent: 'center',
-        padding: '24px 16px 80px'
+        padding: '20px 16px',
+        overflow: 'hidden'
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -121,6 +123,7 @@ export default function CreateListModal({
         style={{
           width: '100%',
           maxWidth: '740px',
+          maxHeight: '90vh',
           background: 'linear-gradient(180deg, #13101c 0%, #0d0b13 100%)',
           borderRadius: '24px',
           border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -130,13 +133,14 @@ export default function CreateListModal({
           flexDirection: 'column'
         }}
       >
-        {/* Header */}
+        {/* Header (Pinned) */}
         <div style={{
           padding: '20px 24px',
           borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between'
+          justifyContent: 'space-between',
+          flexShrink: 0
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Sparkles size={18} color="var(--accent)" />
@@ -160,8 +164,20 @@ export default function CreateListModal({
           </button>
         </div>
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        {/* Form Body (Scrollable Container) */}
+        <form
+          onSubmit={handleSubmit}
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            overscrollBehavior: 'contain',
+            padding: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '20px'
+          }}
+        >
           {/* List Title */}
           <div>
             <label className="form-label" style={{ marginBottom: '8px', display: 'block' }}>

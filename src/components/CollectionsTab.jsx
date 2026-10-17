@@ -140,7 +140,7 @@ export default function CollectionsTab({
   const [newIsRanked, setNewIsRanked] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [autoGroup, setAutoGroup] = useState('franchise');
-  const [showEmpty, setShowEmpty] = useState(false);
+  const [showEmpty, setShowEmpty] = useState(true);
   const [unwatchedOnlyMap, setUnwatchedOnlyMap] = useState({});
   const [taggingStatus, setTaggingStatus] = useState('');
   const [isTagging, setIsTagging] = useState(false);
