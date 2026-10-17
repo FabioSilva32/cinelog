@@ -123,10 +123,8 @@ function AppInner() {
         resolvedInitial = 'explore';
       }
 
-      // Root entry at level 0 (exit trigger threshold)
-      window.history.replaceState({ root: true, level: 0, tab: resolvedInitial }, '', window.location.href);
-      // Level 1 active entry so the browser always has at least one internal back step
-      window.history.pushState({ level: 1, tab: resolvedInitial }, '', window.location.href);
+      // Set clean initial state on mount
+      window.history.replaceState({ root: true, tab: resolvedInitial }, '', window.location.href);
     } catch (e) {}
   }, []);
   const [showSettings, setShowSettings] = useState(false);
@@ -431,20 +429,68 @@ function AppInner() {
   const lastBackActionTimeRef = useRef(0);
   const touchSwipeStartRef = useRef(null);
 
-  // ── Modal Opener Helpers with URL Hash & History Push ──
-  const openMovieDetail = useCallback((movieOrId, mediaType) => {
+  // ── Unified Movie Click / Opener Helper ──
+  const handleMovieClick = useCallback((movieOrId, mediaType) => {
+    lastBackPressRef.current = 0;
     if (typeof movieOrId === 'object' && movieOrId !== null) {
       setActiveEditMovie(movieOrId);
       const tmdbId = movieOrId.tmdb_id || movieOrId.id;
       try {
         window.history.pushState({ modal: 'movie', id: tmdbId }, '', '#movie-' + tmdbId);
       } catch (e) {}
-    } else {
-      handleMovieClick(movieOrId, mediaType);
+      return;
     }
-  }, []);
+
+    const tmdbId = movieOrId;
+    try {
+      window.history.pushState({ modal: 'movie', id: tmdbId }, '', '#movie-' + tmdbId);
+    } catch (e) {}
+
+    let resolvedType = mediaType;
+    if (!resolvedType) {
+      const match = library.find(m => String(m.tmdb_id) === String(tmdbId));
+      if (match) resolvedType = match.media_type;
+    }
+    const existing = library.find(m => String(m.tmdb_id) === String(tmdbId) && (!resolvedType || m.media_type === resolvedType));
+    if (existing) { setActiveEditMovie(existing); return; }
+
+    const targetType = resolvedType || 'movie';
+    const primaryUrl = `https://api.themoviedb.org/3/${targetType}/${tmdbId}?api_key=6a2fd6b9b1bb3befbb9f14c203732225&append_to_response=videos,credits`;
+
+    fetch(primaryUrl)
+      .then(async r => {
+        if (!r.ok && targetType === 'movie') {
+          const fallbackRes = await fetch(`https://api.themoviedb.org/3/tv/${tmdbId}?api_key=6a2fd6b9b1bb3befbb9f14c203732225&append_to_response=videos,credits`);
+          if (fallbackRes.ok) return fallbackRes.json();
+        }
+        return r.json();
+      })
+      .then(data => {
+        if (!data || data.status_code === 34) return;
+        const isTv = data.number_of_seasons !== undefined || data.first_air_date !== undefined || targetType === 'tv';
+        const finalType = isTv ? 'tv' : 'movie';
+        const directorName = data.credits?.crew?.find(c => c.job === 'Director')?.name || null;
+        setActiveEditMovie({
+          id: crypto.randomUUID(), tmdb_id: data.id, media_type: finalType,
+          title: data.title || data.name, poster_path: data.poster_path,
+          backdrop_path: data.backdrop_path, overview: data.overview,
+          release_year: (data.release_date || data.first_air_date || '').slice(0, 4),
+          genres: (data.genres || []).map(g => g.name),
+          director: directorName,
+          tmdb_score: Math.round((data.vote_average || 0) * 10) / 10,
+          status: 'plan_to_watch', rating: null, review: '', favorite: false,
+          date_added: new Date().toISOString(), tags: [],
+          details: data,
+          videos: data.videos
+        });
+      })
+      .catch(err => console.error('Error fetching movie details:', err));
+  }, [library]);
+
+  const openMovieDetail = handleMovieClick;
 
   const openSettings = useCallback(() => {
+    lastBackPressRef.current = 0;
     try {
       window.history.pushState({ modal: 'settings' }, '', '#settings');
     } catch (e) {}
@@ -452,6 +498,7 @@ function AppInner() {
   }, []);
 
   const openCommandCenter = useCallback(() => {
+    lastBackPressRef.current = 0;
     setCmdQuery('');
     try {
       window.history.pushState({ modal: 'search' }, '', '#search');
@@ -460,6 +507,7 @@ function AppInner() {
   }, []);
 
   const openQuickAdd = useCallback(() => {
+    lastBackPressRef.current = 0;
     try {
       window.history.pushState({ modal: 'quickadd' }, '', '#quickadd');
     } catch (e) {}
@@ -467,14 +515,16 @@ function AppInner() {
   }, []);
 
   const openAuth = useCallback(() => {
+    lastBackPressRef.current = 0;
     try {
       window.history.pushState({ modal: 'auth' }, '', '#auth');
     } catch (e) {}
     setShowAuth(true);
   }, []);
 
-  // ── Modal Closer Helper (uses history.back() if hash is active, falls back to state) ──
+  // ── Modal Closer Helper (cleanly synchronizes history hash with state) ──
   const closeModal = useCallback((modalType) => {
+    lastBackPressRef.current = 0;
     const hash = window.location.hash || '';
     const hasModalHash =
       (modalType === 'movie' && hash.startsWith('#movie-')) ||
@@ -486,17 +536,20 @@ function AppInner() {
       (modalType === 'recovery' && hash === '#recovery');
 
     if (hasModalHash) {
-      window.history.back();
-    } else {
-      if (modalType === 'movie') setActiveEditMovie(null);
-      if (modalType === 'settings') setShowSettings(false);
-      if (modalType === 'search') setShowCommandCenter(false);
-      if (modalType === 'quickadd') setShowQuickAdd(false);
-      if (modalType === 'auth') setShowAuth(false);
-      if (modalType === 'recovery') setShowRecoveryModal(false);
-      if (modalType === 'user') setViewingUserProfile(null);
-      if (modalType === 'confirm') setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+      try {
+        const cleanUrl = window.location.pathname + window.location.search;
+        window.history.replaceState(window.history.state, '', cleanUrl);
+      } catch (e) {}
     }
+
+    if (modalType === 'movie') setActiveEditMovie(null);
+    if (modalType === 'settings') setShowSettings(false);
+    if (modalType === 'search') setShowCommandCenter(false);
+    if (modalType === 'quickadd') setShowQuickAdd(false);
+    if (modalType === 'auth') setShowAuth(false);
+    if (modalType === 'recovery') setShowRecoveryModal(false);
+    if (modalType === 'user') setViewingUserProfile(null);
+    if (modalType === 'confirm') setConfirmConfig(prev => ({ ...prev, isOpen: false }));
   }, []);
 
   // ── Native Android CloseWatcher Integration (Official W3C standard for Android edge swipe) ──
@@ -518,23 +571,24 @@ function AppInner() {
       try {
         const watcher = new window.CloseWatcher();
         watcher.onclose = () => {
-          if (showQuickAdd) { setShowQuickAdd(false); return; }
-          if (showCommandCenter) { setShowCommandCenter(false); return; }
-          if (showSettings) { setShowSettings(false); return; }
-          if (showAuth) { setShowAuth(false); return; }
-          if (showRecoveryModal) { setShowRecoveryModal(false); return; }
-          if (confirmConfig?.isOpen) { setConfirmConfig(p => ({ ...p, isOpen: false })); return; }
-          if (activeEditMovie) { setActiveEditMovie(null); return; }
-          if (viewingUserProfile) { setViewingUserProfile(null); return; }
+          lastBackPressRef.current = 0;
+          if (showQuickAdd) { closeModal('quickadd'); return; }
+          if (showCommandCenter) { closeModal('search'); return; }
+          if (showSettings) { closeModal('settings'); return; }
+          if (showAuth) { closeModal('auth'); return; }
+          if (showRecoveryModal) { closeModal('recovery'); return; }
+          if (confirmConfig?.isOpen) { closeModal('confirm'); return; }
+          if (activeEditMovie) { closeModal('movie'); return; }
+          if (viewingUserProfile) { closeModal('user'); return; }
         };
         return () => {
           try { watcher.destroy(); } catch (e) {}
         };
       } catch (err) {}
     }
-  }, [activeEditMovie, showSettings, showCommandCenter, showQuickAdd, showAuth, showRecoveryModal, viewingUserProfile, confirmConfig?.isOpen]);
+  }, [activeEditMovie, showSettings, showCommandCenter, showQuickAdd, showAuth, showRecoveryModal, viewingUserProfile, confirmConfig?.isOpen, closeModal]);
 
-  // ── Arm History Guard on First User Touch (Overcomes Chrome's History Manipulation Intervention) ──
+  // ── Arm History Guard on User Activation (click / pointerup) ──
   useEffect(() => {
     const armHistoryOnUserTouch = () => {
       try {
@@ -542,18 +596,18 @@ function AppInner() {
       } catch (e) {}
     };
 
-    window.addEventListener('pointerdown', armHistoryOnUserTouch, { once: true, passive: true });
-    window.addEventListener('touchstart', armHistoryOnUserTouch, { once: true, passive: true });
+    window.addEventListener('pointerup', armHistoryOnUserTouch, { once: true, passive: true });
+    window.addEventListener('click', armHistoryOnUserTouch, { once: true, passive: true });
     return () => {
-      window.removeEventListener('pointerdown', armHistoryOnUserTouch);
-      window.removeEventListener('touchstart', armHistoryOnUserTouch);
+      window.removeEventListener('pointerup', armHistoryOnUserTouch);
+      window.removeEventListener('click', armHistoryOnUserTouch);
     };
   }, []);
 
   // ── Universal Back Handler (for Capacitor, Android hardware back & WebView) ──
   const handleUniversalBack = useCallback(() => {
     const now = Date.now();
-    if (now - lastBackActionTimeRef.current < 200) {
+    if (now - lastBackActionTimeRef.current < 250) {
       return 'throttled';
     }
     lastBackActionTimeRef.current = now;
@@ -562,33 +616,44 @@ function AppInner() {
     const backEvent = new CustomEvent('cinelog-back-handled', { cancelable: true });
     window.dispatchEvent(backEvent);
     if (backEvent.defaultPrevented) {
+      lastBackPressRef.current = 0;
       return 'handled';
     }
 
-    // 1. Close open modals directly (guarantees app never closes while a modal is up)
-    if (showQuickAddRef.current) { setShowQuickAdd(false); return 'handled'; }
-    if (showCommandCenterRef.current) { setShowCommandCenter(false); return 'handled'; }
-    if (showSettingsRef.current) { setShowSettings(false); return 'handled'; }
-    if (showAuthRef.current) { setShowAuth(false); return 'handled'; }
-    if (showRecoveryModalRef.current) { setShowRecoveryModal(false); return 'handled'; }
-    if (activeEditMovieRef.current) { setActiveEditMovie(null); return 'handled'; }
-    if (viewingUserProfileRef.current) { setViewingUserProfile(null); return 'handled'; }
-    if (confirmConfigRef.current?.isOpen) { setConfirmConfig(p => ({ ...p, isOpen: false })); return 'handled'; }
+    // 1. Close open overlay modals first (guarantees app never closes while a modal is up)
+    if (showQuickAddRef.current) { closeModal('quickadd'); return 'handled'; }
+    if (showCommandCenterRef.current) { closeModal('search'); return 'handled'; }
+    if (showSettingsRef.current) { closeModal('settings'); return 'handled'; }
+    if (showAuthRef.current) { closeModal('auth'); return 'handled'; }
+    if (showRecoveryModalRef.current) { closeModal('recovery'); return 'handled'; }
+    if (activeEditMovieRef.current) { closeModal('movie'); return 'handled'; }
+    if (viewingUserProfileRef.current) { closeModal('user'); return 'handled'; }
+    if (confirmConfigRef.current?.isOpen) { closeModal('confirm'); return 'handled'; }
 
     // Check if an open custom modal close button exists in DOM
     const openModalCloseBtn = document.querySelector('.profile-studio-card button.btn-ghost') ||
       document.querySelector('.modal-backdrop button.btn-ghost');
     if (openModalCloseBtn) {
+      lastBackPressRef.current = 0;
       openModalCloseBtn.click();
       return 'handled';
     }
 
     // 2. Subtab or tab navigation
     if (activeTabRef.current === 'profile' && profileSubTabRef.current !== 'overview') {
+      lastBackPressRef.current = 0;
       setProfileSubTab('overview');
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', 'profile');
+        url.searchParams.delete('sub');
+        window.history.replaceState({ tab: 'profile' }, '', url.toString());
+      } catch (e) {}
       return 'handled';
     }
+
     if (tabHistoryRef.current.length > 1) {
+      lastBackPressRef.current = 0;
       const nextHistory = [...tabHistoryRef.current];
       nextHistory.pop();
       const prevTab = nextHistory[nextHistory.length - 1];
@@ -596,13 +661,15 @@ function AppInner() {
       handleTabChange(prevTab, true);
       return 'handled';
     }
+
     if (activeTabRef.current !== 'explore') {
+      lastBackPressRef.current = 0;
       handleTabChange('explore', true);
       return 'handled';
     }
 
     // 3. At root (explore tab, no modals, no subtabs): Double-tap back to exit
-    if (now - lastBackPressRef.current < 2000) {
+    if (lastBackPressRef.current > 0 && (now - lastBackPressRef.current < 2000)) {
       try {
         CapApp.minimizeApp();
       } catch (err) {}
@@ -614,7 +681,7 @@ function AppInner() {
       }
       return 'warned';
     }
-  }, [handleTabChange, toast]);
+  }, [closeModal, handleTabChange, toast]);
 
   // Expose directly to window for Android WebView evaluateJavascript invocation
   useEffect(() => {
@@ -624,56 +691,50 @@ function AppInner() {
     };
   }, [handleUniversalBack]);
 
-  // ── Synchronized PopState Routing Handler with Infinite Buffer Re-Arming ──
+  // ── Synchronized PopState Handler (Navigates backwards cleanly without creating history loops) ──
   useEffect(() => {
     const onPopState = (e) => {
-      // CRITICAL: Immediately re-push history guard so Android NEVER runs out of history and closes the app!
-      try {
-        window.history.pushState({ cinelogGuard: true, tab: activeTabRef.current }, '', window.location.href);
-      } catch (err) {}
+      const now = Date.now();
+      if (now - lastBackActionTimeRef.current < 150) {
+        return;
+      }
+      lastBackActionTimeRef.current = now;
+
+      const anyModalOpen = Boolean(
+        activeEditMovieRef.current ||
+        showSettingsRef.current ||
+        showCommandCenterRef.current ||
+        showQuickAddRef.current ||
+        showAuthRef.current ||
+        showRecoveryModalRef.current ||
+        viewingUserProfileRef.current ||
+        confirmConfigRef.current?.isOpen
+      );
 
       // 1. Close open overlay modals first
-      if (showQuickAddRef.current) {
-        setShowQuickAdd(false);
-        return;
-      }
-      if (showCommandCenterRef.current) {
-        setShowCommandCenter(false);
-        return;
-      }
-      if (showSettingsRef.current) {
-        setShowSettings(false);
-        return;
-      }
-      if (showAuthRef.current) {
-        setShowAuth(false);
-        return;
-      }
-      if (showRecoveryModalRef.current) {
-        setShowRecoveryModal(false);
-        return;
-      }
-      if (activeEditMovieRef.current) {
-        setActiveEditMovie(null);
-        return;
-      }
-      if (viewingUserProfileRef.current) {
-        setViewingUserProfile(null);
-        return;
-      }
-      if (confirmConfigRef.current?.isOpen) {
-        setConfirmConfig(p => ({ ...p, isOpen: false }));
+      if (anyModalOpen) {
+        lastBackPressRef.current = 0;
+        if (showQuickAddRef.current) setShowQuickAdd(false);
+        if (showCommandCenterRef.current) setShowCommandCenter(false);
+        if (showSettingsRef.current) setShowSettings(false);
+        if (showAuthRef.current) setShowAuth(false);
+        if (showRecoveryModalRef.current) setShowRecoveryModal(false);
+        if (activeEditMovieRef.current) setActiveEditMovie(null);
+        if (viewingUserProfileRef.current) setViewingUserProfile(null);
+        if (confirmConfigRef.current?.isOpen) setConfirmConfig(p => ({ ...p, isOpen: false }));
         return;
       }
 
       // 2. If on a Profile subtab, return to Profile Overview
       if (activeTabRef.current === 'profile' && profileSubTabRef.current !== 'overview') {
+        lastBackPressRef.current = 0;
         setProfileSubTab('overview');
         return;
       }
 
       // 3. Tab navigation history (pop previous tab)
       if (tabHistoryRef.current.length > 1) {
+        lastBackPressRef.current = 0;
         const nextHistory = [...tabHistoryRef.current];
         nextHistory.pop();
         const prevTab = nextHistory[nextHistory.length - 1];
@@ -684,13 +745,13 @@ function AppInner() {
 
       // 4. Return to explore if currently on another tab
       if (activeTabRef.current !== 'explore') {
+        lastBackPressRef.current = 0;
         handleTabChange('explore', true);
         return;
       }
 
       // 5. At root (explore tab, no modals, no subtabs): Double back to exit
-      const now = Date.now();
-      if (now - lastBackPressRef.current < 2000) {
+      if (lastBackPressRef.current > 0 && (now - lastBackPressRef.current < 2000)) {
         try {
           CapApp.minimizeApp();
         } catch (err) {}
@@ -699,6 +760,12 @@ function AppInner() {
         if (toast?.info) {
           toast.info('Exit CineLog', 'Swipe back again to exit');
         }
+        // Asynchronously re-arm a single root buffer entry outside the event loop
+        setTimeout(() => {
+          try {
+            window.history.pushState({ cinelogGuard: true, tab: 'explore' }, '', window.location.href);
+          } catch (err) {}
+        }, 80);
       }
     };
 
@@ -1252,52 +1319,6 @@ function AppInner() {
     if (useSupabase && currentUser?.id) {
       await supabase.from('library').update({ favorite: favState }).eq('id', movieId).eq('user_id', currentUser.id);
     }
-  };
-
-  const handleMovieClick = (tmdbId, mediaType) => {
-    try {
-      window.history.pushState({ modal: 'movie', id: tmdbId }, '', '#movie-' + tmdbId);
-    } catch (e) {}
-
-    let resolvedType = mediaType;
-    if (!resolvedType) {
-      const match = library.find(m => String(m.tmdb_id) === String(tmdbId));
-      if (match) resolvedType = match.media_type;
-    }
-    const existing = library.find(m => String(m.tmdb_id) === String(tmdbId) && (!resolvedType || m.media_type === resolvedType));
-    if (existing) { setActiveEditMovie(existing); return; }
-
-    const targetType = resolvedType || 'movie';
-    const primaryUrl = `https://api.themoviedb.org/3/${targetType}/${tmdbId}?api_key=6a2fd6b9b1bb3befbb9f14c203732225&append_to_response=videos,credits`;
-
-    fetch(primaryUrl)
-      .then(async r => {
-        if (!r.ok && targetType === 'movie') {
-          const fallbackRes = await fetch(`https://api.themoviedb.org/3/tv/${tmdbId}?api_key=6a2fd6b9b1bb3befbb9f14c203732225&append_to_response=videos,credits`);
-          if (fallbackRes.ok) return fallbackRes.json();
-        }
-        return r.json();
-      })
-      .then(data => {
-        if (!data || data.status_code === 34) return;
-        const isTv = data.number_of_seasons !== undefined || data.first_air_date !== undefined || targetType === 'tv';
-        const finalType = isTv ? 'tv' : 'movie';
-        const directorName = data.credits?.crew?.find(c => c.job === 'Director')?.name || null;
-        setActiveEditMovie({
-          id: crypto.randomUUID(), tmdb_id: data.id, media_type: finalType,
-          title: data.title || data.name, poster_path: data.poster_path,
-          backdrop_path: data.backdrop_path, overview: data.overview,
-          release_year: (data.release_date || data.first_air_date || '').slice(0, 4),
-          genres: (data.genres || []).map(g => g.name),
-          director: directorName,
-          tmdb_score: Math.round((data.vote_average || 0) * 10) / 10,
-          status: 'plan_to_watch', rating: null, review: '', favorite: false,
-          date_added: new Date().toISOString(), tags: [],
-          details: data,
-          videos: data.videos
-        });
-      })
-      .catch(err => console.error('Error fetching movie details:', err));
   };
 
   const handleOpenUserProfile = useCallback((userObjOrUsername) => {
