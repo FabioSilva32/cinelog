@@ -8,36 +8,36 @@ const GENRE_MAP = {28:'Action',12:'Adventure',16:'Animation',35:'Comedy',80:'Cri
 function getRatingStyle(r) {
   if (!r) return { color: 'var(--text-dim)', bg: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.1)', star: 'var(--text-dim)' };
   const n = Number(r);
-  if (n >= 8.0) {
+  if (n >= 8.5) {
     return {
-      color: '#fbbf24', // Yellow is the best (8.0 - 10.0)
-      bg: 'rgba(251, 191, 36, 0.14)',
-      border: 'rgba(251, 191, 36, 0.38)',
-      star: '#fbbf24',
-      glow: 'rgba(251, 191, 36, 0.25)'
+      color: '#a855f7', // Highest: Amethyst Purple (8.5 - 10.0)
+      bg: 'rgba(168, 85, 247, 0.16)',
+      border: 'rgba(168, 85, 247, 0.42)',
+      star: '#a855f7',
+      glow: 'rgba(168, 85, 247, 0.30)'
     };
   }
   if (n >= 7.0) {
     return {
-      color: '#10b981', // Green (7.0 - 7.9) [swapped with yellow]
-      bg: 'rgba(16, 185, 129, 0.14)',
-      border: 'rgba(16, 185, 129, 0.38)',
-      star: '#10b981',
-      glow: 'rgba(16, 185, 129, 0.25)'
+      color: '#38bdf8', // Sky Blue (7.0 - 8.4)
+      bg: 'rgba(56, 189, 248, 0.14)',
+      border: 'rgba(56, 189, 248, 0.38)',
+      star: '#38bdf8',
+      glow: 'rgba(56, 189, 248, 0.25)'
     };
   }
   if (n >= 5.5) {
     return {
-      color: '#a855f7', // Purple (5.5 - 6.9) [replaces gold/amber]
-      bg: 'rgba(168, 85, 247, 0.14)',
-      border: 'rgba(168, 85, 247, 0.38)',
-      star: '#a855f7',
-      glow: 'rgba(168, 85, 247, 0.25)'
+      color: '#059669', // Deeper Green (5.5 - 6.9)
+      bg: 'rgba(5, 150, 105, 0.16)',
+      border: 'rgba(5, 150, 105, 0.40)',
+      star: '#059669',
+      glow: 'rgba(5, 150, 105, 0.25)'
     };
   }
   if (n >= 4.0) {
     return {
-      color: '#f97316', // Orange (4.0 - 5.4)
+      color: '#f97316', // Sunset Orange (4.0 - 5.4)
       bg: 'rgba(249, 115, 22, 0.14)',
       border: 'rgba(249, 115, 22, 0.38)',
       star: '#f97316',
@@ -45,7 +45,7 @@ function getRatingStyle(r) {
     };
   }
   return {
-    color: '#ef4444', // Red (< 4.0)
+    color: '#ef4444', // Deep Red (< 4.0)
     bg: 'rgba(239, 68, 68, 0.14)',
     border: 'rgba(239, 68, 68, 0.38)',
     star: '#ef4444',

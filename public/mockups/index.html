@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -206,6 +206,79 @@
   </div>
 
   <div class="palette-grid">
+    <!-- User Custom Mix -->
+    <div class="palette-card" style="grid-column: 1 / -1; background: linear-gradient(145deg, #161226, #0e0b17); border: 2px solid rgba(168, 85, 247, 0.45); box-shadow: 0 20px 50px rgba(168, 85, 247, 0.15);">
+      <div class="palette-header">
+        <div class="palette-title" style="color: #f3e8ff;">
+          <span>✨</span> Your Custom Mix (Applied to CineLog)
+        </div>
+        <span class="palette-badge" style="background: rgba(168, 85, 247, 0.25); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.5);">Active in CineLog</span>
+      </div>
+      <div class="swatches">
+        <div class="swatch" style="background: rgba(168, 85, 247, 0.18); border: 1px solid rgba(168, 85, 247, 0.5); color: #a855f7;">★ 8.5–10 Amethyst Purple (Highest)</div>
+        <div class="swatch" style="background: rgba(56, 189, 248, 0.18); border: 1px solid rgba(56, 189, 248, 0.5); color: #38bdf8;">★ 7.0–8.4 Sky Blue</div>
+        <div class="swatch" style="background: rgba(5, 150, 105, 0.2); border: 1px solid rgba(5, 150, 105, 0.5); color: #059669;">★ 5.5–6.9 Deep Emerald</div>
+        <div class="swatch" style="background: rgba(249, 115, 22, 0.18); border: 1px solid rgba(249, 115, 22, 0.5); color: #f97316;">★ 4.0–5.4 Sunset Orange</div>
+        <div class="swatch" style="background: rgba(239, 68, 68, 0.18); border: 1px solid rgba(239, 68, 68, 0.5); color: #ef4444;">★ &lt;4 Deep Red (Lowest)</div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+        <div class="movie-box">
+          <div class="poster">
+            <img src="https://image.tmdb.org/t/p/w200/xJHokMbljvjADYdit5fK5VQsXEG.jpg" alt="Interstellar">
+          </div>
+          <div class="info">
+            <div class="title">Interstellar</div>
+            <div class="meta">2014 · Adventure · Sci-Fi</div>
+            <span class="tag">✓ Watched</span>
+          </div>
+          <div class="score-pill" style="background: rgba(168, 85, 247, 0.18); border: 1px solid rgba(168, 85, 247, 0.5); color: #a855f7; box-shadow: 0 0 14px rgba(168, 85, 247, 0.35);">
+            ★ 10.0
+          </div>
+          <span class="close-btn">✕</span>
+        </div>
+
+        <div class="movie-box">
+          <div class="poster">
+            <img src="https://image.tmdb.org/t/p/w200/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg" alt="Oppenheimer">
+          </div>
+          <div class="info">
+            <div class="title">Oppenheimer</div>
+            <div class="meta">2023 · Drama · History</div>
+            <span class="tag">✓ Watched</span>
+          </div>
+          <div class="score-pill" style="background: rgba(168, 85, 247, 0.18); border: 1px solid rgba(168, 85, 247, 0.5); color: #a855f7; box-shadow: 0 0 14px rgba(168, 85, 247, 0.35);">
+            ★ 9.4
+          </div>
+          <span class="close-btn">✕</span>
+        </div>
+
+        <div class="movie-box">
+          <div class="poster">
+            <img src="https://image.tmdb.org/t/p/w200/edv5CZvWj09upOsy2Y6IwDhK8bt.jpg" alt="Dune: Part Two">
+          </div>
+          <div class="info">
+            <div class="title">Dune: Part Two</div>
+            <div class="meta">2024 · Sci-Fi · Adventure</div>
+            <span class="tag">✓ Watched</span>
+          </div>
+          <div class="score-pill" style="background: rgba(56, 189, 248, 0.18); border: 1px solid rgba(56, 189, 248, 0.5); color: #38bdf8; box-shadow: 0 0 14px rgba(56, 189, 248, 0.3);">
+            ★ 8.2
+          </div>
+          <span class="close-btn">✕</span>
+        </div>
+      </div>
+
+      <!-- Live Interactive Slider Demo for Custom Mix -->
+      <div class="slider-box" style="background: rgba(0, 0, 0, 0.45); border-color: rgba(168, 85, 247, 0.3);">
+        <div class="slider-header">
+          <span class="label" style="color: #c084fc;">★ Live Rating Slider Preview (Drag Me)</span>
+          <span class="val" id="valCustom" style="color: #a855f7;">★ 9.5</span>
+        </div>
+        <input type="range" id="slCustom" min="0" max="10" step="0.1" value="9.5" oninput="updateCustom(this.value)">
+      </div>
+    </div>
+
     <!-- Palette 1 -->
     <div class="palette-card">
       <div class="palette-header">
@@ -430,6 +503,19 @@
   </div>
 
   <script>
+    function updateCustom(v) {
+      const n = Number(v);
+      const valEl = document.getElementById('valCustom');
+      const slEl = document.getElementById('slCustom');
+      valEl.textContent = '★ ' + n.toFixed(1);
+      let c = '#ef4444';
+      if (n >= 8.5) c = '#a855f7';
+      else if (n >= 7.0) c = '#38bdf8';
+      else if (n >= 5.5) c = '#059669';
+      else if (n >= 4.0) c = '#f97316';
+      valEl.style.color = c;
+      slEl.style.background = `linear-gradient(to right, ${c} 0%, ${c} ${n*10}%, rgba(255,255,255,0.08) ${n*10}%, rgba(255,255,255,0.08) 100%)`;
+    }
     function updateP1(v) {
       const n = Number(v);
       const valEl = document.getElementById('val1');
@@ -482,6 +568,7 @@
       valEl.style.color = c;
       slEl.style.background = `linear-gradient(to right, ${c} 0%, ${c} ${n*10}%, rgba(255,255,255,0.08) ${n*10}%, rgba(255,255,255,0.08) 100%)`;
     }
+    updateCustom(9.5);
     updateP1(9.2);
     updateP2(8.8);
     updateP3(8.5);
