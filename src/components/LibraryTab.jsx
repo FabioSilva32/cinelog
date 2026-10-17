@@ -5,13 +5,65 @@ import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 const GENRE_MAP = {28:'Action',12:'Adventure',16:'Animation',35:'Comedy',80:'Crime',99:'Documentary',18:'Drama',10751:'Family',14:'Fantasy',36:'History',27:'Horror',10402:'Music',9648:'Mystery',10749:'Romance',878:'Sci-Fi',53:'Thriller',10752:'War',37:'Western',10759:'Action & Adventure',10765:'Sci-Fi & Fantasy'};
 
-function getRatingColor(r) {
-  if (!r) return 'var(--text-dim)';
+function getRatingStyle(r) {
+  if (!r) return { color: 'var(--text-dim)', bg: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.1)', star: 'var(--text-dim)' };
   const n = Number(r);
-  if (n >= 8) return '#10b981';
-  if (n >= 6) return '#fbbf24';
-  if (n >= 4) return '#f97316';
-  return '#ef4444';
+  if (n >= 9.0) {
+    return {
+      color: '#10b981', // Emerald green for masterpieces (9.0+)
+      bg: 'rgba(16, 185, 129, 0.14)',
+      border: 'rgba(16, 185, 129, 0.38)',
+      star: '#10b981',
+      glow: 'rgba(16, 185, 129, 0.25)'
+    };
+  }
+  if (n >= 8.0) {
+    return {
+      color: '#34d399', // Mint / Light green (8.0 - 8.9)
+      bg: 'rgba(52, 211, 153, 0.13)',
+      border: 'rgba(52, 211, 153, 0.35)',
+      star: '#34d399',
+      glow: 'rgba(52, 211, 153, 0.2)'
+    };
+  }
+  if (n >= 7.0) {
+    return {
+      color: '#38bdf8', // Cyan / Sky blue (7.0 - 7.9)
+      bg: 'rgba(56, 189, 248, 0.13)',
+      border: 'rgba(56, 189, 248, 0.35)',
+      star: '#38bdf8',
+      glow: 'rgba(56, 189, 248, 0.2)'
+    };
+  }
+  if (n >= 6.0) {
+    return {
+      color: '#fbbf24', // Warm gold / amber (6.0 - 6.9)
+      bg: 'rgba(251, 191, 36, 0.13)',
+      border: 'rgba(251, 191, 36, 0.35)',
+      star: '#fbbf24',
+      glow: 'rgba(251, 191, 36, 0.2)'
+    };
+  }
+  if (n >= 4.5) {
+    return {
+      color: '#f97316', // Orange (4.5 - 5.9)
+      bg: 'rgba(249, 115, 22, 0.13)',
+      border: 'rgba(249, 115, 22, 0.35)',
+      star: '#f97316',
+      glow: 'rgba(249, 115, 22, 0.2)'
+    };
+  }
+  return {
+    color: '#ef4444', // Red (< 4.5)
+    bg: 'rgba(239, 68, 68, 0.13)',
+    border: 'rgba(239, 68, 68, 0.35)',
+    star: '#ef4444',
+    glow: 'rgba(239, 68, 68, 0.2)'
+  };
+}
+
+function getRatingColor(r) {
+  return getRatingStyle(r).color;
 }
 
 // ── JSON Import Modal ────────────────────────────────────────────────
@@ -447,49 +499,37 @@ function LibraryColumn({ label, icon, color, movies, onEditClick, onRemove, sear
                 )}
               </div>
 
-              {/* Right Side: Big, Easy-to-See Rating Badge Centered in the Box */}
-              {movie.rating > 0 && (
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  alignSelf: 'center',
-                  flexShrink: 0,
-                  padding: '8px 12px',
-                  borderRadius: '12px',
-                  background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.16) 0%, rgba(217, 119, 6, 0.08) 100%)',
-                  border: '1px solid rgba(251, 191, 36, 0.45)',
-                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12)',
-                  minWidth: '64px',
-                  textAlign: 'center',
-                  marginRight: '6px'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '3px', lineHeight: 1 }}>
-                    <Star size={17} fill="var(--gold)" color="var(--gold)" style={{ filter: 'drop-shadow(0 2px 5px rgba(251, 191, 36, 0.6))' }} />
+              {/* Right Side: Sleek, Compact Rating Pill (Color Coded by Score, No /10) */}
+              {movie.rating > 0 && (() => {
+                const style = getRatingStyle(movie.rating);
+                return (
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    alignSelf: 'center',
+                    flexShrink: 0,
+                    padding: '4px 8px',
+                    borderRadius: '8px',
+                    background: style.bg,
+                    border: `1px solid ${style.border}`,
+                    boxShadow: `0 2px 8px ${style.glow || 'rgba(0,0,0,0.3)'}`,
+                    color: style.color,
+                    marginRight: '6px',
+                    lineHeight: 1
+                  }}>
+                    <Star size={12} fill="currentColor" color="currentColor" />
                     <span style={{
-                      fontSize: '22px',
+                      fontSize: '15px',
                       fontWeight: 900,
-                      color: 'var(--gold)',
-                      letterSpacing: '-0.5px',
-                      lineHeight: 1,
+                      letterSpacing: '-0.3px',
                       fontFeatureSettings: '"tnum"'
                     }}>
                       {Number(movie.rating).toFixed(1)}
                     </span>
                   </div>
-                  <span style={{
-                    fontSize: '9.5px',
-                    fontWeight: 800,
-                    color: 'rgba(255, 255, 255, 0.5)',
-                    marginTop: '3px',
-                    letterSpacing: '0.04em',
-                    textTransform: 'uppercase'
-                  }}>
-                    / 10
-                  </span>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Remove (✕) Button in Top-Right Corner of the Box */}
               <button
