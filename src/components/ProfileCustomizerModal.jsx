@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import {
   X, SlidersHorizontal, Image as ImageIcon, User, Award, Heart,
   Upload, Search, Check, CheckCircle2, Trash2, Sparkles, Plus,
-  Crown, ExternalLink, RefreshCw
+  Crown, ExternalLink, RefreshCw, Star, Film
 } from 'lucide-react';
 import AvatarWithBorder, { DEFAULT_GREY_AVATAR } from './AvatarWithBorder';
 import { BORDER_STYLES, BADGE_COLORS } from '../utils/achievements';
@@ -995,7 +995,7 @@ export default function ProfileCustomizerModal({
 
                   {/* Character Avatars Section */}
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
                       <div>
                         <label style={{ fontSize: '12px', color: '#fff', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                           Cinema Masks, Helmets & Artifacts ({CURATED_MOVIE_AVATARS.length})
@@ -1008,8 +1008,9 @@ export default function ProfileCustomizerModal({
                       <label
                         style={{
                           display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px',
-                          background: 'rgba(136,8,8,0.18)', border: '1px solid rgba(136,8,8,0.4)',
-                          borderRadius: '20px', cursor: 'pointer', fontSize: '12px', fontWeight: 800, color: '#fff'
+                          background: 'rgba(var(--accent-rgb, 229, 9, 20), 0.14)', border: '1px solid rgba(var(--accent-rgb, 229, 9, 20), 0.35)',
+                          borderRadius: '20px', cursor: 'pointer', fontSize: '12px', fontWeight: 800, color: '#fff',
+                          transition: 'all 0.15s ease'
                         }}
                       >
                         <Upload size={13} color="var(--accent)" /> Upload Custom Photo
@@ -1017,8 +1018,8 @@ export default function ProfileCustomizerModal({
                       </label>
                     </div>
 
-                    {/* BIGGER, MORE NOTICEABLE CHARACTER CARDS GRID */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
+                    {/* RESPONSIVE CINEMA MASKS GRID */}
+                    <div className="profile-masks-grid">
                       {CURATED_MOVIE_AVATARS.map((char) => {
                         const isSelected = avatar === char.url;
                         return (
@@ -1026,12 +1027,13 @@ export default function ProfileCustomizerModal({
                             key={char.id}
                             onClick={() => setAvatar(char.url)}
                             style={{
-                              display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 14px',
+                              display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px',
                               borderRadius: '16px', cursor: 'pointer',
                               border: isSelected ? '2px solid var(--accent)' : '1px solid rgba(255,255,255,0.08)',
-                              background: isSelected ? 'rgba(136,8,8,0.22)' : 'rgba(255,255,255,0.03)',
-                              boxShadow: isSelected ? '0 0 20px rgba(136,8,8,0.45)' : '0 4px 14px rgba(0,0,0,0.35)',
-                              transition: 'transform 0.18s ease, border-color 0.18s ease'
+                              background: isSelected ? 'rgba(var(--accent-rgb, 229, 9, 20), 0.18)' : 'rgba(255,255,255,0.03)',
+                              boxShadow: isSelected ? '0 0 20px rgba(var(--accent-rgb, 229, 9, 20), 0.4)' : '0 4px 12px rgba(0,0,0,0.3)',
+                              transition: 'transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease',
+                              position: 'relative'
                             }}
                             onMouseEnter={e => {
                               if (!isSelected) {
@@ -1046,12 +1048,12 @@ export default function ProfileCustomizerModal({
                               }
                             }}
                           >
-                            {/* LARGE 66px PORTRAIT CIRCLE */}
+                            {/* PORTRAIT CIRCLE */}
                             <div style={{
-                              width: '66px', height: '66px', borderRadius: '50%', flexShrink: 0,
+                              width: '54px', height: '54px', borderRadius: '50%', flexShrink: 0,
                               overflow: 'hidden', position: 'relative',
                               border: isSelected ? '2.5px solid var(--accent)' : '2px solid rgba(255,255,255,0.15)',
-                              boxShadow: isSelected ? '0 0 16px rgba(136,8,8,0.6)' : 'none'
+                              boxShadow: isSelected ? '0 0 14px rgba(var(--accent-rgb, 229, 9, 20), 0.55)' : 'none'
                             }}>
                               <img
                                 src={char.url}
@@ -1062,12 +1064,13 @@ export default function ProfileCustomizerModal({
                             </div>
 
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: '13.5px', fontWeight: 900, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              <div style={{ fontSize: '13px', fontWeight: 900, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                 {char.name}
                               </div>
                               <span style={{
-                                display: 'inline-block', fontSize: '10px', color: isSelected ? 'var(--accent)' : 'var(--text-dim)',
-                                background: isSelected ? 'rgba(136,8,8,0.2)' : 'rgba(255,255,255,0.05)',
+                                display: 'inline-block', fontSize: '10px',
+                                color: isSelected ? 'var(--accent)' : 'var(--text-dim)',
+                                background: isSelected ? 'rgba(var(--accent-rgb, 229, 9, 20), 0.2)' : 'rgba(255,255,255,0.05)',
                                 padding: '2px 8px', borderRadius: '8px', fontWeight: 800, marginTop: '4px',
                                 whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%'
                               }}>
@@ -1076,8 +1079,13 @@ export default function ProfileCustomizerModal({
                             </div>
 
                             {isSelected && (
-                              <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                <Check size={13} color="#fff" />
+                              <div style={{
+                                width: '20px', height: '20px', borderRadius: '50%',
+                                background: 'var(--accent)', display: 'flex', alignItems: 'center',
+                                justifyContent: 'center', flexShrink: 0,
+                                color: 'var(--accent-contrast, #ffffff)'
+                              }}>
+                                <Check size={12} color="currentColor" strokeWidth={3} />
                               </div>
                             )}
                           </div>
@@ -1102,7 +1110,7 @@ export default function ProfileCustomizerModal({
                             style={{
                               padding: '10px 12px', borderRadius: '12px',
                               border: isEquipped ? '2px solid var(--accent)' : '1px solid rgba(255,255,255,0.08)',
-                              background: isEquipped ? 'rgba(136,8,8,0.22)' : isUnlocked ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.3)',
+                              background: isEquipped ? 'rgba(var(--accent-rgb, 229, 9, 20), 0.18)' : isUnlocked ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.3)',
                               opacity: isUnlocked ? 1 : 0.45,
                               cursor: isUnlocked ? 'pointer' : 'not-allowed',
                               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -1210,57 +1218,166 @@ export default function ProfileCustomizerModal({
                 </div>
               )}
 
-              {/* ════ TAB 4: PROFILE INFO ════ */}
+              {/* ════ TAB 4: PROFILE INFO & CINEMA STORY ════ */}
               {customizerTab === 'info' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 800 }}>DISPLAY NAME</label>
-                      <input
-                        type="text"
-                        value={displayName}
-                        onChange={e => setDisplayName(e.target.value)}
-                        className="form-input"
-                        style={{ fontSize: '13px' }}
-                        placeholder="e.g. Cinema Enthusiast"
-                      />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  {/* Section Title */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{
+                      width: '32px', height: '32px', borderRadius: '10px',
+                      background: 'rgba(var(--accent-rgb, 229, 9, 20), 0.16)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>
+                      <SlidersHorizontal size={17} color="var(--accent)" />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 800 }}>USERNAME (HANDLE)</label>
-                      <input
-                        type="text"
-                        value={username}
-                        onChange={e => setUsername(e.target.value)}
-                        className="form-input"
-                        style={{ fontSize: '13px' }}
-                        placeholder="e.g. cinephile"
-                      />
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 900, color: '#fff' }}>
+                        Identity & Cinema Story
+                      </h3>
+                      <p style={{ margin: 0, fontSize: '11.5px', color: 'var(--text-dim)' }}>
+                        Craft your presence across reviews, ratings, discussions, and lists.
+                      </p>
                     </div>
                   </div>
 
-                  {/* LOCKED BIO TEXTAREA (NO INFINITE EXPAND BUG) */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 800 }}>BIO & CINEMA STORY</label>
-                      <span style={{ fontSize: '11px', color: bio.length >= 240 ? 'var(--red)' : 'var(--text-dim)' }}>
-                        {bio.length}/250 chars
+                  {/* Name and Handle Cards */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
+                    {/* Display Name */}
+                    <div style={{
+                      background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: '16px', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '8px'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <label style={{ fontSize: '11px', color: '#fff', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          Display Name
+                        </label>
+                        <span style={{ fontSize: '10px', color: 'var(--text-dim)' }}>Public</span>
+                      </div>
+                      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                        <div style={{ position: 'absolute', left: '12px', pointerEvents: 'none', color: 'var(--text-dim)', display: 'flex' }}>
+                          <User size={15} />
+                        </div>
+                        <input
+                          type="text"
+                          value={displayName}
+                          onChange={e => setDisplayName(e.target.value)}
+                          className="form-input"
+                          style={{ paddingLeft: '36px', fontSize: '13.5px', width: '100%' }}
+                          placeholder="e.g. Cinema Enthusiast"
+                          maxLength={32}
+                        />
+                      </div>
+                      <span style={{ fontSize: '10.5px', color: 'var(--text-dim)' }}>
+                        What friends and followers see on your reviews & feed.
                       </span>
                     </div>
+
+                    {/* Username Handle */}
+                    <div style={{
+                      background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: '16px', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '8px'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <label style={{ fontSize: '11px', color: '#fff', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          Username (Handle)
+                        </label>
+                        <span style={{ fontSize: '10px', color: 'var(--accent)', fontWeight: 800 }}>Unique ID</span>
+                      </div>
+                      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                        <div style={{ position: 'absolute', left: '12px', pointerEvents: 'none', color: 'var(--accent)', fontWeight: 900, fontSize: '14px' }}>
+                          @
+                        </div>
+                        <input
+                          type="text"
+                          value={username}
+                          onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                          className="form-input"
+                          style={{ paddingLeft: '32px', fontSize: '13.5px', width: '100%' }}
+                          placeholder="cinephile"
+                          maxLength={24}
+                        />
+                      </div>
+                      <span style={{ fontSize: '10.5px', color: 'var(--text-dim)' }}>
+                        Used for mentions, URLs, and sign in.
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Bio & Cinema Story Card */}
+                  <div style={{
+                    background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label style={{ fontSize: '11px', color: '#fff', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        Bio & Cinema Story
+                      </label>
+                      <span style={{
+                        fontSize: '11px', fontWeight: 800,
+                        color: bio.length >= 240 ? 'var(--red)' : bio.length > 0 ? 'var(--accent)' : 'var(--text-dim)',
+                        background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: '8px'
+                      }}>
+                        {bio.length} / 250
+                      </span>
+                    </div>
+
                     <textarea
                       maxLength={250}
                       value={bio}
                       onChange={e => setBio(e.target.value)}
-                      placeholder="Share your favorite directors, genres, cinema passions, or favorite movie quotes..."
+                      placeholder="Share your favorite directors, memorable cinema experiences, preferred genres, or all-time quotes..."
                       className="form-input"
                       style={{
-                        height: '115px',
-                        maxHeight: '115px',
+                        height: '110px',
+                        maxHeight: '130px',
                         resize: 'none',
                         overflowY: 'auto',
                         fontSize: '13px',
-                        lineHeight: 1.55
+                        lineHeight: 1.6,
+                        padding: '12px 14px'
                       }}
                     />
+
+                    {/* Quick Inspiration Tags */}
+                    <div>
+                      <div style={{ fontSize: '10.5px', color: 'var(--text-dim)', fontWeight: 700, marginBottom: '6px' }}>
+                        TAP TO ADD INSPIRATION TAGS:
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {[
+                          '🎬 35mm Purist',
+                          '🪐 Sci-Fi Obsessed',
+                          '📼 Criterion Collector',
+                          '🍿 Popcorn Enjoyer',
+                          '🦇 Nolan & Villeneuve',
+                          '☕ Arthouse Regular',
+                          '🌙 Night Owl Cinephile'
+                        ].map((tag) => (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() => {
+                              const trimmed = bio.trim();
+                              if (trimmed.includes(tag)) return;
+                              const addition = trimmed ? (trimmed.endsWith('.') ? ` ${tag}` : `, ${tag}`) : tag;
+                              if ((trimmed + addition).length <= 250) {
+                                setBio(trimmed ? `${trimmed}${addition}` : tag);
+                              }
+                            }}
+                            style={{
+                              fontSize: '11px', fontWeight: 700,
+                              padding: '4px 10px', borderRadius: '14px',
+                              background: bio.includes(tag) ? 'rgba(var(--accent-rgb, 229, 9, 20), 0.18)' : 'rgba(255,255,255,0.04)',
+                              color: bio.includes(tag) ? 'var(--accent)' : '#dedede',
+                              border: bio.includes(tag) ? '1px solid var(--accent)' : '1px solid rgba(255,255,255,0.08)',
+                              cursor: 'pointer', transition: 'all 0.15s ease'
+                            }}
+                          >
+                            {tag} {bio.includes(tag) ? '✓' : '+'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1268,38 +1385,100 @@ export default function ProfileCustomizerModal({
               {/* ════ TAB 5: FAVORITES SHOWCASE (6 SLOTS) ════ */}
               {customizerTab === 'showcase' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', margin: 0 }}>
-                    Select your top 6 favorite films to showcase prominently on your public profile header. Click any slot to choose from your watched films.
-                  </p>
+                  {/* Header */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{
+                        width: '32px', height: '32px', borderRadius: '10px',
+                        background: 'rgba(var(--accent-rgb, 229, 9, 20), 0.16)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}>
+                        <Heart size={17} color="var(--accent)" />
+                      </div>
+                      <div>
+                        <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 900, color: '#fff' }}>
+                          Top 6 Favorite Films
+                        </h3>
+                        <p style={{ margin: 0, fontSize: '11.5px', color: 'var(--text-dim)' }}>
+                          Your cinematic Mount Rushmore prominently featured on your profile header.
+                        </p>
+                      </div>
+                    </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px' }}>
+                    {favorites.some(Boolean) && (
+                      <button
+                        type="button"
+                        onClick={() => setFavorites([null, null, null, null, null, null])}
+                        style={{
+                          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '16px', padding: '5px 12px', fontSize: '11px', fontWeight: 700,
+                          color: 'var(--text-dim)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px',
+                          transition: 'all 0.15s ease'
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-dim)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
+                      >
+                        <Trash2 size={12} /> Clear All
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Responsive 6-Slot Grid */}
+                  <div className="profile-favorites-grid">
                     {favorites.map((fav, idx) => (
                       <div
                         key={idx}
                         onClick={() => onSelectSlot(idx)}
                         style={{
                           aspectRatio: '2/3',
-                          borderRadius: '10px',
-                          border: fav ? '1.5px solid var(--border)' : '1.5px dashed rgba(255,255,255,0.2)',
-                          background: fav ? '#110e1f' : 'rgba(255,255,255,0.02)',
+                          borderRadius: '14px',
+                          border: fav ? '1.5px solid rgba(255,255,255,0.14)' : '1.5px dashed rgba(var(--accent-rgb, 229, 9, 20), 0.35)',
+                          background: fav ? '#0e0c18' : 'rgba(255,255,255,0.02)',
                           display: 'flex',
+                          flexDirection: 'column',
                           alignItems: 'center',
                           justifyContent: 'center',
                           cursor: 'pointer',
                           position: 'relative',
                           overflow: 'hidden',
-                          transition: 'all 0.15s ease'
+                          boxShadow: fav ? '0 8px 24px rgba(0,0,0,0.5)' : 'none',
+                          transition: 'all 0.18s ease'
                         }}
-                        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; }}
-                        onMouseLeave={e => { e.currentTarget.style.borderColor = fav ? 'var(--border)' : 'rgba(255,255,255,0.2)'; }}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.borderColor = 'var(--accent)';
+                          e.currentTarget.style.transform = 'translateY(-3px)';
+                          e.currentTarget.style.boxShadow = '0 12px 28px rgba(0,0,0,0.7), 0 0 16px rgba(var(--accent-rgb, 229, 9, 20), 0.3)';
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.borderColor = fav ? 'rgba(255,255,255,0.14)' : 'rgba(var(--accent-rgb, 229, 9, 20), 0.35)';
+                          e.currentTarget.style.transform = '';
+                          e.currentTarget.style.boxShadow = fav ? '0 8px 24px rgba(0,0,0,0.5)' : 'none';
+                        }}
                       >
+                        {/* Slot Badge */}
+                        <div style={{
+                          position: 'absolute', top: '7px', left: '7px', zIndex: 3,
+                          fontSize: '10px', fontWeight: 900,
+                          padding: '2px 7px', borderRadius: '8px',
+                          background: idx === 0 ? 'linear-gradient(135deg, #eab308 0%, #ca8a04 100%)' : 'rgba(0,0,0,0.75)',
+                          color: idx === 0 ? '#000' : '#fff',
+                          border: idx === 0 ? '1px solid #fde047' : '1px solid rgba(255,255,255,0.15)',
+                          backdropFilter: 'blur(8px)',
+                          display: 'flex', alignItems: 'center', gap: '3px'
+                        }}>
+                          {idx === 0 && <Star size={9} fill="#000" color="#000" />}
+                          #{idx + 1}
+                        </div>
+
                         {fav ? (
                           <>
                             <img
-                              src={`https://image.tmdb.org/t/p/w185${fav.poster_path}`}
+                              src={`https://image.tmdb.org/t/p/w342${fav.poster_path}`}
                               alt={fav.title}
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                              loading="lazy"
                             />
+                            {/* Remove button */}
                             <button
                               type="button"
                               onClick={(e) => {
@@ -1311,31 +1490,66 @@ export default function ProfileCustomizerModal({
                                 });
                               }}
                               style={{
-                                position: 'absolute', top: '6px', right: '6px',
-                                background: 'rgba(0,0,0,0.8)', border: 'none', borderRadius: '50%',
-                                width: '20px', height: '20px', display: 'flex', alignItems: 'center',
-                                justifyContent: 'center', color: '#fff', cursor: 'pointer'
+                                position: 'absolute', top: '7px', right: '7px', zIndex: 3,
+                                background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%',
+                                width: '22px', height: '22px', display: 'flex', alignItems: 'center',
+                                justifyContent: 'center', color: '#fff', cursor: 'pointer',
+                                transition: 'transform 0.15s ease'
                               }}
+                              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.15)'; }}
+                              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                              aria-label={`Remove favorite ${fav.title}`}
                             >
-                              <X size={12} />
+                              <X size={12} strokeWidth={2.5} />
                             </button>
+
+                            {/* Title banner overlay */}
                             <div style={{
                               position: 'absolute', bottom: 0, left: 0, right: 0,
-                              background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, transparent 100%)',
-                              padding: '14px 6px 4px', fontSize: '10px', fontWeight: 800, textAlign: 'center',
-                              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                              background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 65%, transparent 100%)',
+                              padding: '20px 8px 8px', fontSize: '10.5px', fontWeight: 800, textAlign: 'center',
+                              color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                              zIndex: 2
                             }}>
                               {fav.title}
                             </div>
                           </>
                         ) : (
-                          <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)' }}>
-                            <div style={{ fontSize: '20px', marginBottom: '2px' }}>🎬</div>
-                            <div style={{ fontSize: '10px', fontWeight: 700 }}>Slot {idx + 1}</div>
+                          <div style={{
+                            textAlign: 'center', display: 'flex', flexDirection: 'column',
+                            alignItems: 'center', gap: '6px', padding: '10px'
+                          }}>
+                            <div style={{
+                              width: '32px', height: '32px', borderRadius: '50%',
+                              background: 'rgba(var(--accent-rgb, 229, 9, 20), 0.14)',
+                              border: '1px solid rgba(var(--accent-rgb, 229, 9, 20), 0.3)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              color: 'var(--accent)'
+                            }}>
+                              <Plus size={16} strokeWidth={2.5} />
+                            </div>
+                            <div style={{ fontSize: '11px', fontWeight: 800, color: '#fff' }}>
+                              Choose Film
+                            </div>
+                            <div style={{ fontSize: '9.5px', color: 'var(--text-dim)' }}>
+                              Slot #{idx + 1}
+                            </div>
                           </div>
                         )}
                       </div>
                     ))}
+                  </div>
+
+                  {/* Quick Tip Box */}
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                    padding: '10px 14px', borderRadius: '12px',
+                    background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)'
+                  }}>
+                    <Film size={15} color="var(--accent)" />
+                    <span style={{ fontSize: '11.5px', color: 'var(--text-dim)' }}>
+                      Click any slot above to choose from your watched films or search all worldwide cinema on TMDB.
+                    </span>
                   </div>
                 </div>
               )}

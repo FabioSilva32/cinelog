@@ -33,10 +33,11 @@ public class MainActivity extends BridgeActivity {
         }
 
         // 1. Support modern Android 13+ (API 33+) Predictive Back Gesture navigation
+        // Using PRIORITY_OVERLAY ensures CineLog gets the back gesture before OS finishes the Activity
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             backInvokedCallback = () -> handleUniversalBackPress();
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
-                OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+                OnBackInvokedDispatcher.PRIORITY_OVERLAY,
                 backInvokedCallback
             );
         }
@@ -48,6 +49,21 @@ public class MainActivity extends BridgeActivity {
                 handleUniversalBackPress();
             }
         });
+    }
+
+    @Override
+    public void onBackPressed() {
+        // Intercept native back and forward to CineLog Universal Back
+        handleUniversalBackPress();
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, android.view.KeyEvent event) {
+        if (keyCode == android.view.KeyEvent.KEYCODE_BACK) {
+            handleUniversalBackPress();
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
     }
 
     private void handleUniversalBackPress() {

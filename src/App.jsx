@@ -94,8 +94,9 @@ function AppInner() {
     } catch (e) {}
   }, []);
 
-  // Listen for browser Back/Forward (popstate) events
+  // Initialize URL and push history guard state so Android edge swipes are intercepted
   useEffect(() => {
+    let resolvedInitial = 'explore';
     try {
       const params = new URLSearchParams(window.location.search);
       const initialTab = params.get('tab');
@@ -103,35 +104,21 @@ function AppInner() {
       if (['stats', 'calendar', 'wrapped', 'achievements', 'constellation', 'shop', 'diary', 'watchlist'].includes(initialTab)) {
         setProfileSubTab(initialTab);
         setActiveTab('profile');
+        resolvedInitial = 'profile';
       } else if (initialTab === 'profile') {
         if (initialSub) setProfileSubTab(initialSub);
         setActiveTab('profile');
+        resolvedInitial = 'profile';
       } else if (initialTab && initialTab !== 'landing') {
         setActiveTab(initialTab);
-        window.history.replaceState({ tab: initialTab }, '', window.location.href);
+        resolvedInitial = initialTab;
       } else {
         setActiveTab('explore');
-        window.history.replaceState({ tab: 'explore' }, '', window.location.href);
+        resolvedInitial = 'explore';
       }
+      window.history.replaceState({ tab: resolvedInitial, root: true }, '', window.location.href);
+      window.history.pushState({ tab: resolvedInitial, guard: true }, '', window.location.href);
     } catch (e) {}
-
-    const handlePopState = (e) => {
-      if (e.state && e.state.tab) {
-        if (e.state.sub) setProfileSubTab(e.state.sub);
-        setActiveTab(e.state.tab === 'landing' ? 'explore' : e.state.tab);
-      } else {
-        try {
-          const p = new URLSearchParams(window.location.search);
-          const t = p.get('tab') || 'explore';
-          const s = p.get('sub');
-          if (s) setProfileSubTab(s);
-          setActiveTab(t === 'landing' ? 'explore' : t);
-        } catch (err) {}
-      }
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
   const [showSettings, setShowSettings] = useState(false);
   const [showCommandCenter, setShowCommandCenter] = useState(false);
@@ -434,39 +421,55 @@ function AppInner() {
 
   const lastBackPressRef = useRef(0);
 
-  // Universal back handler (handles Capacitor native back & document backbutton event from Android)
-  const handleUniversalBack = useCallback(() => {
+  // Universal back handler (handles Capacitor native back, document backbutton event from Android, and browser popstate edge gestures)
+  const handleUniversalBack = useCallback((fromPopState = false) => {
+    const keepAlive = () => {
+      if (fromPopState) {
+        try {
+          window.history.pushState({ tab: activeTabRef.current, guard: true }, '', window.location.href);
+        } catch (e) {}
+      }
+    };
+
     // 1. Close open overlay modals first
     if (showQuickAddRef.current) {
       setShowQuickAdd(false);
+      keepAlive();
       return;
     }
     if (showCommandCenterRef.current) {
       setShowCommandCenter(false);
+      keepAlive();
       return;
     }
     if (showSettingsRef.current) {
       setShowSettings(false);
+      keepAlive();
       return;
     }
     if (showAuthRef.current) {
       setShowAuth(false);
+      keepAlive();
       return;
     }
     if (showRecoveryModalRef.current) {
       setShowRecoveryModal(false);
+      keepAlive();
       return;
     }
     if (activeEditMovieRef.current) {
       setActiveEditMovie(null);
+      keepAlive();
       return;
     }
     if (viewingUserProfileRef.current) {
       setViewingUserProfile(null);
+      keepAlive();
       return;
     }
     if (confirmConfigRef.current?.isOpen) {
       setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+      keepAlive();
       return;
     }
 
@@ -474,6 +477,7 @@ function AppInner() {
     const backEvent = new CustomEvent('cinelog-back-handled', { cancelable: true });
     window.dispatchEvent(backEvent);
     if (backEvent.defaultPrevented) {
+      keepAlive();
       return;
     }
 
@@ -482,12 +486,14 @@ function AppInner() {
       document.querySelector('.modal-backdrop button.btn-ghost');
     if (openModalCloseBtn) {
       openModalCloseBtn.click();
+      keepAlive();
       return;
     }
 
     // 3. If in Profile and on a subtab, navigate back to Profile Overview
     if (activeTabRef.current === 'profile' && profileSubTabRef.current !== 'overview') {
       setProfileSubTab('overview');
+      keepAlive();
       return;
     }
 
@@ -498,12 +504,14 @@ function AppInner() {
       const prevTab = nextHistory[nextHistory.length - 1];
       setTabHistory(nextHistory);
       handleTabChange(prevTab, true);
+      keepAlive();
       return;
     }
 
     // 5. Return to explore if currently on another tab
     if (activeTabRef.current !== 'explore') {
       handleTabChange('explore', true);
+      keepAlive();
       return;
     }
 
@@ -515,25 +523,26 @@ function AppInner() {
       } catch (e) {}
     } else {
       lastBackPressRef.current = now;
+      keepAlive();
       toast('Press back again to exit', 'info');
     }
   }, [handleTabChange, toast]);
 
   // Expose directly to window for Android WebView evaluateJavascript invocation
   useEffect(() => {
-    window.cinelogHandleBack = handleUniversalBack;
+    window.cinelogHandleBack = () => handleUniversalBack(false);
     return () => {
       delete window.cinelogHandleBack;
     };
   }, [handleUniversalBack]);
 
-  // Intercept native Android back gestures / hardware back button via @capacitor/app & document event
+  // Intercept native Android back gestures / hardware back button via @capacitor/app & document event & popstate
   useEffect(() => {
     let backListener = null;
 
     const setupCapacitorBack = async () => {
       try {
-        backListener = await CapApp.addListener('backButton', handleUniversalBack);
+        backListener = await CapApp.addListener('backButton', () => handleUniversalBack(false));
       } catch (err) {
         // Web browser environment
       }
@@ -543,10 +552,15 @@ function AppInner() {
 
     const docBackHandler = (e) => {
       e?.preventDefault?.();
-      handleUniversalBack();
+      handleUniversalBack(false);
     };
+    const popStateHandler = () => {
+      handleUniversalBack(true);
+    };
+
     document.addEventListener('backbutton', docBackHandler);
     window.addEventListener('cinelog-hardware-back', docBackHandler);
+    window.addEventListener('popstate', popStateHandler);
 
     return () => {
       if (backListener && backListener.remove) {
@@ -554,6 +568,7 @@ function AppInner() {
       }
       document.removeEventListener('backbutton', docBackHandler);
       window.removeEventListener('cinelog-hardware-back', docBackHandler);
+      window.removeEventListener('popstate', popStateHandler);
     };
   }, [handleUniversalBack]);
 
