@@ -9,7 +9,7 @@ import {
 import { ACHIEVEMENTS, BORDER_STYLES, BADGE_COLORS, isUserCreator } from '../utils/achievements';
 import AvatarWithBorder, { DEFAULT_GREY_AVATAR } from './AvatarWithBorder';
 import { supabase } from '../supabaseClient';
-import { TESTER_PROFILE, TESTER_LIBRARY } from '../mockData';
+import { ELENA_PROFILE, ELENA_LIBRARY, TESTER_PROFILE, TESTER_LIBRARY } from '../mockData';
 import StatsTab from './StatsTab';
 import WatchCalendarTab from './WatchCalendarTab';
 import WrappedTab from './WrappedTab';
@@ -291,6 +291,13 @@ export default function ProfileTab({
       return;
     }
     setViewedLoading(true);
+
+    if (targetUser?.id === ELENA_PROFILE.id || targetUser?.username === 'elena_films' || targetUser?.displayName === 'Elena Rodriguez') {
+      setViewedProfile(ELENA_PROFILE);
+      setViewedLibrary(ELENA_LIBRARY);
+      setViewedLoading(false);
+      return;
+    }
 
     const isUUID = (str) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(str || ''));
     const targetId = targetUser?.id;

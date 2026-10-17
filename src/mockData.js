@@ -1,30 +1,78 @@
-export const TESTER_PROFILE = {
-  id: "6f356f70-3ca6-4e61-87bf-2e483c24e15e",
-  username: "tester",
-  displayName: "Alex Vance",
+export const ELENA_PROFILE = {
+  id: "b4a8e239-1b20-4a8f-8d9e-5c4d3e2f1a0b",
+  username: "elena_films",
+  displayName: "Elena Rodriguez",
   avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80",
-  bannerUrl: "https://image.tmdb.org/t/p/w1280/xJHokMbljvjADYdit5fK5VQsXEG.jpg",
+  bannerUrl: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1600&q=80",
   bannerFitMode: "cover",
   bannerPosPercent: 30,
-  bio: "Cinema buff & animation devotee. Obsessed with Denis Villeneuve, Christopher Nolan, and Hayao Miyazaki. ⭐ 8+ means an instant classic.",
+  bio: "Screenwriter & 35mm film purist. A24 devotee, Denis Villeneuve worshipper, and slow-cinema apologist. ⭐ 8.5+ means an instant classic.",
   equippedBorder: "neon_crimson",
-  purchasedBadges: ["Verified Critic", "Top 100 Cinephile", "Anime Veteran"],
-  followersCount: 142,
-  followingCount: 38,
+  purchasedBadges: ["Verified Critic", "Top 100 Cinephile", "35mm Purist"],
+  followersCount: 24,
+  followingCount: 15,
   favorites: [
-    { id: 157336, tmdb_id: 157336, title: "Interstellar", poster_path: "/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg", score: 10, media_type: "movie" },
+    { id: 27205, tmdb_id: 27205, title: "Inception", poster_path: "/oYuLEt3zVCKq57qu2F8dT7NIa6f.jpg", score: 10, media_type: "movie" },
+    { id: 693134, tmdb_id: 693134, title: "Dune: Part Two", poster_path: "/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg", score: 9.8, media_type: "movie" },
+    { id: 157336, tmdb_id: 157336, title: "Interstellar", poster_path: "/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg", score: 9.9, media_type: "movie" },
     { id: 335984, tmdb_id: 335984, title: "Blade Runner 2049", poster_path: "/gajva2L0rPYkEWjzgFlBXCAVBE5.jpg", score: 9.8, media_type: "movie" },
-    { id: 129, tmdb_id: 129, title: "Spirited Away", poster_path: "/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg", score: 9.6, media_type: "movie" },
-    { id: 1429, tmdb_id: 1429, title: "Attack on Titan", poster_path: "/hTP1DtLGFamjfu8WqjnuQdP1n4i.jpg", score: 9.7, media_type: "anime" },
-    { id: 872585, tmdb_id: 872585, title: "Oppenheimer", poster_path: "/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg", score: 9.4, media_type: "movie" },
-    { id: 1399, tmdb_id: 1399, title: "Game of Thrones", poster_path: "/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg", score: 9.0, media_type: "tv" }
+    { id: 969681, tmdb_id: 969681, title: "Spider-Man: Brand New Day", poster_path: "/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg", score: 9.3, media_type: "movie" },
+    { id: 872585, tmdb_id: 872585, title: "Oppenheimer", poster_path: "/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg", score: 9.4, media_type: "movie" }
   ]
 };
 
-export const TESTER_LIBRARY = [
+export const ELENA_LIBRARY = [
   {
-    id: "test-lib-1",
-    user_id: "6f356f70-3ca6-4e61-87bf-2e483c24e15e",
+    id: "elena-lib-1",
+    user_id: "b4a8e239-1b20-4a8f-8d9e-5c4d3e2f1a0b",
+    tmdb_id: 27205,
+    media_type: "movie",
+    title: "Inception",
+    poster_path: "/oYuLEt3zVCKq57qu2F8dT7NIa6f.jpg",
+    release_year: "2010",
+    genres: ["Action", "Science Fiction", "Adventure"],
+    status: "watched",
+    rating: 10,
+    review: "A cinematic triumph of mind-bending architectural precision and emotional depth. Christopher Nolan at the absolute peak of his craft — Hans Zimmer's score elevates every single frame.",
+    favorite: true,
+    tags: ["Masterpiece", "Nolan", "Sci-Fi", "Rewatch"],
+    date_added: "2026-10-16T19:30:00.000Z"
+  },
+  {
+    id: "elena-lib-2",
+    user_id: "b4a8e239-1b20-4a8f-8d9e-5c4d3e2f1a0b",
+    tmdb_id: 969681,
+    media_type: "movie",
+    title: "Spider-Man: Brand New Day",
+    poster_path: "/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg",
+    release_year: "2026",
+    genres: ["Action", "Adventure", "Science Fiction"],
+    status: "watched",
+    rating: 9.3,
+    review: "Incredible energy, vibrant pacing, and genuine emotional resonance. Easily one of the freshest superhero entries in years.",
+    favorite: true,
+    tags: ["Spider-Man", "Marvel", "Must-See"],
+    date_added: "2026-10-15T21:15:00.000Z"
+  },
+  {
+    id: "elena-lib-3",
+    user_id: "b4a8e239-1b20-4a8f-8d9e-5c4d3e2f1a0b",
+    tmdb_id: 693134,
+    media_type: "movie",
+    title: "Dune: Part Two",
+    poster_path: "/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg",
+    release_year: "2024",
+    genres: ["Science Fiction", "Adventure"],
+    status: "watched",
+    rating: 9.8,
+    review: "Monolithic. A monumental sci-fi achievement that feels biblical in scale. Greig Fraser's cinematography and the sound design deserve all the praise.",
+    favorite: true,
+    tags: ["Villeneuve", "Sci-Fi", "Epic"],
+    date_added: "2026-10-14T20:00:00.000Z"
+  },
+  {
+    id: "elena-lib-4",
+    user_id: "b4a8e239-1b20-4a8f-8d9e-5c4d3e2f1a0b",
     tmdb_id: 157336,
     media_type: "movie",
     title: "Interstellar",
@@ -32,15 +80,15 @@ export const TESTER_LIBRARY = [
     release_year: "2014",
     genres: ["Adventure", "Drama", "Science Fiction"],
     status: "watched",
-    rating: 10,
-    review: "An emotional and auditory triumph. Zimmer’s organ score combined with Hoyte van Hoytema’s 70mm cinematography transcends typical sci-fi. The docking sequence alone is pure cinema.",
+    rating: 9.9,
+    review: "The organ swell during the docking sequence still gives me goosebumps every time. Sci-fi poetry at its grandest.",
     favorite: true,
     tags: ["Masterpiece", "Nolan", "Sci-Fi", "Rewatch"],
-    date_added: "2026-10-15T18:30:00.000Z"
+    date_added: "2026-10-12T18:30:00.000Z"
   },
   {
-    id: "test-lib-2",
-    user_id: "6f356f70-3ca6-4e61-87bf-2e483c24e15e",
+    id: "elena-lib-5",
+    user_id: "b4a8e239-1b20-4a8f-8d9e-5c4d3e2f1a0b",
     tmdb_id: 335984,
     media_type: "movie",
     title: "Blade Runner 2049",
@@ -52,27 +100,27 @@ export const TESTER_LIBRARY = [
     review: "Roger Deakins delivered arguably the greatest visual lighting in 21st-century cinema. The pacing is hypnotic, philosophical, and melancholic in the most exquisite way.",
     favorite: true,
     tags: ["Cyberpunk", "Villeneuve", "Visual Masterpiece"],
-    date_added: "2026-10-12T20:15:00.000Z"
+    date_added: "2026-10-10T22:15:00.000Z"
   },
   {
-    id: "test-lib-3",
-    user_id: "6f356f70-3ca6-4e61-87bf-2e483c24e15e",
-    tmdb_id: 129,
+    id: "elena-lib-6",
+    user_id: "b4a8e239-1b20-4a8f-8d9e-5c4d3e2f1a0b",
+    tmdb_id: 414906,
     media_type: "movie",
-    title: "Spirited Away",
-    poster_path: "/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg",
-    release_year: "2001",
-    genres: ["Animation", "Family", "Fantasy"],
+    title: "The Batman",
+    poster_path: "/74xTEgt7R36Fpooo50r9T25onhq.jpg",
+    release_year: "2022",
+    genres: ["Crime", "Mystery", "Thriller"],
     status: "watched",
-    rating: 9.6,
-    review: "Miyazaki at his creative peak. Joe Hisaishi’s Six Station piano piece evokes a nostalgia that words cannot capture. The bathhouse atmosphere is unrivaled in animation history.",
-    favorite: true,
-    tags: ["Ghibli", "Anime", "Nostalgia"],
-    date_added: "2026-10-08T14:00:00.000Z"
+    rating: 8.8,
+    review: "Matt Reeves gave us the Se7en-inspired detective Noir Batman we always deserved. Greig Fraser’s orange and black palette is stunning.",
+    favorite: false,
+    tags: ["DC", "Noir", "Detective"],
+    date_added: "2026-10-08T15:20:00.000Z"
   },
   {
-    id: "test-lib-4",
-    user_id: "6f356f70-3ca6-4e61-87bf-2e483c24e15e",
+    id: "elena-lib-7",
+    user_id: "b4a8e239-1b20-4a8f-8d9e-5c4d3e2f1a0b",
     tmdb_id: 872585,
     media_type: "movie",
     title: "Oppenheimer",
@@ -84,27 +132,11 @@ export const TESTER_LIBRARY = [
     review: "Cillian Murphy gives the performance of a lifetime. The sound design during the Trinity test sequence will forever be ingrained in my mind. Ludwig Göransson’s score is sensational.",
     favorite: true,
     tags: ["Historical", "IMAX", "Nolan"],
-    date_added: "2026-10-04T19:45:00.000Z"
+    date_added: "2026-10-05T19:45:00.000Z"
   },
   {
-    id: "test-lib-5",
-    user_id: "6f356f70-3ca6-4e61-87bf-2e483c24e15e",
-    tmdb_id: 1429,
-    media_type: "anime",
-    title: "Attack on Titan",
-    poster_path: "/hTP1DtLGFamjfu8WqjnuQdP1n4i.jpg",
-    release_year: "2013",
-    genres: ["Animation", "Action & Adventure", "Sci-Fi & Fantasy"],
-    status: "watched",
-    rating: 9.7,
-    review: "An absolute storytelling phenomenon. Hajime Isayama’s foreshadowing and moral ambiguity turned a monster show into one of the most compelling geopolitical tragedies ever animated.",
-    favorite: true,
-    tags: ["Anime", "Action", "Legendary"],
-    date_added: "2026-09-28T22:00:00.000Z"
-  },
-  {
-    id: "test-lib-6",
-    user_id: "6f356f70-3ca6-4e61-87bf-2e483c24e15e",
+    id: "elena-lib-8",
+    user_id: "b4a8e239-1b20-4a8f-8d9e-5c4d3e2f1a0b",
     tmdb_id: 155,
     media_type: "movie",
     title: "The Dark Knight",
@@ -114,115 +146,39 @@ export const TESTER_LIBRARY = [
     status: "watched",
     rating: 9.5,
     review: "Heath Ledger redefined what an antagonist could be in modern blockbusters. A tight, uncompromising crime epic that raised the ceiling for comic adaptations forever.",
-    favorite: true,
+    favorite: false,
     tags: ["Classic", "Thriller", "Batman"],
-    date_added: "2026-09-20T17:10:00.000Z"
+    date_added: "2026-10-01T17:10:00.000Z"
   },
   {
-    id: "test-lib-7",
-    user_id: "6f356f70-3ca6-4e61-87bf-2e483c24e15e",
-    tmdb_id: 60059,
-    media_type: "tv",
-    title: "Better Call Saul",
-    poster_path: "/fC2HDm5t0kHsf79d7v9WBuFz0qp.jpg",
-    release_year: "2015",
-    genres: ["Crime", "Drama"],
+    id: "elena-lib-9",
+    user_id: "b4a8e239-1b20-4a8f-8d9e-5c4d3e2f1a0b",
+    tmdb_id: 129,
+    media_type: "movie",
+    title: "Spirited Away",
+    poster_path: "/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg",
+    release_year: "2001",
+    genres: ["Animation", "Family", "Fantasy"],
     status: "watched",
     rating: 9.6,
-    review: "Every camera angle is deliberate. The tragic descent of Jimmy McGill into Saul Goodman and Kim Wexler’s moral reckoning is television at its highest art form.",
-    favorite: true,
-    tags: ["Crime", "Drama", "Peak TV"],
-    date_added: "2026-09-15T16:00:00.000Z"
-  },
-  {
-    id: "test-lib-8",
-    user_id: "6f356f70-3ca6-4e61-87bf-2e483c24e15e",
-    tmdb_id: 693134,
-    media_type: "movie",
-    title: "Dune: Part Two",
-    poster_path: "/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg",
-    release_year: "2024",
-    genres: ["Science Fiction", "Adventure"],
-    status: "watched",
-    rating: 9.5,
-    review: "A generational sci-fi triumph. The black-and-white Giedi Prime gladiatorial arena and the worm rides through the storm are earth-shattering.",
-    favorite: true,
-    tags: ["Villeneuve", "Sci-Fi", "Epic"],
-    date_added: "2026-09-08T21:30:00.000Z"
-  },
-  {
-    id: "test-lib-9",
-    user_id: "6f356f70-3ca6-4e61-87bf-2e483c24e15e",
-    tmdb_id: 85937,
-    media_type: "anime",
-    title: "Demon Slayer: Kimetsu no Yaiba",
-    poster_path: "/xUfRZu2mi8jH6SzQEJGP6tjBuYj.jpg",
-    release_year: "2019",
-    genres: ["Animation", "Action & Adventure", "Sci-Fi & Fantasy"],
-    status: "watching",
-    rating: 9.0,
-    review: "Ufotable’s digital compositing and sword effects push the boundary of TV animation. Hinokami Kagura remains breathtaking.",
-    favorite: true,
-    tags: ["Anime", "Ufotable", "Shonen"],
-    date_added: "2026-09-02T11:00:00.000Z"
-  },
-  {
-    id: "test-lib-10",
-    user_id: "6f356f70-3ca6-4e61-87bf-2e483c24e15e",
-    tmdb_id: 414906,
-    media_type: "movie",
-    title: "The Batman",
-    poster_path: "/74xTEgt7R36Fpooo50r9T25onhq.jpg",
-    release_year: "2022",
-    genres: ["Crime", "Mystery", "Thriller"],
-    status: "watched",
-    rating: 8.7,
-    review: "Matt Reeves gave us the Se7en-inspired detective Noir Batman we always deserved. Greig Fraser’s orange and black palette is stunning.",
+    review: "Miyazaki at his creative peak. Joe Hisaishi’s Six Station piano piece evokes a nostalgia that words cannot capture. The bathhouse atmosphere is unrivaled in animation history.",
     favorite: false,
-    tags: ["DC", "Noir", "Detective"],
-    date_added: "2026-08-25T15:20:00.000Z"
-  },
-  {
-    id: "test-lib-11",
-    user_id: "6f356f70-3ca6-4e61-87bf-2e483c24e15e",
-    tmdb_id: 93405,
-    media_type: "tv",
-    title: "Squid Game",
-    poster_path: "/dDlEmu3EZ0Pgg93K2SVNLCjCSvE.jpg",
-    release_year: "2021",
-    genres: ["Action & Adventure", "Mystery", "Drama"],
-    status: "watched",
-    rating: 8.5,
-    review: "Brilliant production design and social allegory. Episode 6 (Gganbu) broke my heart.",
-    favorite: false,
-    tags: ["Thriller", "Korean Drama"],
-    date_added: "2026-08-18T18:00:00.000Z"
-  },
-  {
-    id: "test-lib-12",
-    user_id: "6f356f70-3ca6-4e61-87bf-2e483c24e15e",
-    tmdb_id: 111110,
-    media_type: "tv",
-    title: "ONE PIECE",
-    poster_path: "/r7Dfg9ZPl0q89m9L8g2T4U2n0Z.jpg",
-    release_year: "2023",
-    genres: ["Action & Adventure", "Sci-Fi & Fantasy"],
-    status: "plan_to_watch",
-    rating: null,
-    review: "",
-    favorite: false,
-    tags: ["Watchlist"],
-    date_added: "2026-08-10T12:00:00.000Z"
+    tags: ["Ghibli", "Anime", "Nostalgia"],
+    date_added: "2026-09-25T14:00:00.000Z"
   }
 ];
 
+// Backwards compatibility aliases
+export const TESTER_PROFILE = ELENA_PROFILE;
+export const TESTER_LIBRARY = ELENA_LIBRARY;
+
 export const MOCK_USERS = [
-  TESTER_PROFILE
+  ELENA_PROFILE
 ];
 
-export const MOCK_REVIEWS = TESTER_LIBRARY.filter(m => m.review).map(m => ({
+export const MOCK_REVIEWS = ELENA_LIBRARY.filter(m => m.review).map(m => ({
   id: `rev-${m.id}`,
-  user: TESTER_PROFILE,
+  user: ELENA_PROFILE,
   movie: {
     id: m.tmdb_id,
     title: m.title,

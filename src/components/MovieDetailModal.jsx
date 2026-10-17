@@ -1,9 +1,18 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { X, Heart, Film, Tag, Star, Clock, Users, ExternalLink, Play, FolderHeart, Plus, Check, Eye, Bookmark, XCircle, ChevronDown, Repeat, EyeOff } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
-import { MOCK_REVIEWS } from '../mockData';
+import { MOCK_REVIEWS, ELENA_PROFILE, ELENA_LIBRARY } from '../mockData';
 import { getMovieCollections, getSuggestedTags } from '../utils/collections';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
+
+const IGNORED_USERNAMES = new Set([
+  'fabiosilva',
+  'tester',
+  'cinelog.importer.test+75284',
+  'marracarrao',
+  'itzfabiopt2006',
+  'tester99'
+]);
 
 const TMDB_KEY = '6a2fd6b9b1bb3befbb9f14c203732225';
 
@@ -394,6 +403,9 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
               if (!cleanReview) return;
 
               const prof = item.profiles || profilesMap[item.user_id];
+              const uname = (prof?.username || '').toLowerCase();
+              if (IGNORED_USERNAMES.has(uname)) return;
+
               allReviews.push({
                 id: item.id,
                 user_id: item.user_id,
@@ -409,6 +421,24 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
           }
         } catch (err) {
           console.error("Error loading public reviews from Supabase:", err);
+        }
+      }
+
+      // Include Elena Rodriguez's review for this movie if reviewed
+      const elenaEntry = ELENA_LIBRARY.find(m => String(m.tmdb_id) === String(targetTmdbId));
+      if (elenaEntry && elenaEntry.review && (currentUser?.username || '').toLowerCase() !== ELENA_PROFILE.username) {
+        if (!allReviews.some(r => r.username === ELENA_PROFILE.username)) {
+          allReviews.push({
+            id: `elena-rev-${targetTmdbId}`,
+            user_id: ELENA_PROFILE.id,
+            username: ELENA_PROFILE.username,
+            displayName: ELENA_PROFILE.displayName,
+            avatar: ELENA_PROFILE.avatar,
+            rating: elenaEntry.rating,
+            review: elenaEntry.review,
+            date_added: elenaEntry.date_added,
+            contains_spoilers: false
+          });
         }
       }
 

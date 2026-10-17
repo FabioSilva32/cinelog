@@ -1,7 +1,16 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "../supabaseClient";
 import { Search, UserPlus, UserMinus, UserCheck, Activity, Users } from "lucide-react";
-import { TESTER_PROFILE, TESTER_LIBRARY } from "../mockData";
+import { ELENA_PROFILE, ELENA_LIBRARY } from "../mockData";
+
+const IGNORED_USERNAMES = new Set([
+  'fabiosilva',
+  'tester',
+  'cinelog.importer.test+75284',
+  'marracarrao',
+  'itzfabiopt2006',
+  'tester99'
+]);
 
 function timeAgo(ts) {
   const diff = Date.now() - new Date(ts).getTime();
@@ -67,13 +76,13 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
       if (followingIds.length > 0) {
         query = query.in("user_id", followingIds);
       } else {
-        // Show community activity feed when following is empty
         query = query.not("review", "is", null).neq("review", "");
       }
 
+      let rawFeed = [];
       const { data, error } = await query;
       if (!error && data) {
-        setFeed(data);
+        rawFeed = data;
       } else if (error) {
         console.warn("Feed query join note, executing resilient fallback:", error.message);
         let fallbackQuery = supabase
@@ -94,9 +103,39 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
             const { data: profs } = await supabase.from("profiles").select("id, username, display_name, avatar_url").in("id", uids);
             (profs || []).forEach(p => { pMap[p.id] = p; });
           }
-          setFeed(rawLib.map(item => ({ ...item, profiles: pMap[item.user_id] })));
+          rawFeed = rawLib.map(item => ({ ...item, profiles: pMap[item.user_id] }));
         }
       }
+
+      // Filter out unwanted test accounts from feed
+      const cleanDbFeed = rawFeed.filter(item => {
+        const u = (item.profiles?.username || '').toLowerCase();
+        return !IGNORED_USERNAMES.has(u);
+      });
+
+      // Include Elena Rodriguez's authentic reviews in feed
+      const shouldShowElena = following.has(ELENA_PROFILE.id) || following.size === 0;
+      const elenaFeedItems = shouldShowElena
+        ? ELENA_LIBRARY.filter(m => m.review).map(m => ({
+            user_id: ELENA_PROFILE.id,
+            title: m.title,
+            poster_path: m.poster_path,
+            status: m.status,
+            rating: m.rating,
+            review: m.review,
+            date_added: m.date_added,
+            tmdb_id: m.tmdb_id,
+            media_type: m.media_type,
+            profiles: {
+              username: ELENA_PROFILE.username,
+              display_name: ELENA_PROFILE.displayName,
+              avatar_url: ELENA_PROFILE.avatar
+            }
+          }))
+        : [];
+
+      const combined = [...cleanDbFeed, ...elenaFeedItems].sort((a, b) => new Date(b.date_added || 0) - new Date(a.date_added || 0));
+      setFeed(combined);
     } catch (err) {
       console.error("Feed load error:", err);
     } finally {
@@ -108,54 +147,82 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
 
   // Load full profile details for people the user follows
   useEffect(() => {
-    if (!currentUser?.id || following.size === 0) {
+    if (!currentUser?.id && !following.has(ELENA_PROFILE.id)) {
       setFollowingUsers([]);
       return;
     }
     setLoadingFollowing(true);
     const ids = [...following].filter(isUUID);
+
+    const hasElena = following.has(ELENA_PROFILE.id);
+    const elenaObj = {
+      id: ELENA_PROFILE.id,
+      username: ELENA_PROFILE.username,
+      display_name: ELENA_PROFILE.displayName,
+      avatar_url: ELENA_PROFILE.avatar,
+      bio: ELENA_PROFILE.bio
+    };
+
     if (ids.length === 0) {
-      setFollowingUsers([]);
+      setFollowingUsers(hasElena ? [elenaObj] : []);
       setLoadingFollowing(false);
       return;
     }
     supabase.from("profiles")
       .select("id, username, display_name, avatar_url, bio")
       .in("id", ids)
-      .then(({ data, error }) => {
-        if (error) console.warn("Failed to load following users from profiles:", error.message);
-        setFollowingUsers(data || []);
+      .then(({ data }) => {
+        const list = (data || []).filter(u => !IGNORED_USERNAMES.has((u.username || '').toLowerCase()));
+        if (hasElena && !list.some(u => u.id === ELENA_PROFILE.id)) {
+          list.unshift(elenaObj);
+        }
+        setFollowingUsers(list);
       })
-      .catch(err => {
-        console.warn("Failed to load following users:", err);
+      .catch(() => {
+        setFollowingUsers(hasElena ? [elenaObj] : []);
       })
       .finally(() => setLoadingFollowing(false));
   }, [currentUser?.id, following]);
 
-  // Load suggested users from real profiles table
+  // Load suggested users from real profiles table + Elena Rodriguez
   useEffect(() => {
     setLoadingSuggested(true);
     supabase.from("profiles")
       .select("id, username, display_name, avatar_url, bio")
       .limit(30)
-      .then(({ data, error }) => {
-        if (error) {
-          console.warn("Profiles query error:", error.message);
-          return;
+      .then(({ data }) => {
+        const myId = currentUser?.id;
+        const myUsername = (currentUser?.username || '').toLowerCase();
+        let filtered = (data || []).filter(u =>
+          u.id !== myId &&
+          (u.username || '').toLowerCase() !== myUsername &&
+          !IGNORED_USERNAMES.has((u.username || '').toLowerCase()) &&
+          !following.has(u.id)
+        );
+
+        // Always provide Elena Rodriguez as a rich, active community profile to follow & explore
+        if (!following.has(ELENA_PROFILE.id) && myUsername !== ELENA_PROFILE.username) {
+          filtered.unshift({
+            id: ELENA_PROFILE.id,
+            username: ELENA_PROFILE.username,
+            display_name: ELENA_PROFILE.displayName,
+            avatar_url: ELENA_PROFILE.avatar,
+            bio: ELENA_PROFILE.bio
+          });
         }
-        if (data) {
-          const myId = currentUser?.id;
-          const myUsername = (currentUser?.username || '').toLowerCase();
-          const filtered = data.filter(u =>
-            u.id !== myId &&
-            (u.username || '').toLowerCase() !== myUsername &&
-            !following.has(u.id)
-          );
-          setSuggestedUsers(filtered);
-        }
+        setSuggestedUsers(filtered);
       })
       .catch(err => {
         console.warn("Profiles query exception:", err);
+        if (!following.has(ELENA_PROFILE.id)) {
+          setSuggestedUsers([{
+            id: ELENA_PROFILE.id,
+            username: ELENA_PROFILE.username,
+            display_name: ELENA_PROFILE.displayName,
+            avatar_url: ELENA_PROFILE.avatar,
+            bio: ELENA_PROFILE.bio
+          }]);
+        }
       })
       .finally(() => setLoadingSuggested(false));
   }, [currentUser?.id, currentUser?.username, following]);
@@ -165,14 +232,31 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
     if (!searchQuery.trim()) { setSearchResults([]); return; }
     setSearching(true);
     const t = setTimeout(async () => {
-      const q = searchQuery.trim();
+      const q = searchQuery.trim().toLowerCase();
       const { data } = await supabase
         .from("profiles")
         .select("id, username, display_name, avatar_url, bio")
         .or(`username.ilike.%${q}%,display_name.ilike.%${q}%`)
         .limit(10);
       
-      const filtered = (data || []).filter(u => u.id !== currentUser?.id && (u.username || '').toLowerCase() !== (currentUser?.username || '').toLowerCase());
+      let filtered = (data || []).filter(u =>
+        u.id !== currentUser?.id &&
+        (u.username || '').toLowerCase() !== (currentUser?.username || '').toLowerCase() &&
+        !IGNORED_USERNAMES.has((u.username || '').toLowerCase())
+      );
+
+      if ('elena rodriguez elena_films'.includes(q) && currentUser?.username !== ELENA_PROFILE.username) {
+        if (!filtered.some(u => u.username === ELENA_PROFILE.username)) {
+          filtered.unshift({
+            id: ELENA_PROFILE.id,
+            username: ELENA_PROFILE.username,
+            display_name: ELENA_PROFILE.displayName,
+            avatar_url: ELENA_PROFILE.avatar,
+            bio: ELENA_PROFILE.bio
+          });
+        }
+      }
+
       setSearchResults(filtered);
       setSearching(false);
     }, 300);
@@ -187,7 +271,7 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
       return next;
     });
 
-    if (currentUser?.id && isUUID(currentUser.id) && isUUID(userId)) {
+    if (currentUser?.id && isUUID(currentUser.id) && isUUID(userId) && userId !== ELENA_PROFILE.id) {
       try {
         if (isFollowing) {
           await supabase.from("follows").delete()
@@ -197,7 +281,6 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
         }
       } catch (err) {
         console.warn("Follow action failed:", err);
-        // Revert optimistic update
         setFollowing(prev => {
           const next = new Set(prev);
           if (isFollowing) { next.add(userId); } else { next.delete(userId); }
