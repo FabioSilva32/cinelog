@@ -48,42 +48,58 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
     });
   };
 
-  const [lists, setLists] = useState(() => {
-    try {
-      const stored = localStorage.getItem('cinelog_saved_tier_lists_v4');
-      if (stored) return JSON.parse(stored);
-      
-      const storedTiers = localStorage.getItem('cinelog_tiers_list_setup_v3');
-      const storedData = localStorage.getItem('cinelog_tier_list_data_v3');
-      const t = storedTiers ? JSON.parse(storedTiers) : DEFAULT_TIERS;
-      const d = storedData ? JSON.parse(storedData) : {};
-      
-      return {
-        default: { id: 'default', name: 'Global Master List', tiers: t, tierData: d }
-      };
-    } catch {
-      return {
-        default: { id: 'default', name: 'Global Master List', tiers: DEFAULT_TIERS, tierData: {} }
-      };
-    }
-  });
 
+  const isSwitchingListRef = useRef(false);
   const [activeListId, setActiveListId] = useState(() => {
     return localStorage.getItem('cinelog_active_tier_list_id_v4') || 'default';
   });
+  const activeListIdRef = useRef(activeListId);
+  activeListIdRef.current = activeListId;
 
+  // Preserve user's custom tier structure (e.g. S+, S, A, B, C, D) so format remains rock-solid across lists
   const [tiers, setTiers] = useState(() => {
     try {
+      const storedMaster = localStorage.getItem('cinelog_master_tiers_v4');
+      if (storedMaster) {
+        const parsed = JSON.parse(storedMaster);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
       const storedLists = localStorage.getItem('cinelog_saved_tier_lists_v4');
-      const activeId = localStorage.getItem('cinelog_active_tier_list_id_v4') || 'default';
       if (storedLists) {
         const parsed = JSON.parse(storedLists);
-        if (parsed[activeId]) return parsed[activeId].tiers;
+        const activeId = localStorage.getItem('cinelog_active_tier_list_id_v4') || 'default';
+        if (parsed[activeId]?.tiers && parsed[activeId].tiers.length > 0) return parsed[activeId].tiers;
+        for (const l of Object.values(parsed)) {
+          if (l.tiers && l.tiers.length > 0) return l.tiers;
+        }
       }
       const storedTiers = localStorage.getItem('cinelog_tiers_list_setup_v3');
       return storedTiers ? JSON.parse(storedTiers) : DEFAULT_TIERS;
     } catch {
       return DEFAULT_TIERS;
+    }
+  });
+
+  const [lists, setLists] = useState(() => {
+    try {
+      const stored = localStorage.getItem('cinelog_saved_tier_lists_v4');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
+          return parsed;
+        }
+      }
+      
+      const storedData = localStorage.getItem('cinelog_tier_list_data_v3');
+      const d = storedData ? JSON.parse(storedData) : {};
+      
+      return {
+        default: { id: 'default', name: 'Global Master List', tiers, tierData: d }
+      };
+    } catch {
+      return {
+        default: { id: 'default', name: 'Global Master List', tiers: DEFAULT_TIERS, tierData: {} }
+      };
     }
   });
 
@@ -93,7 +109,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
       const activeId = localStorage.getItem('cinelog_active_tier_list_id_v4') || 'default';
       if (storedLists) {
         const parsed = JSON.parse(storedLists);
-        if (parsed[activeId]) return parsed[activeId].tierData;
+        if (parsed[activeId]?.tierData) return parsed[activeId].tierData;
       }
       const storedData = localStorage.getItem('cinelog_tier_list_data_v3');
       return storedData ? JSON.parse(storedData) : {};
@@ -104,7 +120,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
     }
   });
 
-  const [poolFilter, setPoolFilter] = useState(() => lists[activeListId]?.poolFilter || 'all'); // 'all', franchise ID, genre, 'custom:...', or 'tag:...'
+  const [poolFilter, setPoolFilter] = useState(() => lists[activeListId]?.poolFilter || 'all');
   const [poolSearch, setPoolSearch] = useState('');
   const [cloudSyncStatus, setCloudSyncStatus] = useState('idle'); // 'idle' | 'syncing' | 'synced' | 'error'
 
@@ -160,23 +176,43 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
     isDanger: true,
   });
 
+  // Get full lists dictionary snapshot with latest active list data
+  const getFullListsSnapshot = (targetLists = lists, targetActiveId = activeListIdRef.current) => {
+    return {
+      ...targetLists,
+      [targetActiveId]: {
+        ...(targetLists[targetActiveId] || { id: targetActiveId, name: 'List' }),
+        id: targetActiveId,
+        tiers: tiers && tiers.length > 0 ? tiers : DEFAULT_TIERS,
+        tierData: tierData || {},
+        poolFilter: poolFilter || 'all'
+      }
+    };
+  };
+
   // Listen for background tier list updates from other tabs or session load
   useEffect(() => {
     const handleTierSync = (e) => {
       if (e.detail && typeof e.detail === 'object') {
-        setLists(e.detail);
-        const active = localStorage.getItem('cinelog_active_tier_list_id_v4') || 'default';
-        if (e.detail[active]) {
-          setTiers(e.detail[active].tiers || DEFAULT_TIERS);
-          setTierData(e.detail[active].tierData || {});
-          if (e.detail[active].poolFilter) setPoolFilter(e.detail[active].poolFilter);
+        const cloudLists = e.detail;
+        setLists(cloudLists);
+        const active = localStorage.getItem('cinelog_active_tier_list_id_v4') || Object.keys(cloudLists)[0] || 'default';
+        if (cloudLists[active]) {
+          isSwitchingListRef.current = true;
+          setActiveListId(active);
+          activeListIdRef.current = active;
+          const targetTiers = cloudLists[active].tiers && cloudLists[active].tiers.length > 0 ? cloudLists[active].tiers : tiers;
+          setTiers(targetTiers);
+          setTierData(cloudLists[active].tierData || {});
+          if (cloudLists[active].poolFilter) setPoolFilter(cloudLists[active].poolFilter);
+          setTimeout(() => { isSwitchingListRef.current = false; }, 50);
         }
         setCloudSyncStatus('synced');
       }
     };
     window.addEventListener('cinelog_tier_lists_updated', handleTierSync);
     return () => window.removeEventListener('cinelog_tier_lists_updated', handleTierSync);
-  }, []);
+  }, [tiers]);
 
   // Debounced cloud save
   const saveToCloud = useMemo(() => {
@@ -213,17 +249,20 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
         const cloudLists = user.user_metadata.cinelog_tier_lists;
         const cloudActiveId = user.user_metadata.cinelog_active_tier_list_id || 'default';
         if (cloudLists && Object.keys(cloudLists).length > 0) {
+          isSwitchingListRef.current = true;
           setLists(cloudLists);
           localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(cloudLists));
-          if (cloudLists[cloudActiveId]) {
-            setActiveListId(cloudActiveId);
-            localStorage.setItem('cinelog_active_tier_list_id_v4', cloudActiveId);
-            setTiers(cloudLists[cloudActiveId].tiers || DEFAULT_TIERS);
-            setTierData(cloudLists[cloudActiveId].tierData || {});
-            if (cloudLists[cloudActiveId].poolFilter) setPoolFilter(cloudLists[cloudActiveId].poolFilter);
-          }
+          const targetId = cloudLists[cloudActiveId] ? cloudActiveId : Object.keys(cloudLists)[0];
+          setActiveListId(targetId);
+          activeListIdRef.current = targetId;
+          localStorage.setItem('cinelog_active_tier_list_id_v4', targetId);
+          const targetTiers = cloudLists[targetId].tiers && cloudLists[targetId].tiers.length > 0 ? cloudLists[targetId].tiers : tiers;
+          setTiers(targetTiers);
+          setTierData(cloudLists[targetId].tierData || {});
+          if (cloudLists[targetId].poolFilter) setPoolFilter(cloudLists[targetId].poolFilter);
           setCloudSyncStatus('synced');
           isInitialSyncDone.current = true;
+          setTimeout(() => { isSwitchingListRef.current = false; }, 50);
           return;
         }
       }
@@ -232,7 +271,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
       try {
         const local = JSON.parse(localStorage.getItem('cinelog_saved_tier_lists_v4') || '{}');
         if (local && Object.keys(local).length > 0) {
-          saveToCloud(local, activeListId);
+          saveToCloud(local, activeListIdRef.current);
         }
       } catch {}
       isInitialSyncDone.current = true;
@@ -242,10 +281,11 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
     });
   }, [currentUser?.id]);
 
-  // Copy transfer code to clipboard
+  // Copy transfer code to clipboard (always uses freshest snapshot)
   const copyTransferCode = () => {
     try {
-      const code = btoa(unescape(encodeURIComponent(JSON.stringify(lists))));
+      const fullSnapshot = getFullListsSnapshot();
+      const code = btoa(unescape(encodeURIComponent(JSON.stringify(fullSnapshot))));
       navigator.clipboard.writeText(code);
       setTransferMsg('✅ Transfer code copied to clipboard! Paste it on your phone/other device.');
       setTimeout(() => setTransferMsg(''), 6000);
@@ -261,20 +301,27 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
       const jsonStr = decodeURIComponent(escape(atob(transferCodeInput.trim())));
       const parsed = JSON.parse(jsonStr);
       if (parsed && typeof parsed === 'object') {
+        isSwitchingListRef.current = true;
         setLists(parsed);
         localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(parsed));
         const firstId = Object.keys(parsed)[0] || 'default';
         setActiveListId(firstId);
+        activeListIdRef.current = firstId;
         localStorage.setItem('cinelog_active_tier_list_id_v4', firstId);
         if (parsed[firstId]) {
-          setTiers(parsed[firstId].tiers || DEFAULT_TIERS);
+          const targetTiers = parsed[firstId].tiers && parsed[firstId].tiers.length > 0 ? parsed[firstId].tiers : tiers;
+          setTiers(targetTiers);
+          try { localStorage.setItem('cinelog_master_tiers_v4', JSON.stringify(targetTiers)); } catch {}
           setTierData(parsed[firstId].tierData || {});
           if (parsed[firstId].poolFilter) setPoolFilter(parsed[firstId].poolFilter);
         }
         saveToCloud(parsed, firstId);
         setTransferMsg('🎉 Successfully imported and synced your tier lists!');
         setTransferCodeInput('');
-        setTimeout(() => setTransferMsg(''), 5000);
+        setTimeout(() => {
+          setTransferMsg('');
+          isSwitchingListRef.current = false;
+        }, 5000);
       } else {
         setTransferMsg('❌ Invalid tier list code.');
       }
@@ -288,24 +335,16 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
     if (!currentUser?.id || !supabase) return;
     setCloudManualSyncing(true);
     try {
-      const currentSaved = {
-        ...lists,
-        [activeListId]: {
-          ...lists[activeListId],
-          id: activeListId,
-          tiers,
-          tierData,
-          poolFilter
-        }
-      };
+      const currentSaved = getFullListsSnapshot();
       await supabase.auth.updateUser({
         data: {
           cinelog_tier_lists: currentSaved,
-          cinelog_active_tier_list_id: activeListId
+          cinelog_active_tier_list_id: activeListIdRef.current
         }
       });
+      setLists(currentSaved);
       setCloudSyncStatus('synced');
-      setTransferMsg('☁️ Successfully uploaded tier lists to your cloud account!');
+      setTransferMsg('☁️ Successfully uploaded all tier lists to your cloud account!');
     } catch (err) {
       setCloudSyncStatus('error');
       setTransferMsg('Cloud upload error: ' + err.message);
@@ -325,17 +364,21 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
       const cloudLists = user?.user_metadata?.cinelog_tier_lists;
       const cloudActiveId = user?.user_metadata?.cinelog_active_tier_list_id || 'default';
       if (cloudLists && Object.keys(cloudLists).length > 0) {
+        isSwitchingListRef.current = true;
         setLists(cloudLists);
         localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(cloudLists));
-        if (cloudLists[cloudActiveId]) {
-          setActiveListId(cloudActiveId);
-          localStorage.setItem('cinelog_active_tier_list_id_v4', cloudActiveId);
-          setTiers(cloudLists[cloudActiveId].tiers || DEFAULT_TIERS);
-          setTierData(cloudLists[cloudActiveId].tierData || {});
-          if (cloudLists[cloudActiveId].poolFilter) setPoolFilter(cloudLists[cloudActiveId].poolFilter);
-        }
+        const targetId = cloudLists[cloudActiveId] ? cloudActiveId : Object.keys(cloudLists)[0];
+        setActiveListId(targetId);
+        activeListIdRef.current = targetId;
+        localStorage.setItem('cinelog_active_tier_list_id_v4', targetId);
+        const targetTiers = cloudLists[targetId].tiers && cloudLists[targetId].tiers.length > 0 ? cloudLists[targetId].tiers : tiers;
+        setTiers(targetTiers);
+        try { localStorage.setItem('cinelog_master_tiers_v4', JSON.stringify(targetTiers)); } catch {}
+        setTierData(cloudLists[targetId].tierData || {});
+        if (cloudLists[targetId].poolFilter) setPoolFilter(cloudLists[targetId].poolFilter);
         setCloudSyncStatus('synced');
-        setTransferMsg('⬇️ Loaded tier lists from cloud!');
+        setTransferMsg('⬇️ Loaded all tier lists from cloud!');
+        setTimeout(() => { isSwitchingListRef.current = false; }, 50);
       } else {
         setTransferMsg('ℹ️ No saved tier lists found in your cloud account.');
       }
@@ -347,49 +390,81 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
     }
   };
 
-  // Helper to switch list safely
-  const selectList = (listId) => {
-    // 1. Save current active list
-    const updated = {
-      ...lists,
-      [activeListId]: {
-        ...lists[activeListId],
-        tiers,
-        tierData,
-        poolFilter
-      }
-    };
-    setLists(updated);
-    localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(updated));
-    saveToCloud(updated, listId);
+  // Helper to switch list safely without resetting format or corrupting data
+  const selectList = (nextListId) => {
+    if (!nextListId || nextListId === activeListIdRef.current) return;
 
-    // 2. Load next list
-    setActiveListId(listId);
-    localStorage.setItem('cinelog_active_tier_list_id_v4', listId);
-    const nextList = updated[listId];
-    if (nextList) {
-      setTiers(nextList.tiers || DEFAULT_TIERS);
-      setTierData(nextList.tierData || {});
-      if (nextList.poolFilter !== undefined) setPoolFilter(nextList.poolFilter);
-    }
+    // 1. Snapshot current active list with latest tier rankings
+    const currentLists = getFullListsSnapshot();
+
+    // 2. Prepare next list data
+    const nextList = currentLists[nextListId] || {
+      id: nextListId,
+      name: 'List',
+      tiers: tiers,
+      tierData: {},
+      poolFilter: 'all'
+    };
+
+    // Ensure the user's tier layout/format (S+, S, A, B, C, D) is preserved across lists!
+    const activeTiers = (tiers && tiers.length > 0) ? tiers : DEFAULT_TIERS;
+    const nextTierData = nextList.tierData || {};
+    const nextPoolFilter = nextList.poolFilter !== undefined ? nextList.poolFilter : 'all';
+
+    currentLists[nextListId] = {
+      ...nextList,
+      tiers: activeTiers,
+      tierData: nextTierData,
+      poolFilter: nextPoolFilter
+    };
+
+    // 3. Update storage and cloud
+    try {
+      localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(currentLists));
+      localStorage.setItem('cinelog_active_tier_list_id_v4', nextListId);
+    } catch {}
+    saveToCloud(currentLists, nextListId);
+
+    // 4. Update component state cleanly
+    isSwitchingListRef.current = true;
+    setLists(currentLists);
+    setActiveListId(nextListId);
+    activeListIdRef.current = nextListId;
+    setTiers(activeTiers);
+    setTierData(nextTierData);
+    setPoolFilter(nextPoolFilter);
+
+    setTimeout(() => {
+      isSwitchingListRef.current = false;
+    }, 50);
   };
 
-  // Sync tiers/tierData/filter of active list to localStorage & Supabase on modifications
+  // Auto-sync active list modifications (drag/drop placements, filter change, tier label/color edits)
   useEffect(() => {
-    if (!isInitialSyncDone.current) return;
-    const updated = {
-      ...lists,
-      [activeListId]: {
-        ...lists[activeListId],
-        id: activeListId,
-        tiers,
-        tierData,
-        poolFilter
-      }
-    };
-    localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(updated));
-    saveToCloud(updated, activeListId);
-  }, [tiers, tierData, poolFilter, activeListId, saveToCloud]);
+    if (!isInitialSyncDone.current || isSwitchingListRef.current) return;
+
+    const currentId = activeListIdRef.current;
+    setLists(prevLists => {
+      const updated = {
+        ...prevLists,
+        [currentId]: {
+          ...(prevLists[currentId] || { id: currentId, name: 'List' }),
+          id: currentId,
+          tiers,
+          tierData,
+          poolFilter
+        }
+      };
+
+      try {
+        localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(updated));
+        localStorage.setItem('cinelog_master_tiers_v4', JSON.stringify(tiers));
+      } catch {}
+
+      saveToCloud(updated, currentId);
+      return updated;
+    });
+  }, [tiers, tierData, poolFilter, saveToCloud]);
 
 
   // ── HELPERS & SEEDS ────────────────────────────────────────────────
@@ -471,25 +546,40 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
     else if (lower.includes('ghibli')) detectedFilter = 'ghibli';
     else if (lower.includes('spider')) detectedFilter = 'spider-man';
 
+    // 1. Commit current list first
+    const currentLists = getFullListsSnapshot();
+
+    // 2. Preserve user's active tier format (S+, S, A...) for the new list so format never changes!
+    const activeTiers = JSON.parse(JSON.stringify(tiers && tiers.length > 0 ? tiers : DEFAULT_TIERS));
+
     const updated = {
-      ...lists,
+      ...currentLists,
       [newId]: {
         id: newId,
         name: name.trim(),
-        tiers: DEFAULT_TIERS,
+        tiers: activeTiers,
         tierData: {},
-        poolFilter: detectedFilter,
-        includeUnwatched: true
+        poolFilter: detectedFilter
       }
     };
+
+    isSwitchingListRef.current = true;
     setLists(updated);
     setActiveListId(newId);
-    setTiers(DEFAULT_TIERS);
+    activeListIdRef.current = newId;
+    setTiers(activeTiers);
     setTierData({});
     setPoolFilter(detectedFilter);
-    setIncludeUnwatched(true);
-    localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(updated));
-    localStorage.setItem('cinelog_active_tier_list_id_v4', newId);
+
+    try {
+      localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(updated));
+      localStorage.setItem('cinelog_active_tier_list_id_v4', newId);
+    } catch {}
+    saveToCloud(updated, newId);
+
+    setTimeout(() => {
+      isSwitchingListRef.current = false;
+    }, 50);
   };
 
   const deleteList = (listId) => {
@@ -497,20 +587,43 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
     setConfirmConfig({
       isOpen: true,
       title: 'Delete Tier List?',
-      message: `Are you sure you want to delete "${lists[listId]?.name}"? This action cannot be undone.`,
+      message: `Are you sure you want to delete "${lists[listId]?.name || 'this list'}"? This action cannot be undone.`,
       isDanger: true,
       onConfirm: () => {
         const copy = { ...lists };
         delete copy[listId];
+
+        const nextId = 'default';
+        const targetList = copy.default || { id: 'default', name: 'Global Master List', tiers: tiers, tierData: {} };
+        const activeTiers = tiers && tiers.length > 0 ? tiers : DEFAULT_TIERS;
+        const nextData = targetList.tierData || {};
+        const nextFilter = targetList.poolFilter || 'all';
+
+        copy.default = {
+          ...targetList,
+          tiers: activeTiers,
+          tierData: nextData,
+          poolFilter: nextFilter
+        };
+
+        isSwitchingListRef.current = true;
         setLists(copy);
-        localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(copy));
+        setActiveListId(nextId);
+        activeListIdRef.current = nextId;
+        setTiers(activeTiers);
+        setTierData(nextData);
+        setPoolFilter(nextFilter);
         setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-        
-        // Fallback to default list
-        setActiveListId('default');
-        localStorage.setItem('cinelog_active_tier_list_id_v4', 'default');
-        setTiers(copy.default.tiers || DEFAULT_TIERS);
-        setTierData(copy.default.tierData || {});
+
+        try {
+          localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(copy));
+          localStorage.setItem('cinelog_active_tier_list_id_v4', nextId);
+        } catch {}
+        saveToCloud(copy, nextId);
+
+        setTimeout(() => {
+          isSwitchingListRef.current = false;
+        }, 50);
       }
     });
   };
