@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Heart, MessageSquare, Share2, ArrowLeft, X, Trophy, Film, Send, Trash2 } from 'lucide-react';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
@@ -24,7 +25,7 @@ export default function ListDetailModal({
   const [likesCount, setLikesCount] = useState(list?.likesCount || 0);
   const [copied, setCopied] = useState(false);
 
-  if (!list) return null;
+  if (!list || typeof document === 'undefined') return null;
 
   const isOwner = currentUser?.username && (
     list.author?.username === currentUser.username ||
@@ -90,38 +91,48 @@ export default function ListDetailModal({
 
   const entries = list.entries || [];
 
-  return (
+  return createPortal(
     <div
-      className="modal-backdrop animate-fade-in"
+      className="modal-backdrop"
       style={{
         position: 'fixed',
-        inset: 0,
-        zIndex: 920,
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
+        height: '100vh',
+        zIndex: 99999,
         background: 'rgba(5, 3, 10, 0.88)',
         backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '20px 16px',
-        overflow: 'hidden'
+        boxSizing: 'border-box',
+        overflow: 'hidden',
+        animation: 'fadeInOverlay 0.18s ease-out'
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
-        className="glass animate-slide-up"
+        className="glass"
         style={{
           width: '100%',
           maxWidth: '880px',
-          maxHeight: '90vh',
+          maxHeight: 'min(90vh, 860px)',
           background: 'linear-gradient(180deg, #13101c 0%, #0d0b13 100%)',
           borderRadius: '24px',
           border: '1px solid rgba(255, 255, 255, 0.1)',
           boxShadow: '0 30px 80px rgba(0, 0, 0, 0.85)',
           overflow: 'hidden',
           display: 'flex',
-          flexDirection: 'column'
+          flexDirection: 'column',
+          margin: 'auto',
+          animation: 'fadeInScale 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
         }}
       >
         {/* Top Header Bar (Pinned) */}
@@ -544,6 +555,7 @@ export default function ListDetailModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

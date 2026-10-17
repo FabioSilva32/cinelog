@@ -359,7 +359,7 @@ export default function CollectionsTab({
   }, [lists, currentUser]);
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '42px', paddingBottom: '60px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '42px', paddingBottom: '60px' }}>
 
       {/* ────────────────────────────────────────────────────────────────────────── */}
       {/* 1. TOP SECTION: LETTERBOXD-STYLE COMMUNITY LISTS & RANKINGS                */}

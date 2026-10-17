@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { AlertTriangle, Trash2, X } from 'lucide-react';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
@@ -24,25 +25,32 @@ export default function ConfirmModal({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onCancel]);
 
-  if (!isOpen) return null;
+  if (!isOpen || typeof document === 'undefined') return null;
 
-  return (
+  return createPortal(
     <div
       className="modal-backdrop"
       onClick={onCancel}
       onWheel={e => e.stopPropagation()}
       style={{
         position: 'fixed',
-        inset: 0,
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
+        height: '100vh',
         background: 'rgba(4,3,8,0.85)',
         backdropFilter: 'blur(12px)',
-        zIndex: 2000,
+        WebkitBackdropFilter: 'blur(12px)',
+        zIndex: 99999,
         display: 'flex',
-        alignItems: 'flex-start',
+        alignItems: 'center',
         justifyContent: 'center',
         padding: '20px',
-        paddingTop: '12vh',
-        overscrollBehavior: 'contain'
+        boxSizing: 'border-box',
+        overscrollBehavior: 'contain',
+        animation: 'fadeInOverlay 0.18s ease-out'
       }}
     >
       <div
@@ -126,7 +134,8 @@ export default function ConfirmModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
