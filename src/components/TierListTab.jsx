@@ -29,6 +29,8 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
   // Flag to prevent overwriting cloud data on initial mount
   const isInitialSyncDone = useRef(false);
   const [showSyncModal, setShowSyncModal] = useState(false);
+  const [showNewListModal, setShowNewListModal] = useState(false);
+  const [newListNameInput, setNewListNameInput] = useState('');
   const [transferCodeInput, setTransferCodeInput] = useState('');
   const [transferMsg, setTransferMsg] = useState('');
   const [cloudManualSyncing, setCloudManualSyncing] = useState(false);
@@ -533,13 +535,15 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
   const getMovie = (id) => movieMap.get(String(id));
 
   const createNewList = (name) => {
-    if (!name.trim()) return;
+    if (!name || !name.trim()) return;
     const newId = `list-${Date.now()}`;
     const lower = name.toLowerCase();
     let detectedFilter = 'all';
-    if (lower.includes('marvel') || lower.includes('mcu') || lower.includes('avengers')) detectedFilter = 'mcu';
-    else if (lower.includes('star wars')) detectedFilter = 'star-wars';
-    else if (lower.includes('batman') || lower.includes('dc')) detectedFilter = 'batman';
+    if (lower.includes('marvel')) detectedFilter = 'marvel';
+    else if (lower.includes('mcu') || lower.includes('avengers')) detectedFilter = 'mcu';
+    else if (lower.includes('star wars') || lower.includes('star-wars')) detectedFilter = 'star-wars';
+    else if (lower.includes('batman')) detectedFilter = 'batman';
+    else if (lower.includes('dc')) detectedFilter = 'dc';
     else if (lower.includes('harry potter') || lower.includes('wizarding')) detectedFilter = 'harry-potter';
     else if (lower.includes('lotr') || lower.includes('rings') || lower.includes('middle earth')) detectedFilter = 'lotr';
     else if (lower.includes('pixar')) detectedFilter = 'pixar';
@@ -579,7 +583,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
 
     setTimeout(() => {
       isSwitchingListRef.current = false;
-    }, 50);
+    }, 100);
   };
 
   const deleteList = (listId) => {
@@ -623,24 +627,42 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
 
         setTimeout(() => {
           isSwitchingListRef.current = false;
-        }, 50);
+        }, 100);
       }
     });
   };
 
   const handleReset = () => {
+    const listName = lists[activeListId]?.name || 'this list';
     setConfirmConfig({
       isOpen: true,
-      title: 'Reset Tier List?',
-      message: 'Are you sure you want to clear all movie ranks and restore the default tiers? Your current rank placements will be reset.',
+      title: `Clear Placements for "${listName}"?`,
+      message: `Are you sure you want to clear all movie rankings in "${listName}"? All movies will return to the unranked pool. Your custom tier rows (like S+, colors, etc.) will be preserved.`,
       isDanger: true,
       onConfirm: () => {
-        setTiers(DEFAULT_TIERS);
-        const defaultData = {};
-        DEFAULT_TIERS.forEach(t => { defaultData[t.id] = []; });
-        setTierData(defaultData);
+        const clearedData = {};
+        tiers.forEach(t => { clearedData[t.id] = []; });
+        setTierData(clearedData);
         setEditingTierId(null);
         setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+
+        setLists(prev => {
+          const updated = {
+            ...prev,
+            [activeListId]: {
+              ...(prev[activeListId] || {}),
+              id: activeListId,
+              tiers,
+              tierData: clearedData,
+              poolFilter
+            }
+          };
+          try {
+            localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(updated));
+          } catch {}
+          saveToCloud(updated, activeListId);
+          return updated;
+        });
       }
     });
   };
@@ -835,10 +857,19 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
       
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
+      <div
+        className="tier-header-bar"
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: '12px',
+          flexWrap: 'wrap'
+        }}
+      >
+        <div style={{ flexShrink: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <h2 style={{ fontSize: '26px', margin: 0, letterSpacing: '-0.5px' }}>Custom Tier Maker</h2>
+            <h2 style={{ fontSize: '24px', margin: 0, letterSpacing: '-0.5px', whiteSpace: 'nowrap' }}>Custom Tier Maker</h2>
             {currentUser?.id && isSupabaseConfigured && (
               <div style={{
                 display: 'inline-flex',
@@ -857,19 +888,21 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
               </div>
             )}
           </div>
-          <p style={{ color: 'var(--text-muted)', fontSize: '13.5px', marginTop: '4px' }}>
+          <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '3px 0 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             Rank watched titles into customizable rows. Drag posters to reorder, or edit tiers.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-          {/* List Selector Dropdown */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-dim)' }}>Rank List:</span>
+
+        {/* Toolbar Controls */}
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap', flexShrink: 0 }}>
+          {/* List Selector Dropdown + Optional Trash Icon */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-dim)', whiteSpace: 'nowrap' }}>Rank List:</span>
             <select
               value={activeListId}
               onChange={e => selectList(e.target.value)}
               className="form-input"
-              style={{ fontSize: '12.5px', background: '#141414', border: '1px solid var(--border)', color: '#fff', padding: '6px 12px', borderRadius: '6px', width: '185px' }}
+              style={{ fontSize: '12px', background: '#141414', border: '1px solid var(--border)', color: '#fff', padding: '5px 10px', borderRadius: '6px', width: '150px' }}
             >
               {Object.values(lists).map(l => (
                 <option key={l.id} value={l.id} style={{ background: '#141414', color: '#fff' }}>
@@ -877,36 +910,43 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
                 </option>
               ))}
             </select>
+
+            {/* Compact Delete Trash Button for Non-Default Lists */}
+            {activeListId !== 'default' && (
+              <button
+                className="btn btn-ghost"
+                onClick={() => deleteList(activeListId)}
+                title={`Delete list "${lists[activeListId]?.name || 'this list'}"`}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: '32px', height: '32px', padding: 0,
+                  color: 'var(--red)', border: '1px solid rgba(239,68,68,0.3)',
+                  background: 'rgba(239,68,68,0.08)', borderRadius: '6px',
+                  flexShrink: 0
+                }}
+              >
+                <Trash2 size={13} />
+              </button>
+            )}
           </div>
 
           {/* New List Button */}
           <button
             className="btn btn-ghost"
             onClick={() => {
-              const name = prompt("Enter a name for your new rank list:");
-              if (name && name.trim()) createNewList(name);
+              setNewListNameInput('');
+              setShowNewListModal(true);
             }}
-            style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12.5px', height: '34px', padding: '0 12px', border: '1px solid var(--border)', background: '#141414' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', height: '32px', padding: '0 10px', border: '1px solid var(--border)', background: '#141414', borderRadius: '6px' }}
           >
-            <Plus size={14} /> New List
+            <Plus size={13} /> New List
           </button>
-
-          {/* Delete List Button */}
-          {activeListId !== 'default' && (
-            <button
-              className="btn btn-ghost"
-              onClick={() => deleteList(activeListId)}
-              style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12.5px', height: '34px', padding: '0 10px', color: 'var(--red)', border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.06)' }}
-            >
-              ✕ Delete
-            </button>
-          )}
 
           <button
             className="btn btn-ghost"
             onClick={toggleRowLayoutMode}
             style={{
-              display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', height: '34px', padding: '0 12px',
+              display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', height: '32px', padding: '0 10px',
               border: '1px solid var(--border)', background: '#141414', color: '#fff', borderRadius: '6px'
             }}
             title="Toggle between wrapping grid and horizontal swiping rows"
@@ -919,18 +959,23 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
             className="btn btn-ghost"
             onClick={() => setShowSyncModal(true)}
             style={{
-              display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', height: '34px', padding: '0 12px',
+              display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', height: '32px', padding: '0 10px',
               border: '1px solid rgba(229,9,20,0.35)', background: 'rgba(229,9,20,0.08)', color: '#fff', borderRadius: '6px'
             }}
             title="Transfer or sync tier lists between PC and Phone"
           >
-            <Cloud size={14} color="var(--accent)" />
+            <Cloud size={13} color="var(--accent)" />
             <span>Sync / Transfer</span>
           </button>
 
-          <button className="btn btn-ghost" onClick={handleReset} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', height: '34px' }}>
-            <RefreshCw size={13} />
-            Reset Placements
+          <button
+            className="btn btn-ghost"
+            onClick={handleReset}
+            style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', height: '32px', padding: '0 10px', border: '1px solid var(--border)', background: '#141414', borderRadius: '6px' }}
+            title="Clear movie rankings in this list back to the unranked pool"
+          >
+            <RefreshCw size={12} />
+            <span>Reset Placements</span>
           </button>
         </div>
       </div>
@@ -1698,6 +1743,120 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
                 </>
               )}
             </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── CREATE NEW LIST MODAL (Centered via Portal) ── */}
+      {showNewListModal && typeof document !== 'undefined' && createPortal(
+        <div
+          className="modal-backdrop"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0,0,0,0.85)',
+            backdropFilter: 'blur(10px)',
+            zIndex: 999999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            overscrollBehavior: 'contain'
+          }}
+          onClick={e => e.target === e.currentTarget && setShowNewListModal(false)}
+        >
+          <div
+            className="glass animate-fade-in"
+            style={{
+              width: '100%',
+              maxWidth: '420px',
+              borderRadius: '16px',
+              border: '1px solid #2a2a2e',
+              background: '#111015',
+              padding: '24px',
+              position: 'relative',
+              boxShadow: '0 20px 48px rgba(0,0,0,0.9)',
+              margin: 'auto'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: 'rgba(229,9,20,0.12)', border: '1px solid rgba(229,9,20,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Plus size={16} color="var(--accent)" />
+                </div>
+                <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800 }}>Create New Tier List</h3>
+              </div>
+              <button
+                onClick={() => setShowNewListModal(false)}
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <p style={{ fontSize: '13px', color: '#A1A1AA', margin: '0 0 16px', lineHeight: 1.45 }}>
+              Give your new tier list a title (e.g. <em>Marvel</em>, <em>DC</em>, <em>Star Wars</em>, <em>Pixar</em>, or <em>Favorites</em>). It starts with a clean, unranked pool while keeping your tier format!
+            </p>
+
+            <form
+              onSubmit={e => {
+                e.preventDefault();
+                if (newListNameInput.trim()) {
+                  createNewList(newListNameInput);
+                  setShowNewListModal(false);
+                  setNewListNameInput('');
+                }
+              }}
+            >
+              <div style={{ marginBottom: '18px' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#fff', marginBottom: '6px' }}>
+                  List Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Marvel MCU, Star Wars, Pixar..."
+                  value={newListNameInput}
+                  onChange={e => setNewListNameInput(e.target.value)}
+                  autoFocus
+                  className="form-input"
+                  style={{
+                    width: '100%',
+                    background: '#181622',
+                    border: '1px solid var(--border)',
+                    color: '#fff',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    fontSize: '13.5px',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => setShowNewListModal(false)}
+                  style={{ fontSize: '13px', height: '36px' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={!newListNameInput.trim()}
+                  style={{ fontSize: '13px', height: '36px', padding: '0 18px', fontWeight: 700 }}
+                >
+                  Create List
+                </button>
+              </div>
+            </form>
           </div>
         </div>,
         document.body

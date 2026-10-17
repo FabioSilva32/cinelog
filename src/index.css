@@ -1902,13 +1902,26 @@ body.modal-open {
 
   /* ── MINIMALIST LETTERBOXD APP TOP BAR ── */
   .topnav-header {
-    height: 54px !important;
+    height: auto !important;
+    min-height: calc(56px + env(safe-area-inset-top, 0px)) !important;
+    padding-top: env(safe-area-inset-top, 0px) !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+    background: #000000 !important;
+    background-color: #000000 !important;
+    border-bottom: 1px solid #1c1c1c !important;
   }
 
   .topnav-inner {
-    padding: 0 14px !important;
-    height: 54px !important;
-    gap: 8px !important;
+    padding: 0 16px !important;
+    height: 56px !important;
+    gap: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .topnav-nav {
@@ -1921,17 +1934,36 @@ body.modal-open {
 
   .topnav-search-mobile-btn {
     display: flex !important;
-    width: 34px !important;
-    height: 34px !important;
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .logo-wrapper {
+    display: flex !important;
+    align-items: center !important;
+    gap: 9px !important;
+    opacity: 1 !important;
+    visibility: visible !important;
   }
 
   .logo-wrapper span {
-    font-size: 18px !important;
+    font-size: 20px !important;
+    font-weight: 900 !important;
+    display: inline-block !important;
+    color: #FFFFFF !important;
+    letter-spacing: -0.5px !important;
   }
 
   .logo-wrapper > div {
-    width: 28px !important;
-    height: 28px !important;
+    width: 30px !important;
+    height: 30px !important;
+    border-radius: 8px !important;
+    background: var(--accent) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    box-shadow: 0 2px 8px rgba(229,9,20,0.35) !important;
   }
 
   /* ── EXPLORE TAB: ULTRA-PREMIUM CINEMATIC SPOTLIGHT (AIRY & VISIBLE) ── */
@@ -2531,6 +2563,20 @@ body.modal-open {
   .explore-hero-poster-thumb,
   .explore-hero-spacer {
     display: none !important;
+  }
+}
+
+/* ── TIER LIST HEADER BAR (PREVENTS DESKTOP LAYOUT SHIFT ACROSS LISTS) ── */
+.tier-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+@media (min-width: 960px) {
+  .tier-header-bar {
+    flex-wrap: nowrap !important;
   }
 }
 

@@ -756,21 +756,32 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
           <div style={{ display: activeSection === 'overview' ? 'block' : 'none', flexShrink: 0 }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '26px', padding: '4px 0 8px' }}>
 
-              {/* Row 1: Rating + Date watched */}
+              {/* Vertical Stack: 1. Full-Width Score Bar, 2. Date Watched, 3. Review */}
               {(status === 'watched' || status === 'watching') && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 230px', gap: '40px', alignItems: 'start' }}>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '10px' }}>
-                      <div className="form-label">Your Rating</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+                  {/* 1. Score Bar at the top spanning left to right */}
+                  <div style={{
+                    background: '#151515',
+                    border: '1px solid #282828',
+                    borderRadius: '12px',
+                    padding: '16px 18px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px',
+                    width: '100%',
+                    boxSizing: 'border-box'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                      <div className="form-label" style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#fff' }}>Your Rating</div>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
-                        <span style={{ fontSize: '12px', color: 'var(--text-dim)', fontWeight: 500 }}>{ratingLabel(rating)}</span>
-                        <span style={{ fontSize: '34px', fontWeight: 900, color: ratingColor, fontFamily: 'var(--font-heading)', letterSpacing: '-1px', lineHeight: 1 }}>
+                        <span style={{ fontSize: '13px', color: 'var(--text-dim)', fontWeight: 600 }}>{ratingLabel(rating)}</span>
+                        <span style={{ fontSize: '32px', fontWeight: 900, color: ratingColor, fontFamily: 'var(--font-heading)', letterSpacing: '-1px', lineHeight: 1 }}>
                           {rating > 0 ? rating.toFixed(1) : '—'}
                         </span>
                       </div>
                     </div>
 
-                    <div style={{ position: 'relative', padding: '4px 0' }}>
+                    <div style={{ position: 'relative', padding: '4px 0', width: '100%' }}>
                       <input
                         type="range"
                         min="0"
@@ -781,6 +792,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                         onInput={e => setRating(parseFloat(e.target.value) || 0)}
                         className="cinelog-rating-slider"
                         style={{
+                          width: '100%',
                           '--track-fill': rating > 0
                             ? `linear-gradient(to right, ${ratingColor} 0%, ${ratingColor} ${rating * 10}%, rgba(255,255,255,0.08) ${rating * 10}%, rgba(255,255,255,0.08) 100%)`
                             : 'rgba(255,255,255,0.08)',
@@ -788,7 +800,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                           '--thumb-glow': rating > 0 ? `${ratingColor}88` : 'rgba(255,255,255,0.2)',
                         }}
                       />
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', width: '100%' }}>
                         {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
                           <button
                             key={n}
@@ -799,7 +811,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                               border: 'none',
                               padding: '2px 4px',
                               cursor: 'pointer',
-                              fontSize: '10px',
+                              fontSize: '11px',
                               color: Math.abs(rating - n) < 0.6 ? ratingColor : 'var(--text-dim)',
                               fontWeight: Math.abs(rating - n) < 0.6 ? 800 : 400,
                               transition: 'color 0.15s'
@@ -811,7 +823,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '10px' }}>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '2px' }}>
                       {[
                         { label: '💀 1', val: 1 },
                         { label: '😐 5', val: 5 },
@@ -851,15 +863,27 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                     </div>
                   </div>
 
-                  {/* Date watched */}
-                  <div>
-                    <div className="form-label" style={{ marginBottom: '10px' }}>Date Watched</div>
+                  {/* 2. Date Watched directly under score bar */}
+                  <div style={{
+                    background: '#151515',
+                    border: '1px solid #282828',
+                    borderRadius: '12px',
+                    padding: '14px 18px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    width: '100%',
+                    boxSizing: 'border-box'
+                  }}>
+                    <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#fff' }}>
+                      Date Watched
+                    </div>
                     <input
                       type="date"
                       value={watchDate}
                       onChange={e => setWatchDate(e.target.value)}
                       className="form-input"
-                      style={{ fontSize: '13.5px', width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '8px', color: '#fff', padding: '9px 12px' }}
+                      style={{ fontSize: '13.5px', width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '8px', color: '#fff', padding: '9px 12px', boxSizing: 'border-box' }}
                     />
                   </div>
                 </div>
