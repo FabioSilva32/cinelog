@@ -223,6 +223,9 @@ export default function CreateListModal({
   const [reorderTarget, setReorderTarget] = useState(null); // { index, title }
   const [targetPositionInput, setTargetPositionInput] = useState('');
 
+  // Custom In-App Clear All Confirmation Modal
+  const [showClearModal, setShowClearModal] = useState(false);
+
   const handleOpenReorder = (idx, movieTitle) => {
     setReorderTarget({ index: idx, title: movieTitle });
     setTargetPositionInput(String(idx + 1));
@@ -315,9 +318,7 @@ export default function CreateListModal({
   };
 
   const handleClearAll = () => {
-    if (window.confirm('Clear all films from this list?')) {
-      setEntries([]);
-    }
+    setShowClearModal(true);
   };
 
   // Filtered Library Movies
@@ -699,50 +700,81 @@ export default function CreateListModal({
               {/* List Entries Header */}
               <div style={{
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingTop: '10px',
-                borderTop: '1px solid rgba(255, 255, 255, 0.07)'
+                flexDirection: 'column',
+                gap: '8px',
+                paddingTop: '12px',
+                borderTop: '1px solid rgba(255, 255, 255, 0.08)'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 900, color: '#fff' }}>
-                    List Entries ({entries.length})
-                  </span>
-                  {isRanked && entries.length > 0 && (
-                    <span style={{
-                      fontSize: '9.5px',
-                      fontWeight: 800,
-                      background: 'rgba(245, 158, 11, 0.15)',
-                      color: 'var(--gold)',
-                      borderRadius: '5px',
-                      padding: '1px 5px'
-                    }}>
-                      #1 to #{entries.length}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '8px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '7px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 900, color: '#fff' }}>
+                      List Entries ({entries.length})
                     </span>
+                    {isRanked && entries.length > 0 && (
+                      <span style={{
+                        fontSize: '10px',
+                        fontWeight: 800,
+                        background: 'rgba(245, 158, 11, 0.15)',
+                        color: 'var(--gold)',
+                        border: '1px solid rgba(245, 158, 11, 0.3)',
+                        borderRadius: '5px',
+                        padding: '1px 6px',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        #1 to #{entries.length}
+                      </span>
+                    )}
+                  </div>
+
+                  {entries.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowClearModal(true)}
+                      style={{
+                        background: 'rgba(239, 68, 68, 0.12)',
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        color: '#f87171',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        padding: '3px 8px',
+                        borderRadius: '6px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        whiteSpace: 'nowrap',
+                        transition: 'all 0.15s'
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.22)';
+                        e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.45)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)';
+                        e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+                      }}
+                      title="Clear all films from this list"
+                    >
+                      <Trash2 size={11} /> Clear All
+                    </button>
                   )}
                 </div>
 
                 {entries.length > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '11px', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <ArrowUpDown size={11} /> Drag or tap # to reorder
-                    </span>
-                    <button
-                      type="button"
-                      onClick={handleClearAll}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: 'var(--text-dim)',
-                        fontSize: '11px',
-                        cursor: 'pointer',
-                        padding: '3px 6px'
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.color = 'var(--red)'}
-                      onMouseLeave={e => e.currentTarget.style.color = 'var(--text-dim)'}
-                    >
-                      Clear All
-                    </button>
+                  <div style={{
+                    fontSize: '11px',
+                    color: 'var(--text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}>
+                    <ArrowUpDown size={11} style={{ flexShrink: 0 }} />
+                    <span>Drag posters to reorder, or tap rank badge to jump</span>
                   </div>
                 )}
               </div>
@@ -906,12 +938,21 @@ export default function CreateListModal({
                         </div>
 
                         {/* Title & Year */}
-                        <div style={{ padding: '6px 7px 7px', background: '#120f1a', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                        <div style={{
+                          padding: '6px 7px 7px',
+                          background: '#120f1a',
+                          flex: 1,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          minHeight: '48px'
+                        }}>
                           <div style={{
                             fontSize: '10.5px',
                             fontWeight: 700,
                             color: '#fff',
                             lineHeight: 1.25,
+                            height: '27px',
                             overflow: 'hidden',
                             display: '-webkit-box',
                             WebkitLineClamp: 2,
@@ -919,8 +960,16 @@ export default function CreateListModal({
                           }}>
                             {entry.title}
                           </div>
-                          <div style={{ fontSize: '9px', color: 'var(--text-dim)', marginTop: '3px' }}>
-                            {entry.release_year || '—'}
+                          <div style={{
+                            fontSize: '9.5px',
+                            color: 'var(--text-dim)',
+                            marginTop: '2px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between'
+                          }}>
+                            <span>{entry.release_year || '—'}</span>
+                            {entry.rating ? <span style={{ color: 'var(--gold)', fontSize: '9px', fontWeight: 700 }}>★ {entry.rating}</span> : null}
                           </div>
                         </div>
                       </div>
@@ -1190,7 +1239,7 @@ export default function CreateListModal({
                         display: 'flex',
                         gap: '6px',
                         overflowX: 'auto',
-                        paddingBottom: '2px',
+                        padding: '2px 4px',
                         scrollbarWidth: 'thin',
                         scrollbarColor: 'rgba(255,255,255,0.2) transparent',
                         WebkitOverflowScrolling: 'touch',
@@ -1369,7 +1418,7 @@ export default function CreateListModal({
                               </button>
                             )}
                           </div>
-                          <div style={{ padding: '6px', background: '#120f1a', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                          <div style={{ padding: '6px 7px 7px', background: '#120f1a', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '44px' }}>
                             <div style={{ fontSize: '11px', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {movie.title}
                             </div>
@@ -1507,7 +1556,7 @@ export default function CreateListModal({
                                   </button>
                                 )}
                               </div>
-                              <div style={{ padding: '6px', background: '#120f1a', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                              <div style={{ padding: '6px 7px 7px', background: '#120f1a', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '44px' }}>
                                 <div style={{ fontSize: '11px', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                   {movie.title || movie.name}
                                 </div>
@@ -1678,7 +1727,7 @@ export default function CreateListModal({
                                 </button>
                               )}
                             </div>
-                            <div style={{ padding: '6px', background: '#120f1a', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                            <div style={{ padding: '6px 7px 7px', background: '#120f1a', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '44px' }}>
                               <div style={{ fontSize: '11px', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                 {movie.title}
                               </div>
@@ -1835,6 +1884,137 @@ export default function CreateListModal({
                 Apply
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── CUSTOM IN-APP CLEAR ALL CONFIRMATION MODAL ── */}
+      {showClearModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setShowClearModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 100000,
+            background: 'rgba(0, 0, 0, 0.78)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px'
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#181424',
+              border: '1px solid rgba(239, 68, 68, 0.35)',
+              borderRadius: '16px',
+              padding: '24px 22px',
+              maxWidth: '380px',
+              width: '100%',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(239, 68, 68, 0.15)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
+              gap: '14px'
+            }}
+          >
+            {/* Warning Icon Badge */}
+            <div style={{
+              width: '54px',
+              height: '54px',
+              borderRadius: '50%',
+              background: 'rgba(239, 68, 68, 0.14)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 0 20px rgba(239, 68, 68, 0.2)'
+            }}>
+              <Trash2 size={26} color="#ef4444" strokeWidth={2.2} />
+            </div>
+
+            <div>
+              <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#fff', margin: '0 0 6px 0', letterSpacing: '-0.3px' }}>
+                Clear All Films?
+              </h3>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.45 }}>
+                Are you sure you want to remove all <strong style={{ color: '#fff' }}>{entries.length} {entries.length === 1 ? 'film' : 'films'}</strong> from this list?
+              </p>
+            </div>
+
+            {/* Quick stats badge */}
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.04)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '8px',
+              padding: '6px 14px',
+              fontSize: '11.5px',
+              color: 'var(--text-dim)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              <Film size={12} /> {entries.length} items will be removed
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: '10px', width: '100%', marginTop: '6px' }}>
+              <button
+                type="button"
+                onClick={() => setShowClearModal(false)}
+                style={{
+                  flex: 1,
+                  padding: '10px 14px',
+                  borderRadius: '9px',
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  color: '#fff',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'background 0.15s'
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.14)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setEntries([]);
+                  setShowClearModal(false);
+                  showToast('🗑️ Cleared all films from list');
+                }}
+                style={{
+                  flex: 1.2,
+                  padding: '10px 14px',
+                  borderRadius: '9px',
+                  background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)',
+                  border: '1px solid rgba(239, 68, 68, 0.5)',
+                  color: '#fff',
+                  fontSize: '13px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  boxShadow: '0 4px 14px rgba(239, 68, 68, 0.35)',
+                  transition: 'opacity 0.15s, transform 0.15s'
+                }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'none'}
+              >
+                <Trash2 size={14} /> Clear All
+              </button>
+            </div>
           </div>
         </div>
       )}
