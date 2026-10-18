@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  X, Plus, Search, Trash2, ArrowLeft, ArrowUp, ArrowDown,
+  X, Plus, Search, Trash2, ArrowLeft, ArrowUpDown, GripVertical,
   Trophy, Sparkles, Film, Check, Layers, Bookmark, Star,
   ChevronLeft, ChevronRight, Zap, RefreshCw
 } from 'lucide-react';
@@ -212,8 +212,28 @@ export default function CreateListModal({
   const [bannerToast, setBannerToast] = useState('');
   const franchisePillsRef = useRef(null);
 
-  // List Entries view mode: 'grid' (compact ranked posters) | 'notes' (detailed notes list)
-  const [entriesViewMode, setEntriesViewMode] = useState('grid');
+  // Mobile studio tab switcher: 'entries' | 'browse'
+  const [mobileStudioTab, setMobileStudioTab] = useState('entries');
+
+  // Drag and drop state for entries
+  const [draggedIdx, setDraggedIdx] = useState(null);
+  const [dragOverIdx, setDragOverIdx] = useState(null);
+
+  // Quick tap-to-reorder dialog state
+  const [reorderTarget, setReorderTarget] = useState(null); // { index, title }
+  const [targetPositionInput, setTargetPositionInput] = useState('');
+
+  const handleOpenReorder = (idx, movieTitle) => {
+    setReorderTarget({ index: idx, title: movieTitle });
+    setTargetPositionInput(String(idx + 1));
+  };
+
+  const handleApplyReorder = (newRank1Based) => {
+    if (!reorderTarget) return;
+    const targetIdx = Math.max(0, Math.min(entries.length - 1, newRank1Based - 1));
+    handleMoveEntry(reorderTarget.index, targetIdx);
+    setReorderTarget(null);
+  };
 
   const showToast = (msg) => {
     setBannerToast(msg);
@@ -250,8 +270,7 @@ export default function CreateListModal({
       poster_path: movie.poster_path,
       release_year: (movie.release_date || movie.first_air_date || movie.release_year || '').slice(0, 4),
       rating: movie.vote_average ? Number(movie.vote_average.toFixed(1)) : (movie.rating || null),
-      media_type: movie.media_type || 'movie',
-      note: ''
+      media_type: movie.media_type || 'movie'
     };
     setEntries(prev => [...prev, newEntry]);
     showToast(`Added "${newEntry.title}" to list!`);
@@ -269,8 +288,7 @@ export default function CreateListModal({
         poster_path: m.poster_path,
         release_year: m.release_year,
         rating: m.rating,
-        media_type: m.media_type || 'movie',
-        note: ''
+        media_type: m.media_type || 'movie'
       }));
 
     if (toAdd.length === 0) {
@@ -287,19 +305,11 @@ export default function CreateListModal({
   };
 
   const handleMoveEntry = (fromIdx, toIdx) => {
-    if (toIdx < 0 || toIdx >= entries.length) return;
+    if (toIdx < 0 || toIdx >= entries.length || fromIdx === toIdx) return;
     setEntries(prev => {
       const next = [...prev];
       const [item] = next.splice(fromIdx, 1);
       next.splice(toIdx, 0, item);
-      return next;
-    });
-  };
-
-  const handleUpdateNote = (idx, note) => {
-    setEntries(prev => {
-      const next = [...prev];
-      next[idx] = { ...next[idx], note };
       return next;
     });
   };
@@ -354,7 +364,7 @@ export default function CreateListModal({
 
   return createPortal(
     <div
-      className="modal-backdrop"
+      className="modal-backdrop create-list-modal-backdrop"
       style={{
         position: 'fixed',
         top: 0,
@@ -364,7 +374,7 @@ export default function CreateListModal({
         width: '100vw',
         height: '100vh',
         zIndex: 99999,
-        background: 'rgba(5, 3, 10, 0.88)',
+        background: 'rgba(5, 3, 10, 0.92)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
         display: 'flex',
@@ -380,7 +390,7 @@ export default function CreateListModal({
       }}
     >
       <div
-        className="glass"
+        className="glass create-list-modal-container"
         style={{
           width: '100%',
           maxWidth: '1140px',
@@ -398,15 +408,63 @@ export default function CreateListModal({
         }}
       >
         <style>{`
-          @media (max-width: 820px) {
+          @media (max-width: 768px) {
+            .create-list-modal-backdrop {
+              padding: 0 !important;
+            }
+            .create-list-modal-container {
+              width: 100vw !important;
+              max-width: 100vw !important;
+              height: 100vh !important;
+              max-height: 100vh !important;
+              border-radius: 0 !important;
+              border: none !important;
+              margin: 0 !important;
+            }
             .create-list-studio-grid {
-              grid-template-columns: 1fr !important;
-              overflow-y: auto !important;
+              display: flex !important;
+              flex-direction: column !important;
+              overflow: hidden !important;
+              flex: 1 1 auto !important;
+            }
+            .create-list-mobile-tab-bar {
+              display: flex !important;
             }
             .create-list-left-panel {
+              display: ${mobileStudioTab === 'entries' ? 'flex' : 'none'} !important;
               border-right: none !important;
-              border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-              max-height: 420px !important;
+              width: 100% !important;
+              height: 100% !important;
+              flex: 1 1 auto !important;
+            }
+            .create-list-right-panel {
+              display: ${mobileStudioTab === 'browse' ? 'flex' : 'none'} !important;
+              width: 100% !important;
+              height: 100% !important;
+              flex: 1 1 auto !important;
+            }
+            .create-list-desktop-footer {
+              display: none !important;
+            }
+            .create-list-mobile-footer {
+              display: flex !important;
+            }
+          }
+          @media (min-width: 769px) {
+            .create-list-mobile-tab-bar {
+              display: none !important;
+            }
+            .create-list-mobile-footer {
+              display: none !important;
+            }
+            .create-list-desktop-footer {
+              display: flex !important;
+            }
+            .create-list-left-panel {
+              display: flex !important;
+            }
+            .create-list-right-panel {
+              display: flex !important;
             }
           }
         `}</style>
@@ -481,6 +539,63 @@ export default function CreateListModal({
             onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'none'; }}
           >
             <X size={18} />
+          </button>
+        </div>
+
+        {/* Mobile-Only Studio Tab Switcher (Visible only on <= 768px screens) */}
+        <div
+          className="create-list-mobile-tab-bar"
+          style={{
+            background: 'rgba(10, 8, 18, 0.95)',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            padding: '7px 12px',
+            gap: '8px',
+            flexShrink: 0
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setMobileStudioTab('entries')}
+            style={{
+              flex: 1,
+              padding: '9px 12px',
+              borderRadius: '8px',
+              background: mobileStudioTab === 'entries' ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
+              color: '#fff',
+              border: mobileStudioTab === 'entries' ? '1px solid var(--accent)' : '1px solid rgba(255,255,255,0.08)',
+              fontSize: '12.5px',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              transition: 'all 0.15s'
+            }}
+          >
+            <Film size={14} /> My List ({entries.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileStudioTab('browse')}
+            style={{
+              flex: 1,
+              padding: '9px 12px',
+              borderRadius: '8px',
+              background: mobileStudioTab === 'browse' ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
+              color: '#fff',
+              border: mobileStudioTab === 'browse' ? '1px solid var(--accent)' : '1px solid rgba(255,255,255,0.08)',
+              fontSize: '12.5px',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              transition: 'all 0.15s'
+            }}
+          >
+            <Plus size={14} /> Add Films & Packs
           </button>
         </div>
 
@@ -608,47 +723,10 @@ export default function CreateListModal({
                 </div>
 
                 {entries.length > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <div style={{
-                      display: 'flex',
-                      background: 'rgba(255, 255, 255, 0.06)',
-                      borderRadius: '6px',
-                      padding: '2px'
-                    }}>
-                      <button
-                        type="button"
-                        onClick={() => setEntriesViewMode('grid')}
-                        style={{
-                          background: entriesViewMode === 'grid' ? 'var(--accent)' : 'transparent',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '5px',
-                          padding: '3px 7px',
-                          fontSize: '10.5px',
-                          fontWeight: 700,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Grid
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setEntriesViewMode('notes')}
-                        style={{
-                          background: entriesViewMode === 'notes' ? 'var(--accent)' : 'transparent',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '5px',
-                          padding: '3px 7px',
-                          fontSize: '10.5px',
-                          fontWeight: 700,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Notes
-                      </button>
-                    </div>
-
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '11px', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <ArrowUpDown size={11} /> Drag or tap # to reorder
+                    </span>
                     <button
                       type="button"
                       onClick={handleClearAll}
@@ -658,12 +736,12 @@ export default function CreateListModal({
                         color: 'var(--text-dim)',
                         fontSize: '11px',
                         cursor: 'pointer',
-                        padding: '3px 5px'
+                        padding: '3px 6px'
                       }}
                       onMouseEnter={e => e.currentTarget.style.color = 'var(--red)'}
                       onMouseLeave={e => e.currentTarget.style.color = 'var(--text-dim)'}
                     >
-                      Clear
+                      Clear All
                     </button>
                   </div>
                 )}
@@ -671,78 +749,154 @@ export default function CreateListModal({
 
               {/* Entries Content */}
               {entries.length > 0 ? (
-                entriesViewMode === 'grid' ? (
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))',
-                    gap: '8px',
-                    background: 'rgba(0, 0, 0, 0.25)',
-                    border: '1px solid rgba(255, 255, 255, 0.06)',
-                    borderRadius: '12px',
-                    padding: '10px'
-                  }}>
-                    {entries.map((entry, idx) => (
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))',
+                  gap: '9px',
+                  background: 'rgba(0, 0, 0, 0.25)',
+                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                  borderRadius: '12px',
+                  padding: '10px'
+                }}>
+                  {entries.map((entry, idx) => {
+                    const isDragSource = draggedIdx === idx;
+                    const isDragOver = dragOverIdx === idx;
+                    const rankNum = idx + 1;
+                    return (
                       <div
-                        key={entry.tmdb_id || idx}
+                        key={entry.tmdb_id || entry.id || idx}
+                        draggable
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData('text/plain', String(idx));
+                          e.dataTransfer.effectAllowed = 'move';
+                          setDraggedIdx(idx);
+                        }}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = 'move';
+                          if (dragOverIdx !== idx) setDragOverIdx(idx);
+                        }}
+                        onDragLeave={() => {
+                          if (dragOverIdx === idx) setDragOverIdx(null);
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          const fromIndex = draggedIdx !== null ? draggedIdx : parseInt(e.dataTransfer.getData('text/plain'), 10);
+                          if (!isNaN(fromIndex) && fromIndex !== idx) {
+                            handleMoveEntry(fromIndex, idx);
+                          }
+                          setDraggedIdx(null);
+                          setDragOverIdx(null);
+                        }}
+                        onDragEnd={() => {
+                          setDraggedIdx(null);
+                          setDragOverIdx(null);
+                        }}
                         style={{
                           position: 'relative',
                           background: '#191522',
                           borderRadius: '8px',
                           overflow: 'hidden',
-                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          border: isDragOver
+                            ? '2px solid var(--accent)'
+                            : '1px solid rgba(255, 255, 255, 0.12)',
                           display: 'flex',
-                          flexDirection: 'column'
+                          flexDirection: 'column',
+                          opacity: isDragSource ? 0.35 : 1,
+                          transform: isDragOver ? 'scale(1.03)' : 'none',
+                          transition: 'transform 0.15s, border-color 0.15s, opacity 0.15s',
+                          cursor: 'grab',
+                          boxShadow: isDragOver ? '0 0 15px var(--accent-glow)' : '0 3px 8px rgba(0,0,0,0.5)'
                         }}
                       >
+                        {/* Rank Badge #1..N (Clickable to change position) */}
                         {isRanked && (
-                          <div style={{
-                            position: 'absolute',
-                            top: '4px',
-                            left: '4px',
-                            zIndex: 5,
-                            background: idx < 3 ? 'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)' : 'rgba(0, 0, 0, 0.8)',
-                            color: '#fff',
-                            fontSize: '9.5px',
-                            fontWeight: 900,
-                            padding: '1px 4px',
-                            borderRadius: '4px',
-                            boxShadow: '0 2px 6px rgba(0,0,0,0.6)'
-                          }}>
-                            #{idx + 1}
-                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenReorder(idx, entry.title);
+                            }}
+                            title="Tap to change ranking position"
+                            style={{
+                              position: 'absolute',
+                              top: '4px',
+                              left: '4px',
+                              zIndex: 10,
+                              background: rankNum <= 3 ? 'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)' : 'rgba(0, 0, 0, 0.88)',
+                              color: '#fff',
+                              fontSize: '10px',
+                              fontWeight: 900,
+                              padding: '2px 5px',
+                              borderRadius: '5px',
+                              border: rankNum <= 3 ? '1px solid rgba(255,255,255,0.7)' : '1px solid rgba(255,255,255,0.2)',
+                              boxShadow: '0 2px 6px rgba(0,0,0,0.7)',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '2px'
+                            }}
+                          >
+                            #{rankNum}
+                          </button>
                         )}
 
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveEntry(idx)}
-                          style={{
-                            position: 'absolute',
-                            top: '4px',
-                            right: '4px',
-                            zIndex: 5,
-                            background: 'rgba(0, 0, 0, 0.75)',
-                            color: '#fff',
-                            border: 'none',
-                            borderRadius: '50%',
-                            width: '18px',
-                            height: '18px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s'
-                          }}
-                          onMouseEnter={e => e.currentTarget.style.background = 'var(--red)'}
-                          onMouseLeave={e => e.currentTarget.style.background = 'rgba(0, 0, 0, 0.75)'}
-                          title="Remove from list"
-                        >
-                          <X size={11} />
-                        </button>
+                        {/* Top-Right Quick Action Group */}
+                        <div style={{ position: 'absolute', top: '4px', right: '4px', zIndex: 10, display: 'flex', gap: '3px' }}>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenReorder(idx, entry.title);
+                            }}
+                            title="Change position"
+                            style={{
+                              background: 'rgba(0, 0, 0, 0.8)',
+                              color: '#fff',
+                              border: '1px solid rgba(255,255,255,0.15)',
+                              borderRadius: '50%',
+                              width: '20px',
+                              height: '20px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <ArrowUpDown size={10} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveEntry(idx);
+                            }}
+                            title="Remove film"
+                            style={{
+                              background: 'rgba(0, 0, 0, 0.8)',
+                              color: '#fff',
+                              border: '1px solid rgba(255,255,255,0.15)',
+                              borderRadius: '50%',
+                              width: '20px',
+                              height: '20px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer'
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'var(--red)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(0, 0, 0, 0.8)'}
+                          >
+                            <X size={11} />
+                          </button>
+                        </div>
 
+                        {/* Poster */}
                         <div style={{ width: '100%', aspectRatio: '2/3', background: '#0a0810' }}>
                           <img
                             src={entry.poster_path ? `https://image.tmdb.org/t/p/w185${entry.poster_path}` : FALLBACK_POSTER}
                             alt={entry.title}
+                            draggable={false}
                             onError={(e) => {
                               e.currentTarget.onerror = null;
                               e.currentTarget.src = FALLBACK_POSTER;
@@ -751,152 +905,74 @@ export default function CreateListModal({
                           />
                         </div>
 
-                        <div style={{ padding: '5px', background: '#120f1a' }}>
-                          <div style={{ fontSize: '10px', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {/* Title & Year */}
+                        <div style={{ padding: '6px 7px 7px', background: '#120f1a', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                          <div style={{
+                            fontSize: '10.5px',
+                            fontWeight: 700,
+                            color: '#fff',
+                            lineHeight: 1.25,
+                            overflow: 'hidden',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical'
+                          }}>
                             {entry.title}
                           </div>
-                          <div style={{ fontSize: '9px', color: 'var(--text-dim)', marginTop: '1px' }}>
+                          <div style={{ fontSize: '9px', color: 'var(--text-dim)', marginTop: '3px' }}>
                             {entry.release_year || '—'}
                           </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {entries.map((entry, idx) => (
-                      <div
-                        key={entry.tmdb_id || idx}
-                        style={{
-                          background: 'rgba(255, 255, 255, 0.03)',
-                          border: '1px solid rgba(255, 255, 255, 0.07)',
-                          borderRadius: '10px',
-                          padding: '8px 10px',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '6px'
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          {isRanked && (
-                            <span style={{
-                              fontWeight: 900,
-                              fontSize: '11px',
-                              color: idx < 3 ? 'var(--gold)' : 'var(--text-dim)',
-                              width: '24px'
-                            }}>
-                              #{idx + 1}
-                            </span>
-                          )}
-
-                          <img
-                            src={entry.poster_path ? `https://image.tmdb.org/t/p/w92${entry.poster_path}` : FALLBACK_POSTER}
-                            alt=""
-                            onError={(e) => {
-                              e.currentTarget.onerror = null;
-                              e.currentTarget.src = FALLBACK_POSTER;
-                            }}
-                            style={{ width: '24px', height: '36px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }}
-                          />
-
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: '12px', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {entry.title}
-                            </div>
-                            <div style={{ fontSize: '10px', color: 'var(--text-dim)' }}>
-                              {entry.release_year || '—'}
-                            </div>
-                          </div>
-
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                            <button
-                              type="button"
-                              onClick={() => handleMoveEntry(idx, idx - 1)}
-                              disabled={idx === 0}
-                              style={{
-                                background: 'none',
-                                border: 'none',
-                                color: idx === 0 ? 'var(--text-dim)' : '#fff',
-                                cursor: idx === 0 ? 'default' : 'pointer',
-                                padding: '3px'
-                              }}
-                            >
-                              <ArrowUp size={13} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleMoveEntry(idx, idx + 1)}
-                              disabled={idx === entries.length - 1}
-                              style={{
-                                background: 'none',
-                                border: 'none',
-                                color: idx === entries.length - 1 ? 'var(--text-dim)' : '#fff',
-                                cursor: idx === entries.length - 1 ? 'default' : 'pointer',
-                                padding: '3px'
-                              }}
-                            >
-                              <ArrowDown size={13} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveEntry(idx)}
-                              style={{
-                                background: 'none',
-                                border: 'none',
-                                color: 'var(--red)',
-                                cursor: 'pointer',
-                                padding: '3px',
-                                marginLeft: '2px'
-                              }}
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          </div>
-                        </div>
-
-                        <input
-                          type="text"
-                          placeholder="Optional commentary / note..."
-                          value={entry.note || ''}
-                          onChange={e => handleUpdateNote(idx, e.target.value)}
-                          className="form-input"
-                          style={{ fontSize: '11.5px', padding: '5px 8px', background: 'rgba(0,0,0,0.3)' }}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )
+                    );
+                  })}
+                </div>
               ) : (
                 <div style={{
                   textAlign: 'center',
-                  padding: '24px 16px',
+                  padding: '36px 16px',
                   background: 'rgba(255, 255, 255, 0.02)',
                   border: '1px dashed rgba(255, 255, 255, 0.1)',
                   borderRadius: '12px',
-                  color: 'var(--text-dim)'
+                  color: 'var(--text-dim)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '8px'
                 }}>
-                  <Film size={22} style={{ opacity: 0.4, marginBottom: '6px' }} />
-                  <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#fff', marginBottom: '2px' }}>
+                  <Film size={28} style={{ opacity: 0.4 }} />
+                  <div style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>
                     Your list is currently empty
                   </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-dim)' }}>
-                    Pick films from the right panel or 1-click import an entire franchise pack.
+                  <div style={{ fontSize: '11.5px', color: 'var(--text-dim)', maxWidth: '280px' }}>
+                    Browse franchise packs or search TMDB on the right to start curating.
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setMobileStudioTab('browse')}
+                    className="btn btn-primary"
+                    style={{ marginTop: '6px', fontSize: '12px', padding: '7px 16px' }}
+                  >
+                    <Plus size={14} /> Add Films & Franchises
+                  </button>
                 </div>
               )}
             </div>
 
-            {/* Pinned Action Footer */}
-            <div style={{
-              padding: '12px 18px',
-              borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-              background: 'rgba(10, 8, 16, 0.95)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '10px',
-              flexShrink: 0
-            }}>
+            {/* Desktop Action Footer */}
+            <div
+              className="create-list-desktop-footer"
+              style={{
+                padding: '12px 18px',
+                borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                background: 'rgba(10, 8, 16, 0.95)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '10px',
+                flexShrink: 0
+              }}
+            >
               <button
                 type="button"
                 onClick={onClose}
@@ -919,17 +995,62 @@ export default function CreateListModal({
                 Publish List ({entries.length})
               </button>
             </div>
+
+            {/* Mobile Action Footer */}
+            <div
+              className="create-list-mobile-footer"
+              style={{
+                padding: '10px 14px',
+                borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                background: 'rgba(10, 8, 16, 0.98)',
+                display: 'none',
+                alignItems: 'center',
+                gap: '8px',
+                flexShrink: 0
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setMobileStudioTab('browse')}
+                className="btn btn-ghost"
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  fontSize: '12px',
+                  border: '1px solid rgba(255,255,255,0.12)'
+                }}
+              >
+                <Plus size={14} /> Add More
+              </button>
+              <button
+                type="submit"
+                disabled={!title.trim() || entries.length === 0}
+                className="btn btn-primary"
+                style={{
+                  flex: 1.4,
+                  padding: '10px',
+                  fontSize: '12.5px',
+                  fontWeight: 800,
+                  opacity: (!title.trim() || entries.length === 0) ? 0.5 : 1
+                }}
+              >
+                Publish ({entries.length})
+              </button>
+            </div>
           </form>
 
           {/* ── RIGHT COLUMN: Full-Height Interactive Film Picker & Poster Gallery ── */}
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            height: '100%',
-            minHeight: 0,
-            overflow: 'hidden',
-            background: 'rgba(0, 0, 0, 0.25)'
-          }}>
+          <div
+            className="create-list-right-panel"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              height: '100%',
+              minHeight: 0,
+              overflow: 'hidden',
+              background: 'rgba(0, 0, 0, 0.25)'
+            }}
+          >
             {/* Picker Tab Switcher */}
             <div style={{
               display: 'flex',
@@ -1578,9 +1699,145 @@ export default function CreateListModal({
                 </div>
               </div>
             )}
+
+            {/* Mobile-Only Done Adding Bar in Right Panel */}
+            <div
+              className="create-list-mobile-footer"
+              style={{
+                padding: '10px 14px',
+                borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                background: 'rgba(10, 8, 16, 0.98)',
+                display: 'none',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '10px',
+                flexShrink: 0
+              }}
+            >
+              <div style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>
+                <strong style={{ color: '#fff' }}>{entries.length}</strong> {entries.length === 1 ? 'film' : 'films'} in list
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileStudioTab('entries')}
+                className="btn btn-primary"
+                style={{
+                  padding: '9px 18px',
+                  fontSize: '12.5px',
+                  fontWeight: 800,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Check size={14} /> View My List
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Tap-to-Move Position Dialog */}
+      {reorderTarget && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 100005,
+            background: 'rgba(0, 0, 0, 0.78)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px'
+          }}
+          onClick={() => setReorderTarget(null)}
+        >
+          <div
+            style={{
+              background: '#191524',
+              border: '1px solid rgba(255, 255, 255, 0.18)',
+              borderRadius: '16px',
+              padding: '20px',
+              maxWidth: '350px',
+              width: '100%',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.9)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '14px',
+              animation: 'fadeInScale 0.15s ease-out'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: '15px', fontWeight: 900, color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <ArrowUpDown size={16} color="var(--accent)" /> Move Film Position
+              </div>
+              <button
+                onClick={() => setReorderTarget(null)}
+                style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: '4px' }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+              Moving <strong style={{ color: '#fff' }}>"{reorderTarget.title}"</strong> (currently #{reorderTarget.index + 1} of {entries.length})
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={() => handleApplyReorder(1)}
+                className="btn btn-ghost"
+                style={{ flex: 1, fontSize: '12px', padding: '8px 0', border: '1px solid rgba(255,255,255,0.12)', fontWeight: 700 }}
+              >
+                🔝 #1 (Top)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleApplyReorder(entries.length)}
+                className="btn btn-ghost"
+                style={{ flex: 1, fontSize: '12px', padding: '8px 0', border: '1px solid rgba(255,255,255,0.12)', fontWeight: 700 }}
+              >
+                ⬇️ #{entries.length} (Last)
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const targetRank = parseInt(targetPositionInput, 10);
+                if (!isNaN(targetRank)) handleApplyReorder(targetRank);
+              }}
+              style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '4px' }}
+            >
+              <span style={{ fontSize: '12.5px', color: 'var(--text-muted)', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                Move to rank:
+              </span>
+              <input
+                type="number"
+                min="1"
+                max={entries.length}
+                value={targetPositionInput}
+                onChange={e => setTargetPositionInput(e.target.value)}
+                placeholder={`1 - ${entries.length}`}
+                className="form-input"
+                style={{ width: '85px', padding: '7px 8px', fontSize: '13.5px', fontWeight: 800, textAlign: 'center' }}
+                autoFocus
+              />
+              <button
+                type="submit"
+                className="btn btn-primary"
+                style={{ flex: 1, padding: '8px 14px', fontSize: '12.5px', fontWeight: 800 }}
+              >
+                Apply
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>,
     document.body
   );

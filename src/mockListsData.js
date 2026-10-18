@@ -1,7 +1,83 @@
 // Pre-seeded Cinephile Community Lists (Letterboxd-style) for CineLog
 import { ELENA_PROFILE } from './mockData';
+import { MCU_FULL_CATALOGUE } from './utils/collections';
+
+// Lynnx's canonical 49-film MCU ranked list
+const buildLynnxMcuEntries = () => {
+  const topTitles = [
+    'Avengers: Infinity War',
+    'Captain America: The Winter Soldier',
+    'Spider-Man: Brand New Day',
+    'Guardians of the Galaxy Vol. 3',
+    'Thor: Ragnarok',
+    'Thunderbolts*',
+    'The Avengers',
+    'Captain America: Civil War',
+    'WandaVision',
+    'Guardians of the Galaxy',
+    'Avengers: Endgame',
+    'Loki',
+    'Shang-Chi and the Legend of the Ten Rings',
+    'Iron Man',
+    'Moon Knight',
+    'The Fantastic 4: First Steps',
+    'Spider-Man: No Way Home',
+    'Avengers: Age of Ultron',
+    'Doctor Strange in the Multiverse of Madness',
+    'Ant-Man',
+    'Iron Man 2'
+  ];
+  const titleMap = {};
+  (MCU_FULL_CATALOGUE || []).forEach(m => {
+    titleMap[m.title.toLowerCase()] = m;
+  });
+  const matched = [];
+  topTitles.forEach(t => {
+    const item = titleMap[t.toLowerCase()];
+    if (item) matched.push({
+      tmdb_id: item.tmdb_id || item.id,
+      id: item.id || item.tmdb_id,
+      title: item.title,
+      poster_path: item.poster_path,
+      release_year: item.release_year,
+      rating: item.rating,
+      media_type: item.media_type || 'movie'
+    });
+  });
+  const remaining = (MCU_FULL_CATALOGUE || [])
+    .filter(m => !matched.some(x => x.tmdb_id === (m.tmdb_id || m.id)))
+    .map(m => ({
+      tmdb_id: m.tmdb_id || m.id,
+      id: m.id || m.tmdb_id,
+      title: m.title,
+      poster_path: m.poster_path,
+      release_year: m.release_year,
+      rating: m.rating,
+      media_type: m.media_type || 'movie'
+    }));
+  return [...matched, ...remaining].slice(0, 49);
+};
+
+export const LYNNX_MCU_LIST = {
+  id: 'list-lynnx-mcu',
+  title: 'MCU',
+  description: 'The definitive ranked ranking of the Marvel Cinematic Universe.',
+  author: {
+    id: '2436dd73-13e2-45a9-b2af-664a221250d8',
+    username: 'Lynnx',
+    displayName: 'Lynnx',
+    avatar: 'https://image.tmdb.org/t/p/w500/74xTEgt7R36Fpooo50r9T25onhq.jpg'
+  },
+  createdAt: '2026-10-18T13:40:00Z',
+  isRanked: true,
+  isPublic: true,
+  likesCount: 0,
+  entries: buildLynnxMcuEntries(),
+  comments: []
+};
 
 export const INITIAL_COMMUNITY_LISTS = [
+  LYNNX_MCU_LIST,
   {
     id: 'list-elena-35mm',
     title: '35mm Modern Masterpieces: The Pinnacle of 21st Century Cinema',

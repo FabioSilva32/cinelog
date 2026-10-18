@@ -959,6 +959,41 @@ function AppInner() {
           console.warn('Tier list session sync error:', e);
         }
 
+        // Two-way sync custom lists with Supabase cloud user_metadata (cross-device sync between web and app)
+        try {
+          const cloudCustomLists = session.user.user_metadata?.cinelog_custom_lists;
+          const localListsStr = localStorage.getItem('cinelog_community_lists_v2');
+          let localLists = [];
+          try { if (localListsStr) localLists = JSON.parse(localListsStr); } catch {}
+          if (!Array.isArray(localLists)) localLists = [];
+
+          if (cloudCustomLists && Array.isArray(cloudCustomLists) && cloudCustomLists.length > 0) {
+            const merged = [...localLists];
+            cloudCustomLists.forEach(cList => {
+              const idx = merged.findIndex(l => l.id === cList.id);
+              if (idx !== -1) {
+                merged[idx] = cList;
+              } else {
+                merged.unshift(cList);
+              }
+            });
+            localStorage.setItem('cinelog_community_lists_v2', JSON.stringify(merged));
+            window.dispatchEvent(new CustomEvent('cinelog_collections_updated'));
+          } else if (localLists.length > 0) {
+            const userLists = localLists.filter(l => 
+              l.author?.id === session.user.id || 
+              l.author?.username?.toLowerCase() === (session.user.user_metadata?.username || session.user.email?.split('@')[0])?.toLowerCase()
+            );
+            if (userLists.length > 0) {
+              supabase.auth.updateUser({
+                data: { cinelog_custom_lists: userLists }
+              }).catch(e => console.warn('Custom lists cloud upload error:', e));
+            }
+          }
+        } catch (e) {
+          console.warn('Custom lists session sync error:', e);
+        }
+
         // Parallel load of movie entries from Supabase
         supabase.from('library').select('*').eq('user_id', session.user.id)
           .then(({ data: libRows, error: libErr }) => {

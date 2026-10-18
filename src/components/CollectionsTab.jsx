@@ -6,6 +6,7 @@ import { INITIAL_COMMUNITY_LISTS } from '../mockListsData';
 import ListDetailModal from './ListDetailModal';
 import CreateListModal from './CreateListModal';
 import CollectionDetailModal from './CollectionDetailModal';
+import { supabase, isSupabaseConfigured } from '../supabaseClient';
 
 const COLLECTION_EMOJIS = ['📚','🎬','⭐','🔥','💎','🎭','🌟','🎪','🏆','🎯','🌙','❤️'];
 
@@ -145,11 +146,28 @@ export default function CollectionsTab({
   const [taggingStatus, setTaggingStatus] = useState('');
   const [isTagging, setIsTagging] = useState(false);
 
-  // Sync lists to localStorage
+  // Cloud sync helper: updates Supabase user_metadata with user's created lists
+  const syncUserListsToCloud = async (allLists) => {
+    if (!currentUser?.id || !supabase || !isSupabaseConfigured) return;
+    try {
+      const userLists = allLists.filter(l => 
+        l.author?.id === currentUser.id || 
+        l.author?.username?.toLowerCase() === (currentUser.username || '').toLowerCase()
+      );
+      await supabase.auth.updateUser({
+        data: { cinelog_custom_lists: userLists }
+      });
+    } catch (e) {
+      console.warn('Failed to sync custom lists to cloud:', e);
+    }
+  };
+
+  // Sync lists to localStorage and cloud
   const handleUpdateList = (updatedList) => {
     setLists(prev => {
       const next = prev.map(l => l.id === updatedList.id ? updatedList : l);
       try { localStorage.setItem('cinelog_community_lists_v2', JSON.stringify(next)); } catch {}
+      syncUserListsToCloud(next);
       return next;
     });
     if (selectedListModal && selectedListModal.id === updatedList.id) {
@@ -161,6 +179,7 @@ export default function CollectionsTab({
     setLists(prev => {
       const next = [newList, ...prev];
       try { localStorage.setItem('cinelog_community_lists_v2', JSON.stringify(next)); } catch {}
+      syncUserListsToCloud(next);
       return next;
     });
     setSelectedListModal(newList);
@@ -170,12 +189,35 @@ export default function CollectionsTab({
     setLists(prev => {
       const next = prev.filter(l => l.id !== listId);
       try { localStorage.setItem('cinelog_community_lists_v2', JSON.stringify(next)); } catch {}
+      syncUserListsToCloud(next);
       return next;
     });
     if (selectedListModal && selectedListModal.id === listId) {
       setSelectedListModal(null);
     }
   };
+
+  // Initial cloud check on mount or when currentUser changes
+  useEffect(() => {
+    if (!currentUser?.id || !supabase || !isSupabaseConfigured) return;
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user?.user_metadata?.cinelog_custom_lists) {
+        const cloudLists = user.user_metadata.cinelog_custom_lists;
+        if (Array.isArray(cloudLists) && cloudLists.length > 0) {
+          setLists(prev => {
+            const merged = [...prev];
+            cloudLists.forEach(cList => {
+              const idx = merged.findIndex(l => l.id === cList.id);
+              if (idx !== -1) merged[idx] = cList;
+              else merged.unshift(cList);
+            });
+            try { localStorage.setItem('cinelog_community_lists_v2', JSON.stringify(merged)); } catch {}
+            return merged;
+          });
+        }
+      }
+    }).catch(err => console.warn('CollectionsTab cloud sync error:', err));
+  }, [currentUser?.id]);
 
   // Real-time synchronization when movies or collections update
   useEffect(() => {
@@ -584,12 +626,15 @@ export default function CollectionsTab({
                             position: 'absolute',
                             top: '3px',
                             left: '3px',
-                            background: 'rgba(0,0,0,0.85)',
-                            color: '#fff',
+                            zIndex: 5,
+                            background: idx < 3 ? 'rgba(245, 158, 11, 0.95)' : 'rgba(0,0,0,0.85)',
+                            color: idx < 3 ? '#000' : '#fff',
                             borderRadius: '4px',
-                            padding: '1px 4px',
+                            padding: '1px 5px',
                             fontSize: '9.5px',
-                            fontWeight: 900
+                            fontWeight: 900,
+                            pointerEvents: 'none',
+                            boxShadow: '0 2px 5px rgba(0,0,0,0.5)'
                           }}>
                             #{idx + 1}
                           </div>

@@ -458,17 +458,21 @@ export default function ListDetailModal({
                           position: 'absolute',
                           top: '6px',
                           left: '6px',
+                          zIndex: 10,
                           background: rankNum <= 3
-                            ? 'linear-gradient(135deg, rgba(245,158,11,0.95) 0%, rgba(136,8,8,0.95) 100%)'
-                            : 'rgba(10, 8, 20, 0.88)',
+                            ? 'linear-gradient(135deg, rgba(245,158,11,0.98) 0%, rgba(217,119,6,0.98) 100%)'
+                            : 'rgba(10, 8, 20, 0.92)',
                           backdropFilter: 'blur(8px)',
-                          border: `1px solid ${rankNum <= 3 ? 'rgba(245,158,11,0.8)' : 'rgba(255, 255, 255, 0.2)'}`,
+                          WebkitBackdropFilter: 'blur(8px)',
+                          border: `1.5px solid ${rankNum <= 3 ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.25)'}`,
                           color: rankNum <= 3 ? '#000' : '#fff',
                           borderRadius: '6px',
-                          padding: '2px 7px',
+                          padding: '2px 8px',
                           fontSize: '11px',
                           fontWeight: 900,
-                          boxShadow: '0 4px 10px rgba(0,0,0,0.6)'
+                          letterSpacing: '0.3px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.7)',
+                          pointerEvents: 'none'
                         }}>
                           #{rankNum}
                         </div>
@@ -480,14 +484,18 @@ export default function ListDetailModal({
                           position: 'absolute',
                           bottom: '6px',
                           left: '6px',
-                          background: 'rgba(10, 8, 20, 0.85)',
+                          zIndex: 10,
+                          background: 'rgba(10, 8, 20, 0.88)',
                           backdropFilter: 'blur(8px)',
-                          border: '1px solid rgba(255, 255, 255, 0.15)',
+                          WebkitBackdropFilter: 'blur(8px)',
+                          border: '1px solid rgba(255, 255, 255, 0.18)',
                           borderRadius: '6px',
                           padding: '2px 6px',
                           fontSize: '10px',
                           fontWeight: 800,
-                          color: 'var(--gold)'
+                          color: 'var(--gold)',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.6)',
+                          pointerEvents: 'none'
                         }}>
                           ★ {entry.rating}
                         </div>
