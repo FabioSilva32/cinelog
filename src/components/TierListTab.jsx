@@ -163,7 +163,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
   const [dragInfo, setDragInfo] = useState(null);
   const [dropTarget, setDropTarget] = useState(null);
   const [hoveredCardId, setHoveredCardId] = useState(null);
-  const [quickAssignId, setQuickAssignId] = useState(null); // tap-to-assign for mobile
+  const [quickAssignTarget, setQuickAssignTarget] = useState(null); // { id, rect, currentTierId }
   
   // Settings edit modal / panel state
   const [editingTierId, setEditingTierId] = useState(null);
@@ -850,7 +850,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
       }
       return updated;
     });
-    setQuickAssignId(null);
+    setQuickAssignTarget(null);
   };
 
   return (
@@ -1104,18 +1104,23 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
                           transform: isDragging ? 'scale(0.95)' : 'scale(1)',
                           transition: 'all 0.15s ease',
                           borderRadius: '6px',
-                          border: `2px solid ${isDragging ? 'var(--accent)' : 'transparent'}`,
-                          borderLeft: hoveredCardId === id ? '4px solid var(--accent)' : (isDragging ? '2px solid var(--accent)' : '2px solid transparent'),
+                          border: quickAssignTarget?.id === id ? '2px solid var(--accent)' : `2px solid ${isDragging ? 'var(--accent)' : 'transparent'}`,
+                          borderLeft: hoveredCardId === id ? '4px solid var(--accent)' : (quickAssignTarget?.id === id ? '2px solid var(--accent)' : (isDragging ? '2px solid var(--accent)' : '2px solid transparent')),
                           width: '74px',
                           height: '110px',
                           flexShrink: 0,
-                          boxShadow: '0 6px 14px rgba(0,0,0,0.4)',
-                          overflow: 'visible'
+                          boxShadow: quickAssignTarget?.id === id ? '0 0 15px var(--accent-glow)' : '0 6px 14px rgba(0,0,0,0.4)',
+                          overflow: 'hidden'
                         }}
                         title={`Tap to move or drag • ${movie.title}`}
                         onClick={(e) => {
                           e.stopPropagation();
-                          setQuickAssignId(quickAssignId === id ? null : id);
+                          if (quickAssignTarget?.id === id) {
+                            setQuickAssignTarget(null);
+                          } else {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setQuickAssignTarget({ id, rect, currentTierId: tier.id });
+                          }
                         }}
                       >
                         <img
@@ -1160,50 +1165,6 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
                           }}>
                             <Star size={7} fill="var(--gold)" color="var(--gold)" />
                             {Number(movie.rating).toFixed(1)}
-                          </div>
-                        )}
-
-                        {/* Quick Assign / Move Menu on Mobile Tap */}
-                        {quickAssignId === id && (
-                          <div style={{
-                            position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
-                            marginTop: '4px', background: '#121020', border: '1px solid var(--accent)',
-                            borderRadius: '8px', padding: '6px', zIndex: 110, boxShadow: '0 10px 25px rgba(0,0,0,0.85)',
-                            display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '120px'
-                          }} onClick={e => e.stopPropagation()}>
-                            <div style={{ fontSize: '9px', color: 'var(--text-dim)', fontWeight: 800, textAlign: 'center', paddingBottom: '2px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>Move to Tier:</div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px' }}>
-                              {tiers.map(t => (
-                                <button
-                                  key={t.id}
-                                  onClick={() => handleQuickAssign(id, t.id)}
-                                  style={{
-                                    background: t.color, color: '#000', border: 'none', borderRadius: '4px',
-                                    padding: '4px 6px', fontSize: '11px', fontWeight: 900, cursor: 'pointer',
-                                    textAlign: 'center'
-                                  }}
-                                >
-                                  {t.label}
-                                </button>
-                              ))}
-                            </div>
-                            <button
-                              onClick={() => {
-                                setTierData(prev => {
-                                  const u = { ...prev };
-                                  tiers.forEach(t => { u[t.id] = (u[t.id] || []).filter(item => item !== id); });
-                                  return u;
-                                });
-                                setQuickAssignId(null);
-                              }}
-                              style={{
-                                background: 'rgba(239,68,68,0.15)', color: 'var(--red)', border: '1px solid rgba(239,68,68,0.3)',
-                                borderRadius: '4px', padding: '3px 6px', fontSize: '10px', fontWeight: 800, cursor: 'pointer',
-                                textAlign: 'center', marginTop: '2px'
-                              }}
-                            >
-                              ✕ Remove
-                            </button>
                           </div>
                         )}
                       </div>
@@ -1470,11 +1431,22 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
                     width: '74px',
                     height: '110px',
                     position: 'relative',
-                    boxShadow: '0 6px 12px rgba(0,0,0,0.3)',
+                    border: quickAssignTarget?.id === id ? '2px solid var(--accent)' : 'none',
+                    boxShadow: quickAssignTarget?.id === id ? '0 0 15px var(--accent-glow)' : '0 6px 12px rgba(0,0,0,0.3)',
                     margin: '0 auto'
                   }}
                   title={movie.title}
-                  onClick={(e) => { if (!dragInfo) { e.stopPropagation(); setQuickAssignId(quickAssignId === id ? null : id); } }}
+                  onClick={(e) => {
+                    if (!dragInfo) {
+                      e.stopPropagation();
+                      if (quickAssignTarget?.id === id) {
+                        setQuickAssignTarget(null);
+                      } else {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setQuickAssignTarget({ id, rect, currentTierId: 'pool' });
+                      }
+                    }
+                  }}
                 >
                   <img
                     src={`https://image.tmdb.org/t/p/w200${movie.poster_path}`}
@@ -1537,31 +1509,6 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
                   }}>
                     <GripVertical size={12} color="rgba(255,255,255,0.6)" />
                   </div>
-
-                  {/* Tap-to-assign dropdown menu */}
-                  {quickAssignId === id && (
-                    <div style={{
-                      position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
-                      marginTop: '6px', background: '#121020', border: '1px solid var(--accent)',
-                      borderRadius: '8px', padding: '6px', zIndex: 100, boxShadow: '0 10px 25px rgba(0,0,0,0.7)',
-                      display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '110px'
-                    }} onClick={e => e.stopPropagation()}>
-                      <div style={{ fontSize: '9px', color: 'var(--text-dim)', fontWeight: 800, textAlign: 'center', paddingBottom: '2px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>Assign to Tier</div>
-                      {tiers.map(t => (
-                        <button
-                          key={t.id}
-                          onClick={() => handleQuickAssign(id, t.id)}
-                          style={{
-                            background: t.color, color: '#000', border: 'none', borderRadius: '4px',
-                            padding: '4px 8px', fontSize: '11px', fontWeight: 900, cursor: 'pointer',
-                            textAlign: 'center'
-                          }}
-                        >
-                          {t.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
               );
             })}
@@ -1857,6 +1804,122 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
                 </button>
               </div>
             </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── GLOBAL QUICK ASSIGN POPOVER (100% Guaranteed on top of everything via Portal) ── */}
+      {quickAssignTarget && typeof document !== 'undefined' && createPortal(
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 999999,
+            background: 'transparent'
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            setQuickAssignTarget(null);
+          }}
+        >
+          <div
+            style={{
+              position: 'fixed',
+              top: (() => {
+                const popoverHeight = 185;
+                const rect = quickAssignTarget.rect;
+                if (rect.bottom + popoverHeight > window.innerHeight - 10) {
+                  return Math.max(10, rect.top - popoverHeight - 6);
+                }
+                return rect.bottom + 6;
+              })(),
+              left: (() => {
+                const popoverWidth = 145;
+                const rect = quickAssignTarget.rect;
+                const idealLeft = rect.left + (rect.width / 2) - (popoverWidth / 2);
+                return Math.max(10, Math.min(window.innerWidth - popoverWidth - 10, idealLeft));
+              })(),
+              background: '#151222',
+              border: '1.5px solid var(--accent)',
+              borderRadius: '10px',
+              padding: '8px',
+              boxShadow: '0 14px 40px rgba(0,0,0,0.92), 0 0 20px rgba(229,9,20,0.35)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+              width: '145px',
+              boxSizing: 'border-box',
+              animation: 'fadeInScale 0.15s cubic-bezier(0.16, 1, 0.3, 1)'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{
+              fontSize: '10px',
+              color: 'var(--text-muted)',
+              fontWeight: 800,
+              textAlign: 'center',
+              paddingBottom: '4px',
+              borderBottom: '1px solid rgba(255,255,255,0.08)'
+            }}>
+              Move to Tier:
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '5px' }}>
+              {tiers.map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => handleQuickAssign(quickAssignTarget.id, t.id)}
+                  style={{
+                    background: t.color,
+                    color: '#000',
+                    border: 'none',
+                    borderRadius: '5px',
+                    padding: '5px 4px',
+                    fontSize: '11px',
+                    fontWeight: 900,
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    transition: 'transform 0.1s'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.06)'}
+                  onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {quickAssignTarget.currentTierId !== 'pool' && (
+              <button
+                onClick={() => {
+                  const id = quickAssignTarget.id;
+                  setTierData(prev => {
+                    const u = { ...prev };
+                    tiers.forEach(t => { u[t.id] = (u[t.id] || []).filter(item => item !== id); });
+                    return u;
+                  });
+                  setQuickAssignTarget(null);
+                }}
+                style={{
+                  background: 'rgba(239,68,68,0.15)',
+                  color: 'var(--red)',
+                  border: '1px solid rgba(239,68,68,0.35)',
+                  borderRadius: '5px',
+                  padding: '4px 6px',
+                  fontSize: '10px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  marginTop: '2px',
+                  transition: 'all 0.15s'
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.25)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'rgba(239,68,68,0.15)'}
+              >
+                ✕ Remove
+              </button>
+            )}
           </div>
         </div>,
         document.body
