@@ -420,11 +420,13 @@ function MediaPosterCard({ movie, onEditClick, layout = 'shelf' }) {
       <div style={{
         position: 'absolute',
         inset: 0,
-        background: 'linear-gradient(to top, rgba(8, 7, 12, 0.98) 0%, rgba(8, 7, 12, 0.6) 32%, transparent 65%)',
+        zIndex: 2,
+        background: 'linear-gradient(to top, rgba(8, 7, 12, 0.98) 0%, rgba(8, 7, 12, 0.72) 32%, rgba(8, 7, 12, 0.2) 55%, transparent 75%)',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'flex-end',
-        padding: '7px 8px'
+        padding: '7px 8px',
+        pointerEvents: 'none'
       }}>
         <div style={{ fontSize: '11px', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {movie.title}
