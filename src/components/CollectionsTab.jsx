@@ -1095,6 +1095,7 @@ export default function CollectionsTab({
         <CreateListModal
           currentUser={currentUser}
           library={library}
+          franchiseCollections={automaticCollections}
           onClose={() => setShowCreateListModal(false)}
           onSaveList={handleSaveNewList}
         />

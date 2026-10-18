@@ -7,10 +7,10 @@ export const MCU_CANON_IDS = new Set([
   1726, 1724, 10138, 10195, 1771, 24428, 68721, 76338, 100402, 118340,
   99861, 102899, 271110, 284052, 283995, 315635, 284053, 284054, 299536,
   363088, 299537, 299534, 429617, 497698, 566525, 524434, 634649, 453395,
-  616037, 505642, 640146, 447365, 609681, 533535, 894205, 927833, 774752, 823464,
+  616037, 505642, 640146, 447365, 609681, 533535, 894205, 927833, 774752, 822119, 823464,
   986056, 617126, 1003596, 1003598, 1024535, 969681,
   // MCU Disney+ Series (Marvel Studios Canonical)
-  85271, 88396, 84958, 91363, 88329, 92749, 92782, 92783, 114479, 138501, 138505, 202250, 114473
+  85271, 88396, 84958, 91363, 88329, 92749, 92782, 92783, 114472, 114479, 122226, 138501, 138505, 202250, 202555, 114473
 ]);
 
 // Explicit Non-MCU Marvel TMDB IDs (Fox, Sony, Legacy, Animated - MUST NOT be in MCU)
@@ -80,7 +80,24 @@ export const MCU_FULL_CATALOGUE = [
   { id: 533535, tmdb_id: 533535, title: 'Deadpool & Wolverine', release_year: '2024', poster_path: '/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg', rating: 7.6, phase: 'Phase 5' },
   // Official Marvel Studios Special Presentations
   { id: 894205, tmdb_id: 894205, title: 'Werewolf by Night', release_year: '2022', poster_path: '/mvIvNKRIJPPS7WSFarFhOAGIVnU.jpg', rating: 7.0, phase: 'Special' },
-  { id: 774752, tmdb_id: 774752, title: 'The Guardians of the Galaxy Holiday Special', release_year: '2022', poster_path: '/8dqXyslZ2hv49Oiob9UjlGSHSTR.jpg', rating: 6.8, phase: 'Special' }
+  { id: 774752, tmdb_id: 774752, title: 'The Guardians of the Galaxy Holiday Special', release_year: '2022', poster_path: '/8dqXyslZ2hv49Oiob9UjlGSHSTR.jpg', rating: 6.8, phase: 'Special' },
+  // Phase 5 Continued & Phase 6 / Upcoming
+  { id: 822119, tmdb_id: 822119, title: 'Captain America: Brave New World', release_year: '2025', poster_path: '/pzIddUEMWhWzfvLI3TwxUG2wGoi.jpg', rating: 6.0, phase: 'Phase 5' },
+  { id: 986056, tmdb_id: 986056, title: 'Thunderbolts*', release_year: '2025', poster_path: '/hqcexYHbiTBfDIdDWxrxPtVndBX.jpg', rating: 7.3, phase: 'Phase 5' },
+  { id: 617126, tmdb_id: 617126, title: 'The Fantastic 4: First Steps', release_year: '2025', poster_path: '/nf5qaSEvyYSNeFH0YhSs5EsBLX9.jpg', rating: 6.9, phase: 'Phase 6' },
+  { id: 969681, tmdb_id: 969681, title: 'Spider-Man: Brand New Day', release_year: '2026', poster_path: '/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg', rating: 9.3, phase: 'Phase 6' },
+  // Canonical Marvel Studios Disney+ Series
+  { id: 85271, tmdb_id: 85271, title: 'WandaVision', release_year: '2021', poster_path: '/ijWWwINc8h71NQ8j1LTJMFSj5wr.jpg', rating: 8.2, media_type: 'tv', phase: 'Series' },
+  { id: 88396, tmdb_id: 88396, title: 'The Falcon and the Winter Soldier', release_year: '2021', poster_path: '/6kbAMLteGO8yyewYau6bJ683sw7.jpg', rating: 7.6, media_type: 'tv', phase: 'Series' },
+  { id: 84958, tmdb_id: 84958, title: 'Loki', release_year: '2021', poster_path: '/kEl2t3OhXc3Zb9FBh1AuYzRTgZp.jpg', rating: 8.2, media_type: 'tv', phase: 'Series' },
+  { id: 88329, tmdb_id: 88329, title: 'Hawkeye', release_year: '2021', poster_path: '/ct5pNE5dDHryHLDnxyZPYcqO1sz.jpg', rating: 7.8, media_type: 'tv', phase: 'Series' },
+  { id: 92749, tmdb_id: 92749, title: 'Moon Knight', release_year: '2022', poster_path: '/9K3lbMf8TKvL9xGEbzi7TggWCNQ.jpg', rating: 7.6, media_type: 'tv', phase: 'Series' },
+  { id: 92782, tmdb_id: 92782, title: 'Ms. Marvel', release_year: '2022', poster_path: '/3HWWh92kZbD7odwJX7nKmXNZsYo.jpg', rating: 6.3, media_type: 'tv', phase: 'Series' },
+  { id: 92783, tmdb_id: 92783, title: 'She-Hulk: Attorney at Law', release_year: '2022', poster_path: '/5xz2orV8f0usyrfGNshcoXHmiaV.jpg', rating: 6.1, media_type: 'tv', phase: 'Series' },
+  { id: 114472, tmdb_id: 114472, title: 'Secret Invasion', release_year: '2023', poster_path: '/3rINdUPSy9AklJg74jWHOyUXuZd.jpg', rating: 6.4, media_type: 'tv', phase: 'Series' },
+  { id: 122226, tmdb_id: 122226, title: 'Echo', release_year: '2024', poster_path: '/vFyJH630cF68LohVYjQW49074Sy.jpg', rating: 6.0, media_type: 'tv', phase: 'Series' },
+  { id: 138501, tmdb_id: 138501, title: 'Agatha All Along', release_year: '2024', poster_path: '/mGsxKwXUjojitRv2E9qMTbxbBRd.jpg', rating: 7.4, media_type: 'tv', phase: 'Series' },
+  { id: 202555, tmdb_id: 202555, title: 'Daredevil: Born Again', release_year: '2025', poster_path: '/xDUoAsU8lQHOOoRkFiBuarmACDN.jpg', rating: 8.2, media_type: 'tv', phase: 'Series' }
 ];
 
 // Complete Marvel Multiverse & Legacy Movie and Series Catalogue (76 Films & Shows)
@@ -132,9 +149,7 @@ export const MARVEL_COMPLETE_CATALOGUE = [
   // ── Hit Marvel Series & TV ──
   { id: 138502, tmdb_id: 138502, title: 'X-Men \'97', release_year: '2024', poster_path: '/2HKBc5UiFw8JrruHq8S1Y7TnlW0.jpg', rating: 8.7, media_type: 'tv' },
   { id: 61889, tmdb_id: 61889, title: 'Marvel\'s Daredevil', release_year: '2015', poster_path: '/QWbPaDxiB6LW2LjASknzYBvjMj.jpg', rating: 8.2, media_type: 'tv' },
-  { id: 67178, tmdb_id: 67178, title: 'Marvel\'s The Punisher', release_year: '2017', poster_path: '/tM6xqRKXoloH9UchaJEyyRE9O1w.jpg', rating: 8.2, media_type: 'tv' },
-  { id: 85271, tmdb_id: 85271, title: 'WandaVision', release_year: '2021', poster_path: '/ijWWwINc8h71NQ8j1LTJMFSj5wr.jpg', rating: 8.2, media_type: 'tv' },
-  { id: 84958, tmdb_id: 84958, title: 'Loki', release_year: '2021', poster_path: '/kEl2t3OhXc3Zb9FBh1AuYzRTgZp.jpg', rating: 8.2, media_type: 'tv' }
+  { id: 67178, tmdb_id: 67178, title: 'Marvel\'s The Punisher', release_year: '2017', poster_path: '/tM6xqRKXoloH9UchaJEyyRE9O1w.jpg', rating: 8.2, media_type: 'tv' }
 ];
 
 export const FRANCHISE_COLLECTIONS = [

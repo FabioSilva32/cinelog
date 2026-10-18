@@ -17,14 +17,14 @@ const FRANCHISE_PACKS = [
     id: 'mcu',
     name: 'Marvel Cinematic Universe (MCU)',
     emoji: '⚡',
-    badge: '36 Canonical Films & Specials',
+    badge: '53 Canonical Films & Series',
     movies: MCU_FULL_CATALOGUE
   },
   {
     id: 'marvel',
     name: 'Marvel Complete Multiverse & Legacy',
     emoji: '🦸‍♂️',
-    badge: '76 Films & Shows',
+    badge: '89 Films & Shows',
     movies: MARVEL_COMPLETE_CATALOGUE
   },
   {
@@ -166,6 +166,7 @@ const FRANCHISE_PACKS = [
 export default function CreateListModal({
   currentUser,
   library = [],
+  franchiseCollections = [],
   onClose,
   onSaveList
 }) {
@@ -185,8 +186,29 @@ export default function CreateListModal({
   const [librarySearch, setLibrarySearch] = useState('');
   const [libraryFilter, setLibraryFilter] = useState('all');
 
-  // Franchise tab state
-  const [activeFranchise, setActiveFranchise] = useState(FRANCHISE_PACKS[0]);
+  // Franchise packs synchronized 1-to-1 with CineLog Original collections
+  const effectivePacks = useMemo(() => {
+    if (franchiseCollections && franchiseCollections.length > 0) {
+      return franchiseCollections.map(col => {
+        const movies = col.movies || col.catalogue || [];
+        return {
+          id: col.id,
+          name: col.title || col.shortTitle,
+          emoji: col.emoji || '⚡',
+          badge: `${movies.length} Films & Shows`,
+          movies
+        };
+      });
+    }
+
+    return FRANCHISE_PACKS.map(pack => ({
+      ...pack,
+      badge: `${pack.movies.length} Films & Shows`
+    }));
+  }, [franchiseCollections]);
+
+  const [selectedPackId, setSelectedPackId] = useState('mcu');
+  const activeFranchise = effectivePacks.find(p => p.id === selectedPackId) || effectivePacks[0] || FRANCHISE_PACKS[0];
   const [bannerToast, setBannerToast] = useState('');
   const franchisePillsRef = useRef(null);
 
@@ -1055,13 +1077,13 @@ export default function CreateListModal({
                         flex: 1
                       }}
                     >
-                      {FRANCHISE_PACKS.map(pack => {
-                        const isSelected = activeFranchise.id === pack.id;
+                      {effectivePacks.map(pack => {
+                        const isSelected = activeFranchise?.id === pack.id;
                         return (
                           <button
                             key={pack.id}
                             type="button"
-                            onClick={() => setActiveFranchise(pack)}
+                            onClick={() => setSelectedPackId(pack.id)}
                             style={{
                               whiteSpace: 'nowrap',
                               padding: '5px 11px',
