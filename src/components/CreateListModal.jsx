@@ -1192,44 +1192,50 @@ export default function CreateListModal({
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   gap: '8px',
-                  padding: '10px 16px',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-                  background: 'rgba(15, 12, 22, 0.85)',
+                  padding: '8px 16px',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.07)',
+                  background: 'rgba(15, 12, 22, 0.95)',
                   backdropFilter: 'blur(10px)',
-                  flexShrink: 0
+                  flexShrink: 0,
+                  boxSizing: 'border-box'
                 }}>
-                  {/* Horizontal Scrollable Pills */}
+                  {/* Horizontal Scrollable Pills Row */}
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '4px',
+                    gap: '6px',
                     flex: 1,
-                    minWidth: '200px',
-                    position: 'relative'
+                    minWidth: 0,
+                    overflow: 'hidden'
                   }}>
                     <button
                       type="button"
                       onClick={() => franchisePillsRef.current?.scrollBy({ left: -220, behavior: 'smooth' })}
                       style={{
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        background: 'rgba(255, 255, 255, 0.06)',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
                         color: 'var(--text-muted)',
-                        borderRadius: '7px',
-                        width: '26px',
-                        height: '28px',
+                        borderRadius: '8px',
+                        width: '28px',
+                        height: '32px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: 'pointer',
-                        flexShrink: 0
+                        flexShrink: 0,
+                        transition: 'all 0.15s',
+                        boxSizing: 'border-box'
                       }}
+                      onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
                       title="Scroll collections left"
                     >
-                      <ChevronLeft size={14} />
+                      <ChevronLeft size={15} />
                     </button>
 
                     <div
                       ref={franchisePillsRef}
+                      className="cinelog-no-scrollbar"
                       onWheel={(e) => {
                         if (e.deltaY !== 0 && !e.shiftKey) {
                           e.currentTarget.scrollLeft += e.deltaY;
@@ -1237,14 +1243,19 @@ export default function CreateListModal({
                       }}
                       style={{
                         display: 'flex',
+                        alignItems: 'center',
                         gap: '6px',
                         overflowX: 'auto',
-                        padding: '2px 4px',
-                        scrollbarWidth: 'thin',
-                        scrollbarColor: 'rgba(255,255,255,0.2) transparent',
+                        overflowY: 'hidden',
+                        padding: '0 2px',
+                        scrollbarWidth: 'none',
+                        msOverflowStyle: 'none',
                         WebkitOverflowScrolling: 'touch',
                         touchAction: 'pan-x',
-                        flex: 1
+                        scrollBehavior: 'smooth',
+                        flex: 1,
+                        minWidth: 0,
+                        height: '32px'
                       }}
                     >
                       {effectivePacks.map(pack => {
@@ -1256,19 +1267,34 @@ export default function CreateListModal({
                             onClick={() => setSelectedPackId(pack.id)}
                             style={{
                               whiteSpace: 'nowrap',
-                              padding: '5px 11px',
+                              height: '32px',
+                              padding: '0 12px',
                               borderRadius: '8px',
-                              background: isSelected ? 'rgba(245, 158, 11, 0.16)' : 'rgba(255,255,255,0.04)',
-                              border: isSelected ? '1px solid rgba(245, 158, 11, 0.5)' : '1px solid rgba(255,255,255,0.08)',
+                              background: isSelected ? 'rgba(245, 158, 11, 0.18)' : 'rgba(255,255,255,0.05)',
+                              border: isSelected ? '1px solid rgba(245, 158, 11, 0.55)' : '1px solid rgba(255,255,255,0.09)',
                               color: isSelected ? 'var(--gold)' : 'var(--text-muted)',
                               fontSize: '11.5px',
                               fontWeight: 800,
                               cursor: 'pointer',
-                              display: 'flex',
+                              display: 'inline-flex',
                               alignItems: 'center',
-                              gap: '5px',
+                              justifyContent: 'center',
+                              gap: '6px',
                               transition: 'all 0.15s',
-                              flexShrink: 0
+                              flexShrink: 0,
+                              boxSizing: 'border-box'
+                            }}
+                            onMouseEnter={e => {
+                              if (!isSelected) {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.09)';
+                                e.currentTarget.style.color = '#fff';
+                              }
+                            }}
+                            onMouseLeave={e => {
+                              if (!isSelected) {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                                e.currentTarget.style.color = 'var(--text-muted)';
+                              }
                             }}
                           >
                             <span>{pack.emoji}</span>
@@ -1282,21 +1308,25 @@ export default function CreateListModal({
                       type="button"
                       onClick={() => franchisePillsRef.current?.scrollBy({ left: 220, behavior: 'smooth' })}
                       style={{
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        background: 'rgba(255, 255, 255, 0.06)',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
                         color: 'var(--text-muted)',
-                        borderRadius: '7px',
-                        width: '26px',
-                        height: '28px',
+                        borderRadius: '8px',
+                        width: '28px',
+                        height: '32px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: 'pointer',
-                        flexShrink: 0
+                        flexShrink: 0,
+                        transition: 'all 0.15s',
+                        boxSizing: 'border-box'
                       }}
+                      onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
                       title="Scroll collections right"
                     >
-                      <ChevronRight size={14} />
+                      <ChevronRight size={15} />
                     </button>
                   </div>
 
@@ -1306,20 +1336,23 @@ export default function CreateListModal({
                       type="button"
                       onClick={() => handleBatchAddFranchise(activeFranchise)}
                       style={{
+                        height: '32px',
                         background: 'linear-gradient(135deg, #e50914 0%, #b80710 100%)',
                         color: '#fff',
                         border: 'none',
                         borderRadius: '8px',
-                        padding: '6px 12px',
+                        padding: '0 13px',
                         fontSize: '11.5px',
                         fontWeight: 800,
                         cursor: 'pointer',
-                        display: 'flex',
+                        display: 'inline-flex',
                         alignItems: 'center',
+                        justifyContent: 'center',
                         gap: '6px',
                         boxShadow: '0 2px 10px rgba(229, 9, 20, 0.35)',
                         whiteSpace: 'nowrap',
-                        flexShrink: 0
+                        flexShrink: 0,
+                        boxSizing: 'border-box'
                       }}
                     >
                       <Zap size={13} /> Add All ({activeFranchise.movies.length})
