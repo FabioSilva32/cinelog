@@ -290,10 +290,7 @@ function LibraryColumn({ label, icon, color, movies, onEditClick, onRemove, sear
           overflowY: 'auto',
           flex: 1,
           minHeight: 0,
-          padding: '10px 12px 24px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px'
+          padding: '10px 10px 24px'
         }}
       >
         {filtered.length === 0 ? (
@@ -301,256 +298,23 @@ function LibraryColumn({ label, icon, color, movies, onEditClick, onRemove, sear
             <div style={{ fontSize: '28px', marginBottom: '8px' }}>🎬</div>
             {searchQuery ? 'No matching titles found' : 'Empty category – add titles from Explore'}
           </div>
-        ) : filtered.map(movie => {
-          const isWatched = movie.status === 'watched';
-          const genres = (movie.genres || []).slice(0, 2).join(' · ');
-          const isWatching = movie.status === 'watching';
-          const posterUrl = movie.poster_path
-            ? (movie.poster_path.startsWith('http') ? movie.poster_path : `https://image.tmdb.org/t/p/w200${movie.poster_path}`)
-            : null;
-
-          return (
-            <div
-              key={movie.id || movie.tmdb_id}
-              onClick={() => onEditClick(movie)}
-              style={{
-                display: 'flex',
-                gap: '12px',
-                padding: '10px',
-                borderRadius: '12px',
-                background: isWatching ? 'rgba(229, 9, 20, 0.07)' : 'rgba(255, 255, 255, 0.025)',
-                border: isWatching ? '1px solid rgba(229, 9, 20, 0.4)' : '1px solid rgba(255, 255, 255, 0.07)',
-                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.3)',
-                cursor: 'pointer',
-                transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)',
-                position: 'relative'
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.borderColor = isWatching ? 'var(--accent)' : 'rgba(255, 255, 255, 0.2)';
-                e.currentTarget.style.background = isWatching ? 'rgba(229, 9, 20, 0.12)' : 'rgba(255, 255, 255, 0.05)';
-                triggerBackdropHover(movie.backdrop_path || movie.details?.backdrop_path);
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.transform = '';
-                e.currentTarget.style.borderColor = isWatching ? 'rgba(229, 9, 20, 0.4)' : 'rgba(255, 255, 255, 0.07)';
-                e.currentTarget.style.background = isWatching ? 'rgba(229, 9, 20, 0.07)' : 'rgba(255, 255, 255, 0.025)';
-                triggerBackdropHover(null);
-              }}
-            >
-              {/* Big High-Res Poster (74px x 110px) */}
-              <div style={{
-                width: '74px',
-                height: '110px',
-                borderRadius: '8px',
-                overflow: 'hidden',
-                flexShrink: 0,
-                background: '#12101a',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                position: 'relative'
-              }}>
-                {posterUrl ? (
-                  <img
-                    src={posterUrl}
-                    alt={movie.title}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                    loading="lazy"
-                  />
-                ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: '24px' }}>
-                    🎬
-                  </div>
-                )}
-              </div>
-
-              {/* Title, Badges & Meta */}
-              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <div style={{
-                  fontSize: '15.5px',
-                  fontWeight: 900,
-                  color: '#FFFFFF',
-                  lineHeight: 1.25,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  letterSpacing: '-0.3px'
-                }}>
-                  {movie.title}
-                </div>
-
-                {/* Subtitle: Year, runtime, director or episode progress */}
-                <div style={{
-                  fontSize: '12px',
-                  color: 'rgba(255, 255, 255, 0.65)',
-                  fontWeight: 600,
-                  marginTop: '4px',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
-                }}>
-                  {movie.release_year || '—'}{genres ? ` · ${genres}` : ''}
-                </div>
-
-                {/* Status Badges Row */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
-                  {isWatching && (
-                    <span style={{
-                      fontSize: '9.5px',
-                      background: 'rgba(229, 9, 20, 0.2)',
-                      color: 'var(--accent)',
-                      border: '1px solid rgba(229, 9, 20, 0.45)',
-                      borderRadius: '5px',
-                      padding: '2px 7px',
-                      fontWeight: 900,
-                      letterSpacing: '0.04em',
-                      textTransform: 'uppercase'
-                    }}>
-                      ▶ Watching
-                    </span>
-                  )}
-                  {isWatched && !isWatching && (
-                    <span style={{
-                      fontSize: '9.5px',
-                      background: 'rgba(34, 197, 94, 0.15)',
-                      color: '#4ade80',
-                      border: '1px solid rgba(34, 197, 94, 0.35)',
-                      borderRadius: '5px',
-                      padding: '2px 7px',
-                      fontWeight: 800
-                    }}>
-                      ✓ Watched
-                    </span>
-                  )}
-                  {movie.status === 'plan_to_watch' && (
-                    <span style={{
-                      fontSize: '9.5px',
-                      background: 'rgba(96, 165, 250, 0.15)',
-                      color: '#60a5fa',
-                      border: '1px solid rgba(96, 165, 250, 0.35)',
-                      borderRadius: '5px',
-                      padding: '2px 7px',
-                      fontWeight: 800
-                    }}>
-                      ⏳ Watchlist
-                    </span>
-                  )}
-                  {movie.favorite && (
-                    <span style={{
-                      fontSize: '9.5px',
-                      background: 'rgba(239, 68, 68, 0.15)',
-                      color: '#f87171',
-                      border: '1px solid rgba(239, 68, 68, 0.35)',
-                      borderRadius: '5px',
-                      padding: '2px 6px',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '3px',
-                      fontWeight: 800
-                    }}>
-                      <Heart size={9} fill="currentColor" /> Favorite
-                    </span>
-                  )}
-                  {movie.theater_seat && (
-                    <span
-                      title={`Theater Ticket: Row & Seat ${movie.theater_seat}`}
-                      style={{
-                        fontSize: '9.5px',
-                        background: 'rgba(245, 158, 11, 0.15)',
-                        border: '1px solid rgba(245, 158, 11, 0.35)',
-                        color: '#fbbf24',
-                        borderRadius: '5px',
-                        padding: '2px 6px',
-                        fontWeight: 800
-                      }}
-                    >
-                      🎟️ Ticket
-                    </span>
-                  )}
-                </div>
-
-                {/* Personal Review Snippet if available */}
-                {movie.review && movie.review.trim().length > 0 && (
-                  <div style={{
-                    fontSize: '11px',
-                    color: 'rgba(255, 255, 255, 0.72)',
-                    fontStyle: 'italic',
-                    marginTop: '6px',
-                    lineHeight: 1.35,
-                    overflow: 'hidden',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    padding: '3px 8px',
-                    borderRadius: '5px',
-                    borderLeft: '2px solid rgba(255, 255, 255, 0.2)'
-                  }}>
-                    "{movie.review}"
-                  </div>
-                )}
-              </div>
-
-              {/* Right Side: Sleek, Compact Rating Pill (Color Coded by Score, No /10) */}
-              {movie.rating > 0 && (() => {
-                const style = getRatingStyle(movie.rating);
-                return (
-                  <div style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    alignSelf: 'center',
-                    flexShrink: 0,
-                    padding: '4px 8px',
-                    borderRadius: '8px',
-                    background: style.bg,
-                    border: `1px solid ${style.border}`,
-                    boxShadow: `0 2px 8px ${style.glow || 'rgba(0,0,0,0.3)'}`,
-                    color: style.color,
-                    marginRight: '6px',
-                    lineHeight: 1
-                  }}>
-                    <Star size={12} fill="currentColor" color="currentColor" />
-                    <span style={{
-                      fontSize: '15px',
-                      fontWeight: 900,
-                      letterSpacing: '-0.3px',
-                      fontFeatureSettings: '"tnum"'
-                    }}>
-                      {Number(movie.rating).toFixed(1)}
-                    </span>
-                  </div>
-                );
-              })()}
-
-              {/* Remove (✕) Button in Top-Right Corner of the Box */}
-              <button
-                onClick={e => { e.stopPropagation(); onRemove(movie.id); }}
-                style={{
-                  position: 'absolute',
-                  top: '8px',
-                  right: '8px',
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--text-dim)',
-                  cursor: 'pointer',
-                  padding: '4px',
-                  opacity: 0.35,
-                  transition: 'all 0.15s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: '4px',
-                  zIndex: 2
-                }}
-                onMouseEnter={e => { e.currentTarget.style.opacity = 1; e.currentTarget.style.color = '#ef4444'; }}
-                onMouseLeave={e => { e.currentTarget.style.opacity = 0.35; e.currentTarget.style.color = 'var(--text-dim)'; }}
-                title="Remove title"
-              >
-                <X size={13} />
-              </button>
-            </div>
-          );
-        })}
+        ) : (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(95px, 1fr))',
+            gap: '8px',
+            paddingBottom: '20px'
+          }}>
+            {filtered.map(movie => (
+              <MediaPosterCard
+                key={movie.id || movie.tmdb_id}
+                movie={movie}
+                onEditClick={onEditClick}
+                layout="grid"
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1069,18 +833,18 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
   const [showMobileFilterSheet, setShowMobileFilterSheet] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [showImport, setShowImport] = useState(false);
-  const [desktopLayout, setDesktopLayout] = useState(() => {
+  const [categoryTab, setCategoryTab] = useState(() => {
     try {
-      return localStorage.getItem('cinelog_desktop_layout_v1') || 'wall';
+      return localStorage.getItem('cinelog_lib_category_tab') || 'movies';
     } catch {
-      return 'wall';
+      return 'movies';
     }
   });
 
-  const handleSetDesktopLayout = (layout) => {
-    setDesktopLayout(layout);
+  const handleSelectCategoryTab = (tab) => {
+    setCategoryTab(tab);
     try {
-      localStorage.setItem('cinelog_desktop_layout_v1', layout);
+      localStorage.setItem('cinelog_lib_category_tab', tab);
     } catch {}
   };
 
@@ -1655,100 +1419,7 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
           <Download size={13} /> CSV
         </button>
 
-        {/* Desktop Layout Mode Switcher */}
-        <div style={{
-          display: 'flex',
-          background: 'rgba(255, 255, 255, 0.04)',
-          border: '1px solid rgba(255, 255, 255, 0.12)',
-          borderRadius: '8px',
-          padding: '2px',
-          gap: '2px'
-        }}>
-          <button
-            type="button"
-            onClick={() => handleSetDesktopLayout('wall')}
-            style={{
-              background: desktopLayout === 'wall' ? 'var(--accent)' : 'transparent',
-              color: desktopLayout === 'wall' ? '#fff' : 'var(--text-muted)',
-              border: 'none',
-              borderRadius: '6px',
-              padding: '5px 10px',
-              fontSize: '11.5px',
-              fontWeight: 800,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              transition: 'all 0.15s'
-            }}
-            title="The Cinema Wall (Dense 8-Column Poster Grid - 50+ movies visible)"
-          >
-            <LayoutGrid size={13} /> Wall
-          </button>
-          <button
-            type="button"
-            onClick={() => handleSetDesktopLayout('table')}
-            style={{
-              background: desktopLayout === 'table' ? 'var(--accent)' : 'transparent',
-              color: desktopLayout === 'table' ? '#fff' : 'var(--text-muted)',
-              border: 'none',
-              borderRadius: '6px',
-              padding: '5px 10px',
-              fontSize: '11.5px',
-              fontWeight: 800,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              transition: 'all 0.15s'
-            }}
-            title="Cinephile Database Table (25 rows per screen with sortable columns)"
-          >
-            <List size={13} /> Table
-          </button>
-          <button
-            type="button"
-            onClick={() => handleSetDesktopLayout('rails')}
-            style={{
-              background: desktopLayout === 'rails' ? 'var(--accent)' : 'transparent',
-              color: desktopLayout === 'rails' ? '#fff' : 'var(--text-muted)',
-              border: 'none',
-              borderRadius: '6px',
-              padding: '5px 10px',
-              fontSize: '11.5px',
-              fontWeight: 800,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              transition: 'all 0.15s'
-            }}
-            title="Streaming Showcase Rails (Apple TV+ / Plex Rails + Spotlight)"
-          >
-            <Film size={13} /> Rails
-          </button>
-          <button
-            type="button"
-            onClick={() => handleSetDesktopLayout('classic')}
-            style={{
-              background: desktopLayout === 'classic' ? 'var(--accent)' : 'transparent',
-              color: desktopLayout === 'classic' ? '#fff' : 'var(--text-muted)',
-              border: 'none',
-              borderRadius: '6px',
-              padding: '5px 10px',
-              fontSize: '11.5px',
-              fontWeight: 800,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              transition: 'all 0.15s'
-            }}
-            title="3-Column Classic View (Legacy)"
-          >
-            <Layers size={13} /> 3-Col
-          </button>
-        </div>
+
 
         <button className="btn btn-secondary" onClick={() => setShowImport(true)}
           style={{ height: '38px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '0 14px' }}>
@@ -2138,510 +1809,215 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
         </div>
       )}
 
-      {/* ── DESKTOP LIBRARY LAYOUT MODES ───────────────────────────── */}
+      {/* ── DESKTOP LIBRARY VIEW (CATEGORY TABS: MOVIES / SERIES / ANIME / SPLIT) ── */}
       <div className="desktop-only-3col-library" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-        {desktopLayout === 'wall' ? (
-          /* ── 1. THE CINEMA WALL (Dense 8-to-10 Column Poster Grid) ── */
-          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: '4px' }}>
-            {/* Category Quick Filter Pills inside Wall Mode */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {[
-                  { id: 'all', label: `All (${allFilteredWithoutType.length})` },
-                  { id: 'movie', label: `🎬 Movies (${movies.length})` },
-                  { id: 'tv', label: `📺 Series (${series.length})` },
-                  { id: 'anime', label: `⛩️ Anime (${anime.length})` },
-                ].map(tab => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setFilterType(tab.id)}
-                    style={{
-                      background: filterType === tab.id ? 'var(--accent)' : 'rgba(255, 255, 255, 0.05)',
-                      color: filterType === tab.id ? '#fff' : 'var(--text-muted)',
-                      border: `1px solid ${filterType === tab.id ? 'var(--accent)' : 'rgba(255, 255, 255, 0.1)'}`,
-                      borderRadius: '8px',
-                      padding: '5px 12px',
-                      fontSize: '12px',
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s'
-                    }}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-              <div style={{ fontSize: '11.5px', color: 'var(--text-dim)', fontWeight: 700 }}>
-                Showing {filtered.length} titles · 8-10 posters per row
-              </div>
-            </div>
-
-            {filtered.length === 0 ? (
-              <div style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--text-dim)', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px dashed rgba(255,255,255,0.1)' }}>
-                <div style={{ fontSize: '42px', marginBottom: '8px' }}>🎬</div>
-                <div style={{ fontSize: '15px', fontWeight: 800, color: '#FFFFFF' }}>No matching titles found</div>
-                <div style={{ fontSize: '12px', marginTop: '4px', color: 'var(--text-muted)' }}>Try resetting filters or adding titles from Explore.</div>
-              </div>
-            ) : (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
-                gap: '12px',
-                paddingBottom: '40px'
-              }}>
-                {filtered.map(movie => {
-                  const isWatched = movie.status === 'watched';
-                  const isWatching = movie.status === 'watching';
-                  const posterUrl = movie.poster_path
-                    ? (movie.poster_path.startsWith('http') ? movie.poster_path : `https://image.tmdb.org/t/p/w300${movie.poster_path}`)
-                    : null;
-                  const ratingStyle = getRatingStyle(movie.rating);
-                  const mediaType = getMediaType(movie);
-
-                  return (
-                    <div
-                      key={movie.id || movie.tmdb_id}
-                      onClick={() => onEditClick(movie)}
-                      style={{
-                        position: 'relative',
-                        aspectRatio: '2/3',
-                        borderRadius: '10px',
-                        overflow: 'hidden',
-                        background: '#12101b',
-                        border: isWatching ? '2px solid var(--accent)' : '1px solid rgba(255, 255, 255, 0.09)',
-                        boxShadow: isWatching ? '0 0 16px var(--accent-glow)' : '0 4px 14px rgba(0,0,0,0.5)',
-                        cursor: 'pointer',
-                        transition: 'all 0.18s ease'
-                      }}
-                      onMouseEnter={e => {
-                        e.currentTarget.style.transform = 'translateY(-4px) scale(1.03)';
-                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)';
-                        e.currentTarget.style.boxShadow = '0 12px 28px rgba(0,0,0,0.7)';
-                        triggerBackdropHover(movie.backdrop_path || movie.details?.backdrop_path);
-                      }}
-                      onMouseLeave={e => {
-                        e.currentTarget.style.transform = '';
-                        e.currentTarget.style.borderColor = isWatching ? 'var(--accent)' : 'rgba(255, 255, 255, 0.09)';
-                        e.currentTarget.style.boxShadow = isWatching ? '0 0 16px var(--accent-glow)' : '0 4px 14px rgba(0,0,0,0.5)';
-                        triggerBackdropHover(null);
-                      }}
-                    >
-                      {posterUrl ? (
-                        <img
-                          src={posterUrl}
-                          alt={movie.title}
-                          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: '28px' }}>
-                          🎬
-                        </div>
-                      )}
-
-                      {/* Rating Badge Top-Left */}
-                      {movie.rating ? (
-                        <div style={{
-                          position: 'absolute',
-                          top: '6px',
-                          left: '6px',
-                          zIndex: 3,
-                          background: ratingStyle.bg || 'rgba(0,0,0,0.85)',
-                          border: `1px solid ${ratingStyle.border || 'rgba(255,255,255,0.2)'}`,
-                          borderRadius: '5px',
-                          padding: '1px 5px',
-                          fontSize: '10px',
-                          fontWeight: 900,
-                          color: ratingStyle.color || 'var(--gold)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '2px',
-                          boxShadow: '0 2px 6px rgba(0,0,0,0.6)'
-                        }}>
-                          <Star size={9} fill="currentColor" />
-                          <span>{Number(movie.rating).toFixed(1)}</span>
-                        </div>
-                      ) : null}
-
-                      {/* Format Pill (Movie / TV / Anime) Top-Right */}
-                      <div style={{
-                        position: 'absolute',
-                        top: '6px',
-                        right: '6px',
-                        zIndex: 3,
-                        background: mediaType === 'anime' ? 'rgba(245, 158, 11, 0.9)' : mediaType === 'tv' ? 'rgba(59, 130, 246, 0.9)' : 'rgba(0, 0, 0, 0.75)',
-                        color: '#fff',
-                        fontSize: '8.5px',
-                        fontWeight: 800,
-                        textTransform: 'uppercase',
-                        padding: '1px 5px',
-                        borderRadius: '4px',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.5)'
-                      }}>
-                        {mediaType === 'tv' ? 'TV' : mediaType === 'anime' ? 'Anime' : 'Film'}
-                      </div>
-
-                      {/* Bottom Title & Year Overlay */}
-                      <div style={{
-                        position: 'absolute',
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        background: 'linear-gradient(transparent 0%, rgba(10,8,16,0.85) 40%, rgba(5,4,8,0.98) 100%)',
-                        padding: '18px 8px 6px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'flex-end',
-                        zIndex: 2
-                      }}>
-                        <div style={{
-                          fontSize: '11.5px',
-                          fontWeight: 800,
-                          color: '#fff',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          lineHeight: 1.2
-                        }}>
-                          {movie.title}
-                        </div>
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          marginTop: '2px',
-                          fontSize: '9.5px',
-                          color: 'rgba(255,255,255,0.65)',
-                          fontWeight: 600
-                        }}>
-                          <span>{movie.release_year || '—'}</span>
-                          {isWatching && <span style={{ color: 'var(--accent)', fontWeight: 800 }}>▶ Watching</span>}
-                          {isWatched && !isWatching && <span style={{ color: '#4ade80' }}>✓ Watched</span>}
-                          {movie.status === 'plan_to_watch' && <span style={{ color: '#60a5fa' }}>⏳ Watchlist</span>}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        ) : desktopLayout === 'table' ? (
-          /* ── 2. THE CINEPHILE DATABASE & DIARY TABLE ── */
-          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', background: '#110f1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}>
-              <thead style={{ position: 'sticky', top: 0, zIndex: 10, background: '#181524' }}>
-                <tr style={{ color: 'var(--text-muted)', fontSize: '10.5px', textTransform: 'uppercase', fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                  <th style={{ padding: '10px 14px', width: '40px' }}>#</th>
-                  <th style={{ padding: '10px 14px', width: '46px' }}>Poster</th>
-                  <th style={{ padding: '10px 14px', cursor: 'pointer' }} onClick={() => setSortBy(sortBy === 'title-asc' ? 'title-desc' : 'title-asc')}>
-                    Film Title {sortBy.startsWith('title') ? (sortBy.endsWith('asc') ? '▲' : '▼') : ''}
-                  </th>
-                  <th style={{ padding: '10px 14px', width: '80px', cursor: 'pointer' }} onClick={() => setSortBy('year-desc')}>
-                    Year {sortBy === 'year-desc' ? '▼' : ''}
-                  </th>
-                  <th style={{ padding: '10px 14px', width: '90px' }}>Format</th>
-                  <th style={{ padding: '10px 14px', width: '90px', cursor: 'pointer' }} onClick={() => setSortBy('rating-desc')}>
-                    Rating {sortBy === 'rating-desc' ? '▼' : ''}
-                  </th>
-                  <th style={{ padding: '10px 14px', width: '120px' }}>Status</th>
-                  <th style={{ padding: '10px 14px' }}>Genres</th>
-                  <th style={{ padding: '10px 14px', width: '100px', textAlign: 'right' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((movie, idx) => {
-                  const isWatched = movie.status === 'watched';
-                  const isWatching = movie.status === 'watching';
-                  const ratingStyle = getRatingStyle(movie.rating);
-                  const mediaType = getMediaType(movie);
-                  const posterUrl = movie.poster_path
-                    ? (movie.poster_path.startsWith('http') ? movie.poster_path : `https://image.tmdb.org/t/p/w92${movie.poster_path}`)
-                    : null;
-
-                  return (
-                    <tr
-                      key={movie.id || movie.tmdb_id}
-                      onClick={() => onEditClick(movie)}
-                      style={{
-                        borderBottom: '1px solid rgba(255,255,255,0.04)',
-                        background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)',
-                        cursor: 'pointer',
-                        transition: 'background 0.12s'
-                      }}
-                      onMouseEnter={e => {
-                        e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
-                        triggerBackdropHover(movie.backdrop_path || movie.details?.backdrop_path);
-                      }}
-                      onMouseLeave={e => {
-                        e.currentTarget.style.background = idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)';
-                        triggerBackdropHover(null);
-                      }}
-                    >
-                      <td style={{ padding: '8px 14px', color: '#666', fontWeight: 800 }}>{idx + 1}</td>
-                      <td style={{ padding: '8px 14px' }}>
-                        <div style={{ width: '30px', height: '44px', borderRadius: '4px', overflow: 'hidden', background: '#222' }}>
-                          {posterUrl && <img src={posterUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                        </div>
-                      </td>
-                      <td style={{ padding: '8px 14px', fontWeight: 800, color: '#fff' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span>{movie.title}</span>
-                          {movie.favorite && <Heart size={11} fill="var(--red)" color="var(--red)" />}
-                        </div>
-                      </td>
-                      <td style={{ padding: '8px 14px', color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>{movie.release_year || '—'}</td>
-                      <td style={{ padding: '8px 14px' }}>
-                        <span style={{
-                          fontSize: '10px',
-                          fontWeight: 800,
-                          textTransform: 'uppercase',
-                          padding: '2px 7px',
-                          borderRadius: '4px',
-                          background: mediaType === 'movie' ? 'rgba(229,9,20,0.15)' : mediaType === 'tv' ? 'rgba(59,130,246,0.15)' : 'rgba(245,158,11,0.15)',
-                          color: mediaType === 'movie' ? '#ef4444' : mediaType === 'tv' ? '#60a5fa' : '#f59e0b'
-                        }}>
-                          {mediaType === 'tv' ? 'Series' : mediaType === 'anime' ? 'Anime' : 'Film'}
-                        </span>
-                      </td>
-                      <td style={{ padding: '8px 14px' }}>
-                        {movie.rating ? (
-                          <span style={{
-                            fontWeight: 900,
-                            color: ratingStyle.color || '#fff',
-                            background: ratingStyle.bg || 'rgba(245,158,11,0.2)',
-                            border: `1px solid ${ratingStyle.border || 'rgba(245,158,11,0.4)'}`,
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            fontSize: '11px'
-                          }}>
-                            ★ {Number(movie.rating).toFixed(1)}
-                          </span>
-                        ) : (
-                          <span style={{ color: '#555', fontSize: '11px' }}>—</span>
-                        )}
-                      </td>
-                      <td style={{ padding: '8px 14px' }}>
-                        <span style={{
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          color: isWatched ? '#10b981' : isWatching ? '#ef4444' : '#60a5fa'
-                        }}>
-                          {isWatching ? '▶ Watching' : isWatched ? '✓ Watched' : '⏳ Watchlist'}
-                        </span>
-                      </td>
-                      <td style={{ padding: '8px 14px', color: 'var(--text-dim)', fontSize: '11.5px' }}>
-                        {(movie.genres || []).slice(0, 3).join(', ') || '—'}
-                      </td>
-                      <td style={{ padding: '8px 14px', textAlign: 'right' }}>
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); onEditClick(movie); }}
-                          style={{
-                            background: 'rgba(255,255,255,0.06)',
-                            border: '1px solid rgba(255,255,255,0.12)',
-                            color: '#fff',
-                            padding: '3px 9px',
-                            borderRadius: '5px',
-                            fontSize: '11px',
-                            cursor: 'pointer',
-                            fontWeight: 700
-                          }}
-                        >
-                          Edit
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        ) : desktopLayout === 'rails' ? (
-          /* ── 3. STREAMING SHOWCASE RAILS + HERO SPOTLIGHT ── */
-          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px', paddingRight: '4px' }}>
-            {/* Dynamic Hero Spotlight Banner */}
-            {spotlightMovie && (
-              <div style={{
-                position: 'relative',
-                background: `linear-gradient(90deg, rgba(16,13,24,0.98) 0%, rgba(22,17,32,0.92) 50%, rgba(0,0,0,0.5) 100%), url(${spotlightMovie.backdrop_path ? `https://image.tmdb.org/t/p/w1280${spotlightMovie.backdrop_path}` : (spotlightMovie.poster_path ? `https://image.tmdb.org/t/p/w780${spotlightMovie.poster_path}` : '')})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                border: '1px solid rgba(255,255,255,0.12)',
-                borderRadius: '16px',
-                padding: '24px 30px',
+        {/* ── 3 CATEGORY TABS (Movies / Series / Anime / Split) ── */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px',
+          background: 'rgba(16, 13, 24, 0.75)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: '14px',
+          padding: '6px 8px',
+          backdropFilter: 'blur(16px)',
+          margin: '0 0 14px 0',
+          flexWrap: 'wrap'
+        }}>
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => handleSelectCategoryTab('movies')}
+              style={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-between',
-                boxShadow: '0 16px 40px rgba(0,0,0,0.7)',
-                overflow: 'hidden'
+                gap: '8px',
+                padding: '7px 16px',
+                borderRadius: '10px',
+                background: categoryTab === 'movies' ? 'linear-gradient(135deg, #e50914, #991b1b)' : 'rgba(255, 255, 255, 0.03)',
+                color: categoryTab === 'movies' ? '#ffffff' : 'var(--text-muted)',
+                border: `1px solid ${categoryTab === 'movies' ? 'rgba(229, 9, 20, 0.6)' : 'rgba(255, 255, 255, 0.08)'}`,
+                fontWeight: 800,
+                fontSize: '13px',
+                cursor: 'pointer',
+                boxShadow: categoryTab === 'movies' ? '0 4px 18px rgba(229, 9, 20, 0.45)' : 'none',
+                transition: 'all 0.16s ease'
+              }}
+            >
+              <span style={{ fontSize: '16px' }}>🎬</span>
+              <span>Movies</span>
+              <span style={{
+                fontSize: '11px',
+                fontWeight: 900,
+                padding: '2px 7px',
+                borderRadius: '12px',
+                background: categoryTab === 'movies' ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.08)',
+                color: categoryTab === 'movies' ? '#ffffff' : 'var(--text-dim)'
               }}>
-                <div style={{ maxWidth: '680px', zIndex: 2 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                    <span style={{
-                      background: 'var(--accent)',
-                      color: '#fff',
-                      fontSize: '9.5px',
-                      fontWeight: 900,
-                      padding: '2px 8px',
-                      borderRadius: '4px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.04em'
-                    }}>
-                      🔥 Featured in Library
-                    </span>
-                    <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>
-                      {getMediaType(spotlightMovie).toUpperCase()}
-                    </span>
-                  </div>
+                {movies.length}
+              </span>
+            </button>
 
-                  <h2 style={{ fontSize: '28px', fontWeight: 900, margin: '0 0 6px', color: '#fff', letterSpacing: '-0.5px' }}>
-                    {spotlightMovie.title}
-                  </h2>
+            <button
+              type="button"
+              onClick={() => handleSelectCategoryTab('series')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '7px 16px',
+                borderRadius: '10px',
+                background: categoryTab === 'series' ? 'linear-gradient(135deg, #2563eb, #1e40af)' : 'rgba(255, 255, 255, 0.03)',
+                color: categoryTab === 'series' ? '#ffffff' : 'var(--text-muted)',
+                border: `1px solid ${categoryTab === 'series' ? 'rgba(37, 99, 235, 0.6)' : 'rgba(255, 255, 255, 0.08)'}`,
+                fontWeight: 800,
+                fontSize: '13px',
+                cursor: 'pointer',
+                boxShadow: categoryTab === 'series' ? '0 4px 18px rgba(37, 99, 235, 0.45)' : 'none',
+                transition: 'all 0.16s ease'
+              }}
+            >
+              <span style={{ fontSize: '16px' }}>📺</span>
+              <span>Series</span>
+              <span style={{
+                fontSize: '11px',
+                fontWeight: 900,
+                padding: '2px 7px',
+                borderRadius: '12px',
+                background: categoryTab === 'series' ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.08)',
+                color: categoryTab === 'series' ? '#ffffff' : 'var(--text-dim)'
+              }}>
+                {series.length}
+              </span>
+            </button>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                    {spotlightMovie.rating ? (
-                      <span style={{ color: 'var(--gold)', fontWeight: 900, fontSize: '15px' }}>
-                        ★ {Number(spotlightMovie.rating).toFixed(1)}
-                      </span>
-                    ) : null}
-                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>
-                      {spotlightMovie.release_year || '—'} · {(spotlightMovie.genres || []).slice(0, 3).join(', ')}
-                    </span>
-                  </div>
+            <button
+              type="button"
+              onClick={() => handleSelectCategoryTab('anime')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '7px 16px',
+                borderRadius: '10px',
+                background: categoryTab === 'anime' ? 'linear-gradient(135deg, #d97706, #92400e)' : 'rgba(255, 255, 255, 0.03)',
+                color: categoryTab === 'anime' ? '#ffffff' : 'var(--text-muted)',
+                border: `1px solid ${categoryTab === 'anime' ? 'rgba(217, 119, 6, 0.6)' : 'rgba(255, 255, 255, 0.08)'}`,
+                fontWeight: 800,
+                fontSize: '13px',
+                cursor: 'pointer',
+                boxShadow: categoryTab === 'anime' ? '0 4px 18px rgba(217, 119, 6, 0.45)' : 'none',
+                transition: 'all 0.16s ease'
+              }}
+            >
+              <span style={{ fontSize: '16px' }}>⛩️</span>
+              <span>Anime</span>
+              <span style={{
+                fontSize: '11px',
+                fontWeight: 900,
+                padding: '2px 7px',
+                borderRadius: '12px',
+                background: categoryTab === 'anime' ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.08)',
+                color: categoryTab === 'anime' ? '#ffffff' : 'var(--text-dim)'
+              }}>
+                {anime.length}
+              </span>
+            </button>
 
-                  {spotlightMovie.overview && (
-                    <p style={{
-                      fontSize: '12.5px',
-                      color: 'rgba(255,255,255,0.75)',
-                      lineHeight: 1.45,
-                      marginBottom: '14px',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden'
-                    }}>
-                      {spotlightMovie.overview}
-                    </p>
-                  )}
+            <div style={{ width: '1px', height: '22px', background: 'rgba(255, 255, 255, 0.1)', margin: '0 4px' }} />
 
-                  <button
-                    type="button"
-                    onClick={() => onEditClick(spotlightMovie)}
-                    className="btn btn-primary"
-                    style={{ fontSize: '12px', height: '34px', padding: '0 16px', fontWeight: 800 }}
-                  >
-                    ▶ Open Film Diary & Log
-                  </button>
-                </div>
-
-                <div style={{
-                  width: '115px',
-                  height: '168px',
-                  borderRadius: '10px',
-                  overflow: 'hidden',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  boxShadow: '0 10px 30px rgba(0,0,0,0.85)',
-                  flexShrink: 0,
-                  zIndex: 2,
-                  display: 'none',
-                  '@media (min-width: 900px)': { display: 'block' }
-                }}>
-                  {spotlightMovie.poster_path && (
-                    <img
-                      src={`https://image.tmdb.org/t/p/w300${spotlightMovie.poster_path}`}
-                      alt={spotlightMovie.title}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Rails */}
-            {watchingList.length > 0 && (
-              <LibraryShelfRow
-                title="Currently Watching"
-                icon="▶"
-                badgeColor="var(--accent)"
-                accentGlow="#ef4444"
-                items={watchingList}
-                onSeeAll={() => { setFilterStatus('watching'); setDesktopLayout('wall'); }}
-                onEditClick={onEditClick}
-                emptyPrompt="No titles currently marked as watching."
-              />
-            )}
-
-            {topRatedList.length > 0 && (
-              <LibraryShelfRow
-                title="All-Time Masterpieces (Rated 8.5+)"
-                icon="🏆"
-                badgeColor="#f59e0b"
-                accentGlow="#f59e0b"
-                items={topRatedList}
-                onSeeAll={() => { setFilterStatus('all'); setSortBy('rating-desc'); setDesktopLayout('wall'); }}
-                onEditClick={onEditClick}
-                emptyPrompt="Rate titles 8.5+ to feature them here."
-              />
-            )}
-
-            {watchlist.length > 0 && (
-              <LibraryShelfRow
-                title="Top Watchlist Queue"
-                icon="⏳"
-                badgeColor="#60a5fa"
-                accentGlow="#3b82f6"
-                items={watchlist}
-                onSeeAll={() => { setFilterStatus('plan_to_watch'); setDesktopLayout('wall'); }}
-                onEditClick={onEditClick}
-                emptyPrompt="Your watchlist queue is empty."
-              />
-            )}
-
-            <LibraryShelfRow
-              title="Feature Films"
-              icon="🎬"
-              badgeColor="var(--accent)"
-              accentGlow="#ef4444"
-              items={movies}
-              onSeeAll={() => { setFilterType('movie'); setDesktopLayout('wall'); }}
-              onEditClick={onEditClick}
-              emptyPrompt="No feature films in this list."
-            />
-
-            <LibraryShelfRow
-              title="Television Series"
-              icon="📺"
-              badgeColor="#3b82f6"
-              accentGlow="#3b82f6"
-              items={series}
-              onSeeAll={() => { setFilterType('tv'); setDesktopLayout('wall'); }}
-              onEditClick={onEditClick}
-              emptyPrompt="No television series saved."
-            />
-
-            <LibraryShelfRow
-              title="Anime & Animation"
-              icon="⛩️"
-              badgeColor="#f59e0b"
-              accentGlow="#f59e0b"
-              items={anime}
-              onSeeAll={() => { setFilterType('anime'); setDesktopLayout('wall'); }}
-              onEditClick={onEditClick}
-              emptyPrompt="No anime titles saved."
-            />
+            <button
+              type="button"
+              onClick={() => handleSelectCategoryTab('split')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '7px 14px',
+                borderRadius: '10px',
+                background: categoryTab === 'split' ? 'rgba(255, 255, 255, 0.14)' : 'rgba(255, 255, 255, 0.03)',
+                color: categoryTab === 'split' ? '#ffffff' : 'var(--text-muted)',
+                border: `1px solid ${categoryTab === 'split' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.06)'}`,
+                fontWeight: 700,
+                fontSize: '12px',
+                cursor: 'pointer',
+                transition: 'all 0.16s ease'
+              }}
+              title="View all 3 mediums side-by-side in 3 poster columns"
+            >
+              <Layers size={13} />
+              <span>Split 3-Col</span>
+            </button>
           </div>
-        ) : (
-          /* ── 4. 3-COLUMN CLASSIC VIEW (LEGACY) ── */
+
+          <div style={{ fontSize: '12px', color: 'var(--text-dim)', fontWeight: 600, paddingRight: '8px' }}>
+            {categoryTab === 'movies' && `${movies.length} movies visible`}
+            {categoryTab === 'series' && `${series.length} series visible`}
+            {categoryTab === 'anime' && `${anime.length} anime visible`}
+            {categoryTab === 'split' && `3-Column Overview (${movies.length + series.length + anime.length} total)`}
+          </div>
+        </div>
+
+        {/* ── CONTENT AREA ── */}
+        {categoryTab === 'split' ? (
+          /* ── 3-COLUMN SPLIT VIEW ── */
           <div style={{ display: 'flex', gap: '14px', flex: 1, minHeight: 0 }}>
             <LibraryColumn label="Movies" icon="🎬" color="var(--accent)" movies={movies} onEditClick={onEditClick} onRemove={onRemove} searchQuery={searchQuery} sortBy={sortBy} />
             <LibraryColumn label="Series" icon="📺" color="var(--blue)" movies={series} onEditClick={onEditClick} onRemove={onRemove} searchQuery={searchQuery} sortBy={sortBy} />
             <LibraryColumn label="Anime" icon="⛩" color="#f97316" movies={anime} onEditClick={onEditClick} onRemove={onRemove} searchQuery={searchQuery} sortBy={sortBy} />
           </div>
+        ) : (
+          /* ── FULL-WIDTH DENSE POSTER GRID ── */
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: '4px' }}>
+            {(() => {
+              const activeList = categoryTab === 'movies' ? movies : categoryTab === 'series' ? series : anime;
+              const meta = {
+                movies: { icon: '🎬', label: 'Movies' },
+                series: { icon: '📺', label: 'Series' },
+                anime: { icon: '⛩️', label: 'Anime' },
+              }[categoryTab] || { icon: '🎬', label: 'Titles' };
+
+              if (activeList.length === 0) {
+                return (
+                  <div style={{
+                    padding: '80px 20px',
+                    textAlign: 'center',
+                    color: 'var(--text-dim)',
+                    background: 'rgba(255,255,255,0.02)',
+                    borderRadius: '16px',
+                    border: '1px dashed rgba(255,255,255,0.1)'
+                  }}>
+                    <div style={{ fontSize: '42px', marginBottom: '8px' }}>{meta.icon}</div>
+                    <div style={{ fontSize: '16px', fontWeight: 800, color: '#FFFFFF' }}>No {meta.label} Found</div>
+                    <div style={{ fontSize: '12px', marginTop: '4px', color: 'var(--text-muted)' }}>
+                      Try resetting filters or adding titles from Explore.
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+                  gap: '12px',
+                  paddingBottom: '40px'
+                }}>
+                  {activeList.map(movie => (
+                    <MediaPosterCard
+                      key={movie.id || movie.tmdb_id}
+                      movie={movie}
+                      onEditClick={onEditClick}
+                      layout="grid"
+                    />
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
         )}
       </div>
-
 
       {/* ── MOBILE FILTER & SORT BOTTOM SHEET ────────────────────────── */}
       {showMobileFilterSheet && (
