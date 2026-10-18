@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  X, Plus, Search, Trash2, ArrowLeft, ArrowUpDown, GripVertical,
+  X, Plus, Search, Trash2, ArrowLeft, ArrowUpDown, ArrowDownUp, GripVertical,
   Trophy, Sparkles, Film, Check, Layers, Bookmark, Star,
-  ChevronLeft, ChevronRight, ChevronUp, ChevronDown, List, LayoutGrid,
+  ChevronLeft, ChevronRight, ChevronUp, ChevronDown, List, LayoutGrid, Grid3X3,
   Zap, RefreshCw
 } from 'lucide-react';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
@@ -227,8 +227,41 @@ export default function CreateListModal({
   // Custom In-App Clear All Confirmation Modal
   const [showClearModal, setShowClearModal] = useState(false);
 
-  // View mode for entries: 'list' (Letterboxd 1-per-row) | 'grid' (poster grid)
-  const [entriesViewMode, setEntriesViewMode] = useState('list');
+  // View mode for entries: 'dense' (compact 10-per-row tiles) | 'grid' (cards) | 'list' (Letterboxd 1-per-row)
+  const [entriesViewMode, setEntriesViewMode] = useState(() => {
+    if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+      return 'list'; // on phone, default to Letterboxd 1-per-row
+    }
+    return 'dense'; // on PC, default to dense cine-tiles to fit 8-10 films per row without scrolling!
+  });
+
+  const [showSortDropdown, setShowSortDropdown] = useState(false);
+
+  const handleQuickSort = (type) => {
+    setShowSortDropdown(false);
+    if (entries.length <= 1) return;
+
+    setEntries(prev => {
+      const next = [...prev];
+      if (type === 'year-asc') {
+        next.sort((a, b) => (parseInt(a.release_year, 10) || 0) - (parseInt(b.release_year, 10) || 0));
+        showToast('Sorted chronologically (oldest to newest)');
+      } else if (type === 'year-desc') {
+        next.sort((a, b) => (parseInt(b.release_year, 10) || 0) - (parseInt(a.release_year, 10) || 0));
+        showToast('Sorted by year (newest first)');
+      } else if (type === 'rating-desc') {
+        next.sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0));
+        showToast('Sorted by rating (highest first)');
+      } else if (type === 'title-asc') {
+        next.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+        showToast('Sorted alphabetically (A-Z)');
+      } else if (type === 'reverse') {
+        next.reverse();
+        showToast('Reversed list order');
+      }
+      return next;
+    });
+  };
 
   // Touch drag state for mobile Letterboxd-style reordering
   const touchDragState = useRef({
@@ -789,8 +822,8 @@ export default function CreateListModal({
                   </div>
 
                   {entries.length > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      {/* View Switcher (List vs Grid) */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                      {/* View Switcher (Dense vs Cards vs List) */}
                       <div style={{
                         display: 'flex',
                         background: 'rgba(255, 255, 255, 0.06)',
@@ -800,10 +833,10 @@ export default function CreateListModal({
                       }}>
                         <button
                           type="button"
-                          onClick={() => setEntriesViewMode('list')}
+                          onClick={() => setEntriesViewMode('dense')}
                           style={{
-                            background: entriesViewMode === 'list' ? 'var(--accent)' : 'transparent',
-                            color: entriesViewMode === 'list' ? '#fff' : 'var(--text-muted)',
+                            background: entriesViewMode === 'dense' ? 'var(--accent)' : 'transparent',
+                            color: entriesViewMode === 'dense' ? '#fff' : 'var(--text-muted)',
                             border: 'none',
                             borderRadius: '4px',
                             padding: '3px 7px',
@@ -812,11 +845,12 @@ export default function CreateListModal({
                             alignItems: 'center',
                             gap: '4px',
                             fontSize: '11px',
-                            fontWeight: 700
+                            fontWeight: 700,
+                            transition: 'all 0.15s'
                           }}
-                          title="Letterboxd List View (1 per row)"
+                          title="Dense Tiles (Fits 8-10 per row — see entire list without scrolling!)"
                         >
-                          <List size={12} /> List
+                          <Grid3X3 size={12} /> Dense
                         </button>
                         <button
                           type="button"
@@ -832,12 +866,180 @@ export default function CreateListModal({
                             alignItems: 'center',
                             gap: '4px',
                             fontSize: '11px',
-                            fontWeight: 700
+                            fontWeight: 700,
+                            transition: 'all 0.15s'
                           }}
-                          title="Poster Grid View"
+                          title="Standard Poster Cards"
                         >
-                          <LayoutGrid size={12} /> Grid
+                          <LayoutGrid size={12} /> Cards
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => setEntriesViewMode('list')}
+                          style={{
+                            background: entriesViewMode === 'list' ? 'var(--accent)' : 'transparent',
+                            color: entriesViewMode === 'list' ? '#fff' : 'var(--text-muted)',
+                            border: 'none',
+                            borderRadius: '4px',
+                            padding: '3px 7px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            transition: 'all 0.15s'
+                          }}
+                          title="Letterboxd List View (1 per row)"
+                        >
+                          <List size={12} /> List
+                        </button>
+                      </div>
+
+                      {/* Auto-Sort Dropdown */}
+                      <div style={{ position: 'relative' }}>
+                        <button
+                          type="button"
+                          onClick={() => setShowSortDropdown(!showSortDropdown)}
+                          style={{
+                            background: showSortDropdown ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.06)',
+                            border: '1px solid rgba(255, 255, 255, 0.12)',
+                            color: showSortDropdown ? '#fff' : 'var(--text-muted)',
+                            borderRadius: '6px',
+                            padding: '3px 8px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            whiteSpace: 'nowrap',
+                            transition: 'all 0.15s'
+                          }}
+                          title="Auto-Sort options"
+                        >
+                          <ArrowDownUp size={11} /> Auto-Sort
+                        </button>
+
+                        {showSortDropdown && (
+                          <div
+                            style={{
+                              position: 'absolute',
+                              top: 'calc(100% + 4px)',
+                              right: 0,
+                              zIndex: 60,
+                              background: '#191524',
+                              border: '1px solid rgba(255, 255, 255, 0.15)',
+                              borderRadius: '8px',
+                              boxShadow: '0 12px 30px rgba(0,0,0,0.8)',
+                              minWidth: '210px',
+                              padding: '5px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '2px'
+                            }}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => handleQuickSort('year-asc')}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#fff',
+                                textAlign: 'left',
+                                padding: '6px 10px',
+                                borderRadius: '5px',
+                                fontSize: '11.5px',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between'
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+                              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                            >
+                              <span>📅 Year (Oldest First)</span>
+                              <span style={{ fontSize: '9.5px', color: 'var(--gold)', fontWeight: 800 }}>MCU Order</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickSort('year-desc')}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#fff',
+                                textAlign: 'left',
+                                padding: '6px 10px',
+                                borderRadius: '5px',
+                                fontSize: '11.5px',
+                                fontWeight: 600,
+                                cursor: 'pointer'
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+                              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                            >
+                              📅 Year (Newest First)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickSort('rating-desc')}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#fff',
+                                textAlign: 'left',
+                                padding: '6px 10px',
+                                borderRadius: '5px',
+                                fontSize: '11.5px',
+                                fontWeight: 600,
+                                cursor: 'pointer'
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+                              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                            >
+                              ★ Highest Rated First
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickSort('title-asc')}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#fff',
+                                textAlign: 'left',
+                                padding: '6px 10px',
+                                borderRadius: '5px',
+                                fontSize: '11.5px',
+                                fontWeight: 600,
+                                cursor: 'pointer'
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+                              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                            >
+                              🔤 Title (A → Z)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickSort('reverse')}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#fff',
+                                textAlign: 'left',
+                                padding: '6px 10px',
+                                borderRadius: '5px',
+                                fontSize: '11.5px',
+                                fontWeight: 600,
+                                cursor: 'pointer'
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+                              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                            >
+                              ⇅ Reverse Order
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       <button
@@ -884,9 +1086,11 @@ export default function CreateListModal({
                   }}>
                     <ArrowUpDown size={11} style={{ flexShrink: 0 }} />
                     <span>
-                      {entriesViewMode === 'list'
-                        ? 'Hold drag handle ::: to slide down/up, use ▲▼, or tap rank badge'
-                        : 'Drag posters to reorder, or tap rank badge to jump'}
+                      {entriesViewMode === 'dense'
+                        ? 'Dense Mode: 8–10 films per row — fits all films on screen! Drag posters to reorder, or tap rank to jump'
+                        : entriesViewMode === 'grid'
+                          ? 'Cards Mode: 4–5 cards per row — drag posters to reorder, or tap rank to jump'
+                          : 'List Mode: 1 per row — hold drag handle ::: to slide down/up, or use ▲▼'}
                     </span>
                   </div>
                 )}
@@ -894,7 +1098,164 @@ export default function CreateListModal({
 
               {/* Entries Content */}
               {entries.length > 0 ? (
-                entriesViewMode === 'list' ? (
+                entriesViewMode === 'dense' ? (
+                  /* ── ULTRA-COMPACT DENSE CINE-TILES (Fits 8-10 films per row, fits 50 films in 5 rows!) ── */
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(70px, 1fr))',
+                    gap: '7px',
+                    background: 'rgba(0, 0, 0, 0.28)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: '12px',
+                    padding: '10px'
+                  }}>
+                    {entries.map((entry, idx) => {
+                      const isDragSource = draggedIdx === idx;
+                      const isDragOver = dragOverIdx === idx;
+                      const rankNum = idx + 1;
+                      return (
+                        <div
+                          key={entry.tmdb_id || entry.id || idx}
+                          data-entry-index={idx}
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData('text/plain', String(idx));
+                            e.dataTransfer.effectAllowed = 'move';
+                            setDraggedIdx(idx);
+                          }}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = 'move';
+                            if (dragOverIdx !== idx) setDragOverIdx(idx);
+                          }}
+                          onDragLeave={() => {
+                            if (dragOverIdx === idx) setDragOverIdx(null);
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            const fromIndex = draggedIdx !== null ? draggedIdx : parseInt(e.dataTransfer.getData('text/plain'), 10);
+                            if (!isNaN(fromIndex) && fromIndex !== idx) {
+                              handleMoveEntry(fromIndex, idx);
+                            }
+                            setDraggedIdx(null);
+                            setDragOverIdx(null);
+                          }}
+                          onDragEnd={() => {
+                            setDraggedIdx(null);
+                            setDragOverIdx(null);
+                          }}
+                          style={{
+                            position: 'relative',
+                            aspectRatio: '2/3',
+                            background: '#120f1a',
+                            borderRadius: '7px',
+                            overflow: 'hidden',
+                            border: isDragOver
+                              ? '2px solid var(--accent)'
+                              : '1px solid rgba(255, 255, 255, 0.12)',
+                            opacity: isDragSource ? 0.3 : 1,
+                            transform: isDragOver ? 'scale(1.08)' : 'none',
+                            transition: 'transform 0.12s, border-color 0.12s, opacity 0.12s',
+                            cursor: 'grab',
+                            boxShadow: isDragOver ? '0 0 16px var(--accent-glow)' : '0 2px 6px rgba(0,0,0,0.5)',
+                            userSelect: 'none'
+                          }}
+                          title={`#${rankNum} ${entry.title} (${entry.release_year || '—'}) · ★ ${entry.rating || '—'}`}
+                        >
+                          {/* Poster Image */}
+                          <img
+                            src={entry.poster_path ? `https://image.tmdb.org/t/p/w185${entry.poster_path}` : FALLBACK_POSTER}
+                            alt={entry.title}
+                            draggable={false}
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = FALLBACK_POSTER;
+                            }}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                          />
+
+                          {/* Rank Badge */}
+                          {isRanked && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenReorder(idx, entry.title);
+                              }}
+                              title="Tap to change rank"
+                              style={{
+                                position: 'absolute',
+                                top: '3px',
+                                left: '3px',
+                                zIndex: 5,
+                                background: rankNum <= 3 ? 'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)' : 'rgba(0, 0, 0, 0.88)',
+                                color: '#fff',
+                                fontSize: '9px',
+                                fontWeight: 900,
+                                padding: '1px 4px',
+                                borderRadius: '4px',
+                                border: rankNum <= 3 ? '1px solid rgba(255,255,255,0.7)' : '1px solid rgba(255,255,255,0.25)',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.7)',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              #{rankNum}
+                            </button>
+                          )}
+
+                          {/* Quick Remove Button */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveEntry(idx);
+                            }}
+                            style={{
+                              position: 'absolute',
+                              top: '3px',
+                              right: '3px',
+                              zIndex: 6,
+                              background: 'rgba(0,0,0,0.85)',
+                              border: 'none',
+                              color: 'var(--red)',
+                              borderRadius: '50%',
+                              width: '18px',
+                              height: '18px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer',
+                              padding: 0
+                            }}
+                            title="Remove from list"
+                          >
+                            <X size={10} />
+                          </button>
+
+                          {/* Bottom Title Bar Overlay */}
+                          <div style={{
+                            position: 'absolute',
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            background: 'linear-gradient(transparent, rgba(0,0,0,0.88) 40%, rgba(0,0,0,0.98) 100%)',
+                            padding: '8px 4px 3px',
+                            fontSize: '9px',
+                            fontWeight: 700,
+                            color: '#fff',
+                            textAlign: 'center',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            lineHeight: 1.15
+                          }}>
+                            {entry.title}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : entriesViewMode === 'list' ? (
                   /* ── LETTERBOXD 1-PER-ROW LIST VIEW ── */
                   <div style={{
                     display: 'flex',
