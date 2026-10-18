@@ -1810,7 +1810,7 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
       )}
 
       {/* ── DESKTOP LIBRARY VIEW (CATEGORY TABS: MOVIES / SERIES / ANIME / SPLIT) ── */}
-      <div className="desktop-only-3col-library" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+      <div className="desktop-library-workspace" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
         {/* ── 3 CATEGORY TABS (Movies / Series / Anime / Split) ── */}
         <div style={{
           display: 'flex',
@@ -1962,14 +1962,14 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
         {/* ── CONTENT AREA ── */}
         {categoryTab === 'split' ? (
           /* ── 3-COLUMN SPLIT VIEW ── */
-          <div style={{ display: 'flex', gap: '14px', flex: 1, minHeight: 0 }}>
+          <div className="desktop-only-3col-library" style={{ display: 'flex', gap: '14px', flex: 1, minHeight: 0, height: '100%' }}>
             <LibraryColumn label="Movies" icon="🎬" color="var(--accent)" movies={movies} onEditClick={onEditClick} onRemove={onRemove} searchQuery={searchQuery} sortBy={sortBy} />
             <LibraryColumn label="Series" icon="📺" color="var(--blue)" movies={series} onEditClick={onEditClick} onRemove={onRemove} searchQuery={searchQuery} sortBy={sortBy} />
             <LibraryColumn label="Anime" icon="⛩" color="#f97316" movies={anime} onEditClick={onEditClick} onRemove={onRemove} searchQuery={searchQuery} sortBy={sortBy} />
           </div>
         ) : (
           /* ── FULL-WIDTH DENSE POSTER GRID ── */
-          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: '4px' }}>
+          <div className="desktop-library-grid-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: '4px' }}>
             {(() => {
               const activeList = categoryTab === 'movies' ? movies : categoryTab === 'series' ? series : anime;
               const meta = {

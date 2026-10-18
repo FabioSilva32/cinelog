@@ -2665,6 +2665,7 @@ body.modal-open {
   /* ── LIBRARY TAB MOBILE REVAMP (LETTERBOXD CINEMA WALL & DIARY STREAM) ── */
   .desktop-only-library-stats,
   .desktop-only-library-filter,
+  .desktop-library-workspace,
   .desktop-only-3col-library {
     display: none !important;
   }
@@ -2704,6 +2705,30 @@ body.modal-open {
   .desktop-only-library-stats,
   .desktop-only-library-filter {
     flex-shrink: 0 !important;
+  }
+
+  .desktop-library-workspace {
+    flex: 1 !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .desktop-library-grid-scroll {
+    flex: 1 !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(255, 255, 255, 0.18) transparent !important;
+  }
+  .desktop-library-grid-scroll::-webkit-scrollbar {
+    width: 6px !important;
+  }
+  .desktop-library-grid-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-radius: 4px !important;
   }
 
   .desktop-only-3col-library {
