@@ -3,7 +3,8 @@ import { createPortal } from 'react-dom';
 import {
   X, Plus, Search, Trash2, ArrowLeft, ArrowUpDown, GripVertical,
   Trophy, Sparkles, Film, Check, Layers, Bookmark, Star,
-  ChevronLeft, ChevronRight, Zap, RefreshCw
+  ChevronLeft, ChevronRight, ChevronUp, ChevronDown, List, LayoutGrid,
+  Zap, RefreshCw
 } from 'lucide-react';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { MCU_FULL_CATALOGUE, MARVEL_COMPLETE_CATALOGUE } from '../utils/collections';
@@ -226,6 +227,55 @@ export default function CreateListModal({
   // Custom In-App Clear All Confirmation Modal
   const [showClearModal, setShowClearModal] = useState(false);
 
+  // View mode for entries: 'list' (Letterboxd 1-per-row) | 'grid' (poster grid)
+  const [entriesViewMode, setEntriesViewMode] = useState('list');
+
+  // Touch drag state for mobile Letterboxd-style reordering
+  const touchDragState = useRef({
+    active: false,
+    startIndex: null,
+    currentOverIndex: null,
+    startY: 0
+  });
+
+  const handleTouchStart = (idx, e) => {
+    const touch = e.touches[0];
+    touchDragState.current = {
+      active: true,
+      startIndex: idx,
+      currentOverIndex: idx,
+      startY: touch.clientY
+    };
+    setDraggedIdx(idx);
+    setDragOverIdx(idx);
+  };
+
+  const handleTouchMove = (e) => {
+    if (!touchDragState.current.active) return;
+    const touch = e.touches[0];
+    const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
+    const rowElement = targetElement?.closest('[data-entry-index]');
+    if (rowElement) {
+      const overIdx = parseInt(rowElement.getAttribute('data-entry-index'), 10);
+      if (!isNaN(overIdx) && overIdx !== touchDragState.current.currentOverIndex) {
+        touchDragState.current.currentOverIndex = overIdx;
+        setDragOverIdx(overIdx);
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (touchDragState.current.active) {
+      const { startIndex, currentOverIndex } = touchDragState.current;
+      if (startIndex !== null && currentOverIndex !== null && startIndex !== currentOverIndex) {
+        handleMoveEntry(startIndex, currentOverIndex);
+      }
+      touchDragState.current = { active: false, startIndex: null, currentOverIndex: null, startY: 0 };
+      setDraggedIdx(null);
+      setDragOverIdx(null);
+    }
+  };
+
   const handleOpenReorder = (idx, movieTitle) => {
     setReorderTarget({ index: idx, title: movieTitle });
     setTargetPositionInput(String(idx + 1));
@@ -393,10 +443,10 @@ export default function CreateListModal({
       <div
         className="glass create-list-modal-container"
         style={{
-          width: '100%',
-          maxWidth: '1140px',
-          height: 'min(92vh, 880px)',
-          maxHeight: 'min(92vh, 880px)',
+          width: 'min(96vw, 1420px)',
+          maxWidth: '1420px',
+          height: 'min(93vh, 900px)',
+          maxHeight: 'min(93vh, 900px)',
           background: 'linear-gradient(180deg, #13101c 0%, #0d0b13 100%)',
           borderRadius: '24px',
           border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -450,6 +500,9 @@ export default function CreateListModal({
             .create-list-mobile-footer {
               display: flex !important;
             }
+            .create-list-mobile-fab {
+              display: flex !important;
+            }
           }
           @media (min-width: 769px) {
             .create-list-mobile-tab-bar {
@@ -466,6 +519,9 @@ export default function CreateListModal({
             }
             .create-list-right-panel {
               display: flex !important;
+            }
+            .create-list-mobile-fab {
+              display: none !important;
             }
           }
         `}</style>
@@ -607,7 +663,7 @@ export default function CreateListModal({
             flex: '1 1 auto',
             minHeight: 0,
             display: 'grid',
-            gridTemplateColumns: 'minmax(330px, 390px) 1fr',
+            gridTemplateColumns: 'minmax(540px, 1.35fr) minmax(380px, 1fr)',
             overflow: 'hidden'
           }}
         >
@@ -616,6 +672,7 @@ export default function CreateListModal({
             onSubmit={handleSubmit}
             className="create-list-left-panel"
             style={{
+              position: 'relative',
               display: 'flex',
               flexDirection: 'column',
               height: '100%',
@@ -712,7 +769,7 @@ export default function CreateListModal({
                   gap: '8px'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '7px', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 900, color: '#fff' }}>
+                    <span style={{ fontSize: '13.5px', fontWeight: 900, color: '#fff' }}>
                       List Entries ({entries.length})
                     </span>
                     {isRanked && entries.length > 0 && (
@@ -732,36 +789,88 @@ export default function CreateListModal({
                   </div>
 
                   {entries.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setShowClearModal(true)}
-                      style={{
-                        background: 'rgba(239, 68, 68, 0.12)',
-                        border: '1px solid rgba(239, 68, 68, 0.3)',
-                        color: '#f87171',
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        padding: '3px 8px',
-                        borderRadius: '6px',
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {/* View Switcher (List vs Grid) */}
+                      <div style={{
                         display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        whiteSpace: 'nowrap',
-                        transition: 'all 0.15s'
-                      }}
-                      onMouseEnter={e => {
-                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.22)';
-                        e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.45)';
-                      }}
-                      onMouseLeave={e => {
-                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)';
-                        e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)';
-                      }}
-                      title="Clear all films from this list"
-                    >
-                      <Trash2 size={11} /> Clear All
-                    </button>
+                        background: 'rgba(255, 255, 255, 0.06)',
+                        padding: '2px',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(255, 255, 255, 0.1)'
+                      }}>
+                        <button
+                          type="button"
+                          onClick={() => setEntriesViewMode('list')}
+                          style={{
+                            background: entriesViewMode === 'list' ? 'var(--accent)' : 'transparent',
+                            color: entriesViewMode === 'list' ? '#fff' : 'var(--text-muted)',
+                            border: 'none',
+                            borderRadius: '4px',
+                            padding: '3px 7px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontSize: '11px',
+                            fontWeight: 700
+                          }}
+                          title="Letterboxd List View (1 per row)"
+                        >
+                          <List size={12} /> List
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEntriesViewMode('grid')}
+                          style={{
+                            background: entriesViewMode === 'grid' ? 'var(--accent)' : 'transparent',
+                            color: entriesViewMode === 'grid' ? '#fff' : 'var(--text-muted)',
+                            border: 'none',
+                            borderRadius: '4px',
+                            padding: '3px 7px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontSize: '11px',
+                            fontWeight: 700
+                          }}
+                          title="Poster Grid View"
+                        >
+                          <LayoutGrid size={12} /> Grid
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setShowClearModal(true)}
+                        style={{
+                          background: 'rgba(239, 68, 68, 0.12)',
+                          border: '1px solid rgba(239, 68, 68, 0.3)',
+                          color: '#f87171',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          whiteSpace: 'nowrap',
+                          transition: 'all 0.15s'
+                        }}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.background = 'rgba(239, 68, 68, 0.22)';
+                          e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.45)';
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)';
+                          e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+                        }}
+                        title="Clear all films from this list"
+                      >
+                        <Trash2 size={11} /> Clear All
+                      </button>
+                    </div>
                   )}
                 </div>
 
@@ -774,208 +883,465 @@ export default function CreateListModal({
                     gap: '4px'
                   }}>
                     <ArrowUpDown size={11} style={{ flexShrink: 0 }} />
-                    <span>Drag posters to reorder, or tap rank badge to jump</span>
+                    <span>
+                      {entriesViewMode === 'list'
+                        ? 'Hold drag handle ::: to slide down/up, use ▲▼, or tap rank badge'
+                        : 'Drag posters to reorder, or tap rank badge to jump'}
+                    </span>
                   </div>
                 )}
               </div>
 
               {/* Entries Content */}
               {entries.length > 0 ? (
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))',
-                  gap: '9px',
-                  background: 'rgba(0, 0, 0, 0.25)',
-                  border: '1px solid rgba(255, 255, 255, 0.06)',
-                  borderRadius: '12px',
-                  padding: '10px'
-                }}>
-                  {entries.map((entry, idx) => {
-                    const isDragSource = draggedIdx === idx;
-                    const isDragOver = dragOverIdx === idx;
-                    const rankNum = idx + 1;
-                    return (
-                      <div
-                        key={entry.tmdb_id || entry.id || idx}
-                        draggable
-                        onDragStart={(e) => {
-                          e.dataTransfer.setData('text/plain', String(idx));
-                          e.dataTransfer.effectAllowed = 'move';
-                          setDraggedIdx(idx);
-                        }}
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          e.dataTransfer.dropEffect = 'move';
-                          if (dragOverIdx !== idx) setDragOverIdx(idx);
-                        }}
-                        onDragLeave={() => {
-                          if (dragOverIdx === idx) setDragOverIdx(null);
-                        }}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          const fromIndex = draggedIdx !== null ? draggedIdx : parseInt(e.dataTransfer.getData('text/plain'), 10);
-                          if (!isNaN(fromIndex) && fromIndex !== idx) {
-                            handleMoveEntry(fromIndex, idx);
-                          }
-                          setDraggedIdx(null);
-                          setDragOverIdx(null);
-                        }}
-                        onDragEnd={() => {
-                          setDraggedIdx(null);
-                          setDragOverIdx(null);
-                        }}
-                        style={{
-                          position: 'relative',
-                          background: '#191522',
-                          borderRadius: '8px',
-                          overflow: 'hidden',
-                          border: isDragOver
-                            ? '2px solid var(--accent)'
-                            : '1px solid rgba(255, 255, 255, 0.12)',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          opacity: isDragSource ? 0.35 : 1,
-                          transform: isDragOver ? 'scale(1.03)' : 'none',
-                          transition: 'transform 0.15s, border-color 0.15s, opacity 0.15s',
-                          cursor: 'grab',
-                          boxShadow: isDragOver ? '0 0 15px var(--accent-glow)' : '0 3px 8px rgba(0,0,0,0.5)'
-                        }}
-                      >
-                        {/* Rank Badge #1..N (Clickable to change position) */}
-                        {isRanked && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenReorder(idx, entry.title);
-                            }}
-                            title="Tap to change ranking position"
-                            style={{
-                              position: 'absolute',
-                              top: '4px',
-                              left: '4px',
-                              zIndex: 10,
-                              background: rankNum <= 3 ? 'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)' : 'rgba(0, 0, 0, 0.88)',
-                              color: '#fff',
-                              fontSize: '10px',
-                              fontWeight: 900,
-                              padding: '2px 5px',
-                              borderRadius: '5px',
-                              border: rankNum <= 3 ? '1px solid rgba(255,255,255,0.7)' : '1px solid rgba(255,255,255,0.2)',
-                              boxShadow: '0 2px 6px rgba(0,0,0,0.7)',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '2px'
-                            }}
-                          >
-                            #{rankNum}
-                          </button>
-                        )}
-
-                        {/* Top-Right Quick Action Group */}
-                        <div style={{ position: 'absolute', top: '4px', right: '4px', zIndex: 10, display: 'flex', gap: '3px' }}>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenReorder(idx, entry.title);
-                            }}
-                            title="Change position"
-                            style={{
-                              background: 'rgba(0, 0, 0, 0.8)',
-                              color: '#fff',
-                              border: '1px solid rgba(255,255,255,0.15)',
-                              borderRadius: '50%',
-                              width: '20px',
-                              height: '20px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            <ArrowUpDown size={10} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemoveEntry(idx);
-                            }}
-                            title="Remove film"
-                            style={{
-                              background: 'rgba(0, 0, 0, 0.8)',
-                              color: '#fff',
-                              border: '1px solid rgba(255,255,255,0.15)',
-                              borderRadius: '50%',
-                              width: '20px',
-                              height: '20px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              cursor: 'pointer'
-                            }}
-                            onMouseEnter={e => e.currentTarget.style.background = 'var(--red)'}
-                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(0, 0, 0, 0.8)'}
-                          >
-                            <X size={11} />
-                          </button>
-                        </div>
-
-                        {/* Poster */}
-                        <div style={{ width: '100%', aspectRatio: '2/3', background: '#0a0810' }}>
-                          <img
-                            src={entry.poster_path ? `https://image.tmdb.org/t/p/w185${entry.poster_path}` : FALLBACK_POSTER}
-                            alt={entry.title}
-                            draggable={false}
-                            onError={(e) => {
-                              e.currentTarget.onerror = null;
-                              e.currentTarget.src = FALLBACK_POSTER;
-                            }}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          />
-                        </div>
-
-                        {/* Title & Year */}
-                        <div style={{
-                          padding: '6px 7px 7px',
-                          background: '#120f1a',
-                          flex: 1,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          justifyContent: 'space-between',
-                          minHeight: '48px'
-                        }}>
-                          <div style={{
-                            fontSize: '10.5px',
-                            fontWeight: 700,
-                            color: '#fff',
-                            lineHeight: 1.25,
-                            height: '27px',
-                            overflow: 'hidden',
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical'
-                          }}>
-                            {entry.title}
-                          </div>
-                          <div style={{
-                            fontSize: '9.5px',
-                            color: 'var(--text-dim)',
-                            marginTop: '2px',
+                entriesViewMode === 'list' ? (
+                  /* ── LETTERBOXD 1-PER-ROW LIST VIEW ── */
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    background: 'rgba(0, 0, 0, 0.22)',
+                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                    borderRadius: '12px',
+                    padding: '8px'
+                  }}>
+                    {entries.map((entry, idx) => {
+                      const isDragSource = draggedIdx === idx;
+                      const isDragOver = dragOverIdx === idx;
+                      const rankNum = idx + 1;
+                      return (
+                        <div
+                          key={entry.tmdb_id || entry.id || idx}
+                          data-entry-index={idx}
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData('text/plain', String(idx));
+                            e.dataTransfer.effectAllowed = 'move';
+                            setDraggedIdx(idx);
+                          }}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = 'move';
+                            if (dragOverIdx !== idx) setDragOverIdx(idx);
+                          }}
+                          onDragLeave={() => {
+                            if (dragOverIdx === idx) setDragOverIdx(null);
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            const fromIndex = draggedIdx !== null ? draggedIdx : parseInt(e.dataTransfer.getData('text/plain'), 10);
+                            if (!isNaN(fromIndex) && fromIndex !== idx) {
+                              handleMoveEntry(fromIndex, idx);
+                            }
+                            setDraggedIdx(null);
+                            setDragOverIdx(null);
+                          }}
+                          onDragEnd={() => {
+                            setDraggedIdx(null);
+                            setDragOverIdx(null);
+                          }}
+                          style={{
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'space-between'
-                          }}>
-                            <span>{entry.release_year || '—'}</span>
-                            {entry.rating ? <span style={{ color: 'var(--gold)', fontSize: '9px', fontWeight: 700 }}>★ {entry.rating}</span> : null}
+                            gap: '12px',
+                            padding: '8px 10px',
+                            background: isDragOver ? 'rgba(229, 9, 20, 0.15)' : '#161320',
+                            borderRadius: '10px',
+                            border: isDragOver
+                              ? '1.5px solid var(--accent)'
+                              : '1px solid rgba(255, 255, 255, 0.07)',
+                            opacity: isDragSource ? 0.35 : 1,
+                            transform: isDragOver ? 'scale(1.01)' : 'none',
+                            transition: 'all 0.15s',
+                            boxShadow: isDragOver ? '0 0 15px var(--accent-glow)' : '0 2px 6px rgba(0,0,0,0.3)',
+                            userSelect: 'none'
+                          }}
+                        >
+                          {/* Left: Poster + Circular Rank Badge (Letterboxd Style) */}
+                          <div style={{ position: 'relative', width: '46px', height: '69px', flexShrink: 0 }}>
+                            <img
+                              src={entry.poster_path ? `https://image.tmdb.org/t/p/w185${entry.poster_path}` : FALLBACK_POSTER}
+                              alt={entry.title}
+                              draggable={false}
+                              onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = FALLBACK_POSTER;
+                              }}
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                                borderRadius: '6px',
+                                boxShadow: '0 2px 6px rgba(0,0,0,0.5)'
+                              }}
+                            />
+                            {isRanked && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenReorder(idx, entry.title);
+                                }}
+                                title="Tap to jump to position"
+                                style={{
+                                  position: 'absolute',
+                                  top: '-5px',
+                                  left: '-5px',
+                                  width: '21px',
+                                  height: '21px',
+                                  borderRadius: '50%',
+                                  background: rankNum <= 3 ? '#f59e0b' : '#2b3340',
+                                  color: rankNum <= 3 ? '#000' : '#cfd8dc',
+                                  border: '1.5px solid #161320',
+                                  fontSize: '10px',
+                                  fontWeight: 900,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  boxShadow: '0 2px 5px rgba(0,0,0,0.6)',
+                                  cursor: 'pointer',
+                                  zIndex: 5
+                                }}
+                              >
+                                {rankNum}
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Middle: Title, Year & Letterboxd Green Rating Stars */}
+                          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '7px', overflow: 'hidden' }}>
+                              <span style={{
+                                fontSize: '14.5px',
+                                fontWeight: 800,
+                                color: '#fff',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
+                              }}>
+                                {entry.title}
+                              </span>
+                              {entry.release_year && (
+                                <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600, flexShrink: 0 }}>
+                                  {entry.release_year}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Rating Stars & Badges */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              {entry.rating ? (
+                                <span style={{ color: '#00e054', fontSize: '12px', fontWeight: 800, letterSpacing: '0.5px' }}>
+                                  ★ {entry.rating}
+                                </span>
+                              ) : (
+                                <span style={{ color: 'var(--text-dim)', fontSize: '11px' }}>Unrated</span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Right Controls: Micro Up/Down, Remove & Letterboxd 6-dot Drag Handle */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                            {/* Up / Down step buttons */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                              <button
+                                type="button"
+                                disabled={idx === 0}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMoveEntry(idx, idx - 1);
+                                }}
+                                style={{
+                                  background: 'rgba(255,255,255,0.06)',
+                                  border: 'none',
+                                  color: idx === 0 ? 'rgba(255,255,255,0.15)' : 'var(--text-muted)',
+                                  borderRadius: '4px',
+                                  width: '24px',
+                                  height: '18px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  cursor: idx === 0 ? 'default' : 'pointer',
+                                  padding: 0
+                                }}
+                                title="Move up 1 rank"
+                              >
+                                <ChevronUp size={12} />
+                              </button>
+                              <button
+                                type="button"
+                                disabled={idx === entries.length - 1}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMoveEntry(idx, idx + 1);
+                                }}
+                                style={{
+                                  background: 'rgba(255,255,255,0.06)',
+                                  border: 'none',
+                                  color: idx === entries.length - 1 ? 'rgba(255,255,255,0.15)' : 'var(--text-muted)',
+                                  borderRadius: '4px',
+                                  width: '24px',
+                                  height: '18px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  cursor: idx === entries.length - 1 ? 'default' : 'pointer',
+                                  padding: 0
+                                }}
+                                title="Move down 1 rank"
+                              >
+                                <ChevronDown size={12} />
+                              </button>
+                            </div>
+
+                            {/* Remove button */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveEntry(idx);
+                              }}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: 'var(--text-dim)',
+                                padding: '6px',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.color = 'var(--red)'}
+                              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-dim)'}
+                              title="Remove film"
+                            >
+                              <X size={15} />
+                            </button>
+
+                            {/* Letterboxd 6-dot Drag Handle (Touch & Desktop) */}
+                            <div
+                              onTouchStart={(e) => handleTouchStart(idx, e)}
+                              onTouchMove={handleTouchMove}
+                              onTouchEnd={handleTouchEnd}
+                              onTouchCancel={handleTouchEnd}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: '32px',
+                                height: '42px',
+                                cursor: 'grab',
+                                color: 'var(--text-muted)',
+                                touchAction: 'none'
+                              }}
+                              title="Hold and drag up or down to reorder"
+                            >
+                              <GripVertical size={20} />
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  /* ── POSTER GRID VIEW (Wider Columns on Desktop) ── */
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(105px, 1fr))',
+                    gap: '10px',
+                    background: 'rgba(0, 0, 0, 0.25)',
+                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                    borderRadius: '12px',
+                    padding: '10px'
+                  }}>
+                    {entries.map((entry, idx) => {
+                      const isDragSource = draggedIdx === idx;
+                      const isDragOver = dragOverIdx === idx;
+                      const rankNum = idx + 1;
+                      return (
+                        <div
+                          key={entry.tmdb_id || entry.id || idx}
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData('text/plain', String(idx));
+                            e.dataTransfer.effectAllowed = 'move';
+                            setDraggedIdx(idx);
+                          }}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = 'move';
+                            if (dragOverIdx !== idx) setDragOverIdx(idx);
+                          }}
+                          onDragLeave={() => {
+                            if (dragOverIdx === idx) setDragOverIdx(null);
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            const fromIndex = draggedIdx !== null ? draggedIdx : parseInt(e.dataTransfer.getData('text/plain'), 10);
+                            if (!isNaN(fromIndex) && fromIndex !== idx) {
+                              handleMoveEntry(fromIndex, idx);
+                            }
+                            setDraggedIdx(null);
+                            setDragOverIdx(null);
+                          }}
+                          onDragEnd={() => {
+                            setDraggedIdx(null);
+                            setDragOverIdx(null);
+                          }}
+                          style={{
+                            position: 'relative',
+                            background: '#191522',
+                            borderRadius: '8px',
+                            overflow: 'hidden',
+                            border: isDragOver
+                              ? '2px solid var(--accent)'
+                              : '1px solid rgba(255, 255, 255, 0.12)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            opacity: isDragSource ? 0.35 : 1,
+                            transform: isDragOver ? 'scale(1.03)' : 'none',
+                            transition: 'transform 0.15s, border-color 0.15s, opacity 0.15s',
+                            cursor: 'grab',
+                            boxShadow: isDragOver ? '0 0 15px var(--accent-glow)' : '0 3px 8px rgba(0,0,0,0.5)'
+                          }}
+                        >
+                          {/* Rank Badge #1..N (Clickable to change position) */}
+                          {isRanked && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenReorder(idx, entry.title);
+                              }}
+                              title="Tap to change ranking position"
+                              style={{
+                                position: 'absolute',
+                                top: '4px',
+                                left: '4px',
+                                zIndex: 10,
+                                background: rankNum <= 3 ? 'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)' : 'rgba(0, 0, 0, 0.88)',
+                                color: '#fff',
+                                fontSize: '10px',
+                                fontWeight: 900,
+                                padding: '2px 5px',
+                                borderRadius: '5px',
+                                border: rankNum <= 3 ? '1px solid rgba(255,255,255,0.7)' : '1px solid rgba(255,255,255,0.2)',
+                                boxShadow: '0 2px 6px rgba(0,0,0,0.7)',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '2px'
+                              }}
+                            >
+                              #{rankNum}
+                            </button>
+                          )}
+
+                          {/* Top-Right Quick Action Group */}
+                          <div style={{ position: 'absolute', top: '4px', right: '4px', zIndex: 10, display: 'flex', gap: '3px' }}>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenReorder(idx, entry.title);
+                              }}
+                              title="Change position"
+                              style={{
+                                background: 'rgba(0, 0, 0, 0.8)',
+                                color: '#fff',
+                                border: '1px solid rgba(255,255,255,0.15)',
+                                borderRadius: '50%',
+                                width: '20px',
+                                height: '20px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <ArrowUpDown size={10} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveEntry(idx);
+                              }}
+                              title="Remove film"
+                              style={{
+                                background: 'rgba(0, 0, 0, 0.8)',
+                                color: '#fff',
+                                border: '1px solid rgba(255,255,255,0.15)',
+                                borderRadius: '50%',
+                                width: '20px',
+                                height: '20px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer'
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.background = 'var(--red)'}
+                              onMouseLeave={e => e.currentTarget.style.background = 'rgba(0, 0, 0, 0.8)'}
+                            >
+                              <X size={11} />
+                            </button>
+                          </div>
+
+                          {/* Poster */}
+                          <div style={{ width: '100%', aspectRatio: '2/3', background: '#0a0810' }}>
+                            <img
+                              src={entry.poster_path ? `https://image.tmdb.org/t/p/w185${entry.poster_path}` : FALLBACK_POSTER}
+                              alt={entry.title}
+                              draggable={false}
+                              onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = FALLBACK_POSTER;
+                              }}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                          </div>
+
+                          {/* Title & Year */}
+                          <div style={{
+                            padding: '6px 7px 7px',
+                            background: '#120f1a',
+                            flex: 1,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            minHeight: '48px'
+                          }}>
+                            <div style={{
+                              fontSize: '10.5px',
+                              fontWeight: 700,
+                              color: '#fff',
+                              lineHeight: 1.25,
+                              height: '27px',
+                              overflow: 'hidden',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical'
+                            }}>
+                              {entry.title}
+                            </div>
+                            <div style={{
+                              fontSize: '9.5px',
+                              color: 'var(--text-dim)',
+                              marginTop: '2px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between'
+                            }}>
+                              <span>{entry.release_year || '—'}</span>
+                              {entry.rating ? <span style={{ color: 'var(--gold)', fontSize: '9px', fontWeight: 700 }}>★ {entry.rating}</span> : null}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )
               ) : (
                 <div style={{
                   textAlign: 'center',
@@ -1086,6 +1452,34 @@ export default function CreateListModal({
                 Publish ({entries.length})
               </button>
             </div>
+
+            {/* Mobile Letterboxd-Style Floating Action Button '+' */}
+            <button
+              type="button"
+              className="create-list-mobile-fab"
+              onClick={() => setMobileStudioTab('browse')}
+              style={{
+                position: 'absolute',
+                bottom: '68px',
+                right: '16px',
+                width: '52px',
+                height: '52px',
+                borderRadius: '16px',
+                background: '#00e054',
+                color: '#000',
+                border: 'none',
+                boxShadow: '0 8px 24px rgba(0, 224, 84, 0.45)',
+                display: 'none',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                zIndex: 90,
+                transition: 'transform 0.15s, box-shadow 0.15s'
+              }}
+              title="Add films to list"
+            >
+              <Plus size={26} strokeWidth={3} />
+            </button>
           </form>
 
           {/* ── RIGHT COLUMN: Full-Height Interactive Film Picker & Poster Gallery ── */}
