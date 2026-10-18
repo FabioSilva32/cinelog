@@ -164,6 +164,23 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
   const [dropTarget, setDropTarget] = useState(null);
   const [hoveredCardId, setHoveredCardId] = useState(null);
   const [quickAssignTarget, setQuickAssignTarget] = useState(null); // { id, rect, currentTierId }
+
+  // Automatically dismiss quick-assign menu on any scroll or window resize so it never sticks
+  useEffect(() => {
+    if (!quickAssignTarget) return;
+
+    const handleDismiss = () => {
+      setQuickAssignTarget(null);
+    };
+
+    window.addEventListener('scroll', handleDismiss, { capture: true, passive: true });
+    window.addEventListener('resize', handleDismiss, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', handleDismiss, { capture: true });
+      window.removeEventListener('resize', handleDismiss);
+    };
+  }, [quickAssignTarget]);
   
   // Settings edit modal / panel state
   const [editingTierId, setEditingTierId] = useState(null);
