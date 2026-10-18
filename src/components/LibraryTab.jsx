@@ -370,70 +370,12 @@ export function getMediaType(m) {
   return 'movie';
 }
 
-// ── Reusable Cinema Card with High-Contrast Category Badges ───────────
+// ── Reusable Cinema Card with Clean Badges ────────────────────────────
 function MediaPosterCard({ movie, onEditClick, layout = 'shelf' }) {
   const isWatching = movie.status === 'watching';
   const mediaType = getMediaType(movie);
   const isTv = mediaType === 'tv';
   const isAnime = mediaType === 'anime';
-
-  let typeBadge = null;
-  if (isAnime) {
-    typeBadge = (
-      <span style={{
-        background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.95), rgba(217, 119, 6, 0.95))',
-        color: '#FFFFFF',
-        boxShadow: '0 2px 6px rgba(245, 158, 11, 0.4)',
-        borderRadius: '4px',
-        padding: '1.5px 5px',
-        fontSize: '8px',
-        fontWeight: 900,
-        letterSpacing: '0.02em',
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '3px'
-      }}>
-        ⛩️ ANIME
-      </span>
-    );
-  } else if (isTv) {
-    const seasonsCount = movie.number_of_seasons || movie.details?.number_of_seasons;
-    const seasonLabel = seasonsCount ? `TV · S${seasonsCount}` : 'TV SERIES';
-    typeBadge = (
-      <span style={{
-        background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.95), rgba(30, 64, 175, 0.95))',
-        color: '#FFFFFF',
-        boxShadow: '0 2px 6px rgba(37, 99, 235, 0.4)',
-        borderRadius: '4px',
-        padding: '1.5px 5px',
-        fontSize: '8px',
-        fontWeight: 900,
-        letterSpacing: '0.02em',
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '3px'
-      }}>
-        📺 {seasonLabel}
-      </span>
-    );
-  } else {
-    typeBadge = (
-      <span style={{
-        background: 'linear-gradient(135deg, rgba(229, 9, 20, 0.9), rgba(153, 27, 27, 0.9))',
-        color: '#FFFFFF',
-        borderRadius: '4px',
-        padding: '1.5px 5px',
-        fontSize: '8px',
-        fontWeight: 900,
-        letterSpacing: '0.02em',
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '3px'
-      }}>
-        🎬 FILM
-      </span>
-    );
-  }
 
   return (
     <div
@@ -488,60 +430,56 @@ function MediaPosterCard({ movie, onEditClick, layout = 'shelf' }) {
           <span style={{ fontSize: '9.5px', color: '#A1A1AA', fontWeight: 600 }}>
             {movie.release_year || '—'}
           </span>
-          {movie.status === 'watched' && (
+          {isWatching ? (
+            <span style={{ fontSize: '8px', color: '#fff', background: 'var(--accent)', fontWeight: 900, padding: '1.5px 5px', borderRadius: '3px', letterSpacing: '0.02em', boxShadow: '0 2px 6px rgba(229,9,20,0.5)' }}>
+              ▶ Watching
+            </span>
+          ) : movie.status === 'watched' ? (
             <span style={{ fontSize: '8.5px', color: 'var(--green)', fontWeight: 800 }}>✓ Watched</span>
-          )}
-          {movie.status === 'plan_to_watch' && (
+          ) : movie.status === 'plan_to_watch' ? (
             <span style={{ fontSize: '8.5px', color: '#60A5FA', fontWeight: 700 }}>⏳ List</span>
-          )}
+          ) : null}
         </div>
       </div>
 
-      {/* Top Left: Type Pill Badge */}
-      <div style={{ position: 'absolute', top: '5px', left: '5px', zIndex: 2 }}>
-        {typeBadge}
-      </div>
-
-      {/* Top Right: Rating Pill or Favorite */}
-      <div style={{ position: 'absolute', top: '5px', right: '5px', display: 'flex', alignItems: 'center', gap: '3px', zIndex: 2 }}>
-        {movie.favorite && (
-          <div style={{ fontSize: '11px', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.9))' }}>❤️</div>
-        )}
-        {Number(movie.rating) > 0 && (
-          <div style={{
-            background: 'rgba(8, 7, 12, 0.88)',
-            backdropFilter: 'blur(6px)',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            borderRadius: '4px',
-            padding: '1.5px 5px',
-            fontSize: '9px',
-            fontWeight: 900,
-            color: getRatingColor(movie.rating),
-            letterSpacing: '-0.2px',
-            boxShadow: '0 2px 5px rgba(0,0,0,0.5)'
-          }}>
-            ★ {Number(movie.rating).toFixed(1)}
-          </div>
-        )}
-      </div>
-
-      {/* Watching status ribbon */}
-      {isWatching && (
+      {/* Top Left: Bigger Rating Pill */}
+      {Number(movie.rating) > 0 && (
         <div style={{
           position: 'absolute',
-          top: '25px',
-          left: '5px',
-          background: 'var(--accent)',
-          borderRadius: '3px',
-          padding: '1px 5px',
-          fontSize: '7.5px',
+          top: '6px',
+          left: '6px',
+          zIndex: 2,
+          background: 'rgba(8, 7, 12, 0.88)',
+          backdropFilter: 'blur(8px)',
+          border: '1px solid rgba(255, 255, 255, 0.16)',
+          borderRadius: '5px',
+          padding: '2px 6px',
+          fontSize: '11px',
           fontWeight: 900,
-          color: '#fff',
-          letterSpacing: '0.04em',
-          boxShadow: '0 2px 6px rgba(229, 9, 20, 0.5)',
-          zIndex: 2
+          color: getRatingColor(movie.rating),
+          letterSpacing: '-0.2px',
+          boxShadow: '0 3px 8px rgba(0,0,0,0.6)',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '3px'
         }}>
-          ▶ WATCHING
+          <span style={{ fontSize: '10px' }}>★</span>
+          <span>{Number(movie.rating).toFixed(1)}</span>
+        </div>
+      )}
+
+      {/* Top Right: Favorite Heart */}
+      {movie.favorite && (
+        <div style={{
+          position: 'absolute',
+          top: '6px',
+          right: '6px',
+          zIndex: 2,
+          fontSize: '13px',
+          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.9))',
+          lineHeight: 1
+        }}>
+          ❤️
         </div>
       )}
     </div>
