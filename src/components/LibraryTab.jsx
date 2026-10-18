@@ -372,7 +372,10 @@ export function getMediaType(m) {
 
 // ── Reusable Cinema Card with Clean Badges ────────────────────────────
 function MediaPosterCard({ movie, onEditClick, layout = 'shelf' }) {
-  const isWatching = movie.status === 'watching';
+  const rawStatus = (movie.status || '').toLowerCase();
+  const isWatching = rawStatus === 'watching';
+  const isPlanToWatch = rawStatus === 'plan_to_watch' || rawStatus === 'want_to_watch' || rawStatus === 'planned' || rawStatus === 'watchlist';
+  const isWatched = rawStatus === 'watched' || (!isWatching && !isPlanToWatch);
   const mediaType = getMediaType(movie);
   const isTv = mediaType === 'tv';
   const isAnime = mediaType === 'anime';
@@ -431,14 +434,52 @@ function MediaPosterCard({ movie, onEditClick, layout = 'shelf' }) {
             {movie.release_year || '—'}
           </span>
           {isWatching ? (
-            <span style={{ fontSize: '8px', color: '#fff', background: 'var(--accent)', fontWeight: 900, padding: '1.5px 5px', borderRadius: '3px', letterSpacing: '0.02em', boxShadow: '0 2px 6px rgba(229,9,20,0.5)' }}>
+            <span style={{
+              fontSize: '8.5px',
+              color: '#ffffff',
+              background: 'linear-gradient(135deg, #e50914, #b91c1c)',
+              fontWeight: 900,
+              padding: '1.5px 5px',
+              borderRadius: '4px',
+              letterSpacing: '0.02em',
+              boxShadow: '0 2px 6px rgba(229,9,20,0.5)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '2px'
+            }}>
               ▶ Watching
             </span>
-          ) : movie.status === 'watched' ? (
-            <span style={{ fontSize: '8.5px', color: 'var(--green)', fontWeight: 800 }}>✓ Watched</span>
-          ) : movie.status === 'plan_to_watch' ? (
-            <span style={{ fontSize: '8.5px', color: '#60A5FA', fontWeight: 700 }}>⏳ List</span>
-          ) : null}
+          ) : isPlanToWatch ? (
+            <span style={{
+              fontSize: '8.5px',
+              color: '#93c5fd',
+              background: 'rgba(37, 99, 235, 0.25)',
+              border: '1px solid rgba(59, 130, 246, 0.45)',
+              fontWeight: 800,
+              padding: '1.5px 5px',
+              borderRadius: '4px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '2px'
+            }}>
+              ⏳ List
+            </span>
+          ) : (
+            <span style={{
+              fontSize: '8.5px',
+              color: '#34d399',
+              background: 'rgba(16, 185, 129, 0.22)',
+              border: '1px solid rgba(16, 185, 129, 0.45)',
+              fontWeight: 800,
+              padding: '1.5px 5px',
+              borderRadius: '4px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '2px'
+            }}>
+              ✓ Watched
+            </span>
+          )}
         </div>
       </div>
 
