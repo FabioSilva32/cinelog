@@ -476,6 +476,7 @@ export default function CreateListModal({
       <div
         className="glass create-list-modal-container"
         style={{
+          position: 'relative',
           width: 'min(96vw, 1420px)',
           maxWidth: '1420px',
           height: 'min(93vh, 900px)',
@@ -559,23 +560,32 @@ export default function CreateListModal({
           }
         `}</style>
 
-        {/* Toast Feedback */}
+        {/* Floating Toast Notification (Absolute Overlay — Never pushes or shifts the window!) */}
         {bannerToast && (
           <div style={{
-            background: 'var(--accent)',
+            position: 'absolute',
+            top: '14px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 99999,
+            background: 'rgba(20, 16, 28, 0.94)',
+            border: '1px solid rgba(229, 9, 20, 0.55)',
+            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.85), 0 0 20px rgba(229, 9, 20, 0.25)',
+            backdropFilter: 'blur(12px)',
             color: '#fff',
             fontSize: '12.5px',
             fontWeight: 800,
-            padding: '8px 16px',
-            textAlign: 'center',
+            padding: '7px 18px',
+            borderRadius: '30px',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
             gap: '8px',
-            animation: 'fadeIn 0.2s ease-out',
-            flexShrink: 0
+            pointerEvents: 'none',
+            whiteSpace: 'nowrap',
+            animation: 'fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
           }}>
-            <Sparkles size={14} /> {bannerToast}
+            <Sparkles size={14} color="var(--gold)" />
+            <span>{bannerToast}</span>
           </div>
         )}
 
