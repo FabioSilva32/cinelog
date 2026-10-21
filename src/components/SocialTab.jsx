@@ -120,6 +120,46 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
         }
       }
 
+      // Also query activity_feed table for real-time community stream
+      try {
+        let actQuery = supabase
+          .from("activity_feed")
+          .select("id, user_id, action_type, title, media_type, poster_path, rating, details, created_at")
+          .order("created_at", { ascending: false })
+          .limit(30);
+
+        if (followingIds.length > 0) {
+          actQuery = actQuery.in("user_id", followingIds);
+        }
+
+        const { data: actData } = await actQuery;
+        if (actData && actData.length > 0) {
+          const actUids = [...new Set(actData.map(a => a.user_id).filter(isUUID))];
+          let actProfMap = {};
+          if (actUids.length > 0) {
+            const { data: profs } = await supabase.from("profiles").select("id, username, display_name, avatar_url").in("id", actUids);
+            (profs || []).forEach(p => { actProfMap[p.id] = p; });
+          }
+
+          const mappedActivities = actData.map(a => ({
+            id: a.id,
+            user_id: a.user_id,
+            title: a.title,
+            poster_path: a.poster_path,
+            status: a.action_type || 'logged',
+            rating: a.rating,
+            review: a.details?.review || '',
+            date_added: a.created_at,
+            media_type: a.media_type,
+            profiles: actProfMap[a.user_id]
+          }));
+
+          rawFeed = [...rawFeed, ...mappedActivities];
+        }
+      } catch (actErr) {
+        console.warn("Activity feed query note:", actErr);
+      }
+
       // Filter out unwanted test accounts and any database clone of elena from feed
       const cleanDbFeed = rawFeed.filter(item => {
         const u = (item.profiles?.username || '').toLowerCase();

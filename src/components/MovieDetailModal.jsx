@@ -237,6 +237,8 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
   const [publicReviews, setPublicReviews] = useState([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [revealedReviews, setRevealedReviews] = useState({});
+  const [reviewLikesCounts, setReviewLikesCounts] = useState({});
+  const [userLikedReviews, setUserLikedReviews] = useState({});
   const [selectedSeason, setSelectedSeason] = useState(1);
   const [seasonEpisodes, setSeasonEpisodes] = useState([]);
   const [loadingEpisodes, setLoadingEpisodes] = useState(false);
@@ -445,12 +447,51 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
       if (active) {
         setPublicReviews(allReviews);
         setLoadingReviews(false);
+        if (isSupabaseConfigured) {
+          supabase.from('review_likes').select('library_id, user_id').then(({ data: rLikes }) => {
+            if (rLikes && active) {
+              const counts = {};
+              const userMap = {};
+              rLikes.forEach(l => {
+                counts[l.library_id] = (counts[l.library_id] || 0) + 1;
+                if (currentUser?.id && l.user_id === currentUser.id) {
+                  userMap[l.library_id] = true;
+                }
+              });
+              setReviewLikesCounts(counts);
+              setUserLikedReviews(userMap);
+            }
+          }).catch(() => {});
+        }
       }
     };
 
     loadReviews();
     return () => { active = false; };
   }, [targetTmdbId, review, rating, containsSpoilers, currentUser?.id, movie.review]);
+
+  const handleToggleReviewLike = async (reviewId) => {
+    if (!currentUser?.id) return;
+    const isLiked = !!userLikedReviews[reviewId];
+    const nextLiked = !isLiked;
+    setUserLikedReviews(prev => ({ ...prev, [reviewId]: nextLiked }));
+    setReviewLikesCounts(prev => ({
+      ...prev,
+      [reviewId]: Math.max(0, (prev[reviewId] || 0) + (nextLiked ? 1 : -1))
+    }));
+
+    if (isSupabaseConfigured) {
+      try {
+        if (nextLiked) {
+          await supabase.from('review_likes').upsert({ library_id: String(reviewId), user_id: currentUser.id });
+        } else {
+          await supabase.from('review_likes').delete().eq('library_id', String(reviewId)).eq('user_id', currentUser.id);
+        }
+      } catch (err) {
+        console.warn('Error toggling review like in Supabase:', err);
+      }
+    }
+  };
 
   useEffect(() => {
     if (!targetTmdbId) return;
@@ -616,6 +657,20 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
       is_rewatch: isRewatch,
       rewatch_count: isRewatch ? rewatchCount : null,
     });
+
+    if (isSupabaseConfigured && currentUser?.id) {
+      try {
+        supabase.from('activity_feed').insert({
+          user_id: currentUser.id,
+          action_type: status === 'watched' ? (rating ? 'rated' : 'watched') : status,
+          title: movie.title || movie.name,
+          media_type: resolvedType,
+          poster_path: movie.poster_path,
+          rating: status === 'watched' ? rating : null,
+          details: { review: review ? review.slice(0, 200) : '' }
+        }).then(() => {}).catch(() => {});
+      } catch {}
+    }
   };
 
   const insertMarkdown = (wrap, textAreaRef) => {
@@ -2208,11 +2263,34 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                             {r.review}
                           </p>
                         )}
-                        {r.date_added && (
-                          <div style={{ fontSize: '10px', color: 'var(--text-dim)', marginTop: '8px' }}>
-                            {new Date(r.date_added).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-                          </div>
-                        )}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px' }}>
+                          {r.date_added ? (
+                            <div style={{ fontSize: '10px', color: 'var(--text-dim)' }}>
+                              {new Date(r.date_added).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                            </div>
+                          ) : <div />}
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleToggleReviewLike(r.id); }}
+                            style={{
+                              background: userLikedReviews[r.id] ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)',
+                              border: `1px solid ${userLikedReviews[r.id] ? 'var(--red)' : 'rgba(255,255,255,0.08)'}`,
+                              borderRadius: '12px',
+                              padding: '3px 9px',
+                              color: userLikedReviews[r.id] ? 'var(--red)' : 'var(--text-muted)',
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            <span>{userLikedReviews[r.id] ? '❤️' : '🤍'}</span>
+                            <span>{reviewLikesCounts[r.id] || 0}</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
