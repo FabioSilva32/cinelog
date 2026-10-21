@@ -60,6 +60,26 @@ export default function ListDetailModal({
     return () => { isMounted = false; };
   }, [list?.id]);
 
+  useEffect(() => {
+    let isMounted = true;
+    async function checkUserLike() {
+      if (!isSupabaseConfigured || !currentUser?.id || !list?.id) return;
+      try {
+        const { data } = await supabase
+          .from('list_likes')
+          .select('list_id')
+          .eq('list_id', String(list.id))
+          .eq('user_id', currentUser.id)
+          .maybeSingle();
+        if (data && isMounted) {
+          setLiked(true);
+        }
+      } catch {}
+    }
+    checkUserLike();
+    return () => { isMounted = false; };
+  }, [list?.id, currentUser?.id]);
+
   if (!list || typeof document === 'undefined') return null;
 
   const isOwner = currentUser?.username && (
@@ -67,7 +87,7 @@ export default function ListDetailModal({
     list.author?.id === currentUser.id
   );
 
-  const handleToggleLike = () => {
+  const handleToggleLike = async () => {
     const nextLiked = !liked;
     const nextCount = nextLiked ? likesCount + 1 : Math.max(0, likesCount - 1);
     setLiked(nextLiked);
@@ -85,6 +105,21 @@ export default function ListDetailModal({
         ...list,
         likesCount: nextCount
       });
+    }
+
+    if (isSupabaseConfigured && currentUser?.id && list?.id) {
+      try {
+        if (nextLiked) {
+          await supabase.from('list_likes').upsert({
+            list_id: String(list.id),
+            user_id: currentUser.id
+          });
+        } else {
+          await supabase.from('list_likes').delete().eq('list_id', String(list.id)).eq('user_id', currentUser.id);
+        }
+      } catch (err) {
+        console.warn('Could not sync list like to Supabase:', err);
+      }
     }
   };
 

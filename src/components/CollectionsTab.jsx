@@ -146,77 +146,130 @@ export default function CollectionsTab({
   const [taggingStatus, setTaggingStatus] = useState('');
   const [isTagging, setIsTagging] = useState(false);
 
-  // Cloud sync helper: updates Supabase user_metadata with user's created lists
-  const syncUserListsToCloud = async (allLists) => {
-    if (!currentUser?.id || !supabase || !isSupabaseConfigured) return;
-    try {
-      const userLists = allLists.filter(l => 
-        l.author?.id === currentUser.id || 
-        l.author?.username?.toLowerCase() === (currentUser.username || '').toLowerCase()
-      );
-      await supabase.auth.updateUser({
-        data: { cinelog_custom_lists: userLists }
-      });
-    } catch (e) {
-      console.warn('Failed to sync custom lists to cloud:', e);
-    }
-  };
-
-  // Sync lists to localStorage and cloud
-  const handleUpdateList = (updatedList) => {
+  // Sync lists to localStorage and Supabase custom_lists table
+  const handleUpdateList = async (updatedList) => {
     setLists(prev => {
       const next = prev.map(l => l.id === updatedList.id ? updatedList : l);
       try { localStorage.setItem('cinelog_community_lists_v2', JSON.stringify(next)); } catch {}
-      syncUserListsToCloud(next);
       return next;
     });
     if (selectedListModal && selectedListModal.id === updatedList.id) {
       setSelectedListModal(updatedList);
     }
+
+    if (currentUser?.id && supabase && isSupabaseConfigured) {
+      try {
+        await supabase.from('custom_lists').update({
+          title: updatedList.title,
+          description: updatedList.description || '',
+          cover_image: updatedList.coverImage || null,
+          is_public: updatedList.isPublic !== false,
+          is_ranked: !!updatedList.isRanked,
+          entries: updatedList.entries || [],
+          tags: updatedList.tags || [],
+          likes_count: updatedList.likesCount || 0,
+          updated_at: new Date().toISOString()
+        }).eq('id', String(updatedList.id)).eq('user_id', currentUser.id);
+      } catch (e) {
+        console.warn('Could not update custom_list in Supabase:', e);
+      }
+    }
   };
 
-  const handleSaveNewList = (newList) => {
+  const handleSaveNewList = async (newList) => {
     setLists(prev => {
       const next = [newList, ...prev];
       try { localStorage.setItem('cinelog_community_lists_v2', JSON.stringify(next)); } catch {}
-      syncUserListsToCloud(next);
       return next;
     });
     setSelectedListModal(newList);
+
+    if (currentUser?.id && supabase && isSupabaseConfigured) {
+      try {
+        await supabase.from('custom_lists').upsert({
+          id: String(newList.id),
+          user_id: currentUser.id,
+          title: newList.title,
+          description: newList.description || '',
+          cover_image: newList.coverImage || null,
+          is_public: newList.isPublic !== false,
+          is_ranked: !!newList.isRanked,
+          entries: newList.entries || [],
+          tags: newList.tags || [],
+          likes_count: newList.likesCount || 0,
+          author_info: newList.author || {
+            id: currentUser.id,
+            username: currentUser.username,
+            displayName: currentUser.displayName,
+            avatar: currentUser.avatar
+          }
+        });
+      } catch (e) {
+        console.warn('Could not save custom_list to Supabase:', e);
+      }
+    }
   };
 
-  const handleDeleteList = (listId) => {
+  const handleDeleteList = async (listId) => {
     setLists(prev => {
       const next = prev.filter(l => l.id !== listId);
       try { localStorage.setItem('cinelog_community_lists_v2', JSON.stringify(next)); } catch {}
-      syncUserListsToCloud(next);
       return next;
     });
     if (selectedListModal && selectedListModal.id === listId) {
       setSelectedListModal(null);
     }
+
+    if (currentUser?.id && supabase && isSupabaseConfigured) {
+      try {
+        await supabase.from('custom_lists').delete().eq('id', String(listId)).eq('user_id', currentUser.id);
+      } catch (e) {
+        console.warn('Could not delete custom_list from Supabase:', e);
+      }
+    }
   };
 
-  // Initial cloud check on mount or when currentUser changes
+  // Fetch community and user lists from Supabase custom_lists table on mount
   useEffect(() => {
-    if (!currentUser?.id || !supabase || !isSupabaseConfigured) return;
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user?.user_metadata?.cinelog_custom_lists) {
-        const cloudLists = user.user_metadata.cinelog_custom_lists;
-        if (Array.isArray(cloudLists) && cloudLists.length > 0) {
+    let isMounted = true;
+    async function loadCloudLists() {
+      if (!supabase || !isSupabaseConfigured) return;
+      try {
+        const { data, error } = await supabase
+          .from('custom_lists')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!error && data && data.length > 0 && isMounted) {
+          const mapped = data.map(row => ({
+            id: row.id,
+            title: row.title,
+            description: row.description,
+            coverImage: row.cover_image,
+            isPublic: row.is_public,
+            isRanked: row.is_ranked,
+            entries: row.entries || [],
+            tags: row.tags || [],
+            likesCount: row.likes_count || 0,
+            author: row.author_info || { id: row.user_id, username: 'cinephile' },
+            createdAt: row.created_at
+          }));
+
           setLists(prev => {
-            const merged = [...prev];
-            cloudLists.forEach(cList => {
-              const idx = merged.findIndex(l => l.id === cList.id);
-              if (idx !== -1) merged[idx] = cList;
-              else merged.unshift(cList);
+            const merged = [...mapped];
+            prev.forEach(p => {
+              if (!merged.some(m => m.id === p.id)) merged.push(p);
             });
             try { localStorage.setItem('cinelog_community_lists_v2', JSON.stringify(merged)); } catch {}
             return merged;
           });
         }
+      } catch (err) {
+        console.warn('Error loading custom_lists from Supabase:', err);
       }
-    }).catch(err => console.warn('CollectionsTab cloud sync error:', err));
+    }
+    loadCloudLists();
+    return () => { isMounted = false; };
   }, [currentUser?.id]);
 
   // Real-time synchronization when movies or collections update

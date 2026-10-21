@@ -242,6 +242,25 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
       setCloudSyncStatus('syncing');
       timer = setTimeout(async () => {
         try {
+          // Save to public.tier_lists table
+          try {
+            const upsertRows = Object.values(dataToSave).map(l => ({
+              id: String(l.id || 'default'),
+              user_id: currentUser.id,
+              name: l.name || 'Tier List',
+              description: l.description || '',
+              is_public: true,
+              tiers: l.tiers || DEFAULT_TIERS,
+              tier_data: l.tierData || {},
+              pool_filter: l.poolFilter || 'all',
+              updated_at: new Date().toISOString()
+            }));
+            await supabase.from('tier_lists').upsert(upsertRows, { onConflict: 'id' });
+          } catch (tErr) {
+            console.warn('tier_lists table save notice:', tErr);
+          }
+
+          // Fallback backup in user_metadata
           await supabase.auth.updateUser({
             data: {
               cinelog_tier_lists: dataToSave,
@@ -257,47 +276,92 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
     };
   }, [currentUser?.id]);
 
-  // Two-way initial sync on mount with Supabase user_metadata
+  // Two-way initial sync on mount with Supabase tier_lists table & user_metadata
   useEffect(() => {
     if (!currentUser?.id || !supabase || !isSupabaseConfigured) {
       isInitialSyncDone.current = true;
       return;
     }
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user?.user_metadata?.cinelog_tier_lists) {
-        const cloudLists = user.user_metadata.cinelog_tier_lists;
-        const cloudActiveId = user.user_metadata.cinelog_active_tier_list_id || 'default';
-        if (cloudLists && Object.keys(cloudLists).length > 0) {
+
+    async function loadCloudTierLists() {
+      try {
+        // 1. Check public.tier_lists table first
+        const { data: dbLists, error: dbErr } = await supabase
+          .from('tier_lists')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .order('updated_at', { ascending: false });
+
+        if (!dbErr && dbLists && dbLists.length > 0) {
+          const dict = {};
+          dbLists.forEach(r => {
+            dict[r.id] = {
+              id: r.id,
+              name: r.name,
+              tiers: r.tiers || DEFAULT_TIERS,
+              tierData: r.tier_data || {},
+              poolFilter: r.pool_filter || 'all'
+            };
+          });
+
           isSwitchingListRef.current = true;
-          setLists(cloudLists);
-          localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(cloudLists));
-          const targetId = cloudLists[cloudActiveId] ? cloudActiveId : Object.keys(cloudLists)[0];
+          setLists(dict);
+          localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(dict));
+          const targetId = dict[activeListIdRef.current] ? activeListIdRef.current : Object.keys(dict)[0];
           setActiveListId(targetId);
           activeListIdRef.current = targetId;
           localStorage.setItem('cinelog_active_tier_list_id_v4', targetId);
-          const targetTiers = cloudLists[targetId].tiers && cloudLists[targetId].tiers.length > 0 ? cloudLists[targetId].tiers : tiers;
+          const targetTiers = dict[targetId].tiers && dict[targetId].tiers.length > 0 ? dict[targetId].tiers : tiers;
           setTiers(targetTiers);
-          setTierData(cloudLists[targetId].tierData || {});
-          if (cloudLists[targetId].poolFilter) setPoolFilter(cloudLists[targetId].poolFilter);
+          setTierData(dict[targetId].tierData || {});
+          if (dict[targetId].poolFilter) setPoolFilter(dict[targetId].poolFilter);
           setCloudSyncStatus('synced');
           isInitialSyncDone.current = true;
           setTimeout(() => { isSwitchingListRef.current = false; }, 50);
           return;
         }
-      }
-      
-      // If cloud has no tier lists yet, but local storage does (e.g. created on website):
-      try {
-        const local = JSON.parse(localStorage.getItem('cinelog_saved_tier_lists_v4') || '{}');
-        if (local && Object.keys(local).length > 0) {
-          saveToCloud(local, activeListIdRef.current);
+
+        // 2. Fallback to user_metadata
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.user_metadata?.cinelog_tier_lists) {
+          const cloudLists = user.user_metadata.cinelog_tier_lists;
+          const cloudActiveId = user.user_metadata.cinelog_active_tier_list_id || 'default';
+          if (cloudLists && Object.keys(cloudLists).length > 0) {
+            isSwitchingListRef.current = true;
+            setLists(cloudLists);
+            localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(cloudLists));
+            const targetId = cloudLists[cloudActiveId] ? cloudActiveId : Object.keys(cloudLists)[0];
+            setActiveListId(targetId);
+            activeListIdRef.current = targetId;
+            localStorage.setItem('cinelog_active_tier_list_id_v4', targetId);
+            const targetTiers = cloudLists[targetId].tiers && cloudLists[targetId].tiers.length > 0 ? cloudLists[targetId].tiers : tiers;
+            setTiers(targetTiers);
+            setTierData(cloudLists[targetId].tierData || {});
+            if (cloudLists[targetId].poolFilter) setPoolFilter(cloudLists[targetId].poolFilter);
+            setCloudSyncStatus('synced');
+            isInitialSyncDone.current = true;
+            setTimeout(() => { isSwitchingListRef.current = false; }, 50);
+            // Migrate forward to tier_lists table
+            saveToCloud(cloudLists, targetId);
+            return;
+          }
         }
-      } catch {}
-      isInitialSyncDone.current = true;
-    }).catch(e => {
-      console.warn('Failed to load cloud tier lists:', e);
-      isInitialSyncDone.current = true;
-    });
+        
+        // 3. Fallback to local storage if brand new to cloud
+        try {
+          const local = JSON.parse(localStorage.getItem('cinelog_saved_tier_lists_v4') || '{}');
+          if (local && Object.keys(local).length > 0) {
+            saveToCloud(local, activeListIdRef.current);
+          }
+        } catch {}
+      } catch (e) {
+        console.warn('Failed to load cloud tier lists:', e);
+      } finally {
+        isInitialSyncDone.current = true;
+      }
+    }
+
+    loadCloudTierLists();
   }, [currentUser?.id]);
 
   // Copy transfer code to clipboard (always uses freshest snapshot)
