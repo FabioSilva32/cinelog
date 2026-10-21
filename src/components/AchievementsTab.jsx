@@ -1,9 +1,17 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Trophy, CheckCircle2, Lock, Sparkles, Award } from 'lucide-react';
 import { ACHIEVEMENTS, BORDER_STYLES, isUserCreator } from '../utils/achievements';
+import { syncUserBadges } from '../utils/badgesSync';
 import AvatarWithBorder from './AvatarWithBorder';
 
 export default function AchievementsTab({ library, currentUser, onUpdateProfile }) {
+  // Synchronize unlocked badges to Supabase user_badges table
+  useEffect(() => {
+    if (currentUser?.id && Array.isArray(library) && library.length > 0) {
+      syncUserBadges(currentUser, library);
+    }
+  }, [currentUser?.id, library?.length]);
+
   // Compute unlocked status
   const achievementsStatus = ACHIEVEMENTS.map(ach => {
     const currentVal = ach.check(library);

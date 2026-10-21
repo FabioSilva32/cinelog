@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Heart, MessageSquare, Share2, ArrowLeft, X, Trophy, Film, Send, Trash2 } from 'lucide-react';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
+import { supabase, isSupabaseConfigured } from '../supabaseClient';
 
 export default function ListDetailModal({
   list,
@@ -14,6 +15,7 @@ export default function ListDetailModal({
 }) {
   useBodyScrollLock(true);
   const [commentText, setCommentText] = useState('');
+  const [localComments, setLocalComments] = useState(list?.comments || []);
   const [liked, setLiked] = useState(() => {
     try {
       const likedSet = JSON.parse(localStorage.getItem('cinelog_liked_lists') || '[]');
@@ -24,6 +26,39 @@ export default function ListDetailModal({
   });
   const [likesCount, setLikesCount] = useState(list?.likesCount || 0);
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadSupabaseComments() {
+      if (!isSupabaseConfigured || !list?.id) return;
+      try {
+        const { data, error } = await supabase
+          .from('list_comments')
+          .select('*')
+          .eq('list_id', String(list.id))
+          .order('created_at', { ascending: true });
+        if (!error && data && data.length > 0 && isMounted) {
+          const mapped = data.map(c => ({
+            id: c.id,
+            user_id: c.user_id,
+            user: {
+              id: c.user_id,
+              username: c.username,
+              displayName: c.display_name || c.username,
+              avatar: c.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&fit=crop&q=80'
+            },
+            text: c.comment_text,
+            createdAt: c.created_at
+          }));
+          setLocalComments(mapped);
+        }
+      } catch (err) {
+        console.warn('Could not load comments from Supabase:', err);
+      }
+    }
+    loadSupabaseComments();
+    return () => { isMounted = false; };
+  }, [list?.id]);
 
   if (!list || typeof document === 'undefined') return null;
 
@@ -62,30 +97,74 @@ export default function ListDetailModal({
     }
   };
 
-  const handleAddComment = (e) => {
+  const handleAddComment = async (e) => {
     e.preventDefault();
-    if (!commentText.trim()) return;
+    const text = commentText.trim();
+    if (!text) return;
 
+    const tempId = 'comm-' + Date.now();
     const newComment = {
-      id: 'comm-' + Date.now(),
+      id: tempId,
+      user_id: currentUser?.id || 'anon',
       user: {
         id: currentUser?.id || 'anon',
         username: currentUser?.username || 'cinephile',
         displayName: currentUser?.displayName || currentUser?.username || 'Cinephile',
         avatar: currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&fit=crop&q=80'
       },
-      text: commentText.trim(),
+      text: text,
       createdAt: new Date().toISOString()
     };
 
-    const updatedComments = [...(list.comments || []), newComment];
+    const nextList = [...(localComments || []), newComment];
+    setLocalComments(nextList);
     setCommentText('');
 
     if (onUpdateList) {
       onUpdateList({
         ...list,
-        comments: updatedComments
+        comments: nextList
       });
+    }
+
+    if (isSupabaseConfigured && currentUser?.id) {
+      try {
+        const { data, error } = await supabase
+          .from('list_comments')
+          .insert({
+            list_id: String(list.id),
+            user_id: currentUser.id,
+            username: currentUser.username || 'cinephile',
+            display_name: currentUser.displayName || currentUser.username || 'Cinephile',
+            avatar_url: currentUser.avatar || '',
+            comment_text: text
+          })
+          .select()
+          .single();
+        if (!error && data) {
+          setLocalComments(prev => prev.map(c => c.id === tempId ? { ...c, id: data.id } : c));
+        }
+      } catch (err) {
+        console.warn('Could not save comment to Supabase:', err);
+      }
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    const nextList = (localComments || []).filter(c => c.id !== commentId);
+    setLocalComments(nextList);
+    if (onUpdateList) {
+      onUpdateList({
+        ...list,
+        comments: nextList
+      });
+    }
+    if (isSupabaseConfigured && currentUser?.id) {
+      try {
+        await supabase.from('list_comments').delete().eq('id', commentId).eq('user_id', currentUser.id);
+      } catch (err) {
+        console.warn('Could not delete comment from Supabase:', err);
+      }
     }
   };
 
@@ -535,7 +614,7 @@ export default function ListDetailModal({
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px' }}>
               <MessageSquare size={16} color="var(--accent)" />
               <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#fff', margin: 0 }}>
-                Discussion & Comments ({list.comments?.length || 0})
+                Discussion & Comments ({localComments?.length || 0})
               </h3>
             </div>
 
@@ -567,46 +646,74 @@ export default function ListDetailModal({
             </form>
 
             {/* Comment List */}
-            {(list.comments && list.comments.length > 0) ? (
+            {(localComments && localComments.length > 0) ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {list.comments.map(comm => (
-                  <div
-                    key={comm.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: '12px',
-                      background: 'rgba(255, 255, 255, 0.02)',
-                      border: '1px solid rgba(255, 255, 255, 0.05)',
-                      padding: '12px 16px',
-                      borderRadius: '12px'
-                    }}
-                  >
-                    <img
-                      src={comm.user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&fit=crop&q=80'}
-                      alt=""
-                      style={{ width: '30px', height: '30px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
-                    />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
-                        <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#fff' }}>
-                          {comm.user?.displayName || comm.user?.username || 'Cinephile'}
-                        </span>
-                        <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
-                          @{comm.user?.username || 'user'}
-                        </span>
-                        {comm.createdAt && (
-                          <span style={{ fontSize: '11px', color: 'var(--text-dim)', marginLeft: 'auto' }}>
-                            {new Date(comm.createdAt).toLocaleDateString()}
+                {localComments.map(comm => {
+                  const isAuthor = currentUser?.id && (comm.user_id === currentUser.id || comm.user?.id === currentUser.id);
+                  const isUsernameMatch = currentUser?.username && comm.user?.username === currentUser.username;
+                  const canDelete = isAuthor || isUsernameMatch;
+
+                  return (
+                    <div
+                      key={comm.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '12px',
+                        background: 'rgba(255, 255, 255, 0.02)',
+                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                        padding: '12px 16px',
+                        borderRadius: '12px',
+                        position: 'relative'
+                      }}
+                    >
+                      <img
+                        src={comm.user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&fit=crop&q=80'}
+                        alt=""
+                        style={{ width: '30px', height: '30px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                      />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+                          <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#fff' }}>
+                            {comm.user?.displayName || comm.user?.username || 'Cinephile'}
                           </span>
-                        )}
+                          <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
+                            @{comm.user?.username || 'user'}
+                          </span>
+                          {comm.createdAt && (
+                            <span style={{ fontSize: '11px', color: 'var(--text-dim)', marginLeft: 'auto' }}>
+                              {new Date(comm.createdAt).toLocaleDateString()}
+                            </span>
+                          )}
+                          {canDelete && (
+                            <button
+                              onClick={() => handleDeleteComment(comm.id)}
+                              title="Delete comment"
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--text-dim)',
+                                cursor: 'pointer',
+                                padding: '2px 4px',
+                                borderRadius: '4px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                transition: 'color 0.15s ease'
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.color = 'var(--red)'}
+                              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-dim)'}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
+                        </div>
+                        <p style={{ margin: 0, fontSize: '12.5px', color: 'rgba(255, 255, 255, 0.8)', lineHeight: 1.45 }}>
+                          {comm.text}
+                        </p>
                       </div>
-                      <p style={{ margin: 0, fontSize: '12.5px', color: 'rgba(255, 255, 255, 0.8)', lineHeight: 1.45 }}>
-                        {comm.text}
-                      </p>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-dim)', fontSize: '12.5px' }}>

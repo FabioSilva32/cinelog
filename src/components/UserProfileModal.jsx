@@ -18,6 +18,7 @@ export default function UserProfileModal({ targetUser, currentUser, onClose, onM
 
   const [profile, setProfile] = useState(targetUser || null);
   const [userLibrary, setUserLibrary] = useState([]);
+  const [badges, setBadges] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
@@ -64,6 +65,20 @@ export default function UserProfileModal({ targetUser, currentUser, onClose, onM
             .order('date_added', { ascending: false });
 
           if (isMounted) setUserLibrary(libData || []);
+        }
+
+        // Fetch badges from user_badges table
+        if (userId && supabase) {
+          try {
+            const { data: bData } = await supabase
+              .from('user_badges')
+              .select('*')
+              .eq('user_id', userId);
+
+            if (isMounted && bData && bData.length > 0) {
+              setBadges(bData);
+            }
+          } catch {}
         }
 
         // Check follow status
@@ -226,6 +241,37 @@ export default function UserProfileModal({ targetUser, currentUser, onClose, onM
               <div style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700, textTransform: 'uppercase', marginTop: '2px' }}>Total Logs</div>
             </div>
           </div>
+
+          {/* User Badges Ribbon */}
+          {badges.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Award size={13} color="var(--gold)" /> Unlocked Badges & Trophies ({badges.length})
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {badges.map(b => (
+                  <div
+                    key={b.id || b.badge_id}
+                    style={{
+                      background: 'rgba(255, 215, 0, 0.08)',
+                      border: '1px solid rgba(255, 215, 0, 0.25)',
+                      padding: '4px 10px',
+                      borderRadius: '8px',
+                      fontSize: '11.5px',
+                      fontWeight: 800,
+                      color: 'var(--gold)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px'
+                    }}
+                  >
+                    <span>{b.badge_icon || '🎖️'}</span>
+                    <span>{b.badge_name || b.badge_id}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* User's Recent Activity / Library */}
           <div>
