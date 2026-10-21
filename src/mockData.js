@@ -2,6 +2,7 @@ export const ELENA_PROFILE = {
   id: "b4a8e239-1b20-4a8f-8d9e-5c4d3e2f1a0b",
   username: "elena_films",
   displayName: "Elena Rodriguez",
+  email: "tester@cinelog.app",
   avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80",
   bannerUrl: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1600&q=80",
   bannerFitMode: "cover",

@@ -26,7 +26,7 @@ import MobileBottomNav from './components/MobileBottomNav';
 import SettingsPanel, { applyTheme, THEMES } from './components/SettingsPanel';
 import { ToastProvider, useToast } from './components/ToastSystem';
 import { useBodyScrollLock } from './hooks/useBodyScrollLock';
-import { MOCK_USERS } from './mockData';
+import { MOCK_USERS, TESTER_PROFILE, TESTER_LIBRARY } from './mockData';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import { getSuggestedTags } from './utils/collections';
 import { Search, Compass, Library, Award, Trophy, CalendarDays, BarChart3, Users, User, Settings, Film, Tv, X, Loader2, ArrowRight, Flame } from 'lucide-react';
@@ -1455,6 +1455,12 @@ function AppInner() {
   const handleLoginSuccess = (user) => {
     setCurrentUser(user);
     setShowAuth(false);
+    if (user?.id === TESTER_PROFILE?.id || user?.username === 'elena_films' || user?.email === 'tester@cinelog.app') {
+      if (!library || library.length === 0) {
+        setLibrary(TESTER_LIBRARY);
+      }
+      handleTabChange('profile');
+    }
   };
 
   const handleImportMovies = async (importedMovies) => {

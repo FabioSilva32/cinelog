@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Sparkles, Mail, User, Phone, FileText, Camera, Check, AlertCircle, Eye, EyeOff } from 'lucide-react';
-import { MOCK_USERS } from '../mockData';
+import { MOCK_USERS, TESTER_PROFILE } from '../mockData';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
@@ -275,6 +275,14 @@ export default function AuthModal({ onClose, onLoginSuccess, useSupabase, setUse
     }
   };
 
+  const handleQuickTesterLogin = () => {
+    try {
+      localStorage.setItem('cinelog_supabase_cached_user', JSON.stringify(TESTER_PROFILE));
+      localStorage.setItem(`equipped_border_${TESTER_PROFILE.id}`, TESTER_PROFILE.equippedBorder);
+    } catch {}
+    onLoginSuccess(TESTER_PROFILE);
+  };
+
   const handleAuthError = (authError) => {
     const msg = authError?.message || String(authError);
     if (msg === 'Failed to fetch' || authError?.status === 0 || !authError?.status) {
@@ -291,6 +299,18 @@ export default function AuthModal({ onClose, onLoginSuccess, useSupabase, setUse
 
     const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail) { setError('Email address is required.'); return; }
+
+    // Instant tester login bypass
+    if (isLogin && (
+      cleanEmail === 'tester@cinelog.app' ||
+      cleanEmail === 'tester' ||
+      cleanEmail === 'demo@cinelog.app' ||
+      cleanEmail === 'elena@cinelog.app' ||
+      cleanEmail === 'test@cinelog.app'
+    )) {
+      handleQuickTesterLogin();
+      return;
+    }
 
     if (isForgotPassword) {
       if (useSupabase && isSupabaseConfigured) {
@@ -441,6 +461,59 @@ export default function AuthModal({ onClose, onLoginSuccess, useSupabase, setUse
           {!isLogin && !isForgotPassword && (
             <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <span style={{ color: 'var(--red)' }}>*</span> Required fields
+            </div>
+          )}
+
+          {/* Quick 1-Click Tester Account Access */}
+          {isLogin && !isForgotPassword && (
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.14), rgba(168, 85, 247, 0.09))',
+              border: '1px solid rgba(139, 92, 246, 0.4)',
+              borderRadius: '12px',
+              padding: '12px 14px',
+              marginBottom: '18px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              boxShadow: '0 4px 20px rgba(99, 102, 241, 0.15)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                <img
+                  src={TESTER_PROFILE.avatar}
+                  alt="Tester"
+                  style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid #ef4444', objectFit: 'cover', flexShrink: 0 }}
+                />
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '13px', fontWeight: 800, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>Tester Account</span>
+                    <span style={{ fontSize: '9.5px', background: 'rgba(99,102,241,0.35)', color: '#c7d2fe', padding: '1px 6px', borderRadius: '6px', fontWeight: 800 }}>DEMO</span>
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    Elena Rodriguez (@elena_films) • 9 reviews & badges
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleQuickTesterLogin}
+                style={{
+                  background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '7px 14px',
+                  fontSize: '12px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 10px rgba(99, 102, 241, 0.4)',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                Log In →
+              </button>
             </div>
           )}
 
