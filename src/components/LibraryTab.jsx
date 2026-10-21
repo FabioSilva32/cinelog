@@ -847,9 +847,9 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
   const [showImport, setShowImport] = useState(false);
   const [categoryTab, setCategoryTab] = useState(() => {
     try {
-      return localStorage.getItem('cinelog_lib_category_tab') || 'movies';
+      return localStorage.getItem('cinelog_lib_category_tab') || 'split';
     } catch {
-      return 'movies';
+      return 'split';
     }
   });
 
@@ -1838,7 +1838,44 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
           flexWrap: 'wrap'
         }}>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-            {/* 1. Movies Tab */}
+            {/* 1. Main Split Studio Tab */}
+            <button
+              type="button"
+              onClick={() => handleSelectCategoryTab('split')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 18px',
+                borderRadius: '10px',
+                background: categoryTab === 'split' ? 'linear-gradient(135deg, #6366f1, #4338ca)' : 'rgba(255, 255, 255, 0.03)',
+                color: categoryTab === 'split' ? '#ffffff' : 'var(--text-muted)',
+                border: `1px solid ${categoryTab === 'split' ? 'rgba(99, 102, 241, 0.6)' : 'rgba(255, 255, 255, 0.08)'}`,
+                fontWeight: 800,
+                fontSize: '13.5px',
+                cursor: 'pointer',
+                boxShadow: categoryTab === 'split' ? '0 4px 20px rgba(99, 102, 241, 0.45)' : 'none',
+                transition: 'all 0.16s ease'
+              }}
+              title="Main 3-Column Studio View (Movies, Series, Anime side-by-side)"
+            >
+              <Layers size={15} />
+              <span>Split</span>
+              <span style={{
+                fontSize: '11px',
+                fontWeight: 900,
+                padding: '2px 8px',
+                borderRadius: '12px',
+                background: categoryTab === 'split' ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.08)',
+                color: categoryTab === 'split' ? '#ffffff' : 'var(--text-dim)'
+              }}>
+                {movies.length + series.length + anime.length}
+              </span>
+            </button>
+
+            <div style={{ width: '1px', height: '22px', background: 'rgba(255, 255, 255, 0.1)', margin: '0 4px' }} />
+
+            {/* 2. Movies Tab */}
             <button
               type="button"
               onClick={() => handleSelectCategoryTab('movies')}
@@ -1872,7 +1909,7 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
               </span>
             </button>
 
-            {/* 2. Series Tab */}
+            {/* 3. Series Tab */}
             <button
               type="button"
               onClick={() => handleSelectCategoryTab('series')}
@@ -1906,7 +1943,7 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
               </span>
             </button>
 
-            {/* 3. Anime Tab */}
+            {/* 4. Anime Tab */}
             <button
               type="button"
               onClick={() => handleSelectCategoryTab('anime')}
@@ -1938,33 +1975,6 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
               }}>
                 {anime.length}
               </span>
-            </button>
-
-            <div style={{ width: '1px', height: '22px', background: 'rgba(255, 255, 255, 0.1)', margin: '0 4px' }} />
-
-            {/* 4. Split 3-Columns Tab */}
-            <button
-              type="button"
-              onClick={() => handleSelectCategoryTab('split')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '7px 16px',
-                borderRadius: '10px',
-                background: categoryTab === 'split' ? 'linear-gradient(135deg, #6366f1, #4338ca)' : 'rgba(255, 255, 255, 0.04)',
-                color: categoryTab === 'split' ? '#ffffff' : 'var(--text-muted)',
-                border: `1px solid ${categoryTab === 'split' ? 'rgba(99, 102, 241, 0.6)' : 'rgba(255, 255, 255, 0.08)'}`,
-                fontWeight: 700,
-                fontSize: '12.5px',
-                cursor: 'pointer',
-                boxShadow: categoryTab === 'split' ? '0 4px 18px rgba(99, 102, 241, 0.4)' : 'none',
-                transition: 'all 0.16s ease'
-              }}
-              title="View Movies, Series, and Anime side-by-side with 3 poster columns each"
-            >
-              <Layers size={14} />
-              <span>Split 3-Columns</span>
             </button>
           </div>
 
