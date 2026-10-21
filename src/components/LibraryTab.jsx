@@ -847,9 +847,9 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
   const [showImport, setShowImport] = useState(false);
   const [categoryTab, setCategoryTab] = useState(() => {
     try {
-      return localStorage.getItem('cinelog_lib_category_tab') || 'split';
+      return localStorage.getItem('cinelog_lib_category_tab') || 'movies';
     } catch {
-      return 'split';
+      return 'movies';
     }
   });
 
@@ -1838,32 +1838,7 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
           flexWrap: 'wrap'
         }}>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              onClick={() => handleSelectCategoryTab('split')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '7px 18px',
-                borderRadius: '10px',
-                background: categoryTab === 'split' ? 'linear-gradient(135deg, #3b82f6, #1d4ed8)' : 'rgba(255, 255, 255, 0.04)',
-                color: categoryTab === 'split' ? '#ffffff' : 'var(--text-muted)',
-                border: `1px solid ${categoryTab === 'split' ? 'rgba(59, 130, 246, 0.6)' : 'rgba(255, 255, 255, 0.08)'}`,
-                fontWeight: 800,
-                fontSize: '13px',
-                cursor: 'pointer',
-                boxShadow: categoryTab === 'split' ? '0 4px 18px rgba(59, 130, 246, 0.45)' : 'none',
-                transition: 'all 0.16s ease'
-              }}
-              title="View Movies, Series, and Anime side-by-side with 3 poster columns each"
-            >
-              <Layers size={14} />
-              <span>All 3 Mediums Side-by-Side</span>
-            </button>
-
-            <div style={{ width: '1px', height: '22px', background: 'rgba(255, 255, 255, 0.1)', margin: '0 4px' }} />
-
+            {/* 1. Movies Tab */}
             <button
               type="button"
               onClick={() => handleSelectCategoryTab('movies')}
@@ -1871,24 +1846,24 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                padding: '7px 16px',
+                padding: '8px 18px',
                 borderRadius: '10px',
                 background: categoryTab === 'movies' ? 'linear-gradient(135deg, #e50914, #991b1b)' : 'rgba(255, 255, 255, 0.03)',
                 color: categoryTab === 'movies' ? '#ffffff' : 'var(--text-muted)',
                 border: `1px solid ${categoryTab === 'movies' ? 'rgba(229, 9, 20, 0.6)' : 'rgba(255, 255, 255, 0.08)'}`,
                 fontWeight: 800,
-                fontSize: '13px',
+                fontSize: '13.5px',
                 cursor: 'pointer',
-                boxShadow: categoryTab === 'movies' ? '0 4px 18px rgba(229, 9, 20, 0.45)' : 'none',
+                boxShadow: categoryTab === 'movies' ? '0 4px 20px rgba(229, 9, 20, 0.45)' : 'none',
                 transition: 'all 0.16s ease'
               }}
             >
-              <span style={{ fontSize: '15px' }}>🎬</span>
+              <span style={{ fontSize: '16px' }}>🎬</span>
               <span>Movies</span>
               <span style={{
                 fontSize: '11px',
                 fontWeight: 900,
-                padding: '2px 7px',
+                padding: '2px 8px',
                 borderRadius: '12px',
                 background: categoryTab === 'movies' ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.08)',
                 color: categoryTab === 'movies' ? '#ffffff' : 'var(--text-dim)'
@@ -1897,6 +1872,7 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
               </span>
             </button>
 
+            {/* 2. Series Tab */}
             <button
               type="button"
               onClick={() => handleSelectCategoryTab('series')}
@@ -1904,24 +1880,24 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                padding: '7px 16px',
+                padding: '8px 18px',
                 borderRadius: '10px',
                 background: categoryTab === 'series' ? 'linear-gradient(135deg, #2563eb, #1e40af)' : 'rgba(255, 255, 255, 0.03)',
                 color: categoryTab === 'series' ? '#ffffff' : 'var(--text-muted)',
                 border: `1px solid ${categoryTab === 'series' ? 'rgba(37, 99, 235, 0.6)' : 'rgba(255, 255, 255, 0.08)'}`,
                 fontWeight: 800,
-                fontSize: '13px',
+                fontSize: '13.5px',
                 cursor: 'pointer',
-                boxShadow: categoryTab === 'series' ? '0 4px 18px rgba(37, 99, 235, 0.45)' : 'none',
+                boxShadow: categoryTab === 'series' ? '0 4px 20px rgba(37, 99, 235, 0.45)' : 'none',
                 transition: 'all 0.16s ease'
               }}
             >
-              <span style={{ fontSize: '15px' }}>📺</span>
+              <span style={{ fontSize: '16px' }}>📺</span>
               <span>Series</span>
               <span style={{
                 fontSize: '11px',
                 fontWeight: 900,
-                padding: '2px 7px',
+                padding: '2px 8px',
                 borderRadius: '12px',
                 background: categoryTab === 'series' ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.08)',
                 color: categoryTab === 'series' ? '#ffffff' : 'var(--text-dim)'
@@ -1930,6 +1906,7 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
               </span>
             </button>
 
+            {/* 3. Anime Tab */}
             <button
               type="button"
               onClick={() => handleSelectCategoryTab('anime')}
@@ -1937,24 +1914,24 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                padding: '7px 16px',
+                padding: '8px 18px',
                 borderRadius: '10px',
                 background: categoryTab === 'anime' ? 'linear-gradient(135deg, #d97706, #92400e)' : 'rgba(255, 255, 255, 0.03)',
                 color: categoryTab === 'anime' ? '#ffffff' : 'var(--text-muted)',
                 border: `1px solid ${categoryTab === 'anime' ? 'rgba(217, 119, 6, 0.6)' : 'rgba(255, 255, 255, 0.08)'}`,
                 fontWeight: 800,
-                fontSize: '13px',
+                fontSize: '13.5px',
                 cursor: 'pointer',
-                boxShadow: categoryTab === 'anime' ? '0 4px 18px rgba(217, 119, 6, 0.45)' : 'none',
+                boxShadow: categoryTab === 'anime' ? '0 4px 20px rgba(217, 119, 6, 0.45)' : 'none',
                 transition: 'all 0.16s ease'
               }}
             >
-              <span style={{ fontSize: '15px' }}>⛩️</span>
+              <span style={{ fontSize: '16px' }}>⛩️</span>
               <span>Anime</span>
               <span style={{
                 fontSize: '11px',
                 fontWeight: 900,
-                padding: '2px 7px',
+                padding: '2px 8px',
                 borderRadius: '12px',
                 background: categoryTab === 'anime' ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.08)',
                 color: categoryTab === 'anime' ? '#ffffff' : 'var(--text-dim)'
@@ -1962,13 +1939,40 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
                 {anime.length}
               </span>
             </button>
+
+            <div style={{ width: '1px', height: '22px', background: 'rgba(255, 255, 255, 0.1)', margin: '0 4px' }} />
+
+            {/* 4. Split 3-Columns Tab */}
+            <button
+              type="button"
+              onClick={() => handleSelectCategoryTab('split')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '7px 16px',
+                borderRadius: '10px',
+                background: categoryTab === 'split' ? 'linear-gradient(135deg, #6366f1, #4338ca)' : 'rgba(255, 255, 255, 0.04)',
+                color: categoryTab === 'split' ? '#ffffff' : 'var(--text-muted)',
+                border: `1px solid ${categoryTab === 'split' ? 'rgba(99, 102, 241, 0.6)' : 'rgba(255, 255, 255, 0.08)'}`,
+                fontWeight: 700,
+                fontSize: '12.5px',
+                cursor: 'pointer',
+                boxShadow: categoryTab === 'split' ? '0 4px 18px rgba(99, 102, 241, 0.4)' : 'none',
+                transition: 'all 0.16s ease'
+              }}
+              title="View Movies, Series, and Anime side-by-side with 3 poster columns each"
+            >
+              <Layers size={14} />
+              <span>Split 3-Columns</span>
+            </button>
           </div>
 
           <div style={{ fontSize: '12px', color: 'var(--text-dim)', fontWeight: 600, paddingRight: '8px' }}>
-            {categoryTab === 'split' && `Simultaneous 3-Pillar View • 3 Poster Columns per Medium (${movies.length + series.length + anime.length} total)`}
-            {categoryTab === 'movies' && `${movies.length} movies visible`}
-            {categoryTab === 'series' && `${series.length} series visible`}
-            {categoryTab === 'anime' && `${anime.length} anime visible`}
+            {categoryTab === 'movies' && `🎬 ${movies.length} movies • High-density poster grid`}
+            {categoryTab === 'series' && `📺 ${series.length} series • High-density poster grid`}
+            {categoryTab === 'anime' && `⛩️ ${anime.length} anime • High-density poster grid`}
+            {categoryTab === 'split' && `🗂️ 3-Column Simultaneous Studio (${movies.length + series.length + anime.length} total)`}
           </div>
         </div>
 

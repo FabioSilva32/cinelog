@@ -4,12 +4,15 @@ import {
   Heart, Calendar, Star, Film, Trophy, BarChart3, X,
   Search, Plus, Upload, Flame, Coins, ArrowLeft, SlidersHorizontal,
   Image as ImageIcon, Trash2, CheckCircle2, User, Award, Check, Edit2, Sparkles,
-  ChevronDown, ChevronUp, Crown, ExternalLink
+  ChevronDown, ChevronUp, Crown, ExternalLink, List, BookOpen, Layers
 } from 'lucide-react';
 import { ACHIEVEMENTS, BORDER_STYLES, BADGE_COLORS, isUserCreator } from '../utils/achievements';
 import AvatarWithBorder, { DEFAULT_GREY_AVATAR } from './AvatarWithBorder';
-import { supabase } from '../supabaseClient';
+import { supabase, isSupabaseConfigured } from '../supabaseClient';
 import { ELENA_PROFILE, ELENA_LIBRARY, TESTER_PROFILE, TESTER_LIBRARY } from '../mockData';
+import { INITIAL_COMMUNITY_LISTS } from '../mockListsData';
+import ListDetailModal from './ListDetailModal';
+import CreateListModal from './CreateListModal';
 import StatsTab from './StatsTab';
 import WatchCalendarTab from './WatchCalendarTab';
 import WrappedTab from './WrappedTab';
@@ -368,6 +371,162 @@ export default function ProfileTab({
       setViewedLoading(false);
     }
   }, [targetUser, isViewingOther, currentUser?.id]);
+
+  // ── Custom Lists State (Letterboxd-style lists on Profile) ──
+  const [lists, setLists] = useState(() => {
+    try {
+      const stored = localStorage.getItem('cinelog_community_lists_v2');
+      if (stored) return JSON.parse(stored);
+    } catch {}
+    return INITIAL_COMMUNITY_LISTS;
+  });
+  const [selectedListModal, setSelectedListModal] = useState(null);
+  const [showCreateListModal, setShowCreateListModal] = useState(false);
+
+  // Sync latest custom_lists from Supabase
+  useEffect(() => {
+    let isMounted = true;
+    async function loadCloudLists() {
+      if (!supabase || !isSupabaseConfigured) return;
+      try {
+        const { data, error } = await supabase
+          .from('custom_lists')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!error && data && data.length > 0 && isMounted) {
+          const mapped = data.map(row => ({
+            id: row.id,
+            user_id: row.user_id,
+            title: row.title,
+            description: row.description,
+            coverImage: row.cover_image,
+            isPublic: row.is_public,
+            isRanked: row.is_ranked,
+            entries: row.entries || [],
+            tags: row.tags || [],
+            likesCount: row.likes_count || 0,
+            author: row.author_info || { id: row.user_id, username: 'cinephile' },
+            createdAt: row.created_at
+          }));
+
+          setLists(prev => {
+            const merged = [...mapped];
+            prev.forEach(p => {
+              if (!merged.some(m => String(m.id) === String(p.id))) merged.push(p);
+            });
+            try { localStorage.setItem('cinelog_community_lists_v2', JSON.stringify(merged)); } catch {}
+            return merged;
+          });
+        }
+      } catch (err) {
+        console.warn('Error loading custom_lists in ProfileTab:', err);
+      }
+    }
+    loadCloudLists();
+    return () => { isMounted = false; };
+  }, [currentUser?.id]);
+
+  // Determine lists created by the profile being viewed
+  const userCreatedLists = useMemo(() => {
+    const target = isViewingOther ? viewedProfile : currentUser;
+    if (!target) return [];
+
+    const targetId = String(target.id || target.user_id || '');
+    const targetUsername = String(target.username || '').toLowerCase();
+    const isElena = targetUsername === 'elena_films' || target.displayName === 'Elena Rodriguez';
+
+    return lists.filter(l => {
+      const listUserId = String(l.user_id || l.author?.id || '');
+      const listUsername = String(l.author?.username || '').toLowerCase();
+      const listAuthorName = String(l.author?.displayName || '');
+
+      if (targetId && listUserId === targetId) return true;
+      if (targetUsername && listUsername === targetUsername) return true;
+      if (isElena && (listUsername === 'elena_films' || listAuthorName === 'Elena Rodriguez')) return true;
+      return false;
+    });
+  }, [lists, isViewingOther, viewedProfile, currentUser]);
+
+  const handleSaveNewListFromProfile = async (newList) => {
+    setLists(prev => {
+      const next = [newList, ...prev];
+      try { localStorage.setItem('cinelog_community_lists_v2', JSON.stringify(next)); } catch {}
+      return next;
+    });
+    setSelectedListModal(newList);
+
+    if (currentUser?.id && supabase && isSupabaseConfigured) {
+      try {
+        await supabase.from('custom_lists').upsert({
+          id: String(newList.id),
+          user_id: currentUser.id,
+          title: newList.title,
+          description: newList.description || '',
+          cover_image: newList.coverImage || null,
+          is_public: newList.isPublic !== false,
+          is_ranked: !!newList.isRanked,
+          entries: newList.entries || [],
+          tags: newList.tags || [],
+          likes_count: newList.likesCount || 0,
+          author_info: newList.author || {
+            id: currentUser.id,
+            username: currentUser.username,
+            displayName: currentUser.displayName,
+            avatar: currentUser.avatar
+          }
+        });
+      } catch (e) {
+        console.warn('Could not save custom_list to Supabase from Profile:', e);
+      }
+    }
+  };
+
+  const handleUpdateListFromProfile = async (updatedList) => {
+    setLists(prev => {
+      const next = prev.map(l => l.id === updatedList.id ? updatedList : l);
+      try { localStorage.setItem('cinelog_community_lists_v2', JSON.stringify(next)); } catch {}
+      return next;
+    });
+    if (selectedListModal && selectedListModal.id === updatedList.id) {
+      setSelectedListModal(updatedList);
+    }
+    if (currentUser?.id && supabase && isSupabaseConfigured) {
+      try {
+        await supabase.from('custom_lists').update({
+          title: updatedList.title,
+          description: updatedList.description || '',
+          cover_image: updatedList.coverImage || null,
+          is_public: updatedList.isPublic !== false,
+          is_ranked: !!updatedList.isRanked,
+          entries: updatedList.entries || [],
+          tags: updatedList.tags || [],
+          likes_count: updatedList.likesCount || 0,
+          updated_at: new Date().toISOString()
+        }).eq('id', String(updatedList.id)).eq('user_id', currentUser.id);
+      } catch (e) {
+        console.warn('Could not update custom_list in Supabase:', e);
+      }
+    }
+  };
+
+  const handleDeleteListFromProfile = async (listId) => {
+    setLists(prev => {
+      const next = prev.filter(l => l.id !== listId);
+      try { localStorage.setItem('cinelog_community_lists_v2', JSON.stringify(next)); } catch {}
+      return next;
+    });
+    if (selectedListModal && selectedListModal.id === listId) {
+      setSelectedListModal(null);
+    }
+    if (currentUser?.id && supabase && isSupabaseConfigured) {
+      try {
+        await supabase.from('custom_lists').delete().eq('id', String(listId)).eq('user_id', currentUser.id);
+      } catch (e) {
+        console.warn('Could not delete custom_list from Supabase:', e);
+      }
+    }
+  };
 
   // TMDB backdrop search in studio modal
   const handleTmdbSearch = async (e) => {
@@ -1153,6 +1312,74 @@ export default function ProfileTab({
                     </div>
                   </div>
                 )}
+
+                {/* Lists Section for other user */}
+                {userCreatedLists.filter(l => l.isPublic !== false).length > 0 && (
+                  <div style={{ marginTop: '32px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <List size={18} color="var(--accent)" />
+                        <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>Lists by {viewedProfile?.displayName || viewedProfile?.username}</h3>
+                      </div>
+                      <span style={{ fontSize: '12px', color: 'var(--text-dim)', fontWeight: 700 }}>
+                        {userCreatedLists.filter(l => l.isPublic !== false).length} lists
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
+                      {userCreatedLists.filter(l => l.isPublic !== false).map(list => {
+                        const entries = list.entries || [];
+                        const previewPosters = entries.filter(e => e.poster_path).slice(0, 5);
+
+                        return (
+                          <div
+                            key={list.id}
+                            onClick={() => setSelectedListModal(list)}
+                            className="glass"
+                            style={{
+                              borderRadius: '16px',
+                              border: '1px solid rgba(255,255,255,0.08)',
+                              padding: '16px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
+                              background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)'
+                            }}
+                            onMouseEnter={e => {
+                              e.currentTarget.style.borderColor = 'rgba(136,8,8,0.45)';
+                              e.currentTarget.style.transform = 'translateY(-2px)';
+                            }}
+                            onMouseLeave={e => {
+                              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                              <h4 style={{ fontSize: '14.5px', fontWeight: 800, color: '#fff', margin: 0 }}>{list.title}</h4>
+                              <span style={{ fontSize: '11px', color: 'var(--text-dim)' }}>{entries.length} films</span>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', margin: '2px 0 10px', overflow: 'hidden' }}>
+                              {previewPosters.map((movie, idx) => (
+                                <div key={movie.tmdb_id || idx} style={{ flex: '1 1 0', aspectRatio: '2/3', borderRadius: '4px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', background: '#191522' }}>
+                                  <img src={`https://image.tmdb.org/t/p/w185${movie.poster_path}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                </div>
+                              ))}
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', fontSize: '11px', color: 'var(--text-dim)' }}>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <Heart size={12} color="var(--red)" fill="var(--red)" /> {list.likesCount || 0}
+                              </span>
+                              <span style={{ color: 'var(--accent)', fontWeight: 700 }}>View list →</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1480,6 +1707,7 @@ export default function ProfileTab({
           }}>
             {[
               { id: 'overview', label: 'Overview', icon: Film },
+              { id: 'lists', label: `Lists (${userCreatedLists.length})`, icon: List },
               { id: 'stats', label: 'Statistics', icon: BarChart3 },
               { id: 'calendar', label: 'Watch Calendar', icon: Calendar },
               { id: 'wrapped', label: 'Yearly Wrapped', icon: Award },
@@ -1749,6 +1977,287 @@ export default function ProfileTab({
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* ── LISTS TAB (Letterboxd-style lists on Profile) ── */}
+            {profileActiveSubTab === 'lists' && (
+              <div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '16px',
+                  marginBottom: '24px'
+                }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                      <List size={20} color="var(--accent)" />
+                      <h3 style={{ fontSize: '20px', fontWeight: 900, letterSpacing: '-0.3px', margin: 0, color: '#fff' }}>
+                        My Lists
+                      </h3>
+                      <span style={{
+                        background: 'rgba(136,8,8,0.18)',
+                        border: '1px solid rgba(136,8,8,0.4)',
+                        color: 'var(--accent)',
+                        borderRadius: '20px',
+                        padding: '2px 9px',
+                        fontSize: '11px',
+                        fontWeight: 800
+                      }}>
+                        {userCreatedLists.length}
+                      </span>
+                    </div>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: 0 }}>
+                      Letterboxd-style custom lists, rankings, and marathon watchlists you've created.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => setShowCreateListModal(true)}
+                    className="btn btn-primary"
+                    style={{
+                      padding: '9px 18px',
+                      borderRadius: '50px',
+                      gap: '8px',
+                      fontSize: '13px',
+                      fontWeight: 800,
+                      boxShadow: '0 6px 20px rgba(136,8,8,0.3)',
+                      flexShrink: 0
+                    }}
+                  >
+                    <Plus size={15} /> Create New List
+                  </button>
+                </div>
+
+                {userCreatedLists.length === 0 ? (
+                  <div className="glass" style={{
+                    borderRadius: '20px',
+                    padding: '48px 24px',
+                    textAlign: 'center',
+                    border: '1px solid var(--border)',
+                    background: 'rgba(255,255,255,0.015)'
+                  }}>
+                    <div style={{ fontSize: '48px', marginBottom: '12px' }}>📋</div>
+                    <h4 style={{ fontSize: '17px', fontWeight: 800, margin: '0 0 8px', color: '#fff' }}>
+                      No Lists Created Yet
+                    </h4>
+                    <p style={{ fontSize: '13px', color: 'var(--text-muted)', maxWidth: '420px', margin: '0 auto 20px', lineHeight: 1.5 }}>
+                      Rank your all-time favorites, curate director filmographies, or build themed marathons with custom notes for every movie.
+                    </p>
+                    <button
+                      onClick={() => setShowCreateListModal(true)}
+                      className="btn btn-primary"
+                      style={{ padding: '9px 22px', borderRadius: '50px', fontSize: '13px', fontWeight: 800 }}
+                    >
+                      <Plus size={15} style={{ marginRight: '6px' }} /> Create Your First List
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                    gap: '20px'
+                  }}>
+                    {userCreatedLists.map(list => {
+                      const entries = list.entries || [];
+                      const previewPosters = entries.filter(e => e.poster_path).slice(0, 5);
+
+                      return (
+                        <div
+                          key={list.id}
+                          onClick={() => setSelectedListModal(list)}
+                          className="glass"
+                          style={{
+                            borderRadius: '18px',
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            padding: '18px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
+                            background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
+                            position: 'relative'
+                          }}
+                          onMouseEnter={e => {
+                            e.currentTarget.style.borderColor = 'rgba(136,8,8,0.45)';
+                            e.currentTarget.style.transform = 'translateY(-3px)';
+                            e.currentTarget.style.boxShadow = '0 14px 32px rgba(0,0,0,0.55)';
+                          }}
+                          onMouseLeave={e => {
+                            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '';
+                          }}
+                        >
+                          {/* List Status & Entry Badges */}
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              {list.isRanked && (
+                                <span style={{
+                                  background: 'rgba(245, 158, 11, 0.14)',
+                                  color: 'var(--gold)',
+                                  border: '1px solid rgba(245, 158, 11, 0.3)',
+                                  borderRadius: '6px',
+                                  padding: '2px 7px',
+                                  fontSize: '10px',
+                                  fontWeight: 800
+                                }}>
+                                  🏆 RANKED
+                                </span>
+                              )}
+                              <span style={{
+                                background: list.isPublic !== false ? 'rgba(34,197,94,0.1)' : 'rgba(255,255,255,0.05)',
+                                color: list.isPublic !== false ? 'var(--green)' : 'var(--text-dim)',
+                                border: `1px solid ${list.isPublic !== false ? 'rgba(34,197,94,0.25)' : 'rgba(255,255,255,0.08)'}`,
+                                borderRadius: '6px',
+                                padding: '2px 7px',
+                                fontSize: '10px',
+                                fontWeight: 800
+                              }}>
+                                {list.isPublic !== false ? '🌐 PUBLIC' : '🔒 PRIVATE'}
+                              </span>
+                            </div>
+
+                            <span style={{
+                              background: 'rgba(255, 255, 255, 0.05)',
+                              borderRadius: '6px',
+                              padding: '2px 8px',
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              color: 'var(--text-dim)'
+                            }}>
+                              {entries.length} films
+                            </span>
+                          </div>
+
+                          {/* 5-Poster Overlapping Showcase */}
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            margin: '2px 0 14px',
+                            overflow: 'hidden',
+                            paddingBottom: '2px'
+                          }}>
+                            {previewPosters.map((movie, idx) => (
+                              <div
+                                key={movie.tmdb_id || idx}
+                                style={{
+                                  flex: '1 1 0',
+                                  minWidth: 0,
+                                  aspectRatio: '2/3',
+                                  borderRadius: '6px',
+                                  overflow: 'hidden',
+                                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                                  boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
+                                  background: '#191522',
+                                  position: 'relative'
+                                }}
+                              >
+                                <img
+                                  src={`https://image.tmdb.org/t/p/w185${movie.poster_path}`}
+                                  alt=""
+                                  loading="lazy"
+                                  onError={(e) => {
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                />
+                                {list.isRanked && (
+                                  <div style={{
+                                    position: 'absolute',
+                                    top: '3px',
+                                    left: '3px',
+                                    zIndex: 5,
+                                    background: idx < 3 ? 'rgba(245, 158, 11, 0.95)' : 'rgba(0,0,0,0.85)',
+                                    color: idx < 3 ? '#000' : '#fff',
+                                    borderRadius: '4px',
+                                    padding: '1px 4px',
+                                    fontSize: '9px',
+                                    fontWeight: 900,
+                                    pointerEvents: 'none',
+                                    boxShadow: '0 2px 5px rgba(0,0,0,0.5)'
+                                  }}>
+                                    #{idx + 1}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                            {Array.from({ length: Math.max(0, 5 - previewPosters.length) }).map((_, idx) => (
+                              <div
+                                key={idx}
+                                style={{
+                                  flex: '1 1 0',
+                                  minWidth: 0,
+                                  aspectRatio: '2/3',
+                                  borderRadius: '6px',
+                                  background: 'rgba(255,255,255,0.03)',
+                                  border: '1px dashed rgba(255,255,255,0.08)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  fontSize: '13px',
+                                  color: 'var(--text-dim)'
+                                }}
+                              >
+                                🎬
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* List Title & Description */}
+                          <h4 style={{
+                            fontSize: '15.5px',
+                            fontWeight: 800,
+                            color: '#fff',
+                            margin: '0 0 6px',
+                            lineHeight: 1.3
+                          }}>
+                            {list.title}
+                          </h4>
+
+                          {list.description && (
+                            <p style={{
+                              fontSize: '12px',
+                              color: 'rgba(255, 255, 255, 0.65)',
+                              lineHeight: 1.45,
+                              margin: '0 0 14px',
+                              overflow: 'hidden',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              flex: 1
+                            }}>
+                              {list.description}
+                            </p>
+                          )}
+
+                          {/* Bottom Stats */}
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            marginTop: 'auto',
+                            paddingTop: '10px',
+                            borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+                            fontSize: '11.5px',
+                            color: 'var(--text-dim)'
+                          }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                              <Heart size={13} color="var(--red)" fill="var(--red)" /> {list.likesCount || 0}
+                            </span>
+                            <span style={{ color: 'var(--accent)', fontWeight: 700, fontSize: '11.5px' }}>
+                              View list →
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
@@ -2208,6 +2717,28 @@ export default function ProfileTab({
             <button className="btn btn-primary" onClick={() => window.print()} style={{ width: '100%', fontSize: '12px', padding: '8px 0' }}>🖨️ Print or Save as PDF</button>
           </div>
         </div>
+      )}
+
+      {selectedListModal && (
+        <ListDetailModal
+          list={selectedListModal}
+          currentUser={currentUser}
+          onClose={() => setSelectedListModal(null)}
+          onMovieClick={onMovieClick}
+          onOpenUserProfile={onOpenUserProfile}
+          onUpdateList={handleUpdateListFromProfile}
+          onDeleteList={handleDeleteListFromProfile}
+        />
+      )}
+
+      {showCreateListModal && (
+        <CreateListModal
+          currentUser={currentUser}
+          library={library}
+          franchiseCollections={[]}
+          onClose={() => setShowCreateListModal(false)}
+          onSaveList={handleSaveNewListFromProfile}
+        />
       )}
 
     </div>
