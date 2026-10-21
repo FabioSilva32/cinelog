@@ -4,7 +4,8 @@ import {
   Heart, Calendar, Star, Film, Trophy, BarChart3, X,
   Search, Plus, Upload, Flame, Coins, ArrowLeft, SlidersHorizontal,
   Image as ImageIcon, Trash2, CheckCircle2, User, Award, Check, Edit2, Sparkles,
-  ChevronDown, ChevronUp, Crown, ExternalLink, List, BookOpen, Layers
+  ChevronDown, ChevronUp, Crown, ExternalLink, List, BookOpen, Layers,
+  MessageSquare, Library
 } from 'lucide-react';
 import { ACHIEVEMENTS, BORDER_STYLES, BADGE_COLORS, isUserCreator } from '../utils/achievements';
 import AvatarWithBorder, { DEFAULT_GREY_AVATAR } from './AvatarWithBorder';
@@ -171,6 +172,194 @@ function RatingDistributionChart({ library = [] }) {
   );
 }
 
+// ── Letterboxd-style Reviews List View ──────────────────────────────
+function ReviewsListView({ reviews = [], onMovieClick }) {
+  if (!reviews || reviews.length === 0) {
+    return (
+      <div style={{
+        textAlign: 'center',
+        padding: '50px 20px',
+        color: 'var(--text-dim)',
+        background: 'rgba(255, 255, 255, 0.02)',
+        borderRadius: '16px',
+        border: '1px dashed rgba(255, 255, 255, 0.08)'
+      }}>
+        <div style={{ fontSize: '38px', marginBottom: '10px' }}>✍️</div>
+        <div style={{ fontSize: '15px', fontWeight: 800, color: '#FFFFFF', marginBottom: '4px' }}>No Reviews Logged Yet</div>
+        <div style={{ fontSize: '12.5px', opacity: 0.7 }}>Logged reviews, star ratings, and reflections will appear here in list format.</div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      {reviews.map(m => {
+        const cleanReview = (m.review || '')
+          .replace(/__EPISODE_DATA__:.+$/s, '')
+          .replace(/__EPISODE_RATINGS__:.+$/s, '')
+          .trim();
+        if (!cleanReview) return null;
+
+        const dateStr = m.watch_date || m.date_added;
+        const formattedDate = dateStr ? new Date(dateStr).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        }) : null;
+
+        return (
+          <div
+            key={m.id || m.tmdb_id}
+            onClick={() => onMovieClick && onMovieClick(m.tmdb_id, m.media_type || 'movie')}
+            className="glass"
+            style={{
+              display: 'flex',
+              gap: '18px',
+              padding: '16px 20px',
+              borderRadius: '16px',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(20, 16, 28, 0.5) 100%)',
+              cursor: 'pointer',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              position: 'relative'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.borderColor = 'rgba(229, 9, 20, 0.45)';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 10px 28px rgba(0,0,0,0.45)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          >
+            {/* Poster Thumbnail */}
+            <div style={{
+              width: '64px',
+              aspectRatio: '2/3',
+              borderRadius: '9px',
+              overflow: 'hidden',
+              flexShrink: 0,
+              background: '#191522',
+              position: 'relative',
+              boxShadow: '0 4px 14px rgba(0,0,0,0.6)',
+              border: '1px solid rgba(255, 255, 255, 0.1)'
+            }}>
+              {m.poster_path ? (
+                <img
+                  src={`https://image.tmdb.org/t/p/w185${m.poster_path}`}
+                  alt={m.title}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  loading="lazy"
+                  onError={e => { e.currentTarget.style.display = 'none'; }}
+                />
+              ) : (
+                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>🎬</div>
+              )}
+            </div>
+
+            {/* Review Content */}
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', minWidth: 0 }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: 900, color: '#FFFFFF', margin: 0, letterSpacing: '-0.2px' }}>
+                    {m.title}
+                  </h4>
+                  {m.release_year && (
+                    <span style={{ fontSize: '12px', color: 'var(--text-dim)', fontWeight: 600 }}>
+                      ({m.release_year})
+                    </span>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  {m.rating > 0 && (
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      background: 'rgba(245, 158, 11, 0.15)',
+                      color: 'var(--gold)',
+                      border: '1px solid rgba(245, 158, 11, 0.35)',
+                      padding: '2px 9px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 900
+                    }}>
+                      ★ {Number(m.rating).toFixed(1)}
+                    </span>
+                  )}
+                  {formattedDate && (
+                    <span style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 600 }}>
+                      {formattedDate}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Review Text Body */}
+              <div style={{
+                fontSize: '13px',
+                color: 'rgba(255, 255, 255, 0.88)',
+                lineHeight: 1.6,
+                padding: '9px 13px',
+                background: 'rgba(229, 9, 20, 0.05)',
+                borderLeft: '3px solid var(--accent)',
+                borderRadius: '0 8px 8px 0',
+                marginTop: '4px',
+                marginBottom: '8px',
+                whiteSpace: 'pre-line'
+              }}>
+                "{cleanReview}"
+              </div>
+
+              {/* Tags & Favorite indicator if any */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginTop: 'auto' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                  {m.favorite && (
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '3px',
+                      fontSize: '10.5px',
+                      fontWeight: 800,
+                      color: 'var(--red)',
+                      background: 'rgba(239, 68, 68, 0.12)',
+                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      padding: '1px 7px',
+                      borderRadius: '6px'
+                    }}>
+                      <Heart size={10} fill="currentColor" /> Favorite
+                    </span>
+                  )}
+                  {(m.tags || []).slice(0, 4).map(t => (
+                    <span key={t} style={{
+                      fontSize: '10.5px',
+                      fontWeight: 700,
+                      color: 'var(--text-dim)',
+                      background: 'rgba(255, 255, 255, 0.04)',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      padding: '1px 7px',
+                      borderRadius: '6px'
+                    }}>
+                      #{t}
+                    </span>
+                  ))}
+                </div>
+
+                <span style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 700 }}>
+                  View Film Details →
+                </span>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function ProfileTab({
   targetUser,
   currentUser,
@@ -220,6 +409,13 @@ export default function ProfileTab({
     if (onSubTabChange) onSubTabChange(tabId);
   };
   const [activeShareCard, setActiveShareCard] = useState(null);
+
+  // Foreign user profile sub-tab navigation
+  const [foreignActiveTab, setForeignActiveTab] = useState('overview');
+
+  useEffect(() => {
+    setForeignActiveTab('overview');
+  }, [targetUser?.id, targetUser?.username]);
 
   // Other-user profile state (Letterboxd-style full-page view)
   const [viewedProfile, setViewedProfile] = useState(null);
@@ -932,6 +1128,23 @@ export default function ProfileTab({
     return watched.filter(m => m.title.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [library, searchQuery, popupActiveTab, favorites, selectingSlotIdx]);
 
+  const viewedWatched = useMemo(() => viewedLibrary.filter(m => m.status === 'watched'), [viewedLibrary]);
+  const viewedReviewsList = useMemo(() => viewedLibrary.filter(m => m.review && m.review.trim().length > 0).sort((a, b) => new Date(b.watch_date || b.date_added || 0) - new Date(a.watch_date || a.date_added || 0)), [viewedLibrary]);
+  const viewedPublicLists = useMemo(() => userCreatedLists.filter(l => l.isPublic !== false), [userCreatedLists]);
+  const viewedBadges = useMemo(() => {
+    const earned = [];
+    ACHIEVEMENTS.forEach(ach => {
+      if (ach.check(viewedLibrary) >= ach.target) {
+        if (ach.reward.badgeName) earned.push(ach.reward.badgeName);
+      }
+    });
+    const purchased = viewedProfile?.purchasedBadges || viewedProfile?.purchased_badges || [];
+    const featured = viewedProfile?.featuredBadges || [];
+    return Array.from(new Set([...featured, ...purchased, ...earned]));
+  }, [viewedLibrary, viewedProfile]);
+
+  const ownReviews = useMemo(() => library.filter(m => m.review && m.review.trim().length > 0).sort((a, b) => new Date(b.watch_date || b.date_added || 0) - new Date(a.watch_date || a.date_added || 0)), [library]);
+
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '0', position: 'relative' }}>
 
@@ -1176,210 +1389,548 @@ export default function ProfileTab({
                 })()}
               </div>
 
-              {/* Sub tabs & Content */}
-              <div style={{ padding: '24px 0' }}>
-                {/* Top Favorites row if present */}
-                {viewedProfile?.favorites && viewedProfile.favorites.filter(Boolean).length > 0 && (
-                  <div style={{ marginBottom: '28px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-                      <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Heart size={16} color="var(--accent)" fill="var(--accent)" />
-                        Top Favorites
-                      </h3>
-                      <span style={{ fontSize: '12px', color: 'var(--text-dim)', fontWeight: 700 }}>
-                        {viewedProfile.favorites.filter(Boolean).length} titles
-                      </span>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '12px' }}>
-                      {viewedProfile.favorites.filter(Boolean).map(fav => (
-                        <div
-                          key={fav.id || fav.tmdb_id}
-                          onClick={() => onMovieClick && onMovieClick(fav.tmdb_id || fav.id, fav.media_type || 'movie')}
-                          style={{
-                            borderRadius: '10px',
-                            overflow: 'hidden',
-                            border: '1px solid rgba(229, 9, 20, 0.35)',
-                            background: 'var(--surface-solid)',
-                            cursor: 'pointer',
-                            transition: 'transform 0.15s, border-color 0.15s',
-                            position: 'relative'
-                          }}
-                          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.04)'; e.currentTarget.style.borderColor = 'var(--accent)'; }}
-                          onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.borderColor = 'rgba(229, 9, 20, 0.35)'; }}
-                        >
-                          <div style={{ aspectRatio: '2/3', position: 'relative', background: '#120d1c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>🎬</div>
-                            {fav.poster_path && (
-                              <img
-                                src={`https://image.tmdb.org/t/p/w300${fav.poster_path}`}
-                                alt={fav.title}
-                                style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', objectFit: 'cover' }}
-                                loading="lazy"
-                                onError={e => { e.currentTarget.onerror = null; e.currentTarget.style.display = 'none'; }}
-                              />
-                            )}
-                            {fav.score && (
-                              <div style={{ position: 'absolute', zIndex: 2, bottom: '4px', right: '4px', background: 'rgba(0,0,0,0.85)', color: 'var(--gold)', fontSize: '10px', fontWeight: 900, padding: '2px 5px', borderRadius: '4px' }}>
-                                ★ {Number(fav.score).toFixed(1)}
+              {/* FOREIGN PROFILE SUBNAV PILL BAR */}
+              <div className="profile-subnav" style={{
+                display: 'flex',
+                marginTop: '20px',
+                background: 'rgba(15, 12, 22, 0.85)',
+                backdropFilter: 'blur(16px)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '18px',
+                padding: '6px',
+                gap: '4px',
+                overflowX: 'auto',
+                boxShadow: '0 8px 30px rgba(0,0,0,0.35)'
+              }}>
+                {[
+                  { id: 'overview', label: 'Overview', icon: Film },
+                  { id: 'films', label: `Films (${viewedWatched.length})`, icon: Library },
+                  { id: 'reviews', label: `Reviews (${viewedReviewsList.length})`, icon: MessageSquare },
+                  { id: 'lists', label: `Lists (${viewedPublicLists.length})`, icon: List },
+                  { id: 'badges', label: `Badges & XP (${viewedBadges.length})`, icon: Trophy },
+                ].map(tab => {
+                  const isActive = foreignActiveTab === tab.id;
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setForeignActiveTab(tab.id)}
+                      style={{
+                        background: isActive ? 'rgba(136,8,8,0.24)' : 'transparent',
+                        border: isActive ? '1px solid rgba(136,8,8,0.55)' : '1px solid transparent',
+                        padding: '10px 16px',
+                        borderRadius: '12px',
+                        fontSize: '13px',
+                        fontWeight: isActive ? 800 : 600,
+                        whiteSpace: 'nowrap',
+                        color: isActive ? '#FFFFFF' : 'var(--text-muted)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '7px',
+                        transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+                        flexShrink: 0
+                      }}
+                      onMouseEnter={e => {
+                        if (!isActive) {
+                          e.currentTarget.style.color = '#fff';
+                          e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+                        }
+                      }}
+                      onMouseLeave={e => {
+                        if (!isActive) {
+                          e.currentTarget.style.color = 'var(--text-muted)';
+                          e.currentTarget.style.background = 'transparent';
+                        }
+                      }}
+                    >
+                      <Icon size={14} color={isActive ? 'var(--accent)' : 'currentColor'} />
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* FOREIGN PROFILE TAB CONTENT */}
+              <div style={{ padding: '24px 0', display: 'flex', flexDirection: 'column', gap: '28px' }}>
+
+                {/* ── 1. FOREIGN OVERVIEW TAB ── */}
+                {foreignActiveTab === 'overview' && (
+                  <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+                    {/* Top Favorites row if present */}
+                    {viewedProfile?.favorites && viewedProfile.favorites.filter(Boolean).length > 0 && (
+                      <div className="glass" style={{
+                        borderRadius: '20px',
+                        padding: '22px',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        background: 'linear-gradient(180deg, rgba(20,16,28,0.7) 0%, rgba(12,10,18,0.85) 100%)'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                          <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: '#fff' }}>
+                            <Heart size={16} color="var(--red)" fill="var(--red)" />
+                            Top Favorites
+                          </h3>
+                          <span style={{ fontSize: '12px', color: 'var(--text-dim)', fontWeight: 700 }}>
+                            {viewedProfile.favorites.filter(Boolean).length} titles
+                          </span>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '12px' }}>
+                          {viewedProfile.favorites.filter(Boolean).map(fav => (
+                            <div
+                              key={fav.id || fav.tmdb_id}
+                              onClick={() => onMovieClick && onMovieClick(fav.tmdb_id || fav.id, fav.media_type || 'movie')}
+                              style={{
+                                borderRadius: '10px',
+                                overflow: 'hidden',
+                                border: '1px solid rgba(229, 9, 20, 0.35)',
+                                background: 'var(--surface-solid)',
+                                cursor: 'pointer',
+                                transition: 'transform 0.15s, border-color 0.15s',
+                                position: 'relative'
+                              }}
+                              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.04)'; e.currentTarget.style.borderColor = 'var(--accent)'; }}
+                              onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.borderColor = 'rgba(229, 9, 20, 0.35)'; }}
+                            >
+                              <div style={{ aspectRatio: '2/3', position: 'relative', background: '#120d1c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>🎬</div>
+                                {fav.poster_path && (
+                                  <img
+                                    src={`https://image.tmdb.org/t/p/w300${fav.poster_path}`}
+                                    alt={fav.title}
+                                    style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', objectFit: 'cover' }}
+                                    loading="lazy"
+                                    onError={e => { e.currentTarget.onerror = null; e.currentTarget.style.display = 'none'; }}
+                                  />
+                                )}
+                                {fav.score && (
+                                  <div style={{ position: 'absolute', zIndex: 2, bottom: '4px', right: '4px', background: 'rgba(0,0,0,0.85)', color: 'var(--gold)', fontSize: '10px', fontWeight: 900, padding: '2px 5px', borderRadius: '4px' }}>
+                                    ★ {Number(fav.score).toFixed(1)}
+                                  </div>
+                                )}
                               </div>
-                            )}
-                          </div>
-                          <div style={{ padding: '6px 8px' }}>
-                            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {fav.title}
+                              <div style={{ padding: '6px 8px' }}>
+                                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {fav.title}
+                                </div>
+                              </div>
                             </div>
-                          </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                      </div>
+                    )}
 
-                {viewedLibrary.filter(m => m.status === 'watched').length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-dim)', fontSize: '14px' }}>
-                    <div style={{ fontSize: '40px', marginBottom: '12px' }}>🎬</div>
-                    <div style={{ fontWeight: 700, marginBottom: '6px' }}>No watched films yet</div>
-                    <div style={{ fontSize: '13px', opacity: 0.7 }}>This user hasn't logged any films yet.</div>
-                  </div>
-                ) : (
-                  <>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-                      <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>Watched Films</h3>
-                      <span style={{ fontSize: '12px', color: 'var(--text-dim)', fontWeight: 700 }}>{viewedLibrary.filter(m => m.status === 'watched').length} films</span>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px' }}>
-                      {viewedLibrary.filter(m => m.status === 'watched').map(m => (
-                        <div key={m.id || m.tmdb_id} onClick={() => onMovieClick && onMovieClick(m.tmdb_id, m.media_type)}
-                          style={{ borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--surface-solid)', cursor: 'pointer', transition: 'transform 0.15s, border-color 0.15s' }}
-                          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.borderColor = 'rgba(136,8,8,0.5)'; }}
-                          onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.borderColor = 'var(--border)'; }}
-                        >
-                          <div style={{ aspectRatio: '2/3', position: 'relative', background: '#1a1030', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>🎬</div>
-                            {m.poster_path && (
-                              <img
-                                src={`https://image.tmdb.org/t/p/w300${m.poster_path}`}
-                                alt={m.title}
-                                style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', objectFit: 'cover' }}
-                                loading="lazy"
-                                onError={e => { e.currentTarget.onerror = null; e.currentTarget.style.display = 'none'; }}
-                              />
-                            )}
-                            {m.rating > 0 && <div style={{ position: 'absolute', bottom: '4px', right: '4px', background: 'rgba(0,0,0,0.85)', color: 'var(--gold)', fontSize: '10px', fontWeight: 900, padding: '2px 6px', borderRadius: '4px' }}>★ {Number(m.rating).toFixed(1)}</div>}
-                          </div>
-                          <div style={{ padding: '6px 8px' }}>
-                            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.title}</div>
-                            {m.release_year && <div style={{ fontSize: '10px', color: 'var(--text-dim)' }}>{m.release_year}</div>}
-                          </div>
+                    {/* Recent Watched Preview */}
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Library size={17} color="var(--accent)" />
+                          <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: '#fff' }}>Recent Films</h3>
                         </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-
-                {/* Reviews section */}
-                {viewedLibrary.filter(m => m.review && m.review.trim().length > 0).length > 0 && (
-                  <div style={{ marginTop: '32px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-                      <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>Recent Reviews</h3>
-                      <span style={{ fontSize: '12px', color: 'var(--text-dim)', fontWeight: 700 }}>{viewedLibrary.filter(m => m.review && m.review.trim().length > 0).length} reviews</span>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {viewedLibrary
-                        .filter(m => m.review && m.review.trim().length > 0)
-                        .sort((a, b) => new Date(b.date_added || 0) - new Date(a.date_added || 0))
-                        .slice(0, 5)
-                        .map(m => (
-                          <div key={m.id || m.tmdb_id}
-                            onClick={() => onMovieClick && onMovieClick(m.tmdb_id, m.media_type)}
-                            style={{ display: 'flex', gap: '12px', padding: '14px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '14px', cursor: 'pointer', transition: 'border-color 0.15s' }}
-                            onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(136,8,8,0.35)'}
-                            onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+                        {viewedWatched.length > 0 && (
+                          <button
+                            onClick={() => setForeignActiveTab('films')}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: 'var(--accent)',
+                              fontSize: '12px',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
                           >
-                            {m.poster_path && (
-                              <img src={`https://image.tmdb.org/t/p/w92${m.poster_path}`} alt={m.title} style={{ width: '44px', height: '64px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 }} />
-                            )}
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontWeight: 800, fontSize: '13px', marginBottom: '3px' }}>{m.title}</div>
-                              {m.rating > 0 && <div style={{ color: 'var(--gold)', fontSize: '12px', fontWeight: 700, marginBottom: '4px' }}>★ {Number(m.rating).toFixed(1)}</div>}
-                              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', fontStyle: 'italic', lineHeight: 1.5, padding: '6px 10px', background: 'rgba(136,8,8,0.06)', borderLeft: '3px solid rgba(136,8,8,0.5)', borderRadius: '0 6px 6px 0' }}>
-                                "{m.review.slice(0, 160)}{m.review.length > 160 ? '…' : ''}"
+                            See All ({viewedWatched.length}) →
+                          </button>
+                        )}
+                      </div>
+
+                      {viewedWatched.length === 0 ? (
+                        <div className="glass" style={{ textAlign: 'center', padding: '36px 20px', borderRadius: '16px', color: 'var(--text-dim)', fontSize: '13px' }}>
+                          <div style={{ fontSize: '36px', marginBottom: '8px' }}>🎬</div>
+                          <div style={{ fontWeight: 700, color: 'var(--text)', marginBottom: '4px' }}>No watched films yet</div>
+                          <div>This user hasn't logged any films yet.</div>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px' }}>
+                          {viewedWatched.slice(0, 6).map(m => (
+                            <div key={m.id || m.tmdb_id} onClick={() => onMovieClick && onMovieClick(m.tmdb_id, m.media_type)}
+                              style={{ borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--surface-solid)', cursor: 'pointer', transition: 'transform 0.15s, border-color 0.15s' }}
+                              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.borderColor = 'rgba(136,8,8,0.5)'; }}
+                              onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.borderColor = 'var(--border)'; }}
+                            >
+                              <div style={{ aspectRatio: '2/3', position: 'relative', background: '#1a1030', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>🎬</div>
+                                {m.poster_path && (
+                                  <img
+                                    src={`https://image.tmdb.org/t/p/w300${m.poster_path}`}
+                                    alt={m.title}
+                                    style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', objectFit: 'cover' }}
+                                    loading="lazy"
+                                    onError={e => { e.currentTarget.onerror = null; e.currentTarget.style.display = 'none'; }}
+                                  />
+                                )}
+                                {m.rating > 0 && <div style={{ position: 'absolute', bottom: '4px', right: '4px', background: 'rgba(0,0,0,0.85)', color: 'var(--gold)', fontSize: '10px', fontWeight: 900, padding: '2px 6px', borderRadius: '4px' }}>★ {Number(m.rating).toFixed(1)}</div>}
+                              </div>
+                              <div style={{ padding: '6px 8px' }}>
+                                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.title}</div>
+                                {m.release_year && <div style={{ fontSize: '10px', color: 'var(--text-dim)' }}>{m.release_year}</div>}
                               </div>
                             </div>
-                          </div>
-                        ))
-                      }
+                          ))}
+                        </div>
+                      )}
                     </div>
+
+                    {/* Recent Reviews Preview */}
+                    {viewedReviewsList.length > 0 && (
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <MessageSquare size={17} color="var(--accent)" />
+                            <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: '#fff' }}>Recent Reviews</h3>
+                          </div>
+                          <button
+                            onClick={() => setForeignActiveTab('reviews')}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: 'var(--accent)',
+                              fontSize: '12px',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            See All ({viewedReviewsList.length}) →
+                          </button>
+                        </div>
+                        <ReviewsListView reviews={viewedReviewsList.slice(0, 3)} onMovieClick={onMovieClick} />
+                      </div>
+                    )}
+
+                    {/* Lists Preview */}
+                    {viewedPublicLists.length > 0 && (
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <List size={17} color="var(--accent)" />
+                            <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: '#fff' }}>Lists by {viewedProfile?.displayName || viewedProfile?.username}</h3>
+                          </div>
+                          <button
+                            onClick={() => setForeignActiveTab('lists')}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: 'var(--accent)',
+                              fontSize: '12px',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            See All ({viewedPublicLists.length}) →
+                          </button>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
+                          {viewedPublicLists.slice(0, 2).map(list => {
+                            const entries = list.entries || [];
+                            const previewPosters = entries.filter(e => e.poster_path).slice(0, 5);
+                            return (
+                              <div
+                                key={list.id}
+                                onClick={() => setSelectedListModal(list)}
+                                className="glass"
+                                style={{
+                                  borderRadius: '16px',
+                                  border: '1px solid rgba(255,255,255,0.08)',
+                                  padding: '16px',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
+                                  background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)'
+                                }}
+                                onMouseEnter={e => {
+                                  e.currentTarget.style.borderColor = 'rgba(136,8,8,0.45)';
+                                  e.currentTarget.style.transform = 'translateY(-2px)';
+                                }}
+                                onMouseLeave={e => {
+                                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                                  e.currentTarget.style.transform = 'translateY(0)';
+                                }}
+                              >
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                                  <h4 style={{ fontSize: '14.5px', fontWeight: 800, color: '#fff', margin: 0 }}>{list.title}</h4>
+                                  <span style={{ fontSize: '11px', color: 'var(--text-dim)' }}>{entries.length} films</span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', margin: '2px 0 10px', overflow: 'hidden' }}>
+                                  {previewPosters.map((movie, idx) => (
+                                    <div key={movie.tmdb_id || idx} style={{ flex: '1 1 0', aspectRatio: '2/3', borderRadius: '4px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', background: '#191522' }}>
+                                      <img src={`https://image.tmdb.org/t/p/w185${movie.poster_path}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    </div>
+                                  ))}
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', fontSize: '11px', color: 'var(--text-dim)' }}>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <Heart size={12} color="var(--red)" fill="var(--red)" /> {list.likesCount || 0}
+                                  </span>
+                                  <span style={{ color: 'var(--accent)', fontWeight: 700 }}>View list →</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {/* Lists Section for other user */}
-                {userCreatedLists.filter(l => l.isPublic !== false).length > 0 && (
-                  <div style={{ marginTop: '32px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                {/* ── 2. FOREIGN FILMS TAB ── */}
+                {foreignActiveTab === 'films' && (
+                  <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Library size={18} color="var(--accent)" />
+                        <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: '#fff' }}>Watched Library</h3>
+                        <span style={{ fontSize: '12px', color: 'var(--text-dim)', fontWeight: 700 }}>{viewedWatched.length} films</span>
+                      </div>
+                    </div>
+
+                    {viewedWatched.length === 0 ? (
+                      <div className="glass" style={{ textAlign: 'center', padding: '60px 20px', borderRadius: '20px', color: 'var(--text-dim)' }}>
+                        <div style={{ fontSize: '48px', marginBottom: '12px' }}>🎬</div>
+                        <div style={{ fontWeight: 800, fontSize: '16px', color: '#fff', marginBottom: '6px' }}>No watched films yet</div>
+                        <div style={{ fontSize: '13px' }}>This user hasn't logged any films in their watched history.</div>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '14px' }}>
+                        {viewedWatched.map(m => (
+                          <div key={m.id || m.tmdb_id} onClick={() => onMovieClick && onMovieClick(m.tmdb_id, m.media_type)}
+                            style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--surface-solid)', cursor: 'pointer', transition: 'transform 0.15s, border-color 0.15s, box-shadow 0.15s' }}
+                            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.borderColor = 'rgba(136,8,8,0.5)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.4)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = ''; }}
+                          >
+                            <div style={{ aspectRatio: '2/3', position: 'relative', background: '#1a1030', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>🎬</div>
+                              {m.poster_path && (
+                                <img
+                                  src={`https://image.tmdb.org/t/p/w300${m.poster_path}`}
+                                  alt={m.title}
+                                  style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', objectFit: 'cover' }}
+                                  loading="lazy"
+                                  onError={e => { e.currentTarget.onerror = null; e.currentTarget.style.display = 'none'; }}
+                                />
+                              )}
+                              {m.rating > 0 && (
+                                <div style={{ position: 'absolute', bottom: '6px', right: '6px', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)', color: 'var(--gold)', fontSize: '10.5px', fontWeight: 900, padding: '2px 7px', borderRadius: '5px' }}>
+                                  ★ {Number(m.rating).toFixed(1)}
+                                </div>
+                              )}
+                            </div>
+                            <div style={{ padding: '8px 10px' }}>
+                              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.title}</div>
+                              {m.release_year && <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginTop: '2px' }}>{m.release_year}</div>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ── 3. FOREIGN REVIEWS TAB (LIST STYLE) ── */}
+                {foreignActiveTab === 'reviews' && (
+                  <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <MessageSquare size={18} color="var(--accent)" />
+                        <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: '#fff' }}>Reviews by {viewedProfile?.displayName || viewedProfile?.username}</h3>
+                        <span style={{ fontSize: '12px', color: 'var(--text-dim)', fontWeight: 700 }}>{viewedReviewsList.length} reviews</span>
+                      </div>
+                    </div>
+
+                    <ReviewsListView reviews={viewedReviewsList} onMovieClick={onMovieClick} />
+                  </div>
+                )}
+
+                {/* ── 4. FOREIGN LISTS TAB ── */}
+                {foreignActiveTab === 'lists' && (
+                  <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <List size={18} color="var(--accent)" />
-                        <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>Lists by {viewedProfile?.displayName || viewedProfile?.username}</h3>
+                        <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: '#fff' }}>Curated Lists</h3>
+                        <span style={{ fontSize: '12px', color: 'var(--text-dim)', fontWeight: 700 }}>{viewedPublicLists.length} public lists</span>
                       </div>
-                      <span style={{ fontSize: '12px', color: 'var(--text-dim)', fontWeight: 700 }}>
-                        {userCreatedLists.filter(l => l.isPublic !== false).length} lists
-                      </span>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
-                      {userCreatedLists.filter(l => l.isPublic !== false).map(list => {
-                        const entries = list.entries || [];
-                        const previewPosters = entries.filter(e => e.poster_path).slice(0, 5);
-
-                        return (
-                          <div
-                            key={list.id}
-                            onClick={() => setSelectedListModal(list)}
-                            className="glass"
-                            style={{
-                              borderRadius: '16px',
-                              border: '1px solid rgba(255,255,255,0.08)',
-                              padding: '16px',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
-                              background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)'
-                            }}
-                            onMouseEnter={e => {
-                              e.currentTarget.style.borderColor = 'rgba(136,8,8,0.45)';
-                              e.currentTarget.style.transform = 'translateY(-2px)';
-                            }}
-                            onMouseLeave={e => {
-                              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
-                              e.currentTarget.style.transform = 'translateY(0)';
-                            }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                              <h4 style={{ fontSize: '14.5px', fontWeight: 800, color: '#fff', margin: 0 }}>{list.title}</h4>
-                              <span style={{ fontSize: '11px', color: 'var(--text-dim)' }}>{entries.length} films</span>
+                    {viewedPublicLists.length === 0 ? (
+                      <div className="glass" style={{ textAlign: 'center', padding: '60px 20px', borderRadius: '20px', color: 'var(--text-dim)' }}>
+                        <div style={{ fontSize: '48px', marginBottom: '12px' }}>📚</div>
+                        <div style={{ fontWeight: 800, fontSize: '16px', color: '#fff', marginBottom: '6px' }}>No lists created yet</div>
+                        <div style={{ fontSize: '13px' }}>This user hasn't published any public movie lists.</div>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
+                        {viewedPublicLists.map(list => {
+                          const entries = list.entries || [];
+                          const previewPosters = entries.filter(e => e.poster_path).slice(0, 5);
+                          return (
+                            <div
+                              key={list.id}
+                              onClick={() => setSelectedListModal(list)}
+                              className="glass"
+                              style={{
+                                borderRadius: '16px',
+                                border: '1px solid rgba(255,255,255,0.08)',
+                                padding: '16px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
+                                background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)'
+                              }}
+                              onMouseEnter={e => {
+                                e.currentTarget.style.borderColor = 'rgba(136,8,8,0.45)';
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                              }}
+                              onMouseLeave={e => {
+                                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                                e.currentTarget.style.transform = 'translateY(0)';
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                                <h4 style={{ fontSize: '14.5px', fontWeight: 800, color: '#fff', margin: 0 }}>{list.title}</h4>
+                                <span style={{ fontSize: '11px', color: 'var(--text-dim)' }}>{entries.length} films</span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', margin: '2px 0 10px', overflow: 'hidden' }}>
+                                {previewPosters.map((movie, idx) => (
+                                  <div key={movie.tmdb_id || idx} style={{ flex: '1 1 0', aspectRatio: '2/3', borderRadius: '4px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', background: '#191522' }}>
+                                    <img src={`https://image.tmdb.org/t/p/w185${movie.poster_path}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                  </div>
+                                ))}
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', fontSize: '11px', color: 'var(--text-dim)' }}>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <Heart size={12} color="var(--red)" fill="var(--red)" /> {list.likesCount || 0}
+                                </span>
+                                <span style={{ color: 'var(--accent)', fontWeight: 700 }}>View list →</span>
+                              </div>
                             </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', margin: '2px 0 10px', overflow: 'hidden' }}>
-                              {previewPosters.map((movie, idx) => (
-                                <div key={movie.tmdb_id || idx} style={{ flex: '1 1 0', aspectRatio: '2/3', borderRadius: '4px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', background: '#191522' }}>
-                                  <img src={`https://image.tmdb.org/t/p/w185${movie.poster_path}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                </div>
-                              ))}
-                            </div>
-
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', fontSize: '11px', color: 'var(--text-dim)' }}>
-                              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <Heart size={12} color="var(--red)" fill="var(--red)" /> {list.likesCount || 0}
-                              </span>
-                              <span style={{ color: 'var(--accent)', fontWeight: 700 }}>View list →</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
+
+                {/* ── 5. FOREIGN BADGES & XP TAB ── */}
+                {foreignActiveTab === 'badges' && (
+                  <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Trophy size={18} color="var(--accent)" />
+                        <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: '#fff' }}>Badges & Cinematic Prestige</h3>
+                        <span style={{ fontSize: '12px', color: 'var(--text-dim)', fontWeight: 700 }}>{viewedBadges.length} unlocked</span>
+                      </div>
+                    </div>
+
+                    {/* Stats & Rank Card */}
+                    <div className="glass" style={{
+                      borderRadius: '20px',
+                      padding: '24px',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      background: 'linear-gradient(135deg, rgba(20,16,30,0.85) 0%, rgba(12,10,18,0.95) 100%)',
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                      gap: '16px'
+                    }}>
+                      <div style={{ borderRight: '1px solid rgba(255,255,255,0.06)', paddingRight: '16px' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total Watched</div>
+                        <div style={{ fontSize: '26px', fontWeight: 900, color: '#fff', marginTop: '4px' }}>{viewedWatched.length}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>logged entries</div>
+                      </div>
+                      <div style={{ borderRight: '1px solid rgba(255,255,255,0.06)', paddingRight: '16px' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Reviews Written</div>
+                        <div style={{ fontSize: '26px', fontWeight: 900, color: 'var(--accent)', marginTop: '4px' }}>{viewedReviewsList.length}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>critiques</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Estimated XP</div>
+                        <div style={{ fontSize: '26px', fontWeight: 900, color: 'var(--gold)', marginTop: '4px' }}>{(viewedWatched.length * 10) + (viewedReviewsList.length * 10)} XP</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>Level {Math.floor(Math.sqrt(((viewedWatched.length * 10) + (viewedReviewsList.length * 10)) / 25)) + 1} Cinephile</div>
+                      </div>
+                    </div>
+
+                    {/* Badges Grid */}
+                    {viewedBadges.length === 0 ? (
+                      <div className="glass" style={{ textAlign: 'center', padding: '50px 20px', borderRadius: '18px', color: 'var(--text-dim)' }}>
+                        <div style={{ fontSize: '42px', marginBottom: '10px' }}>🎖️</div>
+                        <div style={{ fontWeight: 800, fontSize: '15px', color: '#fff', marginBottom: '4px' }}>No Badges Yet</div>
+                        <div style={{ fontSize: '12px' }}>This user hasn't unlocked any badges or achievements yet.</div>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '14px' }}>
+                        {viewedBadges.map(badge => {
+                          const colors = BADGE_COLORS[badge] || { border: '1px solid var(--border)', color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.03)' };
+                          return (
+                            <div
+                              key={badge}
+                              className="glass"
+                              style={{
+                                padding: '16px',
+                                borderRadius: '16px',
+                                border: '1px solid rgba(255,255,255,0.08)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '14px',
+                                background: 'rgba(255,255,255,0.02)'
+                              }}
+                            >
+                              <div style={{
+                                width: '42px',
+                                height: '42px',
+                                borderRadius: '12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '20px',
+                                background: colors.bg,
+                                border: colors.border
+                              }}>
+                                🎖️
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{
+                                  fontSize: '13px',
+                                  fontWeight: 800,
+                                  color: colors.color || '#fff',
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.04em',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap'
+                                }}>
+                                  {badge}
+                                </div>
+                                <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginTop: '2px' }}>
+                                  Unlocked Milestone
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
               </div>
             </div>
           )}
@@ -1707,6 +2258,7 @@ export default function ProfileTab({
           }}>
             {[
               { id: 'overview', label: 'Overview', icon: Film },
+              { id: 'reviews', label: `Reviews (${reviewsCount})`, icon: MessageSquare },
               { id: 'lists', label: `Lists (${userCreatedLists.length})`, icon: List },
               { id: 'stats', label: 'Statistics', icon: BarChart3 },
               { id: 'calendar', label: 'Watch Calendar', icon: Calendar },
@@ -2258,6 +2810,31 @@ export default function ProfileTab({
                     })}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* ── REVIEWS TAB (LETTERBOXD-STYLE LIST) ── */}
+            {profileActiveSubTab === 'reviews' && (
+              <div className="animate-fade-in" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{
+                      width: '36px', height: '36px', borderRadius: '10px',
+                      background: 'rgba(136,8,8,0.18)', border: '1px solid rgba(136,8,8,0.4)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>
+                      <MessageSquare size={18} color="var(--accent)" />
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: '#fff' }}>My Film Reviews</h3>
+                      <span style={{ fontSize: '12px', color: 'var(--text-dim)', fontWeight: 600 }}>
+                        {ownReviews.length} thoughts and critiques logged
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <ReviewsListView reviews={ownReviews} onMovieClick={onMovieClick} />
               </div>
             )}
 

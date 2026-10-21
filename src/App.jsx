@@ -64,7 +64,7 @@ function AppInner() {
     }
 
     // If navigating to a personal tracking tab that now lives inside Profile, redirect to profile sub-tab!
-    if (['stats', 'calendar', 'wrapped', 'achievements', 'constellation', 'shop', 'diary', 'watchlist'].includes(newTab)) {
+    if (['stats', 'calendar', 'wrapped', 'achievements', 'constellation', 'shop', 'diary', 'watchlist', 'reviews'].includes(newTab)) {
       setProfileSubTab(newTab);
       setActiveTab('profile');
       if (!replace) {
@@ -81,6 +81,11 @@ function AppInner() {
         }
       } catch (e) {}
       return;
+    }
+
+    // Always reset to Overview when navigating back to Profile
+    if (newTab === 'profile') {
+      setProfileSubTab('overview');
     }
 
     const resolved = newTab === 'landing' ? 'explore' : newTab;
