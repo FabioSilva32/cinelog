@@ -7,7 +7,7 @@ import {
   ChevronDown, ChevronUp, Crown, ExternalLink, List, BookOpen, Layers,
   MessageSquare, Library, Bookmark
 } from 'lucide-react';
-import { ACHIEVEMENTS, BORDER_STYLES, BADGE_COLORS, isUserCreator } from '../utils/achievements';
+import { ACHIEVEMENTS, BORDER_STYLES, BADGE_COLORS, getBadgeColors, isUserCreator } from '../utils/achievements';
 import AvatarWithBorder, { DEFAULT_GREY_AVATAR } from './AvatarWithBorder';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
 import { ELENA_PROFILE, ELENA_LIBRARY, TESTER_PROFILE, TESTER_LIBRARY } from '../mockData';
@@ -529,13 +529,29 @@ export default function ProfileTab({
       profPromise.then(async ({ data: prof }) => {
         const resolvedUserId = prof?.id || (isUUID(targetId) ? targetId : null);
         let lib = [];
+        let actData = [];
         if (resolvedUserId) {
-          const { data: libData } = await supabase
-            .from('library')
-            .select('*')
-            .eq('user_id', resolvedUserId)
-            .order('date_added', { ascending: false });
-          lib = libData || [];
+          const [libRes, actRes] = await Promise.all([
+            supabase
+              .from('library')
+              .select('*')
+              .eq('user_id', resolvedUserId)
+              .order('date_added', { ascending: false }),
+            supabase
+              .from('activity_feed')
+              .select('title, media_type, created_at, action_type')
+              .eq('user_id', resolvedUserId)
+              .in('action_type', ['watched', 'rated', 'reviewed'])
+              .order('created_at', { ascending: false })
+          ]);
+          lib = libRes.data || [];
+          actData = actRes.data || [];
+        }
+
+        const actMap = {};
+        for (const a of (actData || [])) {
+          const key = (a.title || '').trim().toLowerCase();
+          if (!actMap[key]) actMap[key] = a.created_at;
         }
 
         if (prof) {
@@ -574,10 +590,28 @@ export default function ProfileTab({
               }
             } catch {}
           }
+
+          // Check if activity_feed has a newer log/rating timestamp
+          const matchTitle = (row.title || '').trim().toLowerCase();
+          const activityTimestamp = actMap[matchTitle];
+          let effectiveWatchDate = watchDate || (row.status === 'watched' ? row.date_added : null);
+          let effectiveDateAdded = row.date_added;
+          if (activityTimestamp) {
+            const actTime = new Date(activityTimestamp).getTime();
+            const currWatchTime = new Date(effectiveWatchDate || 0).getTime();
+            if (actTime > currWatchTime) {
+              effectiveWatchDate = activityTimestamp;
+            }
+            const currAddedTime = new Date(effectiveDateAdded || 0).getTime();
+            if (actTime > currAddedTime) {
+              effectiveDateAdded = activityTimestamp;
+            }
+          }
+
           return {
             ...row,
-            watch_date: watchDate || (row.status === 'watched' ? row.date_added : null),
-            date_added: row.date_added,
+            watch_date: effectiveWatchDate,
+            date_added: effectiveDateAdded,
             title: getEnhancedMovieTitle(row) || row.title,
             review: (row.review || '').replace(/__EPISODE_DATA__:.+$/s, '').replace(/__EPISODE_RATINGS__:.+$/s, '').trim()
           };
@@ -1480,7 +1514,7 @@ export default function ProfileTab({
 
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
                         {displayedBadges.map(b => {
-                          const colors = BADGE_COLORS[b] || { border: '1px solid var(--border)', color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.03)' };
+                          const colors = getBadgeColors(b);
                           return (
                             <button
                               key={b}
@@ -1500,7 +1534,10 @@ export default function ProfileTab({
                                 gap: '5px',
                                 transition: 'all 0.2s ease',
                                 cursor: 'pointer',
-                                ...colors
+                                background: colors.background,
+                                backgroundColor: colors.background,
+                                color: colors.color,
+                                border: colors.border
                               }}
                               onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
                               onMouseLeave={e => e.currentTarget.style.transform = ''}
@@ -2244,7 +2281,7 @@ export default function ProfileTab({
                       ) : (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: '12px' }}>
                           {viewedBadges.map(badge => {
-                            const colors = BADGE_COLORS[badge] || { border: '1px solid var(--border)', color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.03)' };
+                            const colors = getBadgeColors(badge);
                             const ach = ACHIEVEMENTS.find(a => a.reward?.badgeName === badge);
                             return (
                               <div
@@ -2254,11 +2291,12 @@ export default function ProfileTab({
                                 style={{
                                   padding: '14px 16px',
                                   borderRadius: '14px',
-                                  border: '1px solid rgba(255,255,255,0.08)',
+                                  border: colors.border,
                                   display: 'flex',
                                   alignItems: 'center',
                                   gap: '12px',
-                                  background: colors.bg || 'rgba(255,255,255,0.02)',
+                                  background: colors.background,
+                                  backgroundColor: colors.background,
                                   cursor: 'pointer',
                                   transition: 'all 0.15s ease'
                                 }}
@@ -2544,7 +2582,7 @@ export default function ProfileTab({
 
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', width: '100%', alignItems: 'center' }}>
                     {displayedBadges.map(badgeName => {
-                      const colors = BADGE_COLORS[badgeName] || { border: '1px solid var(--border)', color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.03)' };
+                      const colors = getBadgeColors(badgeName);
                       return (
                         <span
                           key={badgeName}
@@ -2561,7 +2599,10 @@ export default function ProfileTab({
                             alignItems: 'center',
                             gap: '5px',
                             transition: 'all 0.2s ease',
-                            ...colors
+                            background: colors.background,
+                            backgroundColor: colors.background,
+                            color: colors.color,
+                            border: colors.border
                           }}
                         >
                           {badgeName}
@@ -3681,7 +3722,7 @@ export default function ProfileTab({
         const badgeName = selectedBadgeModal;
         const ach = ACHIEVEMENTS.find(a => a.reward?.badgeName === badgeName);
         const shopItem = SHOP_BADGES.find(b => b.name === badgeName);
-        const colors = BADGE_COLORS[badgeName] || { border: '1px solid var(--border)', color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.03)' };
+        const colors = getBadgeColors(badgeName);
         
         const description = ach?.description || shopItem?.desc || (isViewedCreator ? 'Exclusive title unlocked for CineLog Creator.' : 'Prestige badge earned through cinephile milestones.');
         const targetRequirement = ach ? `${ach.target} ${ach.category === 'director' ? 'films by this director' : 'films logged'}` : (shopItem ? `Shop Unlock (${shopItem.cost} CinePoints)` : 'Milestone Achievement');
@@ -3749,8 +3790,9 @@ export default function ProfileTab({
                 width: '76px',
                 height: '76px',
                 borderRadius: '22px',
-                background: colors.bg || 'rgba(255,255,255,0.05)',
-                border: colors.border || '1px solid var(--border)',
+                background: colors.background,
+                backgroundColor: colors.background,
+                border: colors.border,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -3774,7 +3816,10 @@ export default function ProfileTab({
                 textTransform: 'uppercase',
                 letterSpacing: '0.06em',
                 marginBottom: '18px',
-                ...colors
+                background: colors.background,
+                backgroundColor: colors.background,
+                color: colors.color,
+                border: colors.border
               }}>
                 {ach?.category ? `${ach.category} Badge` : 'Title Badge'}
               </div>

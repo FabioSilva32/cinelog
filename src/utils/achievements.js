@@ -500,6 +500,29 @@ export const BADGE_COLORS = {
   '35mm Purist': { border: '1px solid #c084fc', color: '#c084fc', bg: 'rgba(168,85,247,0.18)' }
 };
 
+// Guarantee valid CSS background property on all catalog items
+Object.keys(BADGE_COLORS).forEach(k => {
+  if (BADGE_COLORS[k]) {
+    BADGE_COLORS[k].background = BADGE_COLORS[k].background || BADGE_COLORS[k].bg;
+  }
+});
+
+export function getBadgeColors(badgeName) {
+  const item = BADGE_COLORS[badgeName] || {
+    border: '1px solid rgba(255,255,255,0.16)',
+    color: '#e2e8f0',
+    bg: 'rgba(255,255,255,0.06)',
+    background: 'rgba(255,255,255,0.06)'
+  };
+  return {
+    ...item,
+    background: item.background || item.bg || 'rgba(255,255,255,0.06)',
+    bg: item.bg || item.background || 'rgba(255,255,255,0.06)',
+    color: item.color || '#fff',
+    border: item.border || '1px solid rgba(255,255,255,0.16)'
+  };
+}
+
 // ── CREATOR RECOGNITION ─────────────────────────────────────────────────────
 export function isUserCreator(user) {
   if (!user) return false;

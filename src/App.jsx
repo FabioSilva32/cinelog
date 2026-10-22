@@ -1024,11 +1024,20 @@ function AppInner() {
           console.warn('Custom lists session sync error:', e);
         }
 
-        // Parallel load of movie entries from Supabase
-        supabase.from('library').select('*').eq('user_id', session.user.id)
-          .then(({ data: libRows, error: libErr }) => {
+        // Parallel load of movie entries & latest activity logs from Supabase
+        Promise.all([
+          supabase.from('library').select('*').eq('user_id', session.user.id),
+          supabase.from('activity_feed').select('title, media_type, created_at, action_type').eq('user_id', session.user.id).in('action_type', ['watched', 'rated', 'reviewed']).order('created_at', { ascending: false })
+        ])
+          .then(([{ data: libRows, error: libErr }, { data: actRows }]) => {
             if (libErr) {
               console.error('Supabase library load error:', libErr);
+            }
+
+            const actMap = {};
+            for (const a of (actRows || [])) {
+              const key = (a.title || '').trim().toLowerCase();
+              if (!actMap[key]) actMap[key] = a.created_at;
             }
 
             if (libRows && libRows.length > 0) {
@@ -1054,6 +1063,22 @@ function AppInner() {
                     }
                   }
                 }
+                const matchTitle = (row.title || '').trim().toLowerCase();
+                const activityTimestamp = actMap[matchTitle];
+                let effectiveWatchDate = parsedEpisodeData.watch_date || (row.status === 'watched' ? row.date_added : null);
+                let effectiveDateAdded = row.date_added;
+                if (activityTimestamp) {
+                  const actTime = new Date(activityTimestamp).getTime();
+                  const currWatchTime = new Date(effectiveWatchDate || 0).getTime();
+                  if (actTime > currWatchTime) {
+                    effectiveWatchDate = activityTimestamp;
+                  }
+                  const currAddedTime = new Date(effectiveDateAdded || 0).getTime();
+                  if (actTime > currAddedTime) {
+                    effectiveDateAdded = activityTimestamp;
+                  }
+                }
+
                 return {
                   id: row.id,
                   tmdb_id: row.tmdb_id,
@@ -1074,8 +1099,8 @@ function AppInner() {
                   season_dates: parsedEpisodeData.season_dates || row.season_dates || {},
                   episode_data: parsedEpisodeData,
                   favorite: row.favorite,
-                  date_added: row.date_added,
-                  watch_date: parsedEpisodeData.watch_date || (row.status === 'watched' ? row.date_added : null),
+                  date_added: effectiveDateAdded,
+                  watch_date: effectiveWatchDate,
                   tags: row.tags,
                   director: row.director,
                 };
@@ -1170,9 +1195,13 @@ function AppInner() {
       const cleanId = (normalizedMovie.id && uuidRegex.test(normalizedMovie.id)) ? normalizedMovie.id : crypto.randomUUID();
       normalizedMovie.id = cleanId;
 
+      const nowIso = new Date().toISOString();
       const watchDateIso = normalizedMovie.watch_date
         ? (normalizedMovie.watch_date.includes('T') ? normalizedMovie.watch_date : `${normalizedMovie.watch_date}T12:00:00Z`)
-        : (normalizedMovie.date_added || new Date().toISOString());
+        : nowIso;
+
+      normalizedMovie.watch_date = normalizedMovie.status === 'watched' ? watchDateIso : null;
+      normalizedMovie.date_added = normalizedMovie.status === 'watched' ? watchDateIso : (normalizedMovie.date_added || nowIso);
 
       const payload = {
         id: cleanId,
@@ -1188,7 +1217,7 @@ function AppInner() {
         review: dbReview,
         favorite: normalizedMovie.favorite,
         tags: normalizedMovie.tags,
-        date_added: normalizedMovie.status === 'watched' ? watchDateIso : (normalizedMovie.date_added || new Date().toISOString()),
+        date_added: normalizedMovie.status === 'watched' ? watchDateIso : (normalizedMovie.date_added || nowIso),
       };
 
       // Robust check-and-update/insert to avoid any unique constraint or onConflict errors
