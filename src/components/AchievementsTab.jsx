@@ -4,13 +4,13 @@ import { ACHIEVEMENTS, BORDER_STYLES, isUserCreator } from '../utils/achievement
 import { syncUserBadges } from '../utils/badgesSync';
 import AvatarWithBorder from './AvatarWithBorder';
 
-export default function AchievementsTab({ library, currentUser, onUpdateProfile }) {
+export default function AchievementsTab({ library, currentUser, onUpdateProfile, readOnly = false }) {
   // Synchronize unlocked badges to Supabase user_badges table
   useEffect(() => {
-    if (currentUser?.id && Array.isArray(library) && library.length > 0) {
+    if (!readOnly && currentUser?.id && Array.isArray(library) && library.length > 0) {
       syncUserBadges(currentUser, library);
     }
-  }, [currentUser?.id, library?.length]);
+  }, [currentUser?.id, library?.length, readOnly]);
 
   // Compute unlocked status
   const achievementsStatus = ACHIEVEMENTS.map(ach => {
@@ -37,10 +37,13 @@ export default function AchievementsTab({ library, currentUser, onUpdateProfile 
   const equippedBorder = currentUser?.equippedBorder || 'none';
 
   const handleEquipBorder = (borderId) => {
+    if (readOnly) return;
     if (!unlockedBorders.has(borderId)) return;
-    onUpdateProfile({
-      equippedBorder: borderId
-    });
+    if (onUpdateProfile) {
+      onUpdateProfile({
+        equippedBorder: borderId
+      });
+    }
   };
 
   return (
@@ -167,9 +170,13 @@ export default function AchievementsTab({ library, currentUser, onUpdateProfile 
                     {isEquipped ? (
                       <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent)', background: 'rgba(136,8,8,0.15)', padding: '4px 10px', borderRadius: '4px' }}>Equipped</span>
                     ) : isUnlocked ? (
-                      <button onClick={() => handleEquipBorder(borderId)} className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: '11.5px', height: 'auto' }}>
-                        Equip
-                      </button>
+                      readOnly ? (
+                        <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--green)', padding: '4px 8px' }}>Unlocked</span>
+                      ) : (
+                        <button onClick={() => handleEquipBorder(borderId)} className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: '11.5px', height: 'auto' }}>
+                          Equip
+                        </button>
+                      )
                     ) : (
                       <Lock size={12} color="var(--text-dim)" style={{ marginRight: '8px' }} />
                     )}

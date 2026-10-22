@@ -1075,6 +1075,7 @@ function AppInner() {
                   episode_data: parsedEpisodeData,
                   favorite: row.favorite,
                   date_added: row.date_added,
+                  watch_date: parsedEpisodeData.watch_date || (row.status === 'watched' ? row.date_added : null),
                   tags: row.tags,
                   director: row.director,
                 };
@@ -1150,7 +1151,11 @@ function AppInner() {
         season_dates: normalizedMovie.season_dates || {}
       };
 
-      const hasEpisodeData = Object.keys(epData.ratings || {}).length > 0 ||
+      if (normalizedMovie.watch_date) {
+        epData.watch_date = normalizedMovie.watch_date;
+      }
+      const hasEpisodeData = epData.watch_date ||
+                             Object.keys(epData.ratings || {}).length > 0 ||
                              Object.keys(epData.notes || {}).length > 0 ||
                              Object.keys(epData.dates || {}).length > 0 ||
                              Object.keys(epData.season_ratings || {}).length > 0 ||
@@ -1164,6 +1169,10 @@ function AppInner() {
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       const cleanId = (normalizedMovie.id && uuidRegex.test(normalizedMovie.id)) ? normalizedMovie.id : crypto.randomUUID();
       normalizedMovie.id = cleanId;
+
+      const watchDateIso = normalizedMovie.watch_date
+        ? (normalizedMovie.watch_date.includes('T') ? normalizedMovie.watch_date : `${normalizedMovie.watch_date}T12:00:00Z`)
+        : (normalizedMovie.date_added || new Date().toISOString());
 
       const payload = {
         id: cleanId,
@@ -1179,6 +1188,7 @@ function AppInner() {
         review: dbReview,
         favorite: normalizedMovie.favorite,
         tags: normalizedMovie.tags,
+        date_added: normalizedMovie.status === 'watched' ? watchDateIso : (normalizedMovie.date_added || new Date().toISOString()),
       };
 
       // Robust check-and-update/insert to avoid any unique constraint or onConflict errors
@@ -1779,59 +1789,64 @@ function AppInner() {
             background: 'rgba(9, 7, 15, 0.94)',
             backdropFilter: 'blur(16px)',
             borderBottom: '1px solid var(--border)',
-            padding: '12px 24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            maxWidth: '1280px',
-            margin: '0 auto',
             width: '100%',
             boxSizing: 'border-box'
           }}>
-            <button
-              onClick={() => closeModal('user')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid var(--border)',
-                borderRadius: '8px',
-                padding: '7px 16px',
-                color: '#fff',
-                fontSize: '13px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.15s'
-              }}
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.14)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
-            >
-              ← Back to Social
-            </button>
-            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-dim)' }}>
-              Viewing {viewingUserProfile.display_name || viewingUserProfile.displayName || viewingUserProfile.username || 'Profile'}
+            <div style={{
+              maxWidth: '1440px',
+              margin: '0 auto',
+              padding: '12px 24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              width: '100%',
+              boxSizing: 'border-box'
+            }}>
+              <button
+                onClick={() => closeModal('user')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '8px',
+                  padding: '7px 16px',
+                  color: '#fff',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s'
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.14)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+              >
+                ← Back to Social
+              </button>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-dim)' }}>
+                Viewing {viewingUserProfile.display_name || viewingUserProfile.displayName || viewingUserProfile.username || 'Profile'}
+              </div>
+              <button
+                onClick={() => closeModal('user')}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  fontSize: '18px',
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  borderRadius: '6px'
+                }}
+                onMouseEnter={e => e.currentTarget.style.color = '#fff'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+                title="Close Profile"
+              >
+                ✕
+              </button>
             </div>
-            <button
-              onClick={() => closeModal('user')}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--text-muted)',
-                fontSize: '18px',
-                cursor: 'pointer',
-                padding: '4px 8px',
-                borderRadius: '6px'
-              }}
-              onMouseEnter={e => e.currentTarget.style.color = '#fff'}
-              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
-              title="Close Profile"
-            >
-              ✕
-            </button>
           </div>
 
-          <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '16px 20px 40px' }}>
+          <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '24px 24px 64px', width: '100%', boxSizing: 'border-box' }}>
             <ProfileTab
               targetUser={viewingUserProfile}
               currentUser={currentUser}
