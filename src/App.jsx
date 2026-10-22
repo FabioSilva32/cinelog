@@ -29,6 +29,7 @@ import { useBodyScrollLock } from './hooks/useBodyScrollLock';
 import { MOCK_USERS, TESTER_PROFILE, TESTER_LIBRARY } from './mockData';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import { getSuggestedTags } from './utils/collections';
+import { getEnhancedMovieTitle, enhanceMovie, normalizeSearchQuery } from './utils/movieTitles';
 import { Search, Compass, Library, Award, Trophy, CalendarDays, BarChart3, Users, User, Settings, Film, Tv, X, Loader2, ArrowRight, Flame } from 'lucide-react';
 
 const GENRE_MAP = {
@@ -200,11 +201,16 @@ function AppInner() {
   useEffect(() => {
     if (!quickSearch.trim()) { setQuickResults([]); return; }
     setQuickLoading(true);
+    const searchParam = normalizeSearchQuery(quickSearch);
     const timer = setTimeout(() => {
-      fetch(`https://api.themoviedb.org/3/search/multi?api_key=6a2fd6b9b1bb3befbb9f14c203732225&query=${encodeURIComponent(quickSearch)}&page=1`)
+      fetch(`https://api.themoviedb.org/3/search/multi?api_key=6a2fd6b9b1bb3befbb9f14c203732225&query=${encodeURIComponent(searchParam)}&page=1`)
         .then(r => r.json())
         .then(data => {
-          setQuickResults((data.results || []).filter(r => r.media_type === 'movie' || r.media_type === 'tv').slice(0, 6));
+          const enhanced = (data.results || [])
+            .filter(r => r.media_type === 'movie' || r.media_type === 'tv')
+            .map(enhanceMovie)
+            .slice(0, 6);
+          setQuickResults(enhanced);
           setQuickLoading(false);
         })
         .catch(() => setQuickLoading(false));
@@ -258,24 +264,27 @@ function AppInner() {
 
   // Omnisearch TMDB debounced multi-search (initial page)
   useEffect(() => {
-    const q = cmdQuery.trim();
-    if (!q || q.length < 2) {
+    const rawQ = cmdQuery.trim();
+    if (!rawQ || rawQ.length < 2) {
       setCmdSearchResults([]);
       setIsCmdSearching(false);
       setCmdPage(1);
       setCmdTotalPages(1);
       return;
     }
+    const q = normalizeSearchQuery(rawQ);
     setIsCmdSearching(true);
     const timer = setTimeout(async () => {
       try {
         const res = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=6a2fd6b9b1bb3befbb9f14c203732225&query=${encodeURIComponent(q)}&page=1`);
         if (res.ok) {
           const data = await res.json();
-          const filtered = (data.results || []).filter(item =>
-            (item.media_type === 'movie' || item.media_type === 'tv' || item.media_type === 'person') &&
-            (item.title || item.name)
-          );
+          const filtered = (data.results || [])
+            .filter(item =>
+              (item.media_type === 'movie' || item.media_type === 'tv' || item.media_type === 'person') &&
+              (item.title || item.name)
+            )
+            .map(enhanceMovie);
           setCmdSearchResults(filtered);
           setCmdPage(1);
           setCmdTotalPages(data.total_pages || 1);
@@ -292,18 +301,21 @@ function AppInner() {
   // Infinite scroll loader for search results
   const handleLoadMoreSearch = async () => {
     if (isLoadingMore || isCmdSearching || cmdPage >= cmdTotalPages) return;
-    const q = cmdQuery.trim();
-    if (!q) return;
+    const rawQ = cmdQuery.trim();
+    if (!rawQ) return;
+    const q = normalizeSearchQuery(rawQ);
     setIsLoadingMore(true);
     const nextPage = cmdPage + 1;
     try {
       const res = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=6a2fd6b9b1bb3befbb9f14c203732225&query=${encodeURIComponent(q)}&page=${nextPage}`);
       if (res.ok) {
         const data = await res.json();
-        const filtered = (data.results || []).filter(item =>
-          (item.media_type === 'movie' || item.media_type === 'tv' || item.media_type === 'person') &&
-          (item.title || item.name)
-        );
+        const filtered = (data.results || [])
+          .filter(item =>
+            (item.media_type === 'movie' || item.media_type === 'tv' || item.media_type === 'person') &&
+            (item.title || item.name)
+          )
+          .map(enhanceMovie);
         setCmdSearchResults(prev => {
           const existingIds = new Set(prev.map(p => `${p.media_type}-${p.id}`));
           const newItems = filtered.filter(f => !existingIds.has(`${f.media_type}-${f.id}`));
@@ -438,7 +450,7 @@ function AppInner() {
   const handleMovieClick = useCallback((movieOrId, mediaType) => {
     lastBackPressRef.current = 0;
     if (typeof movieOrId === 'object' && movieOrId !== null) {
-      setActiveEditMovie(movieOrId);
+      setActiveEditMovie(enhanceMovie(movieOrId));
       const tmdbId = movieOrId.tmdb_id || movieOrId.id;
       try {
         window.history.pushState({ modal: 'movie', id: tmdbId }, '', '#movie-' + tmdbId);
@@ -457,7 +469,7 @@ function AppInner() {
       if (match) resolvedType = match.media_type;
     }
     const existing = library.find(m => String(m.tmdb_id) === String(tmdbId) && (!resolvedType || m.media_type === resolvedType));
-    if (existing) { setActiveEditMovie(existing); return; }
+    if (existing) { setActiveEditMovie(enhanceMovie(existing)); return; }
 
     const targetType = resolvedType || 'movie';
     const primaryUrl = `https://api.themoviedb.org/3/${targetType}/${tmdbId}?api_key=6a2fd6b9b1bb3befbb9f14c203732225&append_to_response=videos,credits`;
@@ -475,9 +487,9 @@ function AppInner() {
         const isTv = data.number_of_seasons !== undefined || data.first_air_date !== undefined || targetType === 'tv';
         const finalType = isTv ? 'tv' : 'movie';
         const directorName = data.credits?.crew?.find(c => c.job === 'Director')?.name || null;
-        setActiveEditMovie({
+        const enhancedItem = enhanceMovie({
           id: crypto.randomUUID(), tmdb_id: data.id, media_type: finalType,
-          title: data.title || data.name, poster_path: data.poster_path,
+          title: getEnhancedMovieTitle(data) || data.title || data.name, poster_path: data.poster_path,
           backdrop_path: data.backdrop_path, overview: data.overview,
           release_year: (data.release_date || data.first_air_date || '').slice(0, 4),
           genres: (data.genres || []).map(g => g.name),
@@ -488,6 +500,7 @@ function AppInner() {
           details: data,
           videos: data.videos
         });
+        setActiveEditMovie(enhancedItem);
       })
       .catch(err => console.error('Error fetching movie details:', err));
   }, [library]);
@@ -900,6 +913,12 @@ function AppInner() {
             avatar: DEFAULT_GREY_AVATAR,
             bio: '',
             favorites: [],
+            featuredBadges: (() => {
+              try {
+                const raw = localStorage.getItem(`cinelog_featured_badges_${session.user.id}`);
+                return raw ? JSON.parse(raw) : [];
+              } catch { return []; }
+            })(),
             followersCount: 0,
             followingCount: 0,
           };
@@ -922,6 +941,12 @@ function AppInner() {
                 avatar: profile.avatar_url || initialUser.avatar || DEFAULT_GREY_AVATAR,
                 bio: profile.bio || '',
                 favorites: profile.favorites || [],
+                featuredBadges: profile.featured_badges || (() => {
+                  try {
+                    const raw = localStorage.getItem(`cinelog_featured_badges_${session.user.id}`);
+                    return raw ? JSON.parse(raw) : [];
+                  } catch { return []; }
+                })(),
                 equippedBorder: profile.equipped_border || localShop.equippedBorder || localStorage.getItem(`equipped_border_${session.user.id}`) || 'none',
                 bannerUrl: ((profile.banner_url || localShop.bannerUrl || localStorage.getItem(`cinelog_banner_url_${session.user.id}`) || localStorage.getItem('cinelog_banner_url') || '').startsWith('animated-') ? '' : (profile.banner_url || localShop.bannerUrl || localStorage.getItem(`cinelog_banner_url_${session.user.id}`) || localStorage.getItem('cinelog_banner_url') || '')),
                 bannerFitMode: profile.banner_fit_mode || localShop.bannerFitMode || localStorage.getItem(`cinelog_banner_fit_${session.user.id}`) || localStorage.getItem('cinelog_banner_fit') || 'cover',
@@ -1033,7 +1058,7 @@ function AppInner() {
                   id: row.id,
                   tmdb_id: row.tmdb_id,
                   media_type: row.media_type,
-                  title: row.title,
+                  title: getEnhancedMovieTitle(row) || row.title,
                   poster_path: row.poster_path,
                   release_year: row.release_year,
                   genres: row.genres,
@@ -1107,8 +1132,10 @@ function AppInner() {
                  Boolean(updatedMovie.details && (updatedMovie.details.number_of_seasons !== undefined || updatedMovie.details.first_air_date));
     const mediaType = isTv ? 'tv' : (updatedMovie.media_type || 'movie');
 
+    const enhancedTitle = getEnhancedMovieTitle(updatedMovie) || updatedMovie.title;
     const normalizedMovie = {
       ...updatedMovie,
+      title: enhancedTitle,
       tmdb_id: tmdbId ? Number(tmdbId) : null,
       media_type: mediaType,
     };
@@ -1210,12 +1237,14 @@ function AppInner() {
                  newMovie.first_air_date !== undefined;
     const mediaType = isTv ? 'tv' : (mediaTypeFromProp || newMovie.media_type || 'movie');
 
+    const enhancedTitle = getEnhancedMovieTitle(newMovie) || newMovie.title || newMovie.name || 'Unknown Title';
+
     // Normalizing raw search items to standard library items
     const cleanMovie = {
       id: (newMovie.id && typeof newMovie.id === 'string' && newMovie.id.includes('-')) ? newMovie.id : crypto.randomUUID(),
       tmdb_id: Number(tmdbId),
       media_type: mediaType,
-      title: newMovie.title || newMovie.name || 'Unknown Title',
+      title: enhancedTitle,
       poster_path: newMovie.poster_path || null,
       backdrop_path: newMovie.backdrop_path || null,
       overview: newMovie.overview || '',
@@ -1230,7 +1259,7 @@ function AppInner() {
       date_added: newMovie.date_added || new Date().toISOString(),
       tags: (() => {
         const raw = Array.isArray(newMovie.tags) ? newMovie.tags : [];
-        const detected = getSuggestedTags({ title: newMovie.title || newMovie.name, tags: raw });
+        const detected = getSuggestedTags({ title: enhancedTitle, tags: raw });
         return Array.from(new Set([...raw, ...detected]));
       })(),
       episode_ratings: newMovie.episode_ratings || {},
@@ -1393,6 +1422,9 @@ function AppInner() {
         localStorage.setItem(`cinelog_banner_fit_${nextUser.id}`, bannerFit);
         localStorage.setItem(`cinelog_banner_url_${nextUser.id}`, bannerUrlVal);
         localStorage.setItem(`equipped_border_${nextUser.id}`, nextUser.equippedBorder || 'none');
+        if (nextUser.featuredBadges !== undefined) {
+          localStorage.setItem(`cinelog_featured_badges_${nextUser.id}`, JSON.stringify(nextUser.featuredBadges));
+        }
         localStorage.setItem(`cinelog_shop_${nextUser.id}`, JSON.stringify({
           equippedBorder: nextUser.equippedBorder || 'none',
           bannerUrl: bannerUrlVal,
@@ -1408,6 +1440,9 @@ function AppInner() {
         localStorage.setItem('cinelog_supabase_cached_user', JSON.stringify(nextUser));
       } else {
         localStorage.setItem('equipped_border_sandbox', nextUser.equippedBorder || 'none');
+        if (nextUser.featuredBadges !== undefined) {
+          localStorage.setItem('cinelog_featured_badges_sandbox', JSON.stringify(nextUser.featuredBadges));
+        }
         localStorage.setItem('cinelog_sandbox_user', JSON.stringify(nextUser));
       }
       return nextUser;
@@ -1430,6 +1465,10 @@ function AppInner() {
         purchased_banners: updatedDetails.purchasedBanners !== undefined ? updatedDetails.purchasedBanners : (currentUser.purchasedBanners || []),
         purchased_themes: updatedDetails.purchasedThemes !== undefined ? updatedDetails.purchasedThemes : (currentUser.purchasedThemes || [])
       };
+
+      if (updatedDetails.featuredBadges !== undefined) {
+        fullPayload.featured_badges = updatedDetails.featuredBadges;
+      }
 
       const { error } = await supabase.from('profiles').update(fullPayload).eq('id', currentUser.id);
 

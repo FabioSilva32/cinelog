@@ -492,7 +492,12 @@ export const BADGE_COLORS = {
   'Popcorn Overlord': { border: '1px solid #f59e0b', color: '#fbbf24', bg: 'rgba(245,158,11,0.18)' },
   'Midnight Binger': { border: '1px solid #3b82f6', color: '#60a5fa', bg: 'rgba(59,130,246,0.18)' },
   'Cinema Tycoon': { border: '1px solid #10b981', color: '#34d399', bg: 'rgba(16,185,129,0.18)' },
-  "Director's Cut": { border: '1px solid #ec4899', color: '#f472b6', bg: 'rgba(236,72,153,0.18)' }
+  "Director's Cut": { border: '1px solid #ec4899', color: '#f472b6', bg: 'rgba(236,72,153,0.18)' },
+
+  // Special Community & Critic Badges
+  'Verified Critic': { border: '1px solid #10b981', color: '#34d399', bg: 'rgba(16,185,129,0.18)' },
+  'Top 100 Cinephile': { border: '1px solid #fbbf24', color: '#fbbf24', bg: 'linear-gradient(135deg, rgba(251,191,36,0.2) 0%, rgba(245,158,11,0.2) 100%)' },
+  '35mm Purist': { border: '1px solid #c084fc', color: '#c084fc', bg: 'rgba(168,85,247,0.18)' }
 };
 
 // ── CREATOR RECOGNITION ─────────────────────────────────────────────────────

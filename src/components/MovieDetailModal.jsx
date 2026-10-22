@@ -3,6 +3,7 @@ import { X, Heart, Film, Tag, Star, Clock, Users, ExternalLink, Play, FolderHear
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
 import { MOCK_REVIEWS, ELENA_PROFILE, ELENA_LIBRARY } from '../mockData';
 import { getMovieCollections, getSuggestedTags } from '../utils/collections';
+import { getEnhancedMovieTitle } from '../utils/movieTitles';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 const IGNORED_USERNAMES = new Set([
@@ -663,7 +664,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
         supabase.from('activity_feed').insert({
           user_id: currentUser.id,
           action_type: status === 'watched' ? (rating ? 'rated' : 'watched') : status,
-          title: movie.title || movie.name,
+          title: getEnhancedMovieTitle(movie) || movie.title || movie.name,
           media_type: resolvedType,
           poster_path: movie.poster_path,
           rating: status === 'watched' ? rating : null,
@@ -781,7 +782,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                 ))}
               </div>
               <h2 style={{ fontSize: '26px', fontWeight: 900, letterSpacing: '-0.5px', lineHeight: 1.1, marginBottom: '6px', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
-                {movie.title}
+                {getEnhancedMovieTitle(movie) || movie.title}
               </h2>
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
                 <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>{movie.release_year || movie.year || '—'}</span>

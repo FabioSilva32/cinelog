@@ -162,14 +162,19 @@ export default function ProfileCustomizerModal({
         ? currentUser.bannerPosPercent
         : (localStorage.getItem('cinelog_banner_pos') !== null ? Number(localStorage.getItem('cinelog_banner_pos')) : 20);
       setBannerPosPercent(resolvedPos);
-      setFeaturedBadges(
-        currentUser?.featuredBadges && Array.isArray(currentUser.featuredBadges)
-          ? currentUser.featuredBadges
-          : []
-      );
+      let resolvedBadges = [];
+      if (currentUser?.featuredBadges && Array.isArray(currentUser.featuredBadges) && currentUser.featuredBadges.length > 0) {
+        resolvedBadges = currentUser.featuredBadges;
+      } else {
+        try {
+          const stored = localStorage.getItem(`cinelog_featured_badges_${currentUser?.id || 'sandbox'}`);
+          if (stored) resolvedBadges = JSON.parse(stored);
+        } catch {}
+      }
+      setFeaturedBadges(resolvedBadges);
       setCustomizerTab(initialTab);
     }
-  }, [show, initialTab]);
+  }, [show, initialTab, currentUser]);
 
   // Lock background window scroll when modal is open
   useBodyScrollLock(show);
@@ -248,6 +253,9 @@ export default function ProfileCustomizerModal({
       localStorage.setItem(`cinelog_banner_pos_${currentUser.id}`, bannerPosPercent);
       localStorage.setItem(`cinelog_banner_fit_${currentUser.id}`, bannerFitMode);
       localStorage.setItem(`cinelog_banner_url_${currentUser.id}`, bannerUrl);
+      localStorage.setItem(`cinelog_featured_badges_${currentUser.id}`, JSON.stringify(featuredBadges));
+    } else {
+      localStorage.setItem('cinelog_featured_badges_sandbox', JSON.stringify(featuredBadges));
     }
     if (onSave) {
       onSave({
