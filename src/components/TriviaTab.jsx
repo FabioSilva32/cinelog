@@ -624,10 +624,10 @@ export default function TriviaTab({ currentUser, onUpdateProfile }) {
                 Test your movie knowledge across legendary directors, Academy Award winners, cult classics, and cinematic history. Every round is randomly selected from our 50-question vault!
               </p>
             </div>
-            <div style={{ display: 'flex', gap: '16px', fontSize: '12px', color: 'var(--text-dim)', background: 'rgba(255,255,255,0.02)', padding: '8px 16px', borderRadius: '20px', border: '1px solid var(--border)' }}>
-              <span>⏱ 15s Per Question</span>
-              <span>🔥 Answer Streaks</span>
-              <span>🪙 Claim CinePoints</span>
+            <div className="trivia-feature-pills">
+              <span className="trivia-feature-pill">⏱ 15s Per Question</span>
+              <span className="trivia-feature-pill">🔥 Answer Streaks</span>
+              <span className="trivia-feature-pill">🪙 Claim CinePoints</span>
             </div>
             <button className="btn btn-primary" onClick={handleStartGame} style={{ padding: '12px 32px', fontSize: '15px', fontWeight: 800, marginTop: '8px' }}>
               Play Challenge <ArrowRight size={16} style={{ marginLeft: '6px', display: 'inline' }} />
@@ -647,40 +647,29 @@ export default function TriviaTab({ currentUser, onUpdateProfile }) {
             </div>
 
             {/* Timer bar */}
-            <div style={{ height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden', marginBottom: '28px', position: 'relative' }}>
+            <div style={{ height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden', marginBottom: '16px', position: 'relative' }}>
               <div style={{ height: '100%', width: `${(timer / 15) * 100}%`, background: timer > 5 ? 'var(--accent)' : 'linear-gradient(to right, var(--red), #ef4444)', transition: 'width 1s linear', borderRadius: '3px' }} />
             </div>
 
             {/* Question title */}
-            <h3 style={{ fontSize: '18px', fontWeight: 800, lineHeight: 1.5, marginBottom: '28px', minHeight: '54px' }}>
+            <h3 style={{ fontSize: '17px', fontWeight: 800, lineHeight: 1.4, marginBottom: '18px', minHeight: '44px' }}>
               {currentQuestion.question}
             </h3>
 
             {/* Options grid */}
             <div className="trivia-options-grid">
-              {currentQuestion.options.map(option => {
+              {currentQuestion.options.map((option, idx) => {
                 const isSelected = selectedOption === option;
                 const isCorrect = option === currentQuestion.answer;
                 const showResults = selectedOption !== null;
+                const optionLetters = ['A', 'B', 'C', 'D'];
+                const letter = optionLetters[idx] || (idx + 1);
 
-                let background = 'rgba(255,255,255,0.02)';
-                let borderColor = 'var(--border)';
-                let textColor = '#fff';
-
+                let stateClass = '';
                 if (showResults) {
-                  if (isCorrect) {
-                    background = 'rgba(16,185,129,0.12)';
-                    borderColor = 'var(--green)';
-                    textColor = 'var(--green)';
-                  } else if (isSelected) {
-                    background = 'rgba(239,68,68,0.12)';
-                    borderColor = 'var(--red)';
-                    textColor = 'var(--red)';
-                  } else {
-                    background = 'rgba(255,255,255,0.01)';
-                    borderColor = 'rgba(255,255,255,0.04)';
-                    textColor = 'var(--text-dim)';
-                  }
+                  if (isCorrect) stateClass = 'correct';
+                  else if (isSelected) stateClass = 'incorrect';
+                  else stateClass = 'dimmed';
                 }
 
                 return (
@@ -688,34 +677,12 @@ export default function TriviaTab({ currentUser, onUpdateProfile }) {
                     key={option}
                     disabled={showResults}
                     onClick={() => handleAnswer(option)}
-                    style={{
-                      background,
-                      border: `1px solid ${borderColor}`,
-                      color: textColor,
-                      padding: '16px 20px',
-                      borderRadius: '10px',
-                      fontSize: '13.5px',
-                      fontWeight: 700,
-                      cursor: showResults ? 'default' : 'pointer',
-                      transition: 'all 0.15s',
-                      textAlign: 'left',
-                      position: 'relative',
-                      overflow: 'hidden'
-                    }}
-                    onMouseEnter={e => {
-                      if (!showResults) {
-                        e.currentTarget.style.borderColor = 'var(--accent)';
-                        e.currentTarget.style.background = 'rgba(var(--accent-rgb, 136,8,8), 0.1)';
-                      }
-                    }}
-                    onMouseLeave={e => {
-                      if (!showResults) {
-                        e.currentTarget.style.borderColor = 'var(--border)';
-                        e.currentTarget.style.background = 'rgba(255,255,255,0.02)';
-                      }
-                    }}
+                    className={`trivia-option-btn ${stateClass}`}
                   >
-                    {option}
+                    <span className="trivia-option-badge">{letter}</span>
+                    <span className="trivia-option-text">{option}</span>
+                    {showResults && isCorrect && <CheckCircle2 size={16} color="var(--green)" style={{ flexShrink: 0, marginLeft: 'auto' }} />}
+                    {showResults && isSelected && !isCorrect && <XCircle size={16} color="var(--red)" style={{ flexShrink: 0, marginLeft: 'auto' }} />}
                   </button>
                 );
               })}
@@ -729,22 +696,22 @@ export default function TriviaTab({ currentUser, onUpdateProfile }) {
               <Award size={28} color="var(--green)" />
             </div>
             <h2 style={{ fontSize: '22px', fontWeight: 900 }}>Round Completed!</h2>
-            <div style={{ display: 'flex', gap: '24px', margin: '8px 0', flexWrap: 'wrap', justifyContent: 'center' }}>
-              <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '10px', padding: '12px 20px' }}>
-                <div style={{ fontSize: '10px', color: 'var(--text-dim)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Correct</div>
-                <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--green)', marginTop: '2px' }}>{correctAnswers} / {activeQuestions.length}</div>
+            <div className="trivia-results-grid">
+              <div className="trivia-result-stat-box">
+                <div className="stat-label">Correct</div>
+                <div className="stat-val" style={{ color: 'var(--green)' }}>{correctAnswers} / {activeQuestions.length}</div>
               </div>
-              <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '10px', padding: '12px 20px' }}>
-                <div style={{ fontSize: '10px', color: 'var(--text-dim)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Final Score</div>
-                <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--gold)', marginTop: '2px' }}>{score}</div>
+              <div className="trivia-result-stat-box">
+                <div className="stat-label">Final Score</div>
+                <div className="stat-val" style={{ color: 'var(--gold)' }}>{score}</div>
               </div>
-              <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '10px', padding: '12px 20px' }}>
-                <div style={{ fontSize: '10px', color: 'var(--text-dim)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Points Earned</div>
-                <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--accent)', marginTop: '2px' }}>🪙 {Math.round(score * 0.1)}</div>
+              <div className="trivia-result-stat-box">
+                <div className="stat-label">Points Earned</div>
+                <div className="stat-val" style={{ color: 'var(--accent)' }}>🪙 {Math.round(score * 0.1)}</div>
               </div>
             </div>
             
-            <div style={{ display: 'flex', gap: '12px', marginTop: '12px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '12px', marginTop: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
               <button disabled={claimed || Math.round(score * 0.1) === 0} className="btn btn-primary" onClick={handleClaimPoints} style={{ opacity: claimed ? 0.5 : 1, cursor: claimed ? 'default' : 'pointer' }}>
                 {claimed ? "✓ Points Claimed" : "Claim CinePoints"}
               </button>
@@ -795,14 +762,14 @@ export default function TriviaTab({ currentUser, onUpdateProfile }) {
         </div>
 
         {/* Stats Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-          <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px 12px' }}>
-            <div style={{ fontSize: '10px', color: 'var(--text-dim)', textTransform: 'uppercase', fontWeight: 700 }}>Rounds Played</div>
-            <div style={{ fontSize: '18px', fontWeight: 900, color: '#fff', marginTop: '2px' }}>{triviaStats.gamesPlayed || 0}</div>
+        <div className="trivia-stats-boxes-grid">
+          <div className="trivia-stat-box">
+            <div className="stat-label">Rounds Played</div>
+            <div className="stat-val">{triviaStats.gamesPlayed || 0}</div>
           </div>
-          <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px 12px' }}>
-            <div style={{ fontSize: '10px', color: 'var(--text-dim)', textTransform: 'uppercase', fontWeight: 700 }}>Accuracy</div>
-            <div style={{ fontSize: '18px', fontWeight: 900, color: 'var(--green)', marginTop: '2px' }}>{accuracyPct}%</div>
+          <div className="trivia-stat-box">
+            <div className="stat-label">Accuracy</div>
+            <div className="stat-val" style={{ color: 'var(--green)' }}>{accuracyPct}%</div>
           </div>
         </div>
 
