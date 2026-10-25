@@ -1263,7 +1263,7 @@ export default function ProfileTab({
   const ownReviews = useMemo(() => library.filter(m => m.review && m.review.trim().length > 0).sort((a, b) => new Date(b.watch_date || b.date_added || 0) - new Date(a.watch_date || a.date_added || 0)), [library]);
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '0', position: 'relative' }}>
+    <div className="animate-fade-in profile-tab-root" style={{ display: 'flex', flexDirection: 'column', gap: '0', position: 'relative', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
 
       {/* ─────────────────────────────────────────────────────────────
           OTHER USER PROFILE — Letterboxd full-page view
@@ -1640,38 +1640,38 @@ export default function ProfileTab({
               </div>
 
               {/* FOREIGN PROFILE TAB CONTENT */}
-              <div style={{ padding: '24px 0', display: 'flex', flexDirection: 'column', gap: '28px' }}>
+              <div className="profile-tab-content" style={{ padding: '24px 0', display: 'flex', flexDirection: 'column', gap: '28px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
 
                 {/* ── 1. FOREIGN OVERVIEW TAB (Letterboxd 2-Column Split) ── */}
                 {foreignActiveTab === 'overview' && (
                   <div className="profile-overview-columns animate-fade-in" style={{ display: 'flex', gap: '24px', alignItems: 'start' }}>
 
                     {/* LEFT COLUMN: Showcase + Recents */}
-                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    <div className="profile-overview-main-col" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
                       {/* Top Favorites Showcase (Exact match with own profile showcase) */}
-                      <div className="glass" style={{
+                      <div className="glass profile-showcase-card" style={{
                         borderRadius: '20px',
                         padding: '24px',
                         border: '1px solid rgba(255,255,255,0.08)',
                         background: 'linear-gradient(180deg, rgba(20,16,28,0.7) 0%, rgba(12,10,18,0.85) 100%)',
                         boxShadow: '0 12px 36px rgba(0,0,0,0.4)'
                       }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+                        <div className="profile-showcase-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                          <div className="profile-showcase-title-group" style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
                             <div style={{
                               width: '32px', height: '32px', borderRadius: '10px',
                               background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center'
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
                             }}>
                               <Heart size={16} color="var(--red)" fill="var(--red)" />
                             </div>
-                            <div>
-                              <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: '#fff' }}>Favorites Showcase</h3>
+                            <div style={{ minWidth: 0 }}>
+                              <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Favorites Showcase</h3>
                               <span style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 600 }}>Top 6 cinematic masterpieces</span>
                             </div>
                           </div>
-                          <span style={{ fontSize: '12px', color: 'var(--text-dim)', fontWeight: 700 }}>
+                          <span style={{ fontSize: '12px', color: 'var(--text-dim)', fontWeight: 700, flexShrink: 0 }}>
                             {(viewedProfile?.favorites || []).filter(Boolean).length} titles
                           </span>
                         </div>
@@ -1956,7 +1956,7 @@ export default function ProfileTab({
                     </div>
 
                     {/* RIGHT COLUMN: Letterboxd-style Statistics Sidebar */}
-                    <div style={{ width: '320px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div className="profile-overview-side-col" style={{ width: '320px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
                       {/* Genre Breakdown */}
                       <div className="glass" style={{ borderRadius: 'var(--radius-xl)', padding: '20px', border: '1px solid var(--border)' }}>
@@ -2336,7 +2336,7 @@ export default function ProfileTab({
         /* ─────────────────────────────────────────────────────────────
             OWN PROFILE — Letterboxd-style full page
             ───────────────────────────────────────────────────────────── */
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+        <div className="profile-tab-root" style={{ display: 'flex', flexDirection: 'column', gap: '0', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
 
           {/* BANNER (grand cinematic marquee with fallback ambiance) */}
           <div
@@ -2710,38 +2710,39 @@ export default function ProfileTab({
           </div>
 
           {/* TAB CONTENT */}
-          <div style={{ padding: '28px 0', display: 'flex', flexDirection: 'column', gap: '28px' }}>
+          <div className="profile-tab-content" style={{ padding: '28px 0', display: 'flex', flexDirection: 'column', gap: '28px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
 
             {/* ── OVERVIEW TAB ── */}
             {profileActiveSubTab === 'overview' && (
               <div className="profile-overview-columns" style={{ display: 'flex', gap: '24px', alignItems: 'start' }}>
 
                 {/* LEFT COLUMN */}
-                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <div className="profile-overview-main-col" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
                   {/* Favorites Showcase */}
-                  <div className="glass" style={{
+                  <div className="glass profile-showcase-card" style={{
                     borderRadius: '20px',
                     padding: '24px',
                     border: '1px solid rgba(255,255,255,0.08)',
                     background: 'linear-gradient(180deg, rgba(20,16,28,0.7) 0%, rgba(12,10,18,0.85) 100%)',
                     boxShadow: '0 12px 36px rgba(0,0,0,0.4)'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+                    <div className="profile-showcase-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                      <div className="profile-showcase-title-group" style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
                         <div style={{
                           width: '32px', height: '32px', borderRadius: '10px',
                           background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center'
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
                         }}>
                           <Heart size={16} color="var(--red)" fill="var(--red)" />
                         </div>
-                        <div>
-                          <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: '#fff' }}>Favorites Showcase</h3>
+                        <div style={{ minWidth: 0 }}>
+                          <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Favorites Showcase</h3>
                           <span style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 600 }}>Top 6 cinematic masterpieces</span>
                         </div>
                       </div>
                       <button
+                        className="profile-showcase-edit-btn"
                         onClick={() => handleOpenCustomizer('showcase')}
                         style={{
                           background: 'rgba(255,255,255,0.04)',
@@ -2870,8 +2871,8 @@ export default function ProfileTab({
 
                   {/* Recent Diary (top 5) */}
                   {recentDiary.length > 0 && (
-                    <div className="glass" style={{ borderRadius: 'var(--radius-xl)', padding: '20px', border: '1px solid var(--border)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                    <div className="glass profile-diary-card" style={{ borderRadius: 'var(--radius-xl)', padding: '20px', border: '1px solid var(--border)' }}>
+                      <div className="profile-diary-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <Calendar size={16} color="var(--accent)" />
                           <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0 }}>Recent Diary</h3>
@@ -2883,7 +2884,7 @@ export default function ProfileTab({
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         {recentDiary.slice(0, 5).map(item => (
-                          <div key={item.id || item.tmdb_id} style={{ display: 'flex', gap: '12px', alignItems: 'center', padding: '9px 12px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '10px', transition: 'background 0.2s', cursor: 'pointer' }}
+                          <div key={item.id || item.tmdb_id} className="profile-diary-item" style={{ display: 'flex', gap: '12px', alignItems: 'center', padding: '9px 12px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '10px', transition: 'background 0.2s', cursor: 'pointer' }}
                             onClick={() => onMovieClick && onMovieClick(item.tmdb_id, item.media_type)}
                             onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
                             onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}>
@@ -2901,7 +2902,7 @@ export default function ProfileTab({
                 </div>
 
                 {/* RIGHT COLUMN */}
-                <div style={{ width: '320px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className="profile-overview-side-col" style={{ width: '320px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   {/* Genre Breakdown */}
                   <div className="glass" style={{ borderRadius: 'var(--radius-xl)', padding: '20px', border: '1px solid var(--border)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>

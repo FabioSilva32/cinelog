@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Compass,
   Film,
@@ -30,6 +30,11 @@ export default function MobileBottomNav({
   libraryCount = 0
 }) {
   const [showMoreDrawer, setShowMoreDrawer] = useState(false);
+  const drawerTouchStartRef = useRef(null);
+
+  const closeMoreDrawer = useCallback(() => {
+    setShowMoreDrawer(false);
+  }, []);
 
   const handleTabClick = (tabId) => {
     setActiveTab(tabId);
@@ -37,14 +42,67 @@ export default function MobileBottomNav({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // 1. Native Android CloseWatcher integration
+  useEffect(() => {
+    if (!showMoreDrawer) return;
+
+    if (typeof window !== 'undefined' && 'CloseWatcher' in window) {
+      try {
+        const watcher = new window.CloseWatcher();
+        watcher.onclose = () => {
+          closeMoreDrawer();
+        };
+        return () => {
+          try { watcher.destroy(); } catch (e) {}
+        };
+      } catch (err) {}
+    }
+  }, [showMoreDrawer, closeMoreDrawer]);
+
+  // 2. Universal CineLog back event listener (prevents background navigation)
+  useEffect(() => {
+    if (!showMoreDrawer) return;
+
+    const handleBackEvent = (e) => {
+      e.preventDefault();
+      closeMoreDrawer();
+    };
+
+    window.addEventListener('cinelog-back-handled', handleBackEvent);
+    return () => window.removeEventListener('cinelog-back-handled', handleBackEvent);
+  }, [showMoreDrawer, closeMoreDrawer]);
+
+  // 3. History pushState guard so browser/Android system back pop dismisses More menu rather than background tabs
+  useEffect(() => {
+    if (!showMoreDrawer) return;
+
+    try {
+      window.history.pushState({ cinelogMoreDrawer: true }, '', window.location.href);
+    } catch (e) {}
+
+    const handlePopState = () => {
+      setShowMoreDrawer(false);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      try {
+        if (window.history.state?.cinelogMoreDrawer) {
+          window.history.back();
+        }
+      } catch (e) {}
+    };
+  }, [showMoreDrawer]);
+
   const secondaryTabs = [
     { id: 'profile', label: 'My Profile', icon: User, badge: currentUser ? (currentUser.username || 'User') : 'Guest' },
-    { id: 'collections', label: 'Custom Lists & Collections', icon: FolderHeart, badge: 'Lists' },
+    { id: 'collections', label: 'Custom Lists & Collections', icon: FolderHeart },
     { id: 'stats', label: 'Cinema Analytics', icon: BarChart3 },
     { id: 'calendar', label: 'Watch Calendar', icon: Calendar },
     { id: 'constellation', label: 'Film Constellation', icon: Sparkles },
     { id: 'trivia', label: 'Movie Trivia', icon: HelpCircle },
-    { id: 'wrapped', label: 'Yearly Wrapped', icon: Gift, badge: 'NEW' },
+    { id: 'wrapped', label: 'Yearly Wrapped', icon: Gift },
     { id: 'social', label: 'Community Feed', icon: Users },
   ];
 
@@ -142,8 +200,42 @@ export default function MobileBottomNav({
 
       {/* ── NATIVE SLIDE-UP BOTTOM SHEET FOR "MORE" MENU ── */}
       {showMoreDrawer && (
-        <div className="mobile-drawer-overlay" onClick={() => setShowMoreDrawer(false)}>
-          <div className="mobile-drawer-sheet" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="mobile-drawer-overlay"
+          onClick={closeMoreDrawer}
+          onTouchStart={(e) => {
+            if (e.touches.length === 1) {
+              drawerTouchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+          }}
+          onTouchEnd={(e) => {
+            if (!drawerTouchStartRef.current || e.changedTouches.length !== 1) return;
+            const deltaX = e.changedTouches[0].clientX - drawerTouchStartRef.current.x;
+            const deltaY = Math.abs(e.changedTouches[0].clientY - drawerTouchStartRef.current.y);
+            drawerTouchStartRef.current = null;
+            if (deltaX > 40 && deltaX > deltaY * 1.2) {
+              closeMoreDrawer();
+            }
+          }}
+        >
+          <div
+            className="mobile-drawer-sheet"
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => {
+              if (e.touches.length === 1) {
+                drawerTouchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+              }
+            }}
+            onTouchEnd={(e) => {
+              if (!drawerTouchStartRef.current || e.changedTouches.length !== 1) return;
+              const deltaX = e.changedTouches[0].clientX - drawerTouchStartRef.current.x;
+              const deltaY = Math.abs(e.changedTouches[0].clientY - drawerTouchStartRef.current.y);
+              drawerTouchStartRef.current = null;
+              if (deltaX > 40 && deltaX > deltaY * 1.2) {
+                closeMoreDrawer();
+              }
+            }}
+          >
             {/* Grabber Handle */}
             <div className="mobile-drawer-handle" />
 
@@ -172,7 +264,7 @@ export default function MobileBottomNav({
               </div>
               <button
                 className="mobile-drawer-close-btn"
-                onClick={() => setShowMoreDrawer(false)}
+                onClick={closeMoreDrawer}
                 aria-label="Close menu"
               >
                 <X size={18} />

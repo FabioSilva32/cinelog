@@ -590,6 +590,9 @@ function AppInner() {
         const watcher = new window.CloseWatcher();
         watcher.onclose = () => {
           lastBackPressRef.current = 0;
+          const openDrawerCloseBtn = document.querySelector('.mobile-drawer-close-btn') ||
+            document.querySelector('.mobile-drawer-overlay');
+          if (openDrawerCloseBtn) { openDrawerCloseBtn.click(); return; }
           if (showQuickAdd) { closeModal('quickadd'); return; }
           if (showCommandCenter) { closeModal('search'); return; }
           if (showSettings) { closeModal('settings'); return; }
@@ -638,7 +641,15 @@ function AppInner() {
       return 'handled';
     }
 
-    // 1. Close open overlay modals first (guarantees app never closes while a modal is up)
+    // 1. Close open overlay modals or bottom sheets first (guarantees app never closes/navigates background while a modal/drawer is up)
+    const openDrawerCloseBtn = document.querySelector('.mobile-drawer-close-btn') ||
+      document.querySelector('.mobile-drawer-overlay');
+    if (openDrawerCloseBtn) {
+      lastBackPressRef.current = 0;
+      openDrawerCloseBtn.click();
+      return 'handled';
+    }
+
     if (showQuickAddRef.current) { closeModal('quickadd'); return 'handled'; }
     if (showCommandCenterRef.current) { closeModal('search'); return 'handled'; }
     if (showSettingsRef.current) { closeModal('settings'); return 'handled'; }
@@ -728,6 +739,15 @@ function AppInner() {
         viewingUserProfileRef.current ||
         confirmConfigRef.current?.isOpen
       );
+
+      // 0. Close mobile drawer if open (never navigate background tabs while drawer is up)
+      const openDrawerCloseBtn = document.querySelector('.mobile-drawer-close-btn') ||
+        document.querySelector('.mobile-drawer-overlay');
+      if (openDrawerCloseBtn) {
+        lastBackPressRef.current = 0;
+        openDrawerCloseBtn.click();
+        return;
+      }
 
       // 1. Close open overlay modals first
       if (anyModalOpen) {
