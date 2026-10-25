@@ -955,7 +955,29 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
 
   // ── Literal Watched Diary Computations ─────────────────────────────
   const watchedEntries = useMemo(() => {
-    return library.filter(m => m.status === 'watched');
+    const list = [];
+    library.filter(m => m.status === 'watched').forEach(movie => {
+      const scr = movie.screenings || movie.episode_data?.screenings;
+      if (Array.isArray(scr) && scr.length > 1) {
+        // Film has multiple screenings (re-logs)! Add each screening chronologically
+        scr.forEach((s, idx) => {
+          const watchNum = scr.length - idx;
+          list.push({
+            ...movie,
+            diaryEntryId: `${movie.id || movie.tmdb_id}_scr_${s.id || idx}`,
+            watch_date: s.date || movie.watch_date,
+            rating: s.rating != null ? s.rating : movie.rating,
+            review: s.review || (idx === 0 ? movie.review : ''),
+            is_rewatch: watchNum > 1 || s.is_rewatch,
+            screeningNumber: watchNum,
+            totalScreenings: scr.length
+          });
+        });
+      } else {
+        list.push(movie);
+      }
+    });
+    return list;
   }, [library]);
 
   const reviewedCount = useMemo(() => {
@@ -1521,7 +1543,7 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
 
                     return (
                       <div
-                        key={movie.id || movie.tmdb_id}
+                        key={movie.diaryEntryId || movie.id || movie.tmdb_id}
                         onClick={() => onEditClick(movie)}
                         style={{
                           display: 'flex',
@@ -1613,7 +1635,7 @@ export default function LibraryTab({ library, onRemove, onEditClick, onOpenExplo
 
                             {movie.is_rewatch && (
                               <span style={{ fontSize: '9px', fontWeight: 800, color: '#A78BFA', background: 'rgba(167,139,250,0.15)', padding: '1px 5px', borderRadius: '3px' }}>
-                                🔄 Rewatch
+                                🔄 Rewatch {movie.screeningNumber ? `#${movie.screeningNumber}` : ''}
                               </span>
                             )}
 

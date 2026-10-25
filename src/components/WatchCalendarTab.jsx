@@ -17,15 +17,32 @@ export default function WatchCalendarTab({ library = [], onMovieClick }) {
     return movie.date_added || null;
   };
 
-  // Build a map of date => [movies]
+  // Build a map of date => [movies] (including re-logged screenings)
   const dateMap = useMemo(() => {
     const map = {};
     library.forEach(movie => {
-      const dateVal = getMovieDate(movie);
-      if (!dateVal) return;
-      const date = dateVal.slice(0, 10);
-      if (!map[date]) map[date] = [];
-      map[date].push(movie);
+      const scr = movie.screenings || movie.episode_data?.screenings;
+      if (Array.isArray(scr) && scr.length > 0) {
+        scr.forEach((s, idx) => {
+          const dStr = s.date ? s.date.slice(0, 10) : null;
+          if (!dStr) return;
+          if (!map[dStr]) map[dStr] = [];
+          map[dStr].push({
+            ...movie,
+            rating: s.rating != null ? s.rating : movie.rating,
+            watch_date: s.date || movie.watch_date,
+            review: s.review || movie.review,
+            is_rewatch: (scr.length - idx) > 1 || s.is_rewatch,
+            screeningNumber: scr.length - idx
+          });
+        });
+      } else {
+        const dateVal = getMovieDate(movie);
+        if (!dateVal) return;
+        const date = dateVal.slice(0, 10);
+        if (!map[date]) map[date] = [];
+        map[date].push(movie);
+      }
     });
     return map;
   }, [library]);

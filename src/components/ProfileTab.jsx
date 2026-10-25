@@ -1011,18 +1011,41 @@ export default function ProfileTab({
   }, [library]);
 
   const recentDiary = useMemo(() => {
-    return [...library]
-      .filter(m => m.status === 'watched' && (m.watch_date || m.date_added))
-      .sort((a, b) => new Date(b.watch_date || b.date_added) - new Date(a.watch_date || a.date_added));
+    const list = [];
+    library.filter(m => m.status === 'watched').forEach(m => {
+      const scr = m.screenings || m.episode_data?.screenings;
+      if (Array.isArray(scr) && scr.length > 1) {
+        scr.forEach((s, idx) => {
+          list.push({
+            ...m,
+            id: `${m.id || m.tmdb_id}_scr_${s.id || idx}`,
+            watch_date: s.date || m.watch_date,
+            rating: s.rating != null ? s.rating : m.rating,
+            review: s.review || m.review,
+            is_rewatch: (scr.length - idx) > 1 || s.is_rewatch
+          });
+        });
+      } else if (m.watch_date || m.date_added) {
+        list.push(m);
+      }
+    });
+    return list.sort((a, b) => new Date(b.watch_date || b.date_added) - new Date(a.watch_date || a.date_added));
   }, [library]);
 
   // Streak & CinePoints
   const currentStreak = useMemo(() => {
-    const watchDates = new Set(
-      library
-        .filter(m => m.status === 'watched' && (m.watch_date || m.date_added))
-        .map(m => (m.watch_date || m.date_added).split('T')[0])
-    );
+    const watchDates = new Set();
+    library.filter(m => m.status === 'watched').forEach(m => {
+      const scr = m.screenings || m.episode_data?.screenings;
+      if (Array.isArray(scr) && scr.length > 0) {
+        scr.forEach(s => {
+          if (s.date) watchDates.add(s.date.split('T')[0]);
+        });
+      }
+      if (m.watch_date || m.date_added) {
+        watchDates.add((m.watch_date || m.date_added).split('T')[0]);
+      }
+    });
     let streak = 0;
     let checkDate = new Date();
     const todayStr = checkDate.toISOString().split('T')[0];

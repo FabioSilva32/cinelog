@@ -1118,6 +1118,9 @@ function AppInner() {
                   season_notes: parsedEpisodeData.season_notes || row.season_notes || {},
                   season_dates: parsedEpisodeData.season_dates || row.season_dates || {},
                   episode_data: parsedEpisodeData,
+                  screenings: parsedEpisodeData.screenings || row.screenings || [],
+                  is_rewatch: (parsedEpisodeData.screenings && parsedEpisodeData.screenings.length > 1) || parsedEpisodeData.is_rewatch || row.is_rewatch || false,
+                  rewatch_count: (parsedEpisodeData.screenings && parsedEpisodeData.screenings.length) || parsedEpisodeData.rewatch_count || row.rewatch_count || 1,
                   favorite: row.favorite,
                   date_added: effectiveDateAdded,
                   watch_date: effectiveWatchDate,
@@ -1193,13 +1196,19 @@ function AppInner() {
         dates: normalizedMovie.episode_watch_dates || {},
         season_ratings: normalizedMovie.season_ratings || {},
         season_notes: normalizedMovie.season_notes || {},
-        season_dates: normalizedMovie.season_dates || {}
+        season_dates: normalizedMovie.season_dates || {},
+        screenings: normalizedMovie.screenings || []
       };
+
+      if (normalizedMovie.screenings) {
+        epData.screenings = normalizedMovie.screenings;
+      }
 
       if (normalizedMovie.watch_date) {
         epData.watch_date = normalizedMovie.watch_date;
       }
       const hasEpisodeData = epData.watch_date ||
+                             (epData.screenings && epData.screenings.length > 0) ||
                              Object.keys(epData.ratings || {}).length > 0 ||
                              Object.keys(epData.notes || {}).length > 0 ||
                              Object.keys(epData.dates || {}).length > 0 ||

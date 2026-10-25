@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { X, Heart, Film, Tag, Star, Clock, Users, ExternalLink, Play, FolderHeart, Plus, Check, Eye, Bookmark, XCircle, ChevronDown, Repeat, EyeOff } from 'lucide-react';
+import { X, Heart, Film, Tag, Star, Clock, Users, ExternalLink, Play, FolderHeart, Plus, Check, Eye, Bookmark, XCircle, ChevronDown, Repeat, EyeOff, RotateCcw, History, Calendar, Trash2, Edit3, ArrowUpRight } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
 import { MOCK_REVIEWS, ELENA_PROFILE, ELENA_LIBRARY } from '../mockData';
 import { getMovieCollections, getSuggestedTags } from '../utils/collections';
 import { getEnhancedMovieTitle } from '../utils/movieTitles';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
+import { useToast } from './ToastSystem';
 
 const IGNORED_USERNAMES = new Set([
   'fabiosilva',
@@ -202,10 +203,100 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
       .replace(/__EPISODE_RATINGS__:.+$/s, '')
       .trim();
   });
+  const toast = useToast();
   const [watchDate, setWatchDate] = useState(movie.watch_date || new Date().toISOString().split('T')[0]);
   const [containsSpoilers, setContainsSpoilers] = useState(movie.contains_spoilers || false);
-  const [isRewatch, setIsRewatch] = useState(movie.is_rewatch || false);
-  const [rewatchCount, setRewatchCount] = useState(movie.rewatch_count || 1);
+
+  // Parse existing screenings (re-log history)
+  const [screenings, setScreenings] = useState(() => {
+    if (Array.isArray(movie.screenings) && movie.screenings.length > 0) {
+      return movie.screenings;
+    }
+    if (movie.episode_data?.screenings && Array.isArray(movie.episode_data.screenings) && movie.episode_data.screenings.length > 0) {
+      return movie.episode_data.screenings;
+    }
+    // Seed initial screening if movie was previously logged/watched
+    if (movie.status === 'watched' && (movie.watch_date || movie.rating > 0 || movie.date_added)) {
+      const d = movie.watch_date ? movie.watch_date.slice(0, 10) : (movie.date_added ? movie.date_added.slice(0, 10) : new Date().toISOString().slice(0, 10));
+      const cleanR = (movie.review || '')
+        .replace(/__EPISODE_DATA__:.+$/s, '')
+        .replace(/__EPISODE_RATINGS__:.+$/s, '')
+        .trim();
+      return [{
+        id: 'screening_1',
+        date: d,
+        rating: movie.rating != null ? Number(movie.rating) : null,
+        review: cleanR,
+        is_rewatch: Boolean(movie.is_rewatch),
+        created_at: movie.date_added || new Date().toISOString()
+      }];
+    }
+    return [];
+  });
+
+  const [isRewatch, setIsRewatch] = useState(() => (screenings.length > 1 || movie.is_rewatch || false));
+  const [rewatchCount, setRewatchCount] = useState(() => (screenings.length > 1 ? screenings.length : (movie.rewatch_count || 1)));
+
+  // Re-log Form State (Letterboxd-style log again with new score)
+  const [showRelogForm, setShowRelogForm] = useState(false);
+  const [relogDate, setRelogDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [relogRating, setRelogRating] = useState(() => (movie.rating != null && Number(movie.rating) > 0 ? Number(movie.rating) : 7.0));
+  const [relogReview, setRelogReview] = useState('');
+
+  const handleAddRelog = (e) => {
+    e?.preventDefault?.();
+    const newRatingNum = Number(relogRating) || 0;
+    const newScreening = {
+      id: `scr_${Date.now()}`,
+      date: relogDate,
+      rating: newRatingNum > 0 ? newRatingNum : null,
+      review: relogReview.trim(),
+      is_rewatch: true,
+      created_at: new Date().toISOString()
+    };
+
+    const updated = [newScreening, ...screenings];
+    setScreenings(updated);
+
+    // Update active movie state to this latest watch
+    setStatus('watched');
+    setRating(newRatingNum);
+    setWatchDate(relogDate);
+    if (relogReview.trim()) {
+      setReview(relogReview.trim());
+    }
+    setIsRewatch(true);
+    setRewatchCount(updated.length);
+    setShowRelogForm(false);
+    setRelogReview('');
+
+    if (toast?.success) {
+      toast.success(
+        `Screening #${updated.length} Recorded!`,
+        `Re-logged on ${relogDate} with score ★${newRatingNum.toFixed(1)}`
+      );
+    }
+  };
+
+  const handleDeleteScreening = (scrId, e) => {
+    e?.stopPropagation?.();
+    const remaining = screenings.filter(s => s.id !== scrId);
+    setScreenings(remaining);
+    if (remaining.length > 0) {
+      const latest = remaining[0];
+      setRating(latest.rating != null ? Number(latest.rating) : 0);
+      setWatchDate(latest.date || watchDate);
+      if (latest.review) setReview(latest.review);
+      setIsRewatch(remaining.length > 1);
+      setRewatchCount(remaining.length);
+    } else {
+      setIsRewatch(false);
+      setRewatchCount(1);
+    }
+    if (toast?.info) {
+      toast.info('Screening Removed', 'Updated movie history and active score.');
+    }
+  };
   const [accentColor, setAccentColor] = useState('var(--accent)');
   const [newTag, setNewTag] = useState('');
   const [tags, setTags] = useState(movie.tags || []);
@@ -637,13 +728,31 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
       season_dates: seasonDates
     };
 
+    const activeScreenings = screenings.length > 0 ? screenings.map((s, idx) => {
+      if (idx === 0) {
+        return { ...s, date: watchDate, rating: status === 'watched' ? rating : null, review };
+      }
+      return s;
+    }) : (status === 'watched' ? [{
+      id: 'screening_1',
+      date: watchDate,
+      rating: rating != null ? rating : null,
+      review,
+      is_rewatch: isRewatch,
+      created_at: new Date().toISOString()
+    }] : []);
+
     onSave({
       ...movie,
       media_type: resolvedType,
       status,
       rating: status === 'watched' ? rating : null,
       review,
-      episode_data: mergedEpisodeData,
+      screenings: activeScreenings,
+      episode_data: {
+        ...mergedEpisodeData,
+        screenings: activeScreenings
+      },
       episode_ratings: mergedEpisodeData.ratings,
       episode_notes: mergedEpisodeData.notes,
       episode_watch_dates: mergedEpisodeData.dates,
@@ -655,8 +764,8 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
       director: directorName,
       watch_date: status === 'watched' ? watchDate : null,
       contains_spoilers: containsSpoilers,
-      is_rewatch: isRewatch,
-      rewatch_count: isRewatch ? rewatchCount : null,
+      is_rewatch: activeScreenings.length > 1 || isRewatch,
+      rewatch_count: activeScreenings.length > 1 ? activeScreenings.length : (isRewatch ? rewatchCount : null),
     });
 
     if (isSupabaseConfigured && currentUser?.id) {
@@ -837,6 +946,45 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
               })}
             </div>
 
+            {status === 'watched' && (
+              <button
+                id="modal-relog-btn"
+                type="button"
+                onClick={() => {
+                  setShowRelogForm(prev => !prev);
+                  if (!showRelogForm) {
+                    setRelogDate(new Date().toISOString().split('T')[0]);
+                    setRelogRating(rating > 0 ? rating : 7.0);
+                  }
+                }}
+                style={{
+                  background: showRelogForm ? 'var(--accent)' : '#1a1a1a',
+                  border: `1px solid ${showRelogForm ? 'var(--accent)' : 'var(--border)'}`,
+                  color: showRelogForm ? '#fff' : 'var(--text)',
+                  borderRadius: '10px',
+                  padding: '0 14px',
+                  height: '48px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                  whiteSpace: 'nowrap'
+                }}
+                title="Letterboxd-style: Log another screening of this movie with a new date and score"
+              >
+                <RotateCcw size={16} />
+                <span>{showRelogForm ? 'Close Re-log' : 'Re-log'}</span>
+                {screenings.length > 1 && (
+                  <span style={{ fontSize: '10px', background: 'rgba(255,255,255,0.18)', padding: '2px 6px', borderRadius: '10px', fontWeight: 900 }}>
+                    {screenings.length}x
+                  </span>
+                )}
+              </button>
+            )}
+
             <button
               id="modal-favorite-btn"
               onClick={() => onToggleFavorite(movie.id)}
@@ -911,12 +1059,51 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                     padding: '16px 18px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '12px',
+                    gap: '14px',
                     width: '100%',
                     boxSizing: 'border-box'
                   }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                      <div className="form-label" style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#fff' }}>Your Rating</div>
+                    {/* Header */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div className="form-label" style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#fff', margin: 0 }}>
+                          Your Rating
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowRelogForm(v => !v);
+                            if (!showRelogForm) {
+                              setRelogDate(new Date().toISOString().split('T')[0]);
+                              setRelogRating(rating > 0 ? rating : 7.0);
+                            }
+                          }}
+                          style={{
+                            background: showRelogForm ? 'var(--accent)' : 'rgba(255,255,255,0.06)',
+                            border: `1px solid ${showRelogForm ? 'var(--accent)' : 'var(--border)'}`,
+                            color: '#fff',
+                            borderRadius: '16px',
+                            padding: '3px 10px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            transition: 'all 0.15s'
+                          }}
+                          title="Letterboxd-style: Re-log this movie with a new date and score"
+                        >
+                          <RotateCcw size={12} />
+                          <span>{showRelogForm ? 'Cancel Re-log' : 'Log Again'}</span>
+                          {screenings.length > 1 && (
+                            <span style={{ fontSize: '9.5px', background: 'rgba(0,0,0,0.3)', padding: '1px 5px', borderRadius: '8px', fontWeight: 900 }}>
+                              {screenings.length}x
+                            </span>
+                          )}
+                        </button>
+                      </div>
+
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
                         <span style={{ fontSize: '13px', color: 'var(--text-dim)', fontWeight: 600 }}>{ratingLabel(rating)}</span>
                         <span style={{ fontSize: '32px', fontWeight: 900, color: ratingColor, fontFamily: 'var(--font-heading)', letterSpacing: '-1px', lineHeight: 1 }}>
@@ -925,6 +1112,151 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                       </div>
                     </div>
 
+                    {/* Interactive Re-log Form (Letterboxd-style log again with new score) */}
+                    {showRelogForm && (
+                      <div className="relog-card-container">
+                        <div className="relog-card-header">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div className="relog-icon-bubble">
+                              <RotateCcw size={16} color="var(--accent)" />
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#fff' }}>
+                                Log Another Screening <span style={{ color: 'var(--accent)' }}>#{screenings.length + 1}</span>
+                              </div>
+                              <div style={{ fontSize: '11px', color: 'var(--text-dim)' }}>
+                                Watched again? Record a new viewing date, updated score, and screening note.
+                              </div>
+                            </div>
+                          </div>
+                          <button type="button" onClick={() => setShowRelogForm(false)} className="relog-close-btn" title="Cancel">
+                            ✕
+                          </button>
+                        </div>
+
+                        {/* Live Score Comparison Banner */}
+                        {rating > 0 && (
+                          <div className="relog-comparison-banner">
+                            <span>Previous: <strong>★ {rating.toFixed(1)}</strong></span>
+                            <span>➔</span>
+                            <span>This Watch: <strong style={{ color: getRatingColor(relogRating) }}>★ {Number(relogRating).toFixed(1)}</strong></span>
+                            {Number(relogRating) !== Number(rating) && (
+                              <span className={`relog-diff-pill ${relogRating > rating ? 'up' : 'down'}`}>
+                                {relogRating > rating ? `+${(relogRating - rating).toFixed(1)}` : `${(relogRating - rating).toFixed(1)}`} ★
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Screening Date */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <label style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-dim)' }}>
+                            Screening Date
+                          </label>
+                          <input
+                            type="date"
+                            value={relogDate}
+                            onChange={e => setRelogDate(e.target.value)}
+                            className="form-input"
+                            style={{ fontSize: '13px', padding: '8px 12px', background: 'rgba(0,0,0,0.4)', color: '#fff', border: '1px solid #333', borderRadius: '8px' }}
+                          />
+                        </div>
+
+                        {/* Screening Score Slider */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                            <label style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-dim)' }}>
+                              Score for This Watch
+                            </label>
+                            <span style={{ fontSize: '24px', fontWeight: 900, color: getRatingColor(relogRating), fontFamily: 'var(--font-heading)' }}>
+                              ★ {Number(relogRating).toFixed(1)}
+                            </span>
+                          </div>
+
+                          <input
+                            type="range"
+                            min="0"
+                            max="10"
+                            step="0.1"
+                            value={Number(relogRating) || 0}
+                            onChange={e => setRelogRating(parseFloat(e.target.value) || 0)}
+                            className="cinelog-rating-slider"
+                            style={{
+                              width: '100%',
+                              '--track-fill': `linear-gradient(to right, ${getRatingColor(relogRating)} 0%, ${getRatingColor(relogRating)} ${relogRating * 10}%, rgba(255,255,255,0.08) ${relogRating * 10}%, rgba(255,255,255,0.08) 100%)`,
+                              '--thumb-color': getRatingColor(relogRating),
+                              '--thumb-glow': `${getRatingColor(relogRating)}88`,
+                            }}
+                          />
+
+                          {/* Quick rating chips */}
+                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                            {[
+                              { label: '💀 1', val: 1 },
+                              { label: '😐 5', val: 5 },
+                              { label: '👍 7', val: 7 },
+                              { label: '🔥 8.5', val: 8.5 },
+                              { label: '⭐ 10', val: 10 },
+                            ].map(q => (
+                              <button
+                                key={q.label}
+                                type="button"
+                                onClick={() => setRelogRating(q.val)}
+                                style={{
+                                  background: Math.abs(relogRating - q.val) < 0.2 ? `${getRatingColor(q.val)}26` : 'rgba(255,255,255,0.05)',
+                                  border: `1px solid ${Math.abs(relogRating - q.val) < 0.2 ? getRatingColor(q.val) : 'var(--border)'}`,
+                                  borderRadius: '20px',
+                                  padding: '3px 10px',
+                                  fontSize: '11px',
+                                  color: Math.abs(relogRating - q.val) < 0.2 ? getRatingColor(q.val) : 'var(--text-muted)',
+                                  cursor: 'pointer',
+                                  fontWeight: 700
+                                }}
+                              >
+                                {q.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Optional Note */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <label style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-dim)' }}>
+                            Screening Note (Optional)
+                          </label>
+                          <textarea
+                            rows={2}
+                            placeholder="How did this viewing compare? Noticed anything new on rewatch?"
+                            value={relogReview}
+                            onChange={e => setRelogReview(e.target.value)}
+                            className="form-input"
+                            style={{ fontSize: '13px', padding: '8px 12px', background: 'rgba(0,0,0,0.4)', color: '#fff', border: '1px solid #333', borderRadius: '8px', resize: 'vertical' }}
+                          />
+                        </div>
+
+                        {/* Buttons */}
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '6px' }}>
+                          <button
+                            type="button"
+                            onClick={() => setShowRelogForm(false)}
+                            className="btn btn-secondary"
+                            style={{ padding: '8px 16px', fontSize: '12.5px' }}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleAddRelog}
+                            className="btn btn-primary"
+                            style={{ padding: '8px 20px', fontSize: '12.5px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}
+                          >
+                            <Check size={15} /> Save Screening
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Standard Rating Slider (for active screening) */}
                     <div style={{ position: 'relative', padding: '4px 0', width: '100%' }}>
                       <input
                         type="range"
@@ -1005,6 +1337,111 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                         </button>
                       )}
                     </div>
+
+                    {/* Screening History Timeline (Letterboxd-style multi-watch records) */}
+                    {screenings.length > 0 && (
+                      <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '12px', marginTop: '6px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <History size={13} color="var(--accent)" />
+                            <span>Screening History ({screenings.length} {screenings.length === 1 ? 'watch' : 'watches'})</span>
+                          </div>
+                          {!showRelogForm && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowRelogForm(true);
+                                setRelogDate(new Date().toISOString().split('T')[0]);
+                                setRelogRating(rating > 0 ? rating : 7.0);
+                              }}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: 'var(--accent)',
+                                fontSize: '11.5px',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}
+                            >
+                              <Plus size={13} /> Re-log Film
+                            </button>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {screenings.map((scr, idx) => {
+                            const isLatest = idx === 0;
+                            const sColor = scr.rating ? getRatingColor(scr.rating) : 'var(--text-dim)';
+                            const watchNum = screenings.length - idx;
+                            const prevScr = screenings[idx + 1];
+                            const diff = (prevScr && scr.rating && prevScr.rating) ? (scr.rating - prevScr.rating).toFixed(1) : null;
+
+                            return (
+                              <div
+                                key={scr.id || idx}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  padding: '8px 12px',
+                                  background: isLatest ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.02)',
+                                  border: `1px solid ${isLatest ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.04)'}`,
+                                  borderRadius: '8px',
+                                  gap: '10px',
+                                  flexWrap: 'wrap'
+                                }}
+                              >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
+                                  <span style={{ fontSize: '10.5px', fontWeight: 800, color: isLatest ? 'var(--accent)' : 'var(--text-dim)', background: isLatest ? 'rgba(var(--accent-rgb, 229,9,20), 0.15)' : 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: '12px', whiteSpace: 'nowrap' }}>
+                                    Watch #{watchNum} {watchNum > 1 && '🔄'}
+                                  </span>
+                                  <span style={{ fontSize: '12px', color: '#fff', fontWeight: 600 }}>
+                                    {scr.date || '—'}
+                                  </span>
+                                  {scr.review && (
+                                    <span style={{ fontSize: '11px', color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontStyle: 'italic', maxWidth: '220px' }}>
+                                      "{scr.review}"
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                                  {scr.rating > 0 ? (
+                                    <span style={{ fontSize: '12px', fontWeight: 900, color: sColor, background: `${sColor}18`, padding: '2px 8px', borderRadius: '6px', border: `1px solid ${sColor}33` }}>
+                                      ★ {Number(scr.rating).toFixed(1)}
+                                    </span>
+                                  ) : (
+                                    <span style={{ fontSize: '11px', color: 'var(--text-dim)' }}>No rating</span>
+                                  )}
+
+                                  {diff && Number(diff) !== 0 && (
+                                    <span style={{ fontSize: '10px', fontWeight: 800, color: Number(diff) > 0 ? 'var(--green)' : 'var(--red)', background: Number(diff) > 0 ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', padding: '1px 5px', borderRadius: '4px' }}>
+                                      {Number(diff) > 0 ? `+${diff}` : diff}
+                                    </span>
+                                  )}
+
+                                  {screenings.length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => handleDeleteScreening(scr.id, e)}
+                                      style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: '4px', borderRadius: '4px', display: 'flex', alignItems: 'center', transition: 'color 0.15s' }}
+                                      title="Remove this screening"
+                                      onMouseEnter={e => e.currentTarget.style.color = 'var(--red)'}
+                                      onMouseLeave={e => e.currentTarget.style.color = 'var(--text-dim)'}
+                                    >
+                                      <Trash2 size={13} />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* 2. Date Watched directly under score bar */}
@@ -1020,7 +1457,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                     boxSizing: 'border-box'
                   }}>
                     <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#fff' }}>
-                      Date Watched
+                      Date Watched (Latest)
                     </div>
                     <input
                       type="date"
