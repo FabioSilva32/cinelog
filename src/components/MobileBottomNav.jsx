@@ -72,28 +72,6 @@ export default function MobileBottomNav({
     return () => window.removeEventListener('cinelog-back-handled', handleBackEvent);
   }, [showMoreDrawer, closeMoreDrawer]);
 
-  // 3. History pushState guard so browser/Android system back pop dismisses More menu rather than background tabs
-  useEffect(() => {
-    if (!showMoreDrawer) return;
-
-    try {
-      window.history.pushState({ cinelogMoreDrawer: true }, '', window.location.href);
-    } catch (e) {}
-
-    const handlePopState = () => {
-      setShowMoreDrawer(false);
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-      try {
-        if (window.history.state?.cinelogMoreDrawer) {
-          window.history.back();
-        }
-      } catch (e) {}
-    };
-  }, [showMoreDrawer]);
 
   const secondaryTabs = [
     { id: 'profile', label: 'My Profile', icon: User, badge: currentUser ? (currentUser.username || 'User') : 'Guest' },
