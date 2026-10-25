@@ -1172,7 +1172,8 @@ function AppInner() {
 
   const getDefaultSeeds = () => [];
 
-  const handleSaveMovie = async (updatedMovie) => {
+  const handleSaveMovie = async (updatedMovie, options = {}) => {
+    const { keepOpen = false } = options;
     const tmdbId = updatedMovie.tmdb_id || updatedMovie.id;
     const isTv = updatedMovie.media_type === 'tv' ||
                  updatedMovie.type === 'tv' ||
@@ -1189,24 +1190,35 @@ function AppInner() {
       media_type: mediaType,
     };
 
+    const epData = normalizedMovie.episode_data || {
+      ratings: normalizedMovie.episode_ratings || {},
+      notes: normalizedMovie.episode_notes || {},
+      dates: normalizedMovie.episode_watch_dates || {},
+      season_ratings: normalizedMovie.season_ratings || {},
+      season_notes: normalizedMovie.season_notes || {},
+      season_dates: normalizedMovie.season_dates || {},
+      screenings: normalizedMovie.screenings || []
+    };
+
+    if (normalizedMovie.screenings) {
+      epData.screenings = normalizedMovie.screenings;
+    }
+
+    if (normalizedMovie.watch_date) {
+      epData.watch_date = normalizedMovie.watch_date;
+    }
+
+    const baseCleanReview = (normalizedMovie.review || '')
+      .replace(/__EPISODE_DATA__:.+$/s, '')
+      .replace(/__EPISODE_RATINGS__:.+$/s, '')
+      .trim();
+
+    normalizedMovie.review = baseCleanReview;
+    normalizedMovie.screenings = epData.screenings || [];
+    normalizedMovie.is_rewatch = (epData.screenings && epData.screenings.length > 1) || normalizedMovie.is_rewatch || false;
+    normalizedMovie.rewatch_count = (epData.screenings && epData.screenings.length) || normalizedMovie.rewatch_count || 1;
+
     if (useSupabase && currentUser) {
-      const epData = normalizedMovie.episode_data || {
-        ratings: normalizedMovie.episode_ratings || {},
-        notes: normalizedMovie.episode_notes || {},
-        dates: normalizedMovie.episode_watch_dates || {},
-        season_ratings: normalizedMovie.season_ratings || {},
-        season_notes: normalizedMovie.season_notes || {},
-        season_dates: normalizedMovie.season_dates || {},
-        screenings: normalizedMovie.screenings || []
-      };
-
-      if (normalizedMovie.screenings) {
-        epData.screenings = normalizedMovie.screenings;
-      }
-
-      if (normalizedMovie.watch_date) {
-        epData.watch_date = normalizedMovie.watch_date;
-      }
       const hasEpisodeData = epData.watch_date ||
                              (epData.screenings && epData.screenings.length > 0) ||
                              Object.keys(epData.ratings || {}).length > 0 ||
@@ -1217,8 +1229,8 @@ function AppInner() {
                              Object.keys(epData.season_dates || {}).length > 0;
 
       const dbReview = hasEpisodeData
-        ? `${(normalizedMovie.review || '').trim()}\n\n__EPISODE_DATA__:${JSON.stringify(epData)}`
-        : normalizedMovie.review;
+        ? `${baseCleanReview}\n\n__EPISODE_DATA__:${JSON.stringify(epData)}`
+        : baseCleanReview;
 
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       const cleanId = (normalizedMovie.id && uuidRegex.test(normalizedMovie.id)) ? normalizedMovie.id : crypto.randomUUID();
@@ -1252,19 +1264,21 @@ function AppInner() {
       // Robust check-and-update/insert to avoid any unique constraint or onConflict errors
       const { data: existingRows } = await supabase
         .from('library')
-        .select('id')
+        .select('id, date_added')
         .eq('user_id', currentUser.id)
         .eq('tmdb_id', normalizedMovie.tmdb_id);
 
       let data, error;
       if (existingRows && existingRows.length > 0) {
         const targetId = existingRows[0].id;
+        const origDateAdded = existingRows[0].date_added;
         normalizedMovie.id = targetId;
         const res = await supabase
           .from('library')
           .update({
             ...payload,
-            id: targetId
+            id: targetId,
+            date_added: origDateAdded || payload.date_added
           })
           .eq('id', targetId)
           .eq('user_id', currentUser.id)
@@ -1288,10 +1302,25 @@ function AppInner() {
     }
     setLibrary(prev => {
       const idx = prev.findIndex(m => m.id === normalizedMovie.id || (String(m.tmdb_id) === String(normalizedMovie.tmdb_id) && m.media_type === normalizedMovie.media_type));
-      if (idx !== -1) { const c = [...prev]; c[idx] = normalizedMovie; return c; }
-      return [normalizedMovie, ...prev];
+      let updatedList;
+      if (idx !== -1) {
+        updatedList = [...prev];
+        updatedList[idx] = normalizedMovie;
+      } else {
+        updatedList = [normalizedMovie, ...prev];
+      }
+      try {
+        localStorage.setItem('cinelog_library_v2', JSON.stringify(updatedList));
+      } catch {}
+      return updatedList;
     });
-    setActiveEditMovie(null);
+
+    if (!keepOpen) {
+      setActiveEditMovie(null);
+    } else {
+      setActiveEditMovie(normalizedMovie);
+    }
+
     const statusLabel = normalizedMovie.status === 'watched' ? 'Marked as Watched' : normalizedMovie.status === 'plan_to_watch' ? 'Added to Watchlist' : 'Saved';
     toast.success(statusLabel, normalizedMovie.title);
   };

@@ -255,13 +255,32 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
       created_at: new Date().toISOString()
     };
 
-    const updated = [newScreening, ...screenings];
+    // Ensure initial watch is preserved in screening history if it wasn't already seeded
+    let baseScreenings = Array.isArray(screenings) ? [...screenings] : [];
+    if (baseScreenings.length === 0 && (movie.status === 'watched' || rating > 0 || watchDate || movie.watch_date || movie.rating > 0 || movie.date_added)) {
+      const initialDate = (watchDate || movie.watch_date || movie.date_added || new Date().toISOString()).slice(0, 10);
+      const cleanR = (movie.review || '')
+        .replace(/__EPISODE_DATA__:.+$/s, '')
+        .replace(/__EPISODE_RATINGS__:.+$/s, '')
+        .trim();
+      baseScreenings = [{
+        id: 'screening_1',
+        date: initialDate,
+        rating: (rating != null && Number(rating) > 0) ? Number(rating) : (movie.rating != null ? Number(movie.rating) : null),
+        review: cleanR,
+        is_rewatch: false,
+        created_at: movie.date_added || new Date().toISOString()
+      }];
+    }
+
+    const updated = [newScreening, ...baseScreenings];
     setScreenings(updated);
 
     // Update active movie state to this latest watch
     setStatus('watched');
     setRating(newRatingNum);
     setWatchDate(relogDate);
+    const finalReview = relogReview.trim() || review;
     if (relogReview.trim()) {
       setReview(relogReview.trim());
     }
@@ -270,11 +289,73 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
     setShowRelogForm(false);
     setRelogReview('');
 
+    // Construct the complete updated movie payload to persist immediately
+    const isTv = movie.media_type === 'tv' ||
+                 movie.number_of_seasons !== undefined ||
+                 movie.first_air_date !== undefined ||
+                 Boolean(details && (details.number_of_seasons !== undefined || details.first_air_date));
+    const resolvedType = isTv ? 'tv' : (movie.media_type || 'movie');
+    const resolvedGenres = movie.genres || details?.genres?.map(g => g.name) || [];
+    const directorName = movie.director || details?.credits?.crew?.find(c => c.job === 'Director')?.name || null;
+
+    const mergedEpisodeData = {
+      ...episodeData,
+      ratings: episodeData.ratings || {},
+      notes: episodeData.notes || {},
+      dates: episodeData.dates || {},
+      season_ratings: seasonRatings,
+      season_notes: seasonNotes,
+      season_dates: seasonDates,
+      screenings: updated
+    };
+
+    const updatedMoviePayload = {
+      ...movie,
+      media_type: resolvedType,
+      status: 'watched',
+      rating: newRatingNum > 0 ? newRatingNum : null,
+      review: finalReview,
+      screenings: updated,
+      episode_data: mergedEpisodeData,
+      episode_ratings: mergedEpisodeData.ratings,
+      episode_notes: mergedEpisodeData.notes,
+      episode_watch_dates: mergedEpisodeData.dates,
+      season_ratings: seasonRatings,
+      season_notes: seasonNotes,
+      season_dates: seasonDates,
+      tags,
+      genres: resolvedGenres,
+      director: directorName,
+      watch_date: relogDate,
+      contains_spoilers: containsSpoilers,
+      is_rewatch: true,
+      rewatch_count: updated.length,
+    };
+
     if (toast?.success) {
       toast.success(
-        `Screening #${updated.length} Recorded!`,
+        `Screening #${updated.length} Recorded & Saved!`,
         `Re-logged on ${relogDate} with score ★${newRatingNum.toFixed(1)}`
       );
+    }
+
+    if (isSupabaseConfigured && currentUser?.id) {
+      try {
+        supabase.from('activity_feed').insert({
+          user_id: currentUser.id,
+          action_type: 'watched',
+          title: getEnhancedMovieTitle(movie) || movie.title || movie.name,
+          media_type: resolvedType,
+          poster_path: movie.poster_path,
+          rating: newRatingNum > 0 ? newRatingNum : null,
+          details: { review: finalReview ? finalReview.slice(0, 200) : '', is_rewatch: true }
+        }).then(() => {}).catch(() => {});
+      } catch {}
+    }
+
+    // Immediately persist to library state, Supabase cloud, and local cache
+    if (onSave) {
+      onSave(updatedMoviePayload, { keepOpen: true });
     }
   };
 
@@ -282,10 +363,16 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
     e?.stopPropagation?.();
     const remaining = screenings.filter(s => s.id !== scrId);
     setScreenings(remaining);
+    let newLatestRating = rating;
+    let newLatestDate = watchDate;
+    let newLatestReview = review;
     if (remaining.length > 0) {
       const latest = remaining[0];
-      setRating(latest.rating != null ? Number(latest.rating) : 0);
-      setWatchDate(latest.date || watchDate);
+      newLatestRating = latest.rating != null ? Number(latest.rating) : 0;
+      newLatestDate = latest.date || watchDate;
+      if (latest.review) newLatestReview = latest.review;
+      setRating(newLatestRating);
+      setWatchDate(newLatestDate);
       if (latest.review) setReview(latest.review);
       setIsRewatch(remaining.length > 1);
       setRewatchCount(remaining.length);
@@ -293,8 +380,56 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
       setIsRewatch(false);
       setRewatchCount(1);
     }
+
+    const isTv = movie.media_type === 'tv' ||
+                 movie.number_of_seasons !== undefined ||
+                 movie.first_air_date !== undefined ||
+                 Boolean(details && (details.number_of_seasons !== undefined || details.first_air_date));
+    const resolvedType = isTv ? 'tv' : (movie.media_type || 'movie');
+    const resolvedGenres = movie.genres || details?.genres?.map(g => g.name) || [];
+    const directorName = movie.director || details?.credits?.crew?.find(c => c.job === 'Director')?.name || null;
+
+    const mergedEpisodeData = {
+      ...episodeData,
+      ratings: episodeData.ratings || {},
+      notes: episodeData.notes || {},
+      dates: episodeData.dates || {},
+      season_ratings: seasonRatings,
+      season_notes: seasonNotes,
+      season_dates: seasonDates,
+      screenings: remaining
+    };
+
+    const updatedMoviePayload = {
+      ...movie,
+      media_type: resolvedType,
+      status: remaining.length > 0 ? 'watched' : status,
+      rating: newLatestRating > 0 ? newLatestRating : null,
+      review: newLatestReview,
+      screenings: remaining,
+      episode_data: mergedEpisodeData,
+      episode_ratings: mergedEpisodeData.ratings,
+      episode_notes: mergedEpisodeData.notes,
+      episode_watch_dates: mergedEpisodeData.dates,
+      season_ratings: seasonRatings,
+      season_notes: seasonNotes,
+      season_dates: seasonDates,
+      tags,
+      genres: resolvedGenres,
+      director: directorName,
+      watch_date: newLatestDate,
+      contains_spoilers: containsSpoilers,
+      is_rewatch: remaining.length > 1,
+      rewatch_count: Math.max(1, remaining.length),
+    };
+
     if (toast?.info) {
       toast.info('Screening Removed', 'Updated movie history and active score.');
+    }
+
+    // Persist screening removal to database and library
+    if (onSave) {
+      onSave(updatedMoviePayload, { keepOpen: true });
     }
   };
   const [accentColor, setAccentColor] = useState('var(--accent)');
