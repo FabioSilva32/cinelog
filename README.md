@@ -1,16 +1,51 @@
-# React + Vite
+# 🎬 CineLog — Movie & TV Series Tracking Progressive Web App (PWA)
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+[![Live Demo](https://img.shields.io/badge/Live_Application-cinelog--phi.vercel.app-10b981?style=for-the-badge)](https://cinelog-phi.vercel.app)
+[![React](https://img.shields.io/badge/React-TypeScript-6366f1?style=for-the-badge)](https://react.dev)
+[![TMDB API](https://img.shields.io/badge/API-TMDB_REST_v3-059669?style=for-the-badge)](https://www.themoviedb.org/)
+[![Deployment](https://img.shields.io/badge/Deployed_on-Vercel_Edge-000000?style=for-the-badge)](https://cinelog-phi.vercel.app)
 
-Currently, two official plugins are available:
+> **Live Application:** [https://cinelog-phi.vercel.app](https://cinelog-phi.vercel.app)  
+> **Author:** Fábio Júnior Fernandes Silva — BSc in Web Multimedia Development @ IPCA (Portugal)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+![CineLog Live Application Screenshot](./preview.png)
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🌟 Overview & How It Works
 
-## Expanding the Oxlint configuration
+**CineLog** is a mobile-first **Progressive Web App (PWA)** designed for discovering movies and TV series, curating personal watchlists, and logging structured review diaries. Built with **React**, **TypeScript**, and **The Movie Database (TMDB) REST API**, it delivers a dark-canvas tactile cinema interface optimized for both mobile touch viewports and desktop browsers.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+### Key Capabilities
+1. **Real-Time Cinema & Series Discovery**:
+   - Queries live trending, top-rated, and upcoming movies/series via TMDB REST endpoints.
+   - Instant debounced search with asynchronous poster caching and skeleton loading states.
+2. **Personal Review Diary & Watchlist**:
+   - Rate films, log viewing dates, write personal review notes, and organize custom collections.
+   - Persistent client-side storage ensuring watchlists and ratings remain available offline.
+3. **Touch-First Mobile PWA Ergonomics**:
+   - Smooth bottom-sheet modal navigation, high-contrast typography, and responsive poster grids.
+   - Installable on iOS, Android, and desktop via Web App Manifest.
+
+---
+
+## 🛠️ Tech Stack & Architecture
+
+| Layer | Technology |
+| :--- | :--- |
+| **Frontend Framework** | React, TypeScript / ES6+ JavaScript |
+| **Styling & UI** | Responsive CSS Grid/Flexbox, Custom Dark-Mode Tokens |
+| **External Data API** | The Movie Database (TMDB) REST API |
+| **State & Persistence** | React Hooks + Persistent LocalStorage Cache |
+| **Hosting & CI/CD** | Vercel Edge Network (`cinelog-phi.vercel.app`) |
+
+---
+
+## 🚀 Getting Started Locally
+
+```bash
+git clone https://github.com/FabioSilva32/cinelog.git
+cd cinelog
+npm install
+npm run dev
+```
