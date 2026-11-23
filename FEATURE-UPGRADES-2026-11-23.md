@@ -31,7 +31,7 @@ where table_schema='public' and table_name='profiles' and column_name='pinned_li
 
 ## Catalogue automation setup
 
-After the workflow is merged to the default branch, set the repository Actions secret `TMDB_API_KEY` to the existing TMDB read key and enable Actions permission to create pull requests. Run **Refresh franchise catalogues → Run workflow** once. Scheduled runs are weekly. A catalogue update goes live through the usual reviewed merge/release process.
+The repository Actions secret `TMDB_API_KEY` is configured using sealed-box encryption, and Actions permission to create pull requests is enabled. No secret value was logged or committed. The schedule becomes active after the workflow is merged to the default branch. Run **Refresh franchise catalogues → Run workflow** once after that merge. Scheduled runs are weekly. A catalogue update goes live through the usual reviewed merge/release process.
 
 ## Validation
 
@@ -47,4 +47,8 @@ Use `npm run check:release` for build, lint, data/security regressions and page/
 4. A clear import preview with duplicate resolution before committing an imported library.
 5. A compact yearly profile card people can export and share.
 
-The main remaining prerequisite for pins is the database migration. Scheduled catalogue updates also require the repository secret and workflow activation. Neither was applied to production by the local implementation.
+The remaining prerequisite for pins is the database migration; it has not been applied to the live database. Catalogue credentials and PR permission are configured, but the schedule waits for the reviewed merge to main. Production remains unchanged.
+
+GitHub draft review: https://github.com/FabioSilva32/cinelog/pull/1
+
+Vercel preview: https://cinelog-3t300h0pf-lynnx.vercel.app (owner has a temporary private review link). Deployed fixture verification passed the new desktop/mobile workflows with no JavaScript exceptions or fixture errors. The full local release check passed 79 tests, 45 page/menu initialization checks and 10 extras checks; existing collections/search, social and real-touch suites also passed.
