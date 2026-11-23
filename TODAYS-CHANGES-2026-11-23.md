@@ -2,6 +2,8 @@
 
 Everything below was implemented in the experimental copy. The original backup and production site are unchanged by this release candidate. The earlier redesign is retained in GitHub draft PR #1.
 
+Verified preview: https://cinelog-ly3iuo1zb-lynnx.vercel.app (protected; use the private review link supplied in chat). The uploaded build passed the community and episode-tracker desktop/mobile fixture checks. Production still points to the prior release.
+
 ## Enable the new community tools
 
 1. Open the CineLog project in Supabase → SQL Editor → New query.
