@@ -944,8 +944,8 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
         </aside>
         {/* ── SCROLLABLE BODY ── */}
         <div className="movie-detail-scroll-body v2-film-content" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', overscrollBehavior: 'contain', padding: '0 28px 28px', display: 'flex', flexDirection: 'column', gap: '22px', borderTop: '1px solid var(--border)', paddingTop: '16px', width: '100%', boxSizing: 'border-box' }}>
-          {mediaApiType==='tv'&&['overview','log'].includes(activeSection)&&<button className="episode-tracker-entry" onClick={()=>setActiveSection('episodes')}><span><strong>Episode tracker</strong><small>Track what you’ve watched, season by season.</small></span><span>{seasonEpisodes.filter(ep=>isEpisodeWatched(episodeData,episodeKey(selectedSeason,ep.episode_number))).length} watched in {selectedSeason===0?'Specials':'Season '+selectedSeason} · Open tracker ↗</span></button>}
-          {activeSection!=='episodes'&&<div className="v2-film-masthead" style={backdropUrl ? {backgroundImage:`linear-gradient(90deg,#13131577,#131315dd),url(${backdropUrl})`} : undefined}><span className="studio-eyebrow">{activeSection==='log'?(status==='plan_to_watch'?'ON YOUR WATCHLIST':'A MOMENT WORTH REMEMBERING'):'GO A LITTLE DEEPER'}</span><h2>{activeSection==='overview'?'Behind the story.':activeSection==='log'?(status==='plan_to_watch'?'A story for another night.':'Make it part of your story.'):activeSection==='streaming'?'Find your next screening.':SECTIONS.find(section=>section.id===activeSection)?.label}</h2><p>{activeSection==='overview'?'The people, the world, and the moments behind this story.':activeSection==='log'?(status==='plan_to_watch'?'Keep it on your list. Log your thoughts after you watch.':'A rating, a date, a few words. Keep what mattered.'):'A closer look, all in one place.'}</p></div>}
+          {mediaApiType==='tv'&&activeSection==='overview'&&<button className="episode-tracker-entry" onClick={()=>setActiveSection('episodes')}><span><strong>Episode tracker</strong><small>Track what you’ve watched, season by season.</small></span><span>{seasonEpisodes.filter(ep=>isEpisodeWatched(episodeData,episodeKey(selectedSeason,ep.episode_number))).length} watched in {selectedSeason===0?'Specials':'Season '+selectedSeason} · Open tracker ↗</span></button>}
+          {!['episodes','log'].includes(activeSection)&&<div className="v2-film-masthead" style={backdropUrl ? {backgroundImage:`linear-gradient(90deg,#13131577,#131315dd),url(${backdropUrl})`} : undefined}><span className="studio-eyebrow">GO A LITTLE DEEPER</span><h2>{activeSection==='overview'?'Behind the story.':activeSection==='streaming'?'Find your next screening.':SECTIONS.find(section=>section.id===activeSection)?.label}</h2><p>{activeSection==='overview'?'The people, the world, and the moments behind this story.':'A closer look, all in one place.'}</p></div>}
           {/* Underlined tabs (smooth horizontal scroll on mobile) */}
           <div
             className="movie-detail-tabs-bar"
@@ -992,16 +992,17 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
             ))}
           </div>
 
-          {activeSection === 'log' && <p className="studio-log-help">{status==='plan_to_watch'?'Save to your watchlist, or organise it with tags below.':'Choose your status, rating, and notes.'} Select {movie.date_added && inLibrary ? 'Save Changes' : 'Add to Library'} when you're ready.</p>}
+          {activeSection==='log'&&<header className="screening-log-heading"><div><span className="studio-eyebrow">YOUR PERSONAL JOURNAL</span><h2>Your screening.</h2><p>{status==='plan_to_watch'?'Keep it for another night. Your review can wait until you watch.':status==='watching'?'Your impression so far. Update it as the story unfolds.':'A rating, a date and the thoughts you want to keep.'}</p></div><span className="screening-save-note">Save when you’re ready</span></header>}
+          {activeSection==='log'&&mediaApiType==='tv'&&<button className="episode-tracker-entry screening-tracker-link" onClick={()=>setActiveSection('episodes')}><span><strong>Watching episode by episode?</strong><small>{seasonEpisodes.filter(ep=>isEpisodeWatched(episodeData,episodeKey(selectedSeason,ep.episode_number))).length} watched in {selectedSeason===0?'Specials':'Season '+selectedSeason}</small></span><span>Open episode tracker ↗</span></button>}
           {/* ── LOG (rating, tags, review) ── */}
           <div className="screening-editor" style={{ display: activeSection === 'log' ? 'block' : 'none', flexShrink: 0 }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '26px', padding: '4px 0 8px' }}>
 
               {/* Vertical Stack: 1. Full-Width Score Bar, 2. Date Watched, 3. Review */}
               {(status === 'watched' || status === 'watching') && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
-                  {/* 1. Score Bar at the top spanning left to right */}
-                  <div style={{
+                <div className="screening-summary" style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+                  {/* Overall score and latest viewing */}
+                  <div className="screening-score" style={{
                     background: '#151515',
                     border: '1px solid #282828',
                     borderRadius: '12px',
@@ -1395,8 +1396,8 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                     )}
                   </div>
 
-                  {/* 2. Date Watched directly under score bar */}
-                  <div style={{
+                  {/* Latest viewing date */}
+                  <div className="screening-date" style={{
                     background: '#151515',
                     border: '1px solid #282828',
                     borderRadius: '12px',
@@ -1408,7 +1409,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                     boxSizing: 'border-box'
                   }}>
                     <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#fff' }}>
-                      Date Watched (Latest)
+                      Latest viewing
                     </div>
                     <input
                       type="date"
@@ -1437,7 +1438,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#fff' }}>
-                      Your take
+                      Your review
                     </span>
                     <span style={{ fontSize: '11px', color: 'var(--text-dim)' }}>
                       · {review.trim() ? review.trim().split(/\s+/).length : 0} words
@@ -1517,7 +1518,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                   id="review-textarea"
                   aria-label="Screening notes"
                   rows={7}
-                  placeholder="The scene you keep thinking about. The ending you loved. Your take, in your own words."
+                  placeholder="What stayed with you? Write a few words, or leave this for later."
                   value={review}
                   onChange={e => setReview(e.target.value)}
                   onInput={e => {

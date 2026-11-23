@@ -38,6 +38,8 @@ Expect ten tables with row security enabled and one `pinned_list_ids` array fiel
 - **Continue Watching:** aired-episode counts, season progress, next episode and resume season. Mark the next episode, refresh, and check the count persists. Future episodes and specials do not enter the next-episode queue.
 - **Episode tracker redesign:** open a series → **Episode tracker**, or use the shortcuts from **The story** / **Your screening**. Try season selection; All / Unwatched / Watched / Rated; mark watched/unwatched; complete aired episodes; season and episode ratings, dates and notes.
 - **Save progress:** both the tracker action and the left-rail action save without closing the menu or replacing past screenings. Change an episode, save, refresh, and confirm the previous review and viewing history remain.
+- **Visible episode rating bar:** repaired the custom slider's missing track; the fill and thumb use the same rating colour, with a visible unfilled rail and a larger phone touch area. Screenshot checks verify coloured pixels in the track.
+- **Your screening redesign:** removed the duplicate backdrop banner, added a compact journal heading, grouped rating/date into one responsive panel, simplified the episode-tracker shortcut, and restyled the optional review editor. Existing ratings, dates, rewatches and save behaviour are retained. No additional database migration is needed for these visual changes.
 - **Direct film links:** reload a saved film URL and confirm your current saved status, rating, review and episode data load rather than a blank catalogue entry.
 - **Smaller Picked for You posters:** bounded poster sizes and a two-column phone layout. Check long titles and the featured recommendation.
 

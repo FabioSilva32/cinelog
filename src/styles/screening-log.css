@@ -1,0 +1,45 @@
+/* The personal journal: one header, a compact score/date sheet, and room to write. */
+.screening-log-heading{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:2px 0 22px;border-bottom:1px solid #343434}
+.screening-log-heading h2{font-size:clamp(28px,3vw,38px);line-height:1.2;letter-spacing:-1.3px;margin:10px 0}
+.screening-log-heading p{font-size:13px;line-height:1.7;color:#bdbdbd}
+.screening-save-note{font-size:11px;color:#aaa;white-space:nowrap}
+.screening-tracker-link{margin:0!important;background:#181818;border:1px solid #383838;border-left:0;border-radius:12px;padding:16px 18px}
+.screening-tracker-link>span:first-child strong{font-size:13px}
+.screening-tracker-link>span:last-child{color:#fff;font-size:12px;padding:9px 12px;border:1px solid #514044;background:#2a191d;border-radius:8px}
+.screening-editor .screening-summary{display:grid!important;grid-template-columns:minmax(0,2fr) minmax(200px,1fr);gap:0!important;border:1px solid #3b3b3b;background:#191919;border-radius:14px;overflow:hidden}
+.screening-editor .screening-summary>.screening-score,.screening-editor .screening-summary>.screening-date{background:transparent!important;border:0!important;border-radius:0!important;padding:24px!important;min-width:0}
+.screening-editor .screening-summary>.screening-date{border-left:1px solid #383838!important;justify-content:center;gap:16px!important}
+.screening-date input{min-height:46px;color-scheme:dark}
+.screening-editor .screening-summary .form-label{font-size:12px!important;text-transform:none!important;letter-spacing:0!important;color:#ccc!important}
+.screening-editor .screening-review{background:#171717!important;border:1px solid #383838!important;border-radius:14px!important;padding:22px!important;gap:20px!important}
+.screening-editor .screening-review>div:first-child>div:first-child>span:first-child{font-size:20px!important;letter-spacing:-.5px!important}
+.screening-editor #review-textarea{min-height:155px!important;background:transparent!important;border:0!important;border-radius:0!important;padding:0!important;font-size:14px!important;line-height:1.85!important}
+.screening-editor #review-textarea:focus{background:transparent!important;outline:0;border:0!important}
+.screening-editor .screening-review:focus-within{border-color:#9d3747!important}
+.screening-review #modal-rewatch-toggle,.screening-review #modal-spoiler-toggle{min-height:36px;padding:8px 11px!important;font-size:11px!important}
+.screening-editor .screening-tags{padding:20px 0!important}
+
+/* A custom thumb requires an explicit track; accent-color alone cannot paint it. */
+.episode-tracker input.episode-rating-slider{display:block;width:100%;height:32px;min-height:32px;padding:0;border:0;appearance:none;-webkit-appearance:none;background:transparent!important}
+.episode-tracker input.episode-rating-slider::-webkit-slider-runnable-track{height:8px;border:0;border-radius:8px;background:var(--track-fill)!important}
+.episode-tracker input.episode-rating-slider::-moz-range-track{height:8px;border:0;border-radius:8px;background:var(--track-fill)!important}
+.episode-tracker input.episode-rating-slider::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:19px;height:19px;margin-top:-5.5px;background:var(--thumb-color)!important;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 5px #0008}
+.episode-tracker input.episode-rating-slider::-moz-range-thumb{width:16px;height:16px;background:var(--thumb-color)!important;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 5px #0008}
+.episode-tracker input.episode-rating-slider:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:8px}
+.episode-personal-log>div>label:first-child>span{font-variant-numeric:tabular-nums;color:#eee}
+.episode-tracker input[type=date]{color-scheme:dark}
+.episode-tracker input:not([type=range]),.episode-tracker textarea{background:#1c1c1c;border-color:#444}
+@media(max-width:767px){
+ .screening-log-heading{align-items:flex-start;padding-bottom:18px}
+ .screening-log-heading h2{font-size:29px}
+ .screening-save-note{display:none}
+ .screening-tracker-link{gap:14px;padding:16px}
+ .screening-tracker-link>span:last-child{width:100%;text-align:center;min-height:42px;display:grid;place-items:center}
+ .screening-editor .screening-summary{grid-template-columns:minmax(0,1fr)}
+ .screening-editor .screening-summary>.screening-score,.screening-editor .screening-summary>.screening-date{padding:18px!important}
+ .screening-editor .screening-summary>.screening-date{border-left:0!important;border-top:1px solid #383838!important;gap:12px!important}
+ .screening-editor .screening-review{padding:18px!important}
+ .screening-review>div:first-child{align-items:flex-start!important;gap:14px!important}
+ .screening-editor #review-textarea{min-height:150px!important}
+ .episode-tracker input.episode-rating-slider{height:44px;min-height:44px}
+}
