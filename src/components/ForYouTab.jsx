@@ -1,5 +1,6 @@
+import {mediaLabel} from '../utils/mediaLabel';
 import React, { useState, useMemo, useCallback } from "react";
-import { Sparkles, RefreshCw, ExternalLink, Zap, Plus, Check } from "lucide-react";
+import { Sparkles, RefreshCw, ExternalLink, Plus, Check } from "lucide-react";
 
 const TMDB_KEY = "6a2fd6b9b1bb3befbb9f14c203732225";
 const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY;
@@ -78,50 +79,18 @@ async function fetchTmdbPoster(title, year) {
   } catch { return null; }
 }
 
+const DISCOVERY_GENRES = {28:'Action',12:'Adventure',16:'Animation',35:'Comedy',80:'Crime',99:'Documentary',18:'Drama',10751:'Family',14:'Fantasy',36:'History',27:'Horror',10402:'Music',9648:'Mystery',10749:'Romance',878:'Sci-Fi',53:'Thriller',10752:'War',37:'Western',10759:'Action & Adventure',10765:'Sci-Fi & Fantasy'};
 async function fetchFreshTmdbRecommendations(library) {
-  try {
-    const libraryTmdbIds = new Set(library.map(m => String(m.tmdb_id)));
-    const libraryTitles = new Set(library.map(m => (m.title || '').toLowerCase().trim()));
-
-    // Fetch popular/top_rated from a random page (pages 1-10) to keep recommendations dynamic & fresh
-    const randomPage = Math.floor(Math.random() * 10) + 1;
-    const endpoints = [
-      { url: `https://api.themoviedb.org/3/movie/top_rated?api_key=${TMDB_KEY}&page=${randomPage}`, type: 'movie' },
-      { url: `https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_KEY}&page=${randomPage}`, type: 'movie' },
-      { url: `https://api.themoviedb.org/3/trending/movie/week?api_key=${TMDB_KEY}&page=${randomPage}`, type: 'movie' },
-      { url: `https://api.themoviedb.org/3/tv/top_rated?api_key=${TMDB_KEY}&page=${randomPage}`, type: 'tv' },
-      { url: `https://api.themoviedb.org/3/trending/tv/week?api_key=${TMDB_KEY}&page=${randomPage}`, type: 'tv' },
-    ];
-    const chosen = endpoints[Math.floor(Math.random() * endpoints.length)];
-
-    const res = await fetch(chosen.url);
-    const data = await res.json();
-    const results = data.results || [];
-
-    // STRICTLY EXCLUDE ANYTHING ALREADY IN THE LIBRARY!
-    const freshOnly = results.filter(m => {
-      const idStr = String(m.id);
-      const titleLower = (m.title || m.name || '').toLowerCase().trim();
-      return !libraryTmdbIds.has(idStr) && !libraryTitles.has(titleLower);
-    });
-
-    // Shuffle and pick 8
-    const shuffled = [...freshOnly].sort(() => Math.random() - 0.5).slice(0, 8);
-
-    return shuffled.map(m => ({
-      tmdb_id: m.id,
-      media_type: chosen.type,
-      title: m.title || m.name,
-      year: (m.release_date || m.first_air_date || '').slice(0, 4),
-      poster_path: m.poster_path,
-      overview: m.overview || '',
-      reason: `Acclaimed pick with a ${Math.round((m.vote_average || 0) * 10) / 10}★ TMDB rating`,
-      genre: chosen.type === 'tv' ? 'TV Series' : 'Movie'
-    }));
-  } catch (err) {
-    console.error("TMDB discovery fetch error:", err);
-    return [];
-  }
+  const owned = new Set(library.map(m=>String(m.tmdb_id)));
+  const ownedTitles = new Set(library.map(m=>(m.title || '').trim().toLowerCase()));
+  const anchor=[...library].filter(m=>m.tmdb_id&&m.status==='watched'&&Number(m.rating)>0).sort((a,b)=>Number(b.rating)-Number(a.rating))[0];
+  const counts={};for(const m of library.filter(m=>m.status==='watched'))for(const genre of m.genres || []){const label=genre==='Science Fiction'?'Sci-Fi':genre;const id=Object.keys(DISCOVERY_GENRES).find(id=>DISCOVERY_GENRES[id]===label);if(id)counts[id]=(counts[id]||0)+1;}
+  const top=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,2).map(([id])=>id);
+  const sources=[{url: `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&sort_by=vote_average.desc&vote_count.gte=250&primary_release_date.lte=${new Date().toISOString().slice(0,10)}&with_genres=${top.join('|')}&page=${1+Math.floor(Math.random()*3)}`,type:'movie',reason:top.length?`A highly rated discovery in ${top.map(id=>DISCOVERY_GENRES[id]).join(' and ')}.`:'A highly rated discovery to start with.'}];
+  if(anchor){const type=anchor.media_type==='tv'?'tv':'movie';sources.unshift({url:`https://api.themoviedb.org/3/${type}/${anchor.tmdb_id}/recommendations?api_key=${TMDB_KEY}`,type,reason:`Because you rated ${anchor.title} ${Number(anchor.rating).toFixed(1)}.`});}
+  const responses=await Promise.allSettled(sources.map(async source=>{const response=await fetch(source.url);if(!response.ok)throw Error('Discovery unavailable');const data=await response.json();return (data.results || []).map(m=>({...m,_source:source}));}));
+  const seen=new Set();const results=responses.flatMap(r=>r.status==='fulfilled'?r.value:[]).filter(m=>{const title=(m.title||m.name||'').toLowerCase().trim();if(owned.has(String(m.id))||ownedTitles.has(title)||seen.has(m.id)||!m.poster_path)return false;seen.add(m.id);return true;});
+  return results.sort(()=>Math.random()-.5).slice(0,12).map(m=>({tmdb_id:m.id,media_type:m._source.type,title:m.title||m.name,year:(m.release_date||m.first_air_date||'').slice(0,4),poster_path:m.poster_path,original_language:m.original_language,origin_country:m.origin_country,genre_ids:m.genre_ids,overview:m.overview||'',genre:(m.genre_ids||[]).map(id=>DISCOVERY_GENRES[id]).filter(Boolean).join(' / '),reason:m._source.reason}));
 }
 
 function ForYouCard({ rec, saved, onAdd, onClick }) {
@@ -141,6 +110,8 @@ function ForYouCard({ rec, saved, onAdd, onClick }) {
         transform: hover ? "translateY(-4px)" : "none",
         boxShadow: hover ? "0 12px 28px rgba(0,0,0,0.5)" : "none",
       }}
+      onFocus={()=>setHover(true)}
+      onBlur={e=>{if(!e.currentTarget.contains(e.relatedTarget))setHover(false);}}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
@@ -208,6 +179,7 @@ function ForYouCard({ rec, saved, onAdd, onClick }) {
                   release_year: rec.year,
                   media_type: rec.media_type || "movie",
                   overview: rec.overview || "",
+                  genres: (rec.genre || "").split(/\s*\/\s*/).filter(Boolean),
                 });
               }
             }}
@@ -238,11 +210,9 @@ function ForYouCard({ rec, saved, onAdd, onClick }) {
 
       {/* Info */}
       <div style={{ padding: "14px" }}>
-        <div style={{ fontWeight: 800, fontSize: "14px", lineHeight: 1.2, marginBottom: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {rec.title}
-        </div>
+        <button className="poster-title-link" onClick={e=>{e.stopPropagation();onClick();}}>{rec.title}</button>
         <div style={{ fontSize: "11px", color: "var(--text-dim)", marginBottom: "8px" }}>
-          {rec.year} · {rec.genre}
+          {[rec.year,mediaLabel(rec),rec.genre].filter(Boolean).join(' · ')}
         </div>
         <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: 1.4, fontStyle: "italic" }}>
           "{rec.reason}"
@@ -257,7 +227,9 @@ export default function ForYouTab({ library, currentUser, onAddMovie, onMovieCli
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [usingAI, setUsingAI] = useState(false);
+  const [recommendationSource,setRecommendationSource]=useState('curated');
   const [generated, setGenerated] = useState(false);
+  const [lane,setLane] = useState('all');
 
   const tasteProfile = useMemo(() => buildTasteProfile(library), [library]);
   const libraryTmdbIds = useMemo(() => new Set(library.map(m => String(m.tmdb_id))), [library]);
@@ -295,10 +267,11 @@ Rules:
         const match = text.match(/\[[\s\S]*\]/);
         if (match) { try { parsed = JSON.parse(match[0]); } catch {} }
         recs = parsed.slice(0, 8);
-        setUsingAI(true);
+        setUsingAI(true);setRecommendationSource('personal');
       } else {
         // Fetch dynamic unwatched recommendations directly from TMDB endpoints
         let dynamicRecs = await fetchFreshTmdbRecommendations(library);
+        setRecommendationSource(dynamicRecs.length>=8&&tasteProfile?'taste':'mixed');
 
         // Fallback to FALLBACK_RECS strictly filtered against library if TMDB fetch fails
         if (dynamicRecs.length < 8) {
@@ -337,7 +310,7 @@ Rules:
       setGenerated(true);
     } catch (err) {
       console.error("ForYou error:", err);
-      setError(err.message || "Failed to generate recommendations");
+      setError('Personal recommendations are unavailable right now');setRecommendationSource('curated');
       
       const libraryTitles = new Set(library.map(m => (m.title || '').toLowerCase().trim()));
       const unsavedFallbacks = FALLBACK_RECS.filter(f => !libraryTitles.has(f.title.toLowerCase().trim()));
@@ -361,118 +334,13 @@ Rules:
     }
   }, [library, tasteProfile, libraryTmdbIds]);
 
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "28px", paddingBottom: "40px" }}>
-      {/* Header */}
-      <div style={{ textAlign: "center", padding: "8px 0" }}>
-        <div style={{ display: "inline-flex", padding: "12px", background: "#161616", border: "1px solid #262626", borderRadius: "50%", marginBottom: "14px" }}>
-          <Sparkles size={24} color="var(--accent)" />
-        </div>
-        <h2 style={{ fontSize: "26px", fontWeight: 900, marginBottom: "8px", color: "#FFFFFF" }}>
-          For You
-        </h2>
-        <p style={{ fontSize: "14px", color: "var(--text-muted)", maxWidth: "420px", margin: "0 auto", lineHeight: 1.6 }}>
-          {GEMINI_KEY
-            ? "AI analyses your library taste profile and picks films you are most likely to love."
-            : "Curated recommendations based on acclaimed films across every genre."}
-        </p>
-      </div>
-
-      {/* Taste Profile Card */}
-      {tasteProfile && (
-        <div style={{ background: "#141414", border: "1px solid #262626", borderRadius: "12px", padding: "18px 22px" }}>
-          <div style={{ fontSize: "12px", fontWeight: 800, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
-            <Sparkles size={13} /> Your Taste Profile
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: "10px" }}>
-            {tasteProfile.topGenres.length > 0 && (
-              <div>
-                <div style={{ fontSize: "10px", color: "var(--text-dim)", marginBottom: "6px", fontWeight: 700 }}>TOP GENRES</div>
-                <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
-                  {tasteProfile.topGenres.slice(0, 3).map(g => (
-                    <span key={g} style={{ fontSize: "11px", padding: "2px 10px", borderRadius: "4px", background: "#1C1C1C", border: "1px solid #282828", color: "#E4E4E7" }}>{g}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {tasteProfile.avgRating && (
-              <div>
-                <div style={{ fontSize: "10px", color: "var(--text-dim)", marginBottom: "6px", fontWeight: 700 }}>AVG RATING</div>
-                <div style={{ fontSize: "20px", fontWeight: 900, color: "#fbbf24" }}>★ {tasteProfile.avgRating}</div>
-              </div>
-            )}
-            {tasteProfile.topDirectors.length > 0 && (
-              <div>
-                <div style={{ fontSize: "10px", color: "var(--text-dim)", marginBottom: "6px", fontWeight: 700 }}>FAV DIRECTORS</div>
-                <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: 1.5 }}>{tasteProfile.topDirectors.join(", ")}</div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Generate button */}
-      <div style={{ textAlign: "center" }}>
-        <button onClick={generate} disabled={loading} style={{
-          background: loading ? "#222222" : "var(--accent)",
-          border: "none", borderRadius: "8px", padding: "12px 28px",
-          color: "#fff", fontWeight: 800, fontSize: "14px", cursor: loading ? "default" : "pointer",
-          display: "inline-flex", alignItems: "center", gap: "8px",
-          boxShadow: loading ? "none" : "0 4px 12px rgba(229,9,20,0.3)",
-          transition: "all 0.15s",
-        }}>
-          {loading ? (
-            <><div style={{ width: "16px", height: "16px", border: "2px solid rgba(255,255,255,0.3)", borderTop: "2px solid #fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} /> Analysing your taste…</>
-          ) : generated ? (
-            <><RefreshCw size={14} /> Refresh Picks</>
-          ) : (
-            <><Sparkles size={14} /> {GEMINI_KEY ? "Generate AI Picks" : "Get Recommendations"}</>
-          )}
-        </button>
-        {usingAI && <div style={{ fontSize: "11px", color: "var(--accent)", marginTop: "8px", display: "flex", alignItems: "center", gap: "4px", justifyContent: "center" }}><Zap size={11} /> Powered by Gemini AI</div>}
-      </div>
-
-      {/* Error notice */}
-      {error && !generated && (
-        <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: "12px", padding: "12px 16px", fontSize: "13px", color: "#f87171", textAlign: "center" }}>
-          ⚠️ {error} — showing curated picks instead
-        </div>
-      )}
-
-      {/* Results grid */}
-      {recommendations.length > 0 && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: "16px" }}>
-          {recommendations.map((rec, i) => {
-            const saved = library.some(m => String(m.tmdb_id) === String(rec.tmdb_id));
-            return (
-              <ForYouCard
-                key={i}
-                rec={rec}
-                saved={saved}
-                onAdd={onAddMovie}
-                onClick={() => onMovieClick?.(rec.tmdb_id, rec.media_type || "movie")}
-              />
-            );
-          })}
-        </div>
-      )}
-
-      {/* Empty state before generating */}
-      {!generated && !loading && (
-        <div style={{ textAlign: "center", padding: "48px 0", color: "var(--text-muted)" }}>
-          <div style={{ fontSize: "48px", marginBottom: "16px" }}>🎬</div>
-          <div style={{ fontWeight: 700, fontSize: "16px", marginBottom: "8px" }}>
-            {library.length < 3 ? "Add more films to your library first!" : "Ready to discover your next favourite?"}
-          </div>
-          <div style={{ fontSize: "13px", color: "var(--text-dim)" }}>
-            {library.length < 3
-              ? "Rate and log at least a few films to build your taste profile."
-              : "Hit the button above and we will find films made for you."}
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  const matches = lane==='all' ? recommendations : recommendations.filter(rec=>String(rec.genre || '').toLowerCase().includes(lane));
+  const featured=matches[0];
+  return <section className="v2-foryou"><header className="v2-recommendation-heading"><div><span className="studio-eyebrow">A LITTLE INTUITION. A LITTLE DISCOVERY.</span><h1>Your next great film<br/>is out there.</h1><p>A personal shortlist, with room for a surprise.</p></div><button className="studio-primary" onClick={generate} disabled={loading}>{loading?<RefreshCw size={17}/>:<Sparkles size={17}/>} {loading?'Finding your next story…':generated?'Deal me another hand':'Build my shortlist'}</button></header>
+    <p className="workspace-context" role="status">{recommendationSource==='personal'?'Personal recommendations generated from your film taste.':recommendationSource==='taste'?'Discoveries based on your highest-rated films and genres.':recommendationSource==='mixed'?'A mix of taste-based discoveries and editorial picks.':'Editorial picks to explore. These are not personalized recommendations.'}</p><div className="v2-picks-layout"><section className="v2-picks-main">{error&&<div className="v2-picks-notice" role="status">{error}. Curated alternatives are available below.</div>}
+    {featured?<article className="v2-featured-pick"><div className="v2-featured-poster">{featured.poster_path&&<img src={`https://image.tmdb.org/t/p/w500${featured.poster_path}`} alt={featured.title}/>}<span>THE FIRST PICK</span></div><div><span className="studio-eyebrow">{usingAI?'PERSONALIZED FOR YOU':tasteProfile?.totalWatched?'GUIDED BY YOUR WATCHED FILMS':'FROM THE CURATED SHORTLIST'}</span><h2>{featured.title}</h2><p className="v2-pick-meta">{featured.year} · {featured.genre}</p><blockquote>“{featured.reason}”</blockquote><p>{featured.overview}</p><button className="studio-primary" onClick={()=>onMovieClick?.(featured.tmdb_id,featured.media_type || 'movie')}>Take a closer look <ExternalLink size={15}/></button></div></article>:<div className="v2-picks-invitation"><div className="v2-hand"><i>01</i><i>02</i><i>03</i></div><span className="studio-eyebrow">SOMETHING YOU HAVEN'T SEEN COMING</span><h2>{generated?'A different mood?':'Let curiosity choose.'}</h2><p>{generated?'No picks in this lane. Try All picks or generate another shortlist.':'Start with a shortlist of films outside your library. A familiar feeling, or a completely new world.'}</p>{generated&&<button className="studio-secondary" onClick={()=>setLane('all')}>Show all picks</button>}</div>}
+    <div className="v2-shortlist-header"><h2>The shortlist <span>{matches.length}</span></h2><div className="v2-pill-filters">{[['all','All picks'],['drama','Drama'],['thriller','Thriller'],['sci','Sci-fi']].map(([id,label])=><button key={id} aria-pressed={lane===id} onClick={()=>setLane(id)}>{label}</button>)}</div></div>
+    {loading?<div className="v2-picks-loading" role="status">Turning over a few possibilities…</div>:<div className="v2-recommendation-grid">{matches.map((rec,i)=><div key={rec.tmdb_id || i} className="v2-recommendation-card"><span>0{i+1}</span><ForYouCard rec={rec} saved={library.some(m=>String(m.tmdb_id)===String(rec.tmdb_id))} onAdd={onAddMovie} onClick={()=>onMovieClick?.(rec.tmdb_id,rec.media_type||'movie')}/></div>)}</div>}
+    </section><aside className="v2-taste-card"><span className="studio-eyebrow">THE STARTING POINT</span><h2>Your cinematic DNA.</h2><p>{tasteProfile?.totalWatched?`Built around ${tasteProfile.totalWatched} watched films.`:'Your taste takes shape with every film you log.'}</p><div className="v2-taste-tags">{(tasteProfile?.topGenres || []).slice(0,5).map(g=><span key={g}>{g}</span>)}</div><dl><dt>Your average rating</dt><dd>{tasteProfile?.avgRating?'★ '+tasteProfile.avgRating:'Still discovering'}</dd><dt>Directors you return to</dt><dd>{tasteProfile?.topDirectors?.join(', ') || 'Keep logging to find a pattern.'}</dd></dl><footer><Sparkles size={23}/><p>{usingAI?'Personalized suggestions':tasteProfile?.totalWatched?'Guided by your viewing':'Curated discoveries'}<br/>New to your saved library.</p></footer></aside></div>
+  </section>;
 }
-
-

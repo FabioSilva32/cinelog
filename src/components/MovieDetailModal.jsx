@@ -1,7 +1,18 @@
+import {reviewSpoilerFlag} from '../utils/reviews';
+import {persistReaction} from '../utils/reactions';
+import { getRatingColor } from '../utils/ratingColors';
+import {filmPath} from '../utils/navigation';
+import {loadScreeningDetails,tmdbMediaType,selectTrailer} from '../utils/screeningDetails';
+import ConfirmModal from './ConfirmModal';
+import { initialWatchDate } from '../utils/dates';
+import TrailerPlayer from './TrailerPlayer';
+import { useDialogFocus } from '../hooks/useDialogFocus';
+import { CountrySelector } from './CountrySelector';
+import { useCountry } from '../utils/useCountry';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { X, Heart, Film, Tag, Star, Clock, Users, ExternalLink, Play, FolderHeart, Plus, Check, Eye, Bookmark, XCircle, ChevronDown, Repeat, EyeOff, RotateCcw, History, Calendar, Trash2, Edit3, ArrowUpRight } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
-import { MOCK_REVIEWS, ELENA_PROFILE, ELENA_LIBRARY } from '../mockData';
+
 import { getMovieCollections, getSuggestedTags } from '../utils/collections';
 import { getEnhancedMovieTitle } from '../utils/movieTitles';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
@@ -24,15 +35,7 @@ const POPULAR_CINE_TAGS = [
   'Atmospheric', 'Slow Burn', 'Tearjerker', 'Guilty Pleasure', 'Underrated'
 ];
 
-function getRatingColor(r) {
-  if (!r) return 'var(--text-dim)';
-  const n = Number(r);
-  if (n >= 8.5) return '#a855f7'; // Highest: Amethyst Purple (8.5 - 10.0)
-  if (n >= 7.0) return '#38bdf8'; // Sky Blue (7.0 - 8.4)
-  if (n >= 5.5) return '#059669'; // Deeper Green (5.5 - 6.9)
-  if (n >= 4.0) return '#f97316'; // Sunset Orange (4.0 - 5.4)
-  return '#ef4444'; // Deep Red (< 4.0)
-}
+
 
 const STATUS_OPTS = [
   { val: 'watched',      label: '✓ Watched',    color: 'var(--green)' },
@@ -61,6 +64,9 @@ const formatMoney = (n) => {
 
 export default function MovieDetailModal({ movie, currentUser, onClose, onSave, onToggleFavorite, isFavorite, onOpenUserProfile, onOpenMovie, inLibrary }) {
   useBodyScrollLock(true);
+  const [mediaApiType,setMediaApiType]=useState(()=>tmdbMediaType(movie));
+  const [detailsStatus,setDetailsStatus]=useState('loading'),[detailsError,setDetailsError]=useState(''),[detailsRetry,setDetailsRetry]=useState(0),[overviewLanguage,setOverviewLanguage]=useState('en'),[trailerInfo,setTrailerInfo]=useState(null);
+  const [screeningRemoval,setScreeningRemoval]=useState(null);
 
   // Close modal when pressing Escape
   useEffect(() => {
@@ -204,8 +210,8 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
       .trim();
   });
   const toast = useToast();
-  const [watchDate, setWatchDate] = useState(movie.watch_date || new Date().toISOString().split('T')[0]);
-  const [containsSpoilers, setContainsSpoilers] = useState(movie.contains_spoilers || false);
+  const [watchDate, setWatchDate] = useState(() => initialWatchDate(movie));
+  const [containsSpoilers, setContainsSpoilers] = useState(reviewSpoilerFlag(movie));
 
   // Parse existing screenings (re-log history)
   const [screenings, setScreenings] = useState(() => {
@@ -242,9 +248,10 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
   const [relogDate, setRelogDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [relogRating, setRelogRating] = useState(() => (movie.rating != null && Number(movie.rating) > 0 ? Number(movie.rating) : 7.0));
   const [relogReview, setRelogReview] = useState('');
+  const [savePending,setSavePending]=useState(false),[saveError,setSaveError]=useState('');const saveBusy=useRef(false),reactionBusy=useRef(new Set());
 
-  const handleAddRelog = (e) => {
-    e?.preventDefault?.();
+  const handleAddRelog = async (e) => {
+    e?.preventDefault?.();if(saveBusy.current)return;saveBusy.current=true;setSavePending(true);setSaveError('');
     const newRatingNum = Number(relogRating) || 0;
     const newScreening = {
       id: `scr_${Date.now()}`,
@@ -274,27 +281,14 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
     }
 
     const updated = [newScreening, ...baseScreenings];
-    setScreenings(updated);
-
-    // Update active movie state to this latest watch
-    setStatus('watched');
-    setRating(newRatingNum);
-    setWatchDate(relogDate);
     const finalReview = relogReview.trim() || review;
-    if (relogReview.trim()) {
-      setReview(relogReview.trim());
-    }
-    setIsRewatch(true);
-    setRewatchCount(updated.length);
-    setShowRelogForm(false);
-    setRelogReview('');
 
     // Construct the complete updated movie payload to persist immediately
-    const isTv = movie.media_type === 'tv' ||
+    const isTv = mediaApiType === 'tv' ||
                  movie.number_of_seasons !== undefined ||
                  movie.first_air_date !== undefined ||
                  Boolean(details && (details.number_of_seasons !== undefined || details.first_air_date));
-    const resolvedType = isTv ? 'tv' : (movie.media_type || 'movie');
+    const resolvedType = movie.media_type==='anime'?'anime':isTv ? 'tv' : (movie.media_type || 'movie');
     const resolvedGenres = movie.genres || details?.genres?.map(g => g.name) || [];
     const directorName = movie.director || details?.credits?.crew?.find(c => c.job === 'Director')?.name || null;
 
@@ -332,37 +326,28 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
       rewatch_count: updated.length,
     };
 
-    if (toast?.success) {
-      toast.success(
-        `Screening #${updated.length} Recorded & Saved!`,
-        `Re-logged on ${relogDate} with score ★${newRatingNum.toFixed(1)}`
-      );
-    }
+    try{const saved=await onSave(updatedMoviePayload,{keepOpen:true,requireCloudSuccess:true});if(saved===false)throw new Error('Your screening could not be saved. Please try again.');
+    setScreenings(updated);
 
-    if (isSupabaseConfigured && currentUser?.id) {
-      try {
-        supabase.from('activity_feed').insert({
-          user_id: currentUser.id,
-          action_type: 'watched',
-          title: getEnhancedMovieTitle(movie) || movie.title || movie.name,
-          media_type: resolvedType,
-          poster_path: movie.poster_path,
-          rating: newRatingNum > 0 ? newRatingNum : null,
-          details: { review: finalReview ? finalReview.slice(0, 200) : '', is_rewatch: true }
-        }).then(() => {}).catch(() => {});
-      } catch {}
+    // Update active movie state to this latest watch
+    setStatus('watched');
+    setRating(newRatingNum);
+    setWatchDate(relogDate);
+    if (relogReview.trim()) {
+      setReview(relogReview.trim());
     }
+    setIsRewatch(true);
+    setRewatchCount(updated.length);
+    setShowRelogForm(false);
+    setRelogReview('');
 
-    // Immediately persist to library state, Supabase cloud, and local cache
-    if (onSave) {
-      onSave(updatedMoviePayload, { keepOpen: true });
-    }
+
+    }catch(error){setSaveError(error.message);}finally{saveBusy.current=false;setSavePending(false);}
   };
 
-  const handleDeleteScreening = (scrId, e) => {
+  const handleDeleteScreening = async (scrId, e) => {
     e?.stopPropagation?.();
     const remaining = screenings.filter(s => s.id !== scrId);
-    setScreenings(remaining);
     let newLatestRating = rating;
     let newLatestDate = watchDate;
     let newLatestReview = review;
@@ -371,21 +356,13 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
       newLatestRating = latest.rating != null ? Number(latest.rating) : 0;
       newLatestDate = latest.date || watchDate;
       if (latest.review) newLatestReview = latest.review;
-      setRating(newLatestRating);
-      setWatchDate(newLatestDate);
-      if (latest.review) setReview(latest.review);
-      setIsRewatch(remaining.length > 1);
-      setRewatchCount(remaining.length);
-    } else {
-      setIsRewatch(false);
-      setRewatchCount(1);
     }
 
-    const isTv = movie.media_type === 'tv' ||
+    const isTv = mediaApiType === 'tv' ||
                  movie.number_of_seasons !== undefined ||
                  movie.first_air_date !== undefined ||
                  Boolean(details && (details.number_of_seasons !== undefined || details.first_air_date));
-    const resolvedType = isTv ? 'tv' : (movie.media_type || 'movie');
+    const resolvedType = movie.media_type==='anime'?'anime':isTv ? 'tv' : (movie.media_type || 'movie');
     const resolvedGenres = movie.genres || details?.genres?.map(g => g.name) || [];
     const directorName = movie.director || details?.credits?.crew?.find(c => c.job === 'Director')?.name || null;
 
@@ -423,13 +400,10 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
       rewatch_count: Math.max(1, remaining.length),
     };
 
-    if (toast?.info) {
-      toast.info('Screening Removed', 'Updated movie history and active score.');
-    }
-
     // Persist screening removal to database and library
     if (onSave) {
-      onSave(updatedMoviePayload, { keepOpen: true });
+      const result=await onSave(updatedMoviePayload, { keepOpen: true,requireCloudSuccess:true });
+      if(result===false)throw new Error('This screening could not be removed. Please try again.');
     }
   };
   const [accentColor, setAccentColor] = useState('var(--accent)');
@@ -452,24 +426,21 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
   const [cast, setCast] = useState([]);
   const [similar, setSimilar] = useState([]);
   const [reviewTab, setReviewTab] = useState('write'); // 'write' | 'preview'
-  const [trailerKey, setTrailerKey] = useState(() => {
-    if (movie.videos?.results) {
-      const t = movie.videos.results.find(v => v.type === 'Trailer' && v.site === 'YouTube');
-      return t ? t.key : '';
-    }
-    return '';
-  });
-  const [activeSection, setActiveSection] = useState('overview');
+  const [trailerKey,setTrailerKey]=useState(()=>selectTrailer(movie.videos?.results||movie.details?.videos?.results)?.key||'');
+  const [country, setCountry] = useCountry();
+  const [activeSection, setActiveSection] = useState(movie.screening_start_section==='episodes'?'episodes':'overview');
   const [logOpen, setLogOpen] = useState(true);
   const [publicReviews, setPublicReviews] = useState([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [revealedReviews, setRevealedReviews] = useState({});
   const [reviewLikesCounts, setReviewLikesCounts] = useState({});
   const [userLikedReviews, setUserLikedReviews] = useState({});
-  const [selectedSeason, setSelectedSeason] = useState(1);
+  const [selectedSeason, setSelectedSeason] = useState(Number(movie.screening_start_season)||1);
   const [seasonEpisodes, setSeasonEpisodes] = useState([]);
   const [loadingEpisodes, setLoadingEpisodes] = useState(false);
   const [watchProviders, setWatchProviders] = useState(null);
+  const [providerStatus,setProviderStatus]=useState('loading');
+  const [providerRetry,setProviderRetry]=useState(0);
 
   // Simple markdown to HTML for preview
   const renderMarkdown = (text) => {
@@ -555,7 +526,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
         .trim();
 
       const userReviewObj = currentUserReviewText ? {
-        id: 'user-current-review',
+        id: movie.id || 'user-current-review',
         user_id: currentUser?.id || 'me',
         username: currentUser?.username || 'You',
         displayName: currentUser?.display_name || currentUser?.displayName || currentUser?.username || 'You',
@@ -644,30 +615,12 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                 rating: item.rating,
                 review: cleanReview,
                 date_added: item.date_added,
-                contains_spoilers: item.contains_spoilers
+                contains_spoilers: reviewSpoilerFlag(item)
               });
             });
           }
         } catch (err) {
           console.error("Error loading public reviews from Supabase:", err);
-        }
-      }
-
-      // Include Elena Rodriguez's review for this movie if reviewed
-      const elenaEntry = ELENA_LIBRARY.find(m => String(m.tmdb_id) === String(targetTmdbId));
-      if (elenaEntry && elenaEntry.review && (currentUser?.username || '').toLowerCase() !== ELENA_PROFILE.username) {
-        if (!allReviews.some(r => r.username === ELENA_PROFILE.username)) {
-          allReviews.push({
-            id: `elena-rev-${targetTmdbId}`,
-            user_id: ELENA_PROFILE.id,
-            username: ELENA_PROFILE.username,
-            displayName: ELENA_PROFILE.displayName,
-            avatar: ELENA_PROFILE.avatar,
-            rating: elenaEntry.rating,
-            review: elenaEntry.review,
-            date_added: elenaEntry.date_added,
-            contains_spoilers: false
-          });
         }
       }
 
@@ -695,65 +648,21 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
 
     loadReviews();
     return () => { active = false; };
-  }, [targetTmdbId, review, rating, containsSpoilers, currentUser?.id, movie.review]);
+  }, [targetTmdbId, review, rating, containsSpoilers, currentUser?.id, currentUser?.username,currentUser?.displayName,currentUser?.display_name,currentUser?.avatar,currentUser?.avatar_url,movie.review,movie.id,movie.title,movie.rating,movie.date_added,watchDate]);
 
-  const handleToggleReviewLike = async (reviewId) => {
-    if (!currentUser?.id) return;
-    const isLiked = !!userLikedReviews[reviewId];
-    const nextLiked = !isLiked;
-    setUserLikedReviews(prev => ({ ...prev, [reviewId]: nextLiked }));
-    setReviewLikesCounts(prev => ({
-      ...prev,
-      [reviewId]: Math.max(0, (prev[reviewId] || 0) + (nextLiked ? 1 : -1))
-    }));
+  const handleToggleReviewLike=async reviewId=>{if(!currentUser?.id||reactionBusy.current.has(reviewId))return;reactionBusy.current.add(reviewId);try{const next=!userLikedReviews[reviewId];await persistReaction(supabase,'review_likes',reviewId,currentUser.id,next);setUserLikedReviews(prev=>({...prev,[reviewId]:next}));setReviewLikesCounts(prev=>({...prev,[reviewId]:Math.max(0,(prev[reviewId]||0)+(next?1:-1))}));}catch(error){toast?.error?.('Reaction not saved',error.message);}finally{reactionBusy.current.delete(reviewId);}};
 
-    if (isSupabaseConfigured) {
-      try {
-        if (nextLiked) {
-          await supabase.from('review_likes').upsert({ library_id: String(reviewId), user_id: currentUser.id });
-        } else {
-          await supabase.from('review_likes').delete().eq('library_id', String(reviewId)).eq('user_id', currentUser.id);
-        }
-      } catch (err) {
-        console.warn('Error toggling review like in Supabase:', err);
-      }
-    }
-  };
+  useEffect(()=>{
+    let live=true;const controller=new AbortController();setDetailsStatus('loading');setDetailsError('');setDetails(movie.details||null);setTrailerKey('');setTrailerInfo(null);setCast([]);
+    const timeout=setTimeout(()=>controller.abort(),15000);
+    loadScreeningDetails(movie,{apiKey:TMDB_KEY,signal:controller.signal}).then(result=>{if(!live)return;const route=new URL(window.location.href);if(route.pathname.startsWith('/film/')&&decodeURIComponent(route.pathname.split('/')[3]||'')===String(movie.tmdb_id||movie.id)){route.pathname=filmPath(movie.tmdb_id||movie.id,result.mediaType);window.history.replaceState({...window.history.state,mediaType:result.mediaType},'',route.pathname+route.search+route.hash);}setDetails(result.details);setMediaApiType(result.mediaType);setTrailerKey(result.trailer?.key||'');setTrailerInfo(result.trailer);setOverviewLanguage(result.overviewLanguage);setCast(result.details.credits?.cast||[]);setDetailsStatus('ready');if(result.refreshFailed)setDetailsError('Could not refresh details. Showing saved information.');else if(result.partialFailure)setDetailsError('Some story or trailer information could not be loaded. Please try again.');}).catch(error=>{if(!live)return;setDetailsStatus('error');setDetailsError(error.name==='AbortError'?'Loading took too long. Please try again.':error.message);}).finally(()=>clearTimeout(timeout));
+    return()=>{live=false;clearTimeout(timeout);controller.abort();};
+  },[movie,detailsRetry]);
+
+  useEffect(()=>{if(!targetTmdbId||detailsStatus!=='ready')return;let live=true;const base='https://api.themoviedb.org/3/'+mediaApiType+'/'+targetTmdbId;const query='?api_key='+TMDB_KEY+'&language=en-US';const request=path=>fetch(base+path+query).then(response=>{if(!response.ok)throw new Error();return response.json();});setSimilar([]);request('/recommendations').then(async data=>{const good=(data.results||[]).filter(item=>item.poster_path&&item.vote_average>0);if(good.length>=4)return good;const extra=await request('/similar').catch(()=>({results:[]}));return [...good,...(extra.results||[]).filter(item=>item.poster_path&&item.vote_average>0&&!good.some(existing=>existing.id===item.id))];}).then(items=>{if(live)setSimilar(items.slice(0,8));}).catch(()=>{if(live)setSimilar([]);});return()=>{live=false;};},[targetTmdbId,mediaApiType,detailsStatus]);
 
   useEffect(() => {
-    if (!targetTmdbId) return;
-    const mt = movie.media_type === 'tv' ? 'tv' : 'movie';
-    let active = true;
-
-    // Fetch details + credits + similar in parallel
-    const base = `https://api.themoviedb.org/3/${mt}/${targetTmdbId}`;
-    const p = `?api_key=${TMDB_KEY}&language=en-US`;
-
-    Promise.all([
-      movie.details ? Promise.resolve(movie.details) : fetch(`${base}${p}&append_to_response=videos,credits`).then(r => r.json()),
-      fetch(`${base}/credits${p}`).then(r => r.json()).catch(() => ({ cast: [] })),
-      fetch(`${base}/recommendations${p}`).then(r => r.json()).then(async rec => {
-        const good = (rec.results || []).filter(x => x.poster_path && x.vote_average > 0);
-        if (good.length >= 4) return { results: good };
-        const sim = await fetch(`${base}/similar${p}`).then(r => r.json()).catch(() => ({ results: [] }));
-        const merged = [...good, ...(sim.results || []).filter(x => x.poster_path && x.vote_average > 0 && !good.some(g => g.id === x.id))];
-        return { results: merged };
-      }).catch(() => ({ results: [] })),
-    ]).then(([det, credits, sim]) => {
-      if (!active) return;
-      setDetails(det);
-      if (!trailerKey && det.videos?.results) {
-        const t = det.videos.results.find(v => v.type === 'Trailer' && v.site === 'YouTube');
-        if (t) setTrailerKey(t.key);
-      }
-      setCast((credits.cast || []).slice(0, 12));
-      setSimilar((sim.results || []).slice(0, 8));
-    }).catch(() => {});
-
-  }, [targetTmdbId, movie.media_type]);
-
-  useEffect(() => {
-    if (movie.media_type !== 'tv' || !targetTmdbId) return;
+    if (mediaApiType !== 'tv' || !targetTmdbId || detailsStatus!=='ready') return;
     
     let active = true;
     setLoadingEpisodes(true);
@@ -779,28 +688,28 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
         }
       });
 
-  }, [targetTmdbId, movie.media_type, selectedSeason]);
+  }, [targetTmdbId, mediaApiType, selectedSeason,detailsStatus]);
 
-  // Fetch streaming availability
+  // Fetch only the selected country's availability; ignore stale responses.
   useEffect(() => {
     if (!targetTmdbId) return;
-    const mt = movie.media_type === 'tv' ? 'tv' : 'movie';
+    if(detailsStatus!=='ready'){setWatchProviders(null);setProviderStatus(detailsStatus==='error'?'error':'loading');return;}
+    let cancelled = false;
+    setWatchProviders(null);
+    setProviderStatus('loading');
+    const mt = mediaApiType;
     fetch(`https://api.themoviedb.org/3/${mt}/${targetTmdbId}/watch/providers?api_key=${TMDB_KEY}`)
-      .then(r => r.json())
-      .then(data => {
-        // Try to get US providers, fall back to first available country
-        const results = data.results || {};
-        const providers = results['US'] || results[Object.keys(results)[0]] || null;
-        setWatchProviders(providers);
-      })
-      .catch(() => {});
-  }, [targetTmdbId, movie.media_type]);
+      .then(r => { if (!r.ok) throw new Error('Providers unavailable'); return r.json(); })
+      .then(data => { if (!cancelled){setWatchProviders(data.results?.[country] || null);setProviderStatus('ready');} })
+      .catch(() => { if (!cancelled){setWatchProviders(null);setProviderStatus('error');} });
+    return () => { cancelled = true; };
+  }, [targetTmdbId, mediaApiType, country, providerRetry,detailsStatus]);
 
   // Auto-calculate main TV series rating average:
   // 1. If season ratings exist, average the seasons!
   // 2. Otherwise if episode ratings exist, average the episodes!
   useEffect(() => {
-    if (movie.media_type !== 'tv') return;
+    if (mediaApiType !== 'tv') return;
     const sKeys = Object.keys(seasonRatings).filter(k => seasonRatings[k] > 0);
     if (sKeys.length > 0) {
       const sum = sKeys.reduce((acc, k) => acc + Number(seasonRatings[k]), 0);
@@ -814,7 +723,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
       const avg = Math.round((sum / eKeys.length) * 10) / 10;
       setRating(avg);
     }
-  }, [seasonRatings, episodeRatings, movie.media_type]);
+  }, [seasonRatings, episodeRatings, mediaApiType]);
 
   const getSeasonAverage = (seasonNum) => {
     const prefix = `S${String(seasonNum).padStart(2, '0')}E`;
@@ -835,21 +744,25 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
     return POPULAR_CINE_TAGS.filter(t => !active.has(t.toLowerCase()) && (!q || t.toLowerCase().includes(q)));
   }, [newTag, tags]);
 
+  const addCurrentTag = () => {
+    const clean = newTag.trim().replace(/^#/, '');
+    if (clean && !tags.some(tag => tag.toLowerCase() === clean.toLowerCase())) setTags(prev => [...prev, clean]);
+    setNewTag('');
+  };
   const handleAddTag = (e) => {
     if ((e.key === 'Enter' || e.key === ',') && newTag.trim()) {
       e.preventDefault();
-      const clean = newTag.trim().replace(/^#/, '');
-      if (clean && !tags.includes(clean)) setTags([...tags, clean]);
-      setNewTag('');
+      addCurrentTag();
     }
   };
 
-  const handleSave = () => {
-    const isTv = movie.media_type === 'tv' ||
+  const handleSave = async () => {
+    if(saveBusy.current)return;saveBusy.current=true;setSavePending(true);setSaveError('');try{
+    const isTv = mediaApiType === 'tv' ||
                  movie.number_of_seasons !== undefined ||
                  movie.first_air_date !== undefined ||
                  Boolean(details && (details.number_of_seasons !== undefined || details.first_air_date));
-    const resolvedType = isTv ? 'tv' : (movie.media_type || 'movie');
+    const resolvedType = movie.media_type==='anime'?'anime':isTv ? 'tv' : (movie.media_type || 'movie');
     const genres = movie.genres || details?.genres?.map(g => g.name) || [];
     const directorName = movie.director || details?.credits?.crew?.find(c => c.job === 'Director')?.name || null;
 
@@ -877,7 +790,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
       created_at: new Date().toISOString()
     }] : []);
 
-    onSave({
+    const saved=await onSave({
       ...movie,
       media_type: resolvedType,
       status,
@@ -903,6 +816,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
       rewatch_count: activeScreenings.length > 1 ? activeScreenings.length : (isRewatch ? rewatchCount : null),
     });
 
+    if(saved===false){setSaveError('Your changes could not be saved. Please retry.');return;}
     if (isSupabaseConfigured && currentUser?.id) {
       try {
         supabase.from('activity_feed').insert({
@@ -916,6 +830,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
         }).then(() => {}).catch(() => {});
       } catch {}
     }
+    }catch(error){setSaveError(error.message||'Your changes could not be saved.');}finally{saveBusy.current=false;setSavePending(false);}
   };
 
   const insertMarkdown = (wrap, textAreaRef) => {
@@ -940,11 +855,12 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
 
   const SECTIONS = [
     { id: 'overview', label: 'Overview' },
-    { id: 'episodes', label: 'Seasons & Episodes', hidden: movie.media_type !== 'tv' },
+    { id: 'log', label: 'Log / Rate' },
+    { id: 'streaming', label: 'Streaming' },
+    { id: 'episodes', label: 'Seasons & Episodes', hidden: mediaApiType !== 'tv' },
     { id: 'details', label: 'Details' },
     { id: 'cast', label: 'Cast' },
     { id: 'reviews', label: publicReviews.length > 0 ? `Reviews (${publicReviews.length})` : 'Reviews' },
-    { id: 'trailer', label: 'Trailer', hidden: !trailerKey },
     { id: 'similar', label: 'Similar', hidden: similar.length === 0 },
   ].filter(s => !s.hidden);
 
@@ -952,6 +868,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
   const STATUS_SHORT = { watched: 'Watched', plan_to_watch: 'Watchlist', watching: 'Watching', dropped: 'Dropped' };
 
   const touchStartRef = useRef(null);
+  const dialogRef = useDialogFocus(!screeningRemoval);
 
   return (
     <div
@@ -979,86 +896,26 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
       }}
     >
       <div
-        className="movie-detail-modal-dialog animate-fade-in-scale"
+        className="movie-detail-modal-dialog studio-film-dialog v2-film-workspace animate-fade-in-scale"
+        ref={dialogRef} role="dialog" aria-modal="true" aria-label={movie.title || movie.name || "Film details"} tabIndex={-1}
         style={{ width: '100%', maxWidth: '1120px', maxHeight: '94vh', borderRadius: 'var(--radius-xl)', overflow: 'hidden', border: '1px solid var(--border)', position: 'relative', display: 'flex', flexDirection: 'column', background: '#121212', overscrollBehaviorY: 'contain' }}
         onWheel={e => e.stopPropagation()}
       >
-        {/* Mobile Grabber Handle */}
-        <div className="mobile-modal-grabber" />
-
-        {/* ── BACKDROP HERO ── */}
-        <div className="movie-detail-hero" style={{ position: 'relative', height: '220px', flexShrink: 0, overflow: 'hidden' }}>
-          {backdropUrl ? (
-            <img src={backdropUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.45 }} />
-          ) : (
-            <div style={{ height: '100%', background: '#181818' }} />
-          )}
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.7) 60%, #121212 100%)' }} />
-
-          {/* Close button */}
-          <button
-            onClick={onClose}
-            style={{ position: 'absolute', top: '14px', right: '14px', background: '#181818', border: '1px solid #333333', color: 'var(--text)', cursor: 'pointer', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', zIndex: 10 }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = '#fff'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = '#181818'; e.currentTarget.style.borderColor = '#333333'; e.currentTarget.style.color = 'var(--text)'; }}
-          >
-            <X size={18} />
-          </button>
-
-
-          {/* Movie info overlay */}
-          <div className="movie-detail-header-overlay" style={{ position: 'absolute', bottom: '0', left: '0', right: '0', padding: '0 28px 18px', display: 'flex', alignItems: 'flex-end', gap: '20px' }}>
-            {/* Poster */}
-            <div className="movie-detail-poster-wrap" style={{ width: '100px', height: '150px', borderRadius: '10px', overflow: 'hidden', flexShrink: 0, border: '2px solid var(--border)', boxShadow: '0 8px 24px rgba(0,0,0,0.7)', marginBottom: '-30px' }}>
-              {movie.poster_path ? (
-                <img src={`https://image.tmdb.org/t/p/w300${movie.poster_path}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              ) : (
-                <div style={{ height: '100%', background: 'var(--surface-solid)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px' }}>🎬</div>
-              )}
-            </div>
-
-            <div style={{ flex: 1, minWidth: 0, paddingBottom: '6px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
-                {(details?.genres || movie.genres || []).slice(0, 3).map(g => (
-                  <span key={typeof g === 'object' ? g.id : g} className="genre-pill" style={{ fontSize: '10px', padding: '2px 8px' }}>
-                    {typeof g === 'object' ? g.name : g}
-                  </span>
-                ))}
-              </div>
-              <h2 style={{ fontSize: '26px', fontWeight: 900, letterSpacing: '-0.5px', lineHeight: 1.1, marginBottom: '6px', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
-                {getEnhancedMovieTitle(movie) || movie.title}
-              </h2>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>{movie.release_year || movie.year || '—'}</span>
-                {details?.runtime && <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>· {Math.floor(details.runtime / 60)}h {details.runtime % 60}m</span>}
-                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>· {movie.media_type === 'tv' ? 'Series' : movie.media_type === 'anime' ? 'Anime' : 'Film'}</span>
-                {details?.vote_average > 0 && (
-                  <span style={{ color: 'var(--gold)', fontWeight: 800, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                    ★ {details.vote_average.toFixed(1)}
-                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 500 }}>({details.vote_count?.toLocaleString()} votes)</span>
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
+        <header className="v2-film-command"><span>CINELOG <i>/</i> THE SCREENING ROOM</span><button onClick={onClose} aria-label="Close film details"><X size={17}/> Back to browsing</button></header>
+        <aside className="v2-film-rail">
+          <div className="v2-film-identity">{(details?.poster_path || movie.poster_path) && <img src={`https://image.tmdb.org/t/p/w342${details?.poster_path || movie.poster_path}`} alt=""/>}<div><span className="studio-eyebrow">{mediaApiType === 'tv' ? 'THE SERIES' : 'THE FILM'}</span><h1>{movie.title || movie.name || details?.title || details?.name}</h1><p>{String(details?.release_date || details?.first_air_date || movie.release_year || '').slice(0,4)} {details?.runtime ? ` · ${details.runtime} min` : ''}</p>{details?.vote_average > 0 && <strong>★ {details.vote_average.toFixed(1)} <small>TMDB</small></strong>}</div></div>
+          <nav aria-label="Film sections" className="v2-film-sections">{SECTIONS.map((section,index)=><button id={`modal-tab-${section.id}`} key={section.id} aria-current={activeSection===section.id?'page':undefined} onClick={()=>setActiveSection(section.id)}><span>0{index+1}</span>{section.id==='overview'?'The story':section.id==='log'?'Your screening':section.id==='streaming'?'Where to watch':section.label}<span>↗</span></button>)}</nav>
+          <div className="v2-film-log-label">YOUR LIBRARY</div>
         {/* ── SYNOPSIS + ACTION ROW (fixed) ── */}
-        <div className="movie-detail-actions-row" style={{ flexShrink: 0, padding: '38px 28px 0' }}>
-          {(details?.overview || movie.overview) && (
-            <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', lineHeight: 1.65, margin: '0 0 18px', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-              {details?.overview || movie.overview}
-            </p>
-          )}
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', paddingBottom: '18px' }}>
+        <div className="movie-detail-actions-row" style={{ flexShrink: 0, padding: '20px 28px 0' }}>
+          {saveError&&<p className="screening-error" role="alert">{saveError}</p>}<div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', paddingBottom: '18px' }}>
             <button
               id="modal-save-btn"
               className="btn btn-primary"
-              onClick={handleSave}
+              onClick={handleSave} disabled={savePending}
               style={{ fontSize: '14px', padding: '11px 26px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800 }}
             >
-              <Plus size={17} /> {movie.date_added && inLibrary ? 'Save Changes' : 'Add to Library'}
+              <Plus size={17} /> {savePending?'Saving…':movie.date_added && inLibrary ? 'Save Changes' : 'Add to Library'}
             </button>
 
             <div style={{ display: 'flex', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: '10px', padding: '3px', gap: '2px' }}>
@@ -1086,6 +943,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                 id="modal-relog-btn"
                 type="button"
                 onClick={() => {
+                  setActiveSection('log');
                   setShowRelogForm(prev => !prev);
                   if (!showRelogForm) {
                     setRelogDate(new Date().toISOString().split('T')[0]);
@@ -1108,7 +966,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                   transition: 'all 0.15s',
                   whiteSpace: 'nowrap'
                 }}
-                title="Letterboxd-style: Log another screening of this movie with a new date and score"
+                title="Log another screening with a new date and score"
               >
                 <RotateCcw size={16} />
                 <span>{showRelogForm ? 'Close Re-log' : 'Re-log'}</span>
@@ -1131,8 +989,12 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
           </div>
         </div>
 
+
+          <p className="v2-rail-note">Choose a status, then save.<br/>Your story with this film starts here.</p>
+        </aside>
         {/* ── SCROLLABLE BODY ── */}
-        <div className="movie-detail-scroll-body" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', overscrollBehavior: 'contain', padding: '0 28px 28px', display: 'flex', flexDirection: 'column', gap: '22px', borderTop: '1px solid var(--border)', paddingTop: '16px', width: '100%', boxSizing: 'border-box' }}>
+        <div className="movie-detail-scroll-body v2-film-content" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', overscrollBehavior: 'contain', padding: '0 28px 28px', display: 'flex', flexDirection: 'column', gap: '22px', borderTop: '1px solid var(--border)', paddingTop: '16px', width: '100%', boxSizing: 'border-box' }}>
+          <div className="v2-film-masthead" style={backdropUrl ? {backgroundImage:`linear-gradient(90deg,#13131577,#131315dd),url(${backdropUrl})`} : undefined}><span className="studio-eyebrow">{activeSection==='log'?(status==='plan_to_watch'?'ON YOUR WATCHLIST':'A MOMENT WORTH REMEMBERING'):'GO A LITTLE DEEPER'}</span><h2>{activeSection==='overview'?'Behind the story.':activeSection==='log'?(status==='plan_to_watch'?'A story for another night.':'Make it part of your story.'):activeSection==='streaming'?'Find your next screening.':SECTIONS.find(section=>section.id===activeSection)?.label}</h2><p>{activeSection==='overview'?'The people, the world, and the moments behind this story.':activeSection==='log'?(status==='plan_to_watch'?'Keep it on your list. Log your thoughts after you watch.':'A rating, a date, a few words. Keep what mattered.'):'A closer look, all in one place.'}</p></div>
           {/* Underlined tabs (smooth horizontal scroll on mobile) */}
           <div
             className="movie-detail-tabs-bar"
@@ -1154,7 +1016,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
             {SECTIONS.map(s => (
               <button
                 key={s.id}
-                id={`modal-tab-${s.id}`}
+                id={`legacy-film-tab-${s.id}`}
                 onClick={(e) => {
                   setActiveSection(s.id);
                   e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
@@ -1179,8 +1041,9 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
             ))}
           </div>
 
+          {activeSection === 'log' && <p className="studio-log-help">{status==='plan_to_watch'?'Save to your watchlist, or organise it with tags below.':'Choose your status, rating, and notes.'} Select {movie.date_added && inLibrary ? 'Save Changes' : 'Add to Library'} when you're ready.</p>}
           {/* ── LOG (rating, tags, review) ── */}
-          <div style={{ display: activeSection === 'overview' ? 'block' : 'none', flexShrink: 0 }}>
+          <div className="screening-editor" style={{ display: activeSection === 'log' ? 'block' : 'none', flexShrink: 0 }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '26px', padding: '4px 0 8px' }}>
 
               {/* Vertical Stack: 1. Full-Width Score Bar, 2. Date Watched, 3. Review */}
@@ -1227,7 +1090,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                             gap: '4px',
                             transition: 'all 0.15s'
                           }}
-                          title="Letterboxd-style: Re-log this movie with a new date and score"
+                          title="Log another viewing with its own date and rating"
                         >
                           <RotateCcw size={12} />
                           <span>{showRelogForm ? 'Cancel Re-log' : 'Log Again'}</span>
@@ -1310,6 +1173,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
 
                           <input
                             type="range"
+                            aria-label="Rewatch rating"
                             min="0"
                             max="10"
                             step="0.1"
@@ -1327,11 +1191,11 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                           {/* Quick rating chips */}
                           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                             {[
-                              { label: '💀 1', val: 1 },
-                              { label: '😐 5', val: 5 },
-                              { label: '👍 7', val: 7 },
-                              { label: '🔥 8.5', val: 8.5 },
-                              { label: '⭐ 10', val: 10 },
+                              { label: '1', val: 1 },
+                              { label: '5', val: 5 },
+                              { label: '7', val: 7 },
+                              { label: '8.5', val: 8.5 },
+                              { label: '10', val: 10 },
                             ].map(q => (
                               <button
                                 key={q.label}
@@ -1395,6 +1259,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                     <div style={{ position: 'relative', padding: '4px 0', width: '100%' }}>
                       <input
                         type="range"
+                        aria-label="Your rating"
                         min="0"
                         max="10"
                         step="0.1"
@@ -1436,11 +1301,11 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
 
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '2px' }}>
                       {[
-                        { label: '💀 1', val: 1 },
-                        { label: '😐 5', val: 5 },
-                        { label: '👍 7', val: 7 },
-                        { label: '🔥 8.5', val: 8.5 },
-                        { label: '⭐ 10', val: 10 },
+                        { label: '1', val: 1 },
+                        { label: '5', val: 5 },
+                        { label: '7', val: 7 },
+                        { label: '8.5', val: 8.5 },
+                        { label: '10', val: 10 },
                       ].map(q => {
                         const chipColor = getRatingColor(q.val);
                         const isActive = Math.abs(rating - q.val) < 0.2;
@@ -1561,7 +1426,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                                   {screenings.length > 1 && (
                                     <button
                                       type="button"
-                                      onClick={(e) => handleDeleteScreening(scr.id, e)}
+                                      onClick={e=>{e.stopPropagation();setScreeningRemoval(scr);}}
                                       style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: '4px', borderRadius: '4px', display: 'flex', alignItems: 'center', transition: 'color 0.15s' }}
                                       title="Remove this screening"
                                       onMouseEnter={e => e.currentTarget.style.color = 'var(--red)'}
@@ -1605,8 +1470,9 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                 </div>
               )}
 
-              {/* Row 2: Prominent Review Box */}
-              <div style={{
+              {status==='plan_to_watch'&&!review.trim()&&<section className="watchlist-planning"><Bookmark size={22}/><div><h3>Save it for the right night.</h3><p>Your review starts after the credits. Find where to watch, or mark it watched when you're ready to log it.</p><div><button className="studio-secondary" onClick={()=>setActiveSection('streaming')}>Where to watch <ArrowUpRight size={14}/></button><button className="studio-text-button" onClick={()=>{setStatus('watched');setLogOpen(true);}}>I've watched this</button></div></div></section>}
+              {/* Keep any existing review accessible without showing an empty editor on Watchlist. */}
+              {(status!=='plan_to_watch'||Boolean(review.trim()))&&<div className="screening-review" style={{
                 background: '#151515',
                 border: '1px solid #282828',
                 borderRadius: '12px',
@@ -1620,7 +1486,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#fff' }}>
-                      Your Review
+                      Your take
                     </span>
                     <span style={{ fontSize: '11px', color: 'var(--text-dim)' }}>
                       · {review.trim() ? review.trim().split(/\s+/).length : 0} words
@@ -1698,8 +1564,9 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
 
                 <textarea
                   id="review-textarea"
-                  rows={3}
-                  placeholder="What did you think about this title? Share your thoughts, highlights, or critique..."
+                  aria-label="Screening notes"
+                  rows={7}
+                  placeholder="The scene you keep thinking about. The ending you loved. Your take, in your own words."
                   value={review}
                   onChange={e => setReview(e.target.value)}
                   onInput={e => {
@@ -1731,16 +1598,16 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                     transition: 'border-color 0.2s'
                   }}
                 />
-              </div>
+              </div>}
 
-              {/* Row 3: Tags + Franchises (under Review Box) */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', alignItems: 'start' }}>
+              {/* Organise this screening */}
+              <div className="screening-tags" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', alignItems: 'start' }}>
                 {/* Tags */}
                 <div>
-                  <div className="form-label" style={{ marginBottom: '10px' }}>Tags <span style={{ color: 'var(--text-dim)', fontWeight: 400, textTransform: 'none', fontSize: '11px' }}>(Enter or click pill to add)</span></div>
-                  <input type="text" placeholder="Add tags: Rewatch, Comfort, Must-See…" value={newTag}
+                  <div className="form-label" style={{ marginBottom: '10px' }}>Organise your film <span style={{ color: 'var(--text-dim)', fontWeight: 400, textTransform: 'none', fontSize: '11px' }}>(Enter or click pill to add)</span></div>
+                  <div className="screening-tag-input"><input aria-label="Film tag" type="text" placeholder="Add tags: Rewatch, Comfort, Must-See…" value={newTag}
                     onChange={e => setNewTag(e.target.value)} onKeyDown={handleAddTag}
-                    className="form-input" style={{ fontSize: '13.5px', width: '100%' }} />
+                    className="form-input" style={{ fontSize: '13.5px', width: '100%' }} /><button className="studio-secondary" type="button" disabled={!newTag.trim().replace(/^#/, '')} onClick={addCurrentTag}>Add</button></div>
 
                   {/* Suggestions Chips */}
                   {availableTagSuggestions.length > 0 && (
@@ -2057,7 +1924,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                           { label: '💀 1', val: 1.0 },
                           { label: '😐 5', val: 5.0 },
                           { label: '👍 7', val: 7.0 },
-                          { label: '🔥 8.5', val: 8.5 },
+                          { label: '8.5', val: 8.5 },
                           { label: '⭐ 10', val: 10.0 }
                         ].map(chip => {
                           const chipColor = getRatingColor(chip.val);
@@ -2564,10 +2431,11 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
           )}
 
           {/* ── STREAMING SECTION ── */}
-          {activeSection === 'overview' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {activeSection === 'streaming' && (
+            <div className="streaming-panel" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div className="streaming-panel-header">
                 <span style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--accent)' }}>📺 Where to Watch</span>
+                <CountrySelector country={country} onChange={setCountry} />
                 {watchProviders?.link && (
                   <a href={watchProviders.link} target="_blank" rel="noopener noreferrer"
                     style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none' }}>
@@ -2577,11 +2445,11 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                 )}
               </div>
 
-              {!watchProviders ? (
+              {providerStatus==='loading'?<div className="workspace-state" role="status">Checking streaming availability…</div>:providerStatus==='error'?<div className="workspace-state" role="alert"><h3>Streaming services could not be loaded</h3><p>Please retry. A connection error does not mean this title is unavailable.</p><button className="studio-secondary" onClick={()=>{setProviderRetry(value=>value+1);if(detailsStatus==='error')setDetailsRetry(value=>value+1);}}>Try again</button></div>:!watchProviders || !['flatrate','rent','buy'].some(key=>watchProviders[key]?.length) ? (
                 <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-muted)' }}>
                   <div style={{ fontSize: '36px', marginBottom: '12px' }}>🔍</div>
-                  <div style={{ fontWeight: 700, marginBottom: '6px' }}>No streaming info available</div>
-                  <div style={{ fontSize: '13px', color: 'var(--text-dim)' }}>This title may not be available for streaming in your region.</div>
+                  <div style={{ fontWeight: 700, marginBottom: '6px' }}>No services listed for this country</div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-dim)' }}>Our provider has no streaming, rental or purchase listings here. Try another country or check JustWatch.</div>
                 </div>
               ) : (
                 <>
@@ -2645,104 +2513,17 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                 </>
               )}
 
-              {/* ── Community Reviews Spotlight on Overview ── */}
-              <div style={{
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid var(--border)',
-                borderRadius: '12px',
-                padding: '18px 20px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '14px',
-                marginTop: '6px'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--accent)' }}>💬 Community Reviews</span>
-                    {publicReviews.length > 0 && (
-                      <span style={{ fontSize: '11px', fontWeight: 800, background: 'rgba(var(--accent-rgb, 229,9,20), 0.15)', color: 'var(--accent)', padding: '2px 8px', borderRadius: '12px' }}>
-                        {publicReviews.length}
-                      </span>
-                    )}
-                  </div>
-                  {publicReviews.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setActiveSection('reviews')}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: 'var(--accent)',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        padding: '4px 6px'
-                      }}
-                    >
-                      View all ({publicReviews.length}) →
-                    </button>
-                  )}
-                </div>
-
-                {loadingReviews ? (
-                  <div style={{ fontSize: '12px', color: 'var(--text-dim)', textAlign: 'center', padding: '16px 0' }}>
-                    Loading community reviews…
-                  </div>
-                ) : publicReviews.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {publicReviews.slice(0, 2).map(r => (
-                      <div
-                        key={r.id}
-                        onClick={() => setActiveSection('reviews')}
-                        style={{
-                          background: 'rgba(0,0,0,0.3)',
-                          border: '1px solid rgba(255,255,255,0.06)',
-                          borderRadius: '8px',
-                          padding: '12px 14px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          gap: '12px',
-                          alignItems: 'flex-start',
-                          transition: 'border-color 0.15s'
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.18)'}
-                        onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'}
-                      >
-                        <img
-                          src={r.avatar}
-                          alt={r.displayName}
-                          style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
-                        />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#fff' }}>{r.displayName}</span>
-                            {r.rating && (
-                              <span style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--gold)' }}>★ {Number(r.rating).toFixed(1)}</span>
-                            )}
-                          </div>
-                          <p style={{
-                            fontSize: '12px',
-                            color: 'var(--text-muted)',
-                            lineHeight: 1.45,
-                            margin: '4px 0 0',
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden'
-                          }}>
-                            {r.review}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{ fontSize: '12.5px', color: 'var(--text-dim)', textAlign: 'center', padding: '12px 0' }}>
-                    No reviews yet · Share your thoughts on this title above!
-                  </div>
-                )}
-              </div>
             </div>
+          )}
+
+          {activeSection === 'overview' && (
+            <section className="film-overview">
+              {detailsError&&<div className="film-info-error" role="alert"><p>{detailsError}</p><button className="studio-secondary" onClick={()=>setDetailsRetry(value=>value+1)}>Try again</button></div>}
+              <div className="film-story"><h3>Story</h3><p>{String(details?.overview||'').trim() || String(movie.overview||'').trim() || (detailsStatus==='loading'?'Loading the story…':detailsStatus==='error'||detailsError?'Story information could not be loaded.':'No synopsis has been listed for this title yet.')}</p>{overviewLanguage!=='en'&&details?.overview&&<small>Synopsis available in {new Intl.DisplayNames(['en'],{type:'language'}).of(overviewLanguage)}.</small>}</div>
+              {trailerKey?<div className="screening-trailer"><div className="screening-section-heading"><h3>{trailerInfo?.official?'Official '+(trailerInfo.type||'trailer').toLowerCase():trailerInfo?.type||'Trailer'}</h3><a href={'https://www.youtube.com/watch?v='+encodeURIComponent(trailerKey)} target="_blank" rel="noopener noreferrer">Watch on YouTube ↗</a></div><TrailerPlayer videoId={trailerKey} title={(movie.title||movie.name||'Film')+' trailer'}/></div>:<div className="film-trailer-empty" role="status"><h3>{detailsStatus==='loading'?'Finding a trailer…':'Trailer'}</h3><p>{detailsStatus==='loading'?'Checking the available videos for this title.':detailsStatus==='error'||detailsError?'Trailer information could not be loaded. Try again above.':'No trailer or teaser is listed for this title yet.'}</p>{detailsStatus==='ready'&&<a href={'https://www.youtube.com/results?search_query='+encodeURIComponent((movie.title||movie.name||'')+' official trailer')} target="_blank" rel="noopener noreferrer">Find a trailer on YouTube ↗</a>}</div>}
+              {cast.length > 0 && <div className="film-overview-cast"><div className="screening-section-heading"><h3>Starring</h3><button className="studio-text-button" onClick={() => setActiveSection('cast')}>View full cast →</button></div><div className="overview-cast">{cast.slice(0,6).map(person => <div key={person.id}>{person.profile_path && <img src={`https://image.tmdb.org/t/p/w185`+person.profile_path} alt="" loading="lazy" />}<strong>{person.name}</strong><span>{person.character}</span></div>)}</div></div>}
+              <button className="btn btn-secondary" onClick={() => setActiveSection('streaming')}>Where to watch →</button>
+            </section>
           )}
 
           {/* ── CAST SECTION ── */}
@@ -2880,26 +2661,12 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
             </div>
           )}
 
-          {/* ── TRAILER SECTION ── */}
-          {activeSection === 'trailer' && trailerKey && (
-            <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}>
-              <iframe
-                src={`https://www.youtube-nocookie.com/embed/${trailerKey}?rel=0&modestbranding=1`}
-                title="Trailer"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-              />
-            </div>
-          )}
-
           {/* ── SIMILAR SECTION ── */}
           {activeSection === 'similar' && similar.length > 0 && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '12px' }}>
               {similar.map(item => (
                 <div key={item.id} style={{ borderRadius: 'var(--radius)', overflow: 'hidden', cursor: 'pointer', background: 'var(--surface-solid)', border: '1px solid var(--border)', transition: 'transform 0.2s' }}
-                  onClick={() => { if (onOpenMovie) onOpenMovie(item.id, movie.media_type === 'tv' ? 'tv' : 'movie'); }}
+                  onClick={() => { if (onOpenMovie) onOpenMovie(item.id, mediaApiType === 'tv' ? 'tv' : 'movie'); }}
                   onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-3px)'}
                   onMouseLeave={e => e.currentTarget.style.transform = ''}
                 >
@@ -2921,6 +2688,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
         </div>
 
       </div>
+      <ConfirmModal isOpen={Boolean(screeningRemoval)} title="Remove this screening?" message="This removes the selected entry from your viewing history. The film stays in your library. Any remaining screening becomes your active log." confirmText="Remove screening" cancelText="Keep screening" item={{...movie,title:movie.title||movie.name}} onCancel={()=>setScreeningRemoval(null)} onConfirm={()=>handleDeleteScreening(screeningRemoval.id)}/>
     </div>
   );
 }

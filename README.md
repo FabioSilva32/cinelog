@@ -49,3 +49,10 @@ cd cinelog
 npm install
 npm run dev
 ```
+
+
+## Viewing and profile upgrades (preview)
+
+This branch synchronizes the deployed redesign and adds episode progress, per-viewing diary editing, profile pins/connections, discovery filters, Undo and recoverable save states. Production remains on its reviewed release.
+
+See [setup, validation and migration notes](FEATURE-UPGRADES-2026-11-23.md). Run `npm ci` and `npm run check:release`; create `.env.local` from `.env.example` for local API access. Never commit credentials. Browser account checks use isolated fixtures.

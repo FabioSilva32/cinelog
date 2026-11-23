@@ -1,0 +1,42 @@
+name: Refresh franchise catalogues
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 6 * * 1'
+permissions:
+  contents: write
+  pull-requests: write
+concurrency:
+  group: catalogue-refresh
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Fetch and validate catalogue membership
+        env:
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+        run: |
+          node scripts/refresh-franchise-catalogues.mjs
+          node --test scripts/catalogue-search.test.mjs
+      - name: Open an update for review
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- src/data/franchiseCatalogues.json; then exit 0; fi
+          if gh pr list --search 'is:open in:title "Refresh franchise catalogues"' --json number --jq '.[0].number' | grep -q '[0-9]'; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          branch="codex/catalogue-refresh-${GITHUB_RUN_ID}"
+          git checkout -b "$branch"
+          git add src/data/franchiseCatalogues.json
+          git commit -m 'Refresh verified franchise catalogues'
+          git push origin "$branch"
+          gh pr create --base main --head "$branch" --title 'Refresh franchise catalogues' --body 'Weekly TMDB refresh. Membership guards and catalogue regression tests passed. Review the additions before merging.'

@@ -1,5 +1,6 @@
+import { knownRuntime, hasGenre, getMediaType } from '../utils/media';
 import React, { useMemo, useState } from 'react';
-import { BarChart3, Trophy, Sparkles, Star, Heart, Clock, Film, Calendar, Zap, TrendingUp } from 'lucide-react';
+import { BarChart3, Sparkles, Star, Heart, Clock, Film, Calendar, Zap, TrendingUp } from 'lucide-react';
 
 // ── SVG DONUT CHART ──────────────────────────────────────────────────────────
 function DonutChart({ segments, size = 180, thickness = 38 }) {
@@ -144,7 +145,7 @@ function RatingAreaChart({ library, onMovieClick }) {
       {hovIdx !== null && points[hovIdx] && points[hovIdx].count > 0 && (() => {
         const p = points[hovIdx];
         const matchingMovies = library.filter(m => m.rating != null && Math.min(10, Math.max(1, Math.round(Number(m.rating)))) === p.rating);
-        
+
         const pctX = (p.x / W) * 100;
         const pctY = (p.y / H) * 100;
 
@@ -173,7 +174,7 @@ function RatingAreaChart({ library, onMovieClick }) {
                   key={m.id || m.tmdb_id}
                   src={m.poster_path ? `https://image.tmdb.org/t/p/w92${m.poster_path}` : 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?auto=format&fit=crop&w=80&q=80'}
                   alt=""
-                  onClick={() => onMovieClick && onMovieClick(m.tmdb_id, m.media_type || 'movie')}
+                  role="button" tabIndex={0} onKeyDown={e=>{if(e.target===e.currentTarget&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.currentTarget.click();}}} onClick={() => onMovieClick && onMovieClick(m.tmdb_id, m.media_type || 'movie')}
                   style={{ width: '28px', height: '42px', objectFit: 'cover', borderRadius: '4px', cursor: 'pointer', border: '1px solid var(--border)' }}
                   title={m.title}
                 />
@@ -187,7 +188,7 @@ function RatingAreaChart({ library, onMovieClick }) {
 }
 
 
-export default function StatsTab({ library, onMovieClick }) {
+export default function StatsTab({ library, onMovieClick, onNavigate }) {
   const [decadeStart, setDecadeStart] = useState(1950);
   const [decadeEnd, setDecadeEnd] = useState(2020);
 
@@ -218,7 +219,7 @@ export default function StatsTab({ library, onMovieClick }) {
     let totalMin = 0;
     filteredLibrary.forEach(m => {
       if (m.status === 'watched') {
-        totalMin += m.media_type === 'tv' ? 45 : 115;
+        totalMin += knownRuntime(m) || 0;
       }
     });
     return Math.round(totalMin / 60);
@@ -231,14 +232,14 @@ export default function StatsTab({ library, onMovieClick }) {
       .filter(Boolean)
       .map(d => d.slice(0, 10))
     )].sort();
-    
+
     if (watchDates.length === 0) return { current: 0, longest: 0 };
-    
+
     let longest = 0;
     let temp = 0;
     let prevDate = null;
     const oneDayMs = 24 * 60 * 60 * 1000;
-    
+
     for (const dStr of watchDates) {
       const d = new Date(dStr);
       if (prevDate) {
@@ -255,13 +256,13 @@ export default function StatsTab({ library, onMovieClick }) {
       prevDate = d;
     }
     if (temp > longest) longest = temp;
-    
+
     const today = new Date().toISOString().slice(0, 10);
     const yesterday = new Date(Date.now() - oneDayMs).toISOString().slice(0, 10);
     const hasToday = watchDates.includes(today);
     const hasYesterday = watchDates.includes(yesterday);
     const current = (hasToday || hasYesterday) ? temp : 0;
-    
+
     return { current, longest };
   }, [filteredLibrary]);
 
@@ -307,15 +308,15 @@ export default function StatsTab({ library, onMovieClick }) {
       totalDays,
       marsPercent,
       popcornCount: Math.round(watchedCount * 1.5),
-      framesCount: (watchedCount * 115 * 60 * 24).toLocaleString()
+      framesCount: totalRuntimeHours > 0 ? Math.round(totalRuntimeHours * 3600 * 24).toLocaleString() : null
     };
   }, [watchedCount, totalRuntimeHours]);
 
   // ── MEDIA TYPE BREAKDOWN ────────────────────────────────────────────
   const mediaTypeStats = useMemo(() => {
-    const movies = filteredLibrary.filter(m => m.media_type === 'movie' || (!m.media_type && m.type !== 'anime' && m.type !== 'tv'));
-    const series = filteredLibrary.filter(m => m.media_type === 'tv' || m.type === 'tv');
-    const anime = filteredLibrary.filter(m => m.media_type === 'anime' || m.type === 'anime');
+    const movies = filteredLibrary.filter(m => getMediaType(m) === 'movie');
+    const series = filteredLibrary.filter(m => getMediaType(m) === 'tv' || m.type === 'tv');
+    const anime = filteredLibrary.filter(m => getMediaType(m) === 'anime' || m.type === 'anime');
     const total = filteredLibrary.length || 1;
     return [
       { label: 'Movies', count: movies.length, color: '#880808', pct: Math.round((movies.length / total) * 100) },
@@ -326,20 +327,21 @@ export default function StatsTab({ library, onMovieClick }) {
 
   // ── RUNTIME BREAKDOWN ──
   const runtimeStats = useMemo(() => {
-    let shortCount = 0; 
-    let standardCount = 0; 
-    let featureCount = 0; 
-    let epicCount = 0; 
-    
+    let shortCount = 0;
+    let standardCount = 0;
+    let featureCount = 0;
+    let epicCount = 0;
+
     filteredLibrary.forEach(m => {
       if (m.status !== 'watched') return;
-      const run = m.media_type === 'tv' ? 45 : 115; 
+      const run = knownRuntime(m);
+      if (!run) return;
       if (run < 90) shortCount++;
       else if (run <= 120) standardCount++;
       else if (run <= 150) featureCount++;
       else epicCount++;
     });
-    
+
     const total = shortCount + standardCount + featureCount + epicCount || 1;
     return [
       { label: 'Short (<90m)', count: shortCount, color: '#06b6d4', pct: Math.round((shortCount / total) * 100) },
@@ -364,7 +366,8 @@ export default function StatsTab({ library, onMovieClick }) {
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '30px', paddingBottom: '40px' }}>
-      
+
+      <p className="workspace-context">Release years {decadeStart}–{decadeEnd+9}. Titles with unknown release years are included.</p>{!library.length&&<div className="workspace-state"><h2>Your viewing story starts here</h2><p>Log a film to see your ratings, genres and viewing patterns.</p><a className="studio-secondary" href="/explore">Explore films</a></div>}
       {/* ── HEADER ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -404,14 +407,14 @@ export default function StatsTab({ library, onMovieClick }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
         {[
           { label: 'Total Titles', val: filteredLibrary.length, color: 'var(--accent)', glow: 'rgba(136,8,8,0.2)', icon: Film, detail: `${watchedCount} Watched · ${watchlistCount} Watchlist` },
-          { label: 'Time Invested', val: `${totalRuntimeHours}h`, color: 'var(--green)', glow: 'rgba(16,185,129,0.2)', icon: Clock, detail: `Approx. ${comparisons ? comparisons.totalDays : 0} complete days` },
+          { label: 'Recorded runtime', val: filteredLibrary.some(m => m.status === 'watched' && knownRuntime(m)) ? `${totalRuntimeHours}h` : '—', color: 'var(--green)', glow: 'rgba(16,185,129,0.2)', icon: Clock, detail: `${filteredLibrary.filter(m => m.status === 'watched' && knownRuntime(m)).length} titles with known runtime` },
           { label: 'Avg Rating', val: avgRating > 0 ? avgRating.toFixed(1) : '—', color: 'var(--gold)', glow: 'rgba(251,191,36,0.2)', icon: Star, detail: `Across ${filteredLibrary.filter(m => m.rating).length} rated titles` },
           { label: 'Favorites', val: favCount, color: 'var(--red)', glow: 'rgba(239,68,68,0.2)', icon: Heart, detail: `${Math.round((favCount / (filteredLibrary.length || 1)) * 100)}% of collection` },
           { label: 'Watch Streak', val: `${streaks.current}d`, color: '#880808', glow: 'rgba(192,57,43,0.2)', icon: Zap, detail: `Longest streak: ${streaks.longest} days` }
         ].map((s, idx) => {
           const Icon = s.icon;
           return (
-            <div key={idx} className="glass" style={{
+            <div key={idx} className="glass screening-metric" style={{
               borderRadius: 'var(--radius-lg)', padding: '20px', position: 'relative', overflow: 'hidden',
               border: '1px solid var(--border)', transition: 'all 0.3s'
             }}
@@ -478,7 +481,7 @@ export default function StatsTab({ library, onMovieClick }) {
           {topRated.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {topRated.map((m, i) => (
-                <div key={m.id} onClick={() => onMovieClick(m.tmdb_id, m.media_type || 'movie')}
+                <div key={m.id} role="button" tabIndex={0} onKeyDown={e=>{if(e.target===e.currentTarget&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.currentTarget.click();}}} onClick={() => onMovieClick(m.tmdb_id, m.media_type || 'movie')}
                   style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', padding: '8px', borderRadius: '8px', transition: 'all 0.2s', background: 'rgba(255,255,255,0.01)' }}
                   onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface-hover)'; }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.01)'; }}>
@@ -501,39 +504,7 @@ export default function StatsTab({ library, onMovieClick }) {
           )}
         </div>
 
-        {/* Active Challenges */}
-        <div className="glass" style={{ borderRadius: 'var(--radius-lg)', padding: '24px', border: '1px solid var(--border)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
-            <Trophy size={18} color="var(--gold)" />
-            <h3 style={{ fontSize: '15px', fontWeight: 800 }}>Active Challenges</h3>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            {[
-              { label: '🎬 2026 Marathon', current: watchedCount, goal: 50, note: 'Watch 50 titles this year' },
-              { label: '👾 Sci-Fi Explorer', current: library.filter(m => m.genres?.includes('Sci-Fi')).length, goal: 10, note: 'Log 10 Sci-Fi titles' },
-              { label: '❤️ Favorites Wall', current: favCount, goal: 12, note: 'Mark 12 favorites' },
-              { label: '⭐ High Rater', current: library.filter(m => Number(m.rating) >= 9).length, goal: 5, note: 'Rate 5 titles at 9+' },
-            ].map(c => {
-              const pct = Math.min(100, Math.round((c.current / c.goal) * 100));
-              const done = pct >= 100;
-              return (
-                <div key={c.label} style={{ background: 'rgba(255,255,255,0.02)', padding: '14px', borderRadius: '12px', border: `1px solid ${done ? 'rgba(16,185,129,0.3)' : 'var(--border)'}` }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 700, marginBottom: '8px' }}>
-                    <span>{c.label}</span>
-                    <span style={{ color: done ? 'var(--green)' : 'var(--accent)' }}>
-                      {done ? '🏆 Done!' : `${Math.min(c.current, c.goal)}/${c.goal}`}
-                    </span>
-                  </div>
-                  <div className="progress-bar" style={{ height: '6px' }}>
-                    <div className="progress-fill" style={{ width: `${pct}%`, background: done ? 'var(--green)' : 'var(--accent-gradient)' }} />
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginTop: '6px' }}>{c.note}</div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
+        <section className="workspace-state"><h3>Keep your cinema habit going</h3><p>Track goals and play trivia in their dedicated workspaces.</p><div className="workspace-actions">{onNavigate?<><button className="studio-secondary" onClick={()=>onNavigate('challenges')}>Open challenges</button><button className="studio-secondary" onClick={()=>onNavigate('trivia')}>Play film trivia</button></>:<><a href="/challenges">Open challenges</a><a href="/trivia">Play film trivia</a></>}</div></section>
       </div>
 
       {/* ── FUN TRIVIA ── */}
@@ -541,7 +512,7 @@ export default function StatsTab({ library, onMovieClick }) {
         <div className="glass" style={{ borderRadius: 'var(--radius-lg)', padding: '24px', border: '1px solid var(--border)', position: 'relative', overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
               <Zap size={18} color="var(--accent)" />
-              <h3 style={{ fontSize: '15px', fontWeight: 800 }}>Fun Trivia</h3>
+              <h3 style={{ fontSize: '15px', fontWeight: 800 }}>Viewing time comparisons</h3>
             </div>
             {comparisons ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '13.5px', lineHeight: 1.5 }}>
@@ -554,7 +525,7 @@ export default function StatsTab({ library, onMovieClick }) {
                     </div>
                   </div>
                 </div>
-                
+
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                   <span style={{ fontSize: '22px' }}>🍿</span>
                   <div>
@@ -570,7 +541,7 @@ export default function StatsTab({ library, onMovieClick }) {
                   <div>
                     <div style={{ fontWeight: 700 }}>Projected Frames</div>
                     <div style={{ color: 'var(--text-muted)', fontSize: '12.5px' }}>
-                      At a standard 24 frames per second, you have witnessed approximately {comparisons.framesCount} individual frames of cinematic history.
+                      {comparisons.framesCount ? `At 24 frames per second, recorded runtime represents approximately ${comparisons.framesCount} frames.` : 'Add film runtimes to estimate the frames you have watched.'}
                     </div>
                   </div>
                 </div>
@@ -585,7 +556,7 @@ export default function StatsTab({ library, onMovieClick }) {
 
       {/* ── MEDIA TYPE, RUNTIME & DECADE BREAKDOWN ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '24px' }}>
-        
+
         {/* Media Type */}
         <div className="glass" style={{ borderRadius: 'var(--radius-lg)', padding: '24px', border: '1px solid var(--border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
@@ -669,5 +640,3 @@ export default function StatsTab({ library, onMovieClick }) {
     </div>
   );
 }
-
-

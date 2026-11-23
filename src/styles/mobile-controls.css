@@ -1,0 +1,21 @@
+/* Mobile actions: rounded controls without rounding poster cards or text tabs. */
+@media(max-width:767px){
+ :root{--mobile-action-radius:14px;--mobile-action-height:44px}
+ :is(.studio-shell,.cine-dialog,.cine-list-builder,.atelier-dialog,.workspace-dialog) :is(.studio-primary,.studio-secondary,.btn-primary,.btn-secondary):not(.studio-collection-tabs button){border-radius:var(--mobile-action-radius)!important;min-height:var(--mobile-action-height)!important;padding:11px 16px!important;line-height:1.4!important;gap:8px;touch-action:manipulation}
+ .studio-signin.studio-primary{border-radius:999px!important;min-height:40px!important;padding:9px 14px!important}
+ .v2-profile .profile-action-bar button,.workspace-list-actions>button,.tier-toolbar>.btn,.tier-more summary{border-radius:var(--mobile-action-radius)!important;min-height:44px!important;padding:11px 14px!important}
+ .studio-view-toggle{border-radius:14px!important;padding:4px!important;gap:2px}.studio-view-toggle button{border-radius:10px!important;width:38px!important;height:38px!important}
+ .atelier-segments>button,.atelier-upload-button,.atelier-preview-toggle{border-radius:12px!important;min-height:40px!important;padding:9px 12px!important}
+ .cine-dialog>button[aria-label^="Close"],.cine-dialog>.screening-dialog-close,.atelier-icon,.workspace-dialog .studio-icon-button{border-radius:50%!important;width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;padding:0!important;display:inline-flex!important;align-items:center;justify-content:center}
+ .cine-dialog>h2,.cine-dialog>h3{padding-right:48px}
+ .studio-mobile-bottom{height:calc(80px + env(safe-area-inset-bottom))!important;padding:4px 8px env(safe-area-inset-bottom)!important;box-sizing:border-box;gap:4px;background:#101010f5!important;border-top-color:#3a2b30!important;box-shadow:0 -8px 24px #0003}
+ .studio-mobile-bottom>button{display:grid!important;grid-template-rows:48px 14px;align-content:center;justify-items:center;flex:1 1 0;width:auto!important;min-width:0;height:72px!important;min-height:44px;gap:3px!important;border-radius:16px;background:transparent!important;border-color:transparent!important;font-size:10px!important;font-weight:500;color:#aaa!important;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+ .studio-mobile-bottom>button>svg{width:40px!important;height:40px!important;padding:9px!important;box-sizing:border-box;border-radius:14px;background:transparent}
+ .studio-mobile-bottom>button.is-active{color:#e9b9c5!important}.studio-mobile-bottom>button.is-active>svg{background:#311b23;color:#edb0c0}
+ .studio-mobile-bottom>.studio-mobile-log{background:transparent!important;color:#fff!important;gap:3px!important}
+ .studio-mobile-bottom>.studio-mobile-log>svg{width:48px!important;height:48px!important;padding:12px!important;border-radius:50%!important;background:linear-gradient(145deg,#b42543,#801127)!important;color:#fff;box-shadow:0 4px 14px #690f2745,inset 0 1px 0 #ffffff25;flex-shrink:0}
+ .studio-mobile-bottom>.studio-mobile-log>span{font-weight:650;line-height:1.25}
+ .studio-mobile-bottom>button:active>svg{filter:brightness(1.15)}
+ .studio-main{padding-bottom:calc(108px + env(safe-area-inset-bottom))!important}
+ .cine-confirm footer,.atelier-footer>div:last-child{gap:10px!important}
+}

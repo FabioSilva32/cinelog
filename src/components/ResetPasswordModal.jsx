@@ -1,3 +1,4 @@
+import {useDialogFocus} from '../hooks/useDialogFocus';
 import React, { useState, useEffect } from 'react';
 import { X, Lock, Check, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../supabaseClient';
@@ -7,20 +8,12 @@ import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 export default function ResetPasswordModal({ onClose }) {
   useBodyScrollLock(true);
 
-  // Close modal on Escape key
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') onClose?.();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
-
   const toast = useToast();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const dialogRef=useDialogFocus();
   const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
@@ -55,18 +48,18 @@ export default function ResetPasswordModal({ onClose }) {
 
   return (
     <div
-      className="modal-backdrop"
+      className="modal-backdrop cine-backdrop" onKeyDown={e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();if(!loading)onClose();}}}
       style={{
         position: 'fixed', inset: 0,
         background: 'rgba(8,7,11,0.85)', backdropFilter: 'blur(12px)',
         zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px',
         overscrollBehavior: 'contain'
       }}
-      onClick={e => e.target === e.currentTarget && onClose()}
+      onClick={e => e.target === e.currentTarget && !loading && onClose()}
       onWheel={e => e.stopPropagation()}
     >
       <div
-        className="glass animate-fade-in"
+        className="cine-dialog cine-recovery" ref={dialogRef} role="dialog" aria-modal="true" aria-label="Reset password" tabIndex={-1}
         style={{
           width: '100%', maxWidth: '440px', borderRadius: 'var(--radius-lg)',
           border: '1px solid var(--border)', position: 'relative', padding: '32px',
@@ -75,7 +68,7 @@ export default function ResetPasswordModal({ onClose }) {
         onWheel={e => e.stopPropagation()}
       >
         <button
-          onClick={onClose}
+          aria-label="Close password recovery" disabled={loading} onClick={onClose}
           style={{ position: 'absolute', right: '18px', top: '18px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
         >
           <X size={20} />

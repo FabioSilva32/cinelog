@@ -1,17 +1,23 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import {accountTierStorage} from '../utils/accountTierStorage';
+import {moveTierPoster,tierInsertionIndex} from '../utils/tierOrdering';
+import {tierDisplayColor,getRatingColor,ratingColors} from '../utils/ratingColors';
+import {decodeTierTransfer} from '../utils/tierTransfer';
+import {useDialogFocus} from '../hooks/useDialogFocus';
+import {useBodyScrollLock} from '../hooks/useBodyScrollLock';
+import React, { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { RefreshCw, GripVertical, Settings2, Trash2, Plus, ChevronUp, ChevronDown, Heart, Star, Check, X, Sparkles, Tag, Cloud, Smartphone, Copy, Download, Upload, ShieldCheck, MoveHorizontal, Grid3X3 } from 'lucide-react';
+import { RefreshCw, Settings2, Trash2, Plus, ChevronUp, ChevronDown, Heart, Star, Check, X, Sparkles, Tag, Cloud, Smartphone, Copy, Download, Upload, ShieldCheck, MoveHorizontal, Grid3X3 } from 'lucide-react';
 import ConfirmModal from './ConfirmModal';
 import { FRANCHISE_COLLECTIONS, GENRE_LIST, matchesCollection } from '../utils/collections';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
 
 const DEFAULT_TIERS = [
-  { id: 's', label: 'S', color: '#ff4d4d', desc: 'All-time masterpieces' },
-  { id: 'a', label: 'A', color: '#ff8c00', desc: 'Excellent films' },
-  { id: 'b', label: 'B', color: '#f0c040', desc: 'Great watches' },
-  { id: 'c', label: 'C', color: '#4dcd80', desc: 'Solid & enjoyable' },
-  { id: 'd', label: 'D', color: '#4da6ff', desc: 'Below average' },
-  { id: 'f', label: 'F', color: '#9b59b6', desc: 'Forgettable' }
+  { id: 's', label: 'S', color: ratingColors.perfect, desc: 'All-time masterpieces' },
+  { id: 'a', label: 'A', color: ratingColors.excellent, desc: 'Excellent films' },
+  { id: 'b', label: 'B', color: ratingColors.good, desc: 'Great watches' },
+  { id: 'c', label: 'C', color: ratingColors.mixed, desc: 'Solid & enjoyable' },
+  { id: 'd', label: 'D', color: ratingColors.low, desc: 'Below average' },
+  { id: 'f', label: 'F', color: ratingColors.poor, desc: 'Forgettable' }
 ];
 
 const COLOR_PRESETS = [
@@ -25,9 +31,17 @@ const COLOR_PRESETS = [
   { name: 'Slate', value: '#64748b' }
 ];
 
-export default function TierListTab({ library = [], currentUser = null, onOpenAuth = null }) {
+export default function TierListTab({ library = [], currentUser = null, onOpenAuth = null, onOpenExplore = null, storage:providedStorage }) {
+  const storage=useMemo(()=>providedStorage||accountTierStorage(localStorage,currentUser?.id),[providedStorage,currentUser?.id]);
   // Flag to prevent overwriting cloud data on initial mount
   const isInitialSyncDone = useRef(false);
+  const moreOptionsRef=useRef(null);
+  useEffect(()=>{
+    const dismiss=event=>{if(moreOptionsRef.current && (event.key==='Escape'||(event.type==='pointerdown'&&!moreOptionsRef.current.contains(event.target))))moreOptionsRef.current.open=false;};
+    document.addEventListener('pointerdown',dismiss);document.addEventListener('keydown',dismiss);
+    return()=>{document.removeEventListener('pointerdown',dismiss);document.removeEventListener('keydown',dismiss);};
+  },[]);
+
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [showNewListModal, setShowNewListModal] = useState(false);
   const [newListNameInput, setNewListNameInput] = useState('');
@@ -36,7 +50,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
   const [cloudManualSyncing, setCloudManualSyncing] = useState(false);
   const [rowLayoutMode, setRowLayoutMode] = useState(() => {
     try {
-      return localStorage.getItem('cinelog_tier_layout_mode_v2') || 'wrap';
+      return storage.getItem('cinelog_tier_layout_mode_v2') || 'wrap';
     } catch {
       return 'wrap';
     }
@@ -45,7 +59,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
   const toggleRowLayoutMode = () => {
     setRowLayoutMode(prev => {
       const next = prev === 'wrap' ? 'scroll' : 'wrap';
-      try { localStorage.setItem('cinelog_tier_layout_mode_v2', next); } catch {}
+      try { storage.setItem('cinelog_tier_layout_mode_v2', next); } catch {}
       return next;
     });
   };
@@ -53,7 +67,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
 
   const isSwitchingListRef = useRef(false);
   const [activeListId, setActiveListId] = useState(() => {
-    return localStorage.getItem('cinelog_active_tier_list_id_v4') || 'default';
+    return storage.getItem('cinelog_active_tier_list_id_v4') || 'default';
   });
   const activeListIdRef = useRef(activeListId);
   activeListIdRef.current = activeListId;
@@ -61,21 +75,21 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
   // Preserve user's custom tier structure (e.g. S+, S, A, B, C, D) so format remains rock-solid across lists
   const [tiers, setTiers] = useState(() => {
     try {
-      const storedMaster = localStorage.getItem('cinelog_master_tiers_v4');
+      const storedMaster = storage.getItem('cinelog_master_tiers_v4');
       if (storedMaster) {
         const parsed = JSON.parse(storedMaster);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
-      const storedLists = localStorage.getItem('cinelog_saved_tier_lists_v4');
+      const storedLists = storage.getItem('cinelog_saved_tier_lists_v4');
       if (storedLists) {
         const parsed = JSON.parse(storedLists);
-        const activeId = localStorage.getItem('cinelog_active_tier_list_id_v4') || 'default';
+        const activeId = storage.getItem('cinelog_active_tier_list_id_v4') || 'default';
         if (parsed[activeId]?.tiers && parsed[activeId].tiers.length > 0) return parsed[activeId].tiers;
         for (const l of Object.values(parsed)) {
           if (l.tiers && l.tiers.length > 0) return l.tiers;
         }
       }
-      const storedTiers = localStorage.getItem('cinelog_tiers_list_setup_v3');
+      const storedTiers = storage.getItem('cinelog_tiers_list_setup_v3');
       return storedTiers ? JSON.parse(storedTiers) : DEFAULT_TIERS;
     } catch {
       return DEFAULT_TIERS;
@@ -84,17 +98,17 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
 
   const [lists, setLists] = useState(() => {
     try {
-      const stored = localStorage.getItem('cinelog_saved_tier_lists_v4');
+      const stored = storage.getItem('cinelog_saved_tier_lists_v4');
       if (stored) {
         const parsed = JSON.parse(stored);
         if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
           return parsed;
         }
       }
-      
-      const storedData = localStorage.getItem('cinelog_tier_list_data_v3');
+
+      const storedData = storage.getItem('cinelog_tier_list_data_v3');
       const d = storedData ? JSON.parse(storedData) : {};
-      
+
       return {
         default: { id: 'default', name: 'Global Master List', tiers, tierData: d }
       };
@@ -107,13 +121,13 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
 
   const [tierData, setTierData] = useState(() => {
     try {
-      const storedLists = localStorage.getItem('cinelog_saved_tier_lists_v4');
-      const activeId = localStorage.getItem('cinelog_active_tier_list_id_v4') || 'default';
+      const storedLists = storage.getItem('cinelog_saved_tier_lists_v4');
+      const activeId = storage.getItem('cinelog_active_tier_list_id_v4') || 'default';
       if (storedLists) {
         const parsed = JSON.parse(storedLists);
         if (parsed[activeId]?.tierData) return parsed[activeId].tierData;
       }
-      const storedData = localStorage.getItem('cinelog_tier_list_data_v3');
+      const storedData = storage.getItem('cinelog_tier_list_data_v3');
       return storedData ? JSON.parse(storedData) : {};
     } catch {
       const defaultData = {};
@@ -128,14 +142,14 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
 
   // Synchronize custom collections created in CollectionsTab
   const [customCollections, setCustomCollections] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('cinelog_collections_v1')) || {}; }
+    try { return JSON.parse(storage.getItem('cinelog_collections_v1')) || {}; }
     catch { return {}; }
   });
 
   useEffect(() => {
     const handleSync = () => {
       try {
-        const stored = JSON.parse(localStorage.getItem('cinelog_collections_v1')) || {};
+        const stored = JSON.parse(storage.getItem('cinelog_collections_v1')) || {};
         setCustomCollections(stored);
       } catch {}
     };
@@ -162,8 +176,22 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
 
   const [dragInfo, setDragInfo] = useState(null);
   const [dropTarget, setDropTarget] = useState(null);
-  const [hoveredCardId, setHoveredCardId] = useState(null);
-  const [quickAssignTarget, setQuickAssignTarget] = useState(null); // { id, rect, currentTierId }
+  const [dropPreview,setDropPreview]=useState(null);
+  const boardRef=useRef(null),posterRects=useRef(new Map()),dragSlots=useRef(new Map()),dragRowHeights=useRef(new Map());
+  useLayoutEffect(()=>{
+    const next=new Map();
+    for(const card of boardRef.current?.querySelectorAll('[data-tier-movie]')||[]){
+      const id=card.dataset.tierMovie,rect={left:card.offsetLeft,top:card.offsetTop},previous=posterRects.current.get(id);next.set(id,rect);
+      if(dragInfo&&id!==dragInfo.movieId&&previous&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+        const dx=previous.left-rect.left,dy=previous.top-rect.top;
+        if(dx||dy){card.getAnimations?.().forEach(animation=>animation.cancel());card.animate?.([{translate:dx+'px '+dy+'px'},{translate:'0px 0px'}],{duration:160,easing:'ease-out'});}
+      }
+    }
+    posterRects.current=next;
+  },[dropPreview,dragInfo,tierData]);
+  const [quickAssignTarget, setQuickAssignTarget] = useState(null);
+  const syncRef=useDialogFocus(showSyncModal),newListRef=useDialogFocus(showNewListModal),assignRef=useDialogFocus(Boolean(quickAssignTarget));
+  useBodyScrollLock(showSyncModal||showNewListModal); // { id, rect, currentTierId }
 
   // Automatically dismiss quick-assign menu on any scroll or window resize so it never sticks
   useEffect(() => {
@@ -181,7 +209,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
       window.removeEventListener('resize', handleDismiss);
     };
   }, [quickAssignTarget]);
-  
+
   // Settings edit modal / panel state
   const [editingTierId, setEditingTierId] = useState(null);
   const [editLabel, setEditLabel] = useState('');
@@ -215,7 +243,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
       if (e.detail && typeof e.detail === 'object') {
         const cloudLists = e.detail;
         setLists(cloudLists);
-        const active = localStorage.getItem('cinelog_active_tier_list_id_v4') || Object.keys(cloudLists)[0] || 'default';
+        const active = storage.getItem('cinelog_active_tier_list_id_v4') || Object.keys(cloudLists)[0] || 'default';
         if (cloudLists[active]) {
           isSwitchingListRef.current = true;
           setActiveListId(active);
@@ -245,7 +273,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
           // Save to public.tier_lists table
           try {
             const upsertRows = Object.values(dataToSave).map(l => ({
-              id: String(l.id || 'default'),
+              id: l.cloudId || (String(l.id||'default').startsWith(currentUser.id+':')?String(l.id):currentUser.id+':'+String(l.id||'default')),
               user_id: currentUser.id,
               name: l.name || 'Tier List',
               description: l.description || '',
@@ -255,18 +283,19 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
               pool_filter: l.poolFilter || 'all',
               updated_at: new Date().toISOString()
             }));
-            await supabase.from('tier_lists').upsert(upsertRows, { onConflict: 'id' });
+            const saved=await supabase.from('tier_lists').upsert(upsertRows, { onConflict: 'id' });if(saved.error)throw saved.error;
           } catch (tErr) {
-            console.warn('tier_lists table save notice:', tErr);
+            throw tErr;
           }
 
           // Fallback backup in user_metadata
-          await supabase.auth.updateUser({
+          const metadataSave=await supabase.auth.updateUser({
             data: {
               cinelog_tier_lists: dataToSave,
               cinelog_active_tier_list_id: activeId
             }
           });
+          if(metadataSave.error)throw metadataSave.error;
           setCloudSyncStatus('synced');
         } catch (e) {
           console.warn('Tier list cloud sync failed:', e);
@@ -296,7 +325,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
           const dict = {};
           dbLists.forEach(r => {
             dict[r.id] = {
-              id: r.id,
+              id: r.id,cloudId:r.id,
               name: r.name,
               tiers: r.tiers || DEFAULT_TIERS,
               tierData: r.tier_data || {},
@@ -306,11 +335,11 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
 
           isSwitchingListRef.current = true;
           setLists(dict);
-          localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(dict));
+          storage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(dict));
           const targetId = dict[activeListIdRef.current] ? activeListIdRef.current : Object.keys(dict)[0];
           setActiveListId(targetId);
           activeListIdRef.current = targetId;
-          localStorage.setItem('cinelog_active_tier_list_id_v4', targetId);
+          storage.setItem('cinelog_active_tier_list_id_v4', targetId);
           const targetTiers = dict[targetId].tiers && dict[targetId].tiers.length > 0 ? dict[targetId].tiers : tiers;
           setTiers(targetTiers);
           setTierData(dict[targetId].tierData || {});
@@ -329,11 +358,11 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
           if (cloudLists && Object.keys(cloudLists).length > 0) {
             isSwitchingListRef.current = true;
             setLists(cloudLists);
-            localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(cloudLists));
+            storage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(cloudLists));
             const targetId = cloudLists[cloudActiveId] ? cloudActiveId : Object.keys(cloudLists)[0];
             setActiveListId(targetId);
             activeListIdRef.current = targetId;
-            localStorage.setItem('cinelog_active_tier_list_id_v4', targetId);
+            storage.setItem('cinelog_active_tier_list_id_v4', targetId);
             const targetTiers = cloudLists[targetId].tiers && cloudLists[targetId].tiers.length > 0 ? cloudLists[targetId].tiers : tiers;
             setTiers(targetTiers);
             setTierData(cloudLists[targetId].tierData || {});
@@ -346,10 +375,10 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
             return;
           }
         }
-        
+
         // 3. Fallback to local storage if brand new to cloud
         try {
-          const local = JSON.parse(localStorage.getItem('cinelog_saved_tier_lists_v4') || '{}');
+          const local = JSON.parse(storage.getItem('cinelog_saved_tier_lists_v4') || '{}');
           if (local && Object.keys(local).length > 0) {
             saveToCloud(local, activeListIdRef.current);
           }
@@ -365,11 +394,11 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
   }, [currentUser?.id]);
 
   // Copy transfer code to clipboard (always uses freshest snapshot)
-  const copyTransferCode = () => {
+  const copyTransferCode = async () => {
     try {
       const fullSnapshot = getFullListsSnapshot();
       const code = btoa(unescape(encodeURIComponent(JSON.stringify(fullSnapshot))));
-      navigator.clipboard.writeText(code);
+      await navigator.clipboard.writeText(code);
       setTransferMsg('✅ Transfer code copied to clipboard! Paste it on your phone/other device.');
       setTimeout(() => setTransferMsg(''), 6000);
     } catch (err) {
@@ -378,40 +407,33 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
   };
 
   // Import transfer code
-  const importTransferCode = () => {
-    if (!transferCodeInput.trim()) return;
-    try {
-      const jsonStr = decodeURIComponent(escape(atob(transferCodeInput.trim())));
-      const parsed = JSON.parse(jsonStr);
-      if (parsed && typeof parsed === 'object') {
+  const readLocalBackup=()=>{try{return storage.getItem('cinelog_tier_backup_'+(currentUser?.id||'guest'));}catch{return null;}};
+  const loadLocalBackup=()=>{const backup=readLocalBackup();if(!backup)return;setTransferCodeInput(btoa(unescape(encodeURIComponent(backup))));setTransferMsg('Your previous local tiers are loaded in the transfer field. Choose Import to restore them.');setShowSyncModal(true);};
+  const backupBeforeReplace=()=>storage.setItem('cinelog_tier_backup_'+(currentUser?.id||'guest'),JSON.stringify(getFullListsSnapshot()));
+  const importTransferCode=()=>{if(!transferCodeInput.trim())return;try{const parsed=decodeTierTransfer(transferCodeInput);setConfirmConfig({isOpen:true,title:'Replace your tier lists?',message:'The imported lists will replace the tier lists on this device. Your library is unchanged. A local copy of the current tiers will be kept for recovery.',confirmText:'Replace tier lists',isDanger:true,onConfirm:()=>{backupBeforeReplace();
         isSwitchingListRef.current = true;
         setLists(parsed);
-        localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(parsed));
+        storage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(parsed));
         const firstId = Object.keys(parsed)[0] || 'default';
         setActiveListId(firstId);
         activeListIdRef.current = firstId;
-        localStorage.setItem('cinelog_active_tier_list_id_v4', firstId);
+        storage.setItem('cinelog_active_tier_list_id_v4', firstId);
         if (parsed[firstId]) {
           const targetTiers = parsed[firstId].tiers && parsed[firstId].tiers.length > 0 ? parsed[firstId].tiers : tiers;
           setTiers(targetTiers);
-          try { localStorage.setItem('cinelog_master_tiers_v4', JSON.stringify(targetTiers)); } catch {}
+          try { storage.setItem('cinelog_master_tiers_v4', JSON.stringify(targetTiers)); } catch {}
           setTierData(parsed[firstId].tierData || {});
           if (parsed[firstId].poolFilter) setPoolFilter(parsed[firstId].poolFilter);
         }
         saveToCloud(parsed, firstId);
-        setTransferMsg('🎉 Successfully imported and synced your tier lists!');
+        setTransferMsg('Imported your tier lists. Cloud sync progress is shown above.');
         setTransferCodeInput('');
         setTimeout(() => {
           setTransferMsg('');
           isSwitchingListRef.current = false;
         }, 5000);
-      } else {
-        setTransferMsg('❌ Invalid tier list code.');
-      }
-    } catch (e) {
-      setTransferMsg('❌ Invalid or corrupted transfer code.');
-    }
-  };
+
+return true;}});}catch(error){setTransferMsg(error.message);}};
 
   // Force Push to Supabase Cloud
   const handleForcePushCloud = async () => {
@@ -419,18 +441,19 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
     setCloudManualSyncing(true);
     try {
       const currentSaved = getFullListsSnapshot();
-      await supabase.auth.updateUser({
+      const {error:pushError}=await supabase.auth.updateUser({
         data: {
           cinelog_tier_lists: currentSaved,
           cinelog_active_tier_list_id: activeListIdRef.current
         }
       });
+      if(pushError)throw pushError;
       setLists(currentSaved);
       setCloudSyncStatus('synced');
       setTransferMsg('☁️ Successfully uploaded all tier lists to your cloud account!');
     } catch (err) {
       setCloudSyncStatus('error');
-      setTransferMsg('Cloud upload error: ' + err.message);
+      setTransferMsg('Cloud upload error: ' + err.message);throw err;
     } finally {
       setCloudManualSyncing(false);
       setTimeout(() => setTransferMsg(''), 5000);
@@ -449,14 +472,14 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
       if (cloudLists && Object.keys(cloudLists).length > 0) {
         isSwitchingListRef.current = true;
         setLists(cloudLists);
-        localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(cloudLists));
+        storage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(cloudLists));
         const targetId = cloudLists[cloudActiveId] ? cloudActiveId : Object.keys(cloudLists)[0];
         setActiveListId(targetId);
         activeListIdRef.current = targetId;
-        localStorage.setItem('cinelog_active_tier_list_id_v4', targetId);
+        storage.setItem('cinelog_active_tier_list_id_v4', targetId);
         const targetTiers = cloudLists[targetId].tiers && cloudLists[targetId].tiers.length > 0 ? cloudLists[targetId].tiers : tiers;
         setTiers(targetTiers);
-        try { localStorage.setItem('cinelog_master_tiers_v4', JSON.stringify(targetTiers)); } catch {}
+        try { storage.setItem('cinelog_master_tiers_v4', JSON.stringify(targetTiers)); } catch {}
         setTierData(cloudLists[targetId].tierData || {});
         if (cloudLists[targetId].poolFilter) setPoolFilter(cloudLists[targetId].poolFilter);
         setCloudSyncStatus('synced');
@@ -466,7 +489,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
         setTransferMsg('ℹ️ No saved tier lists found in your cloud account.');
       }
     } catch (err) {
-      setTransferMsg('Cloud download error: ' + err.message);
+      setTransferMsg('Cloud download error: ' + err.message);throw err;
     } finally {
       setCloudManualSyncing(false);
       setTimeout(() => setTransferMsg(''), 5000);
@@ -503,8 +526,8 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
 
     // 3. Update storage and cloud
     try {
-      localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(currentLists));
-      localStorage.setItem('cinelog_active_tier_list_id_v4', nextListId);
+      storage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(currentLists));
+      storage.setItem('cinelog_active_tier_list_id_v4', nextListId);
     } catch {}
     saveToCloud(currentLists, nextListId);
 
@@ -540,8 +563,8 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
       };
 
       try {
-        localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(updated));
-        localStorage.setItem('cinelog_master_tiers_v4', JSON.stringify(tiers));
+        storage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(updated));
+        storage.setItem('cinelog_master_tiers_v4', JSON.stringify(tiers));
       } catch {}
 
       saveToCloud(updated, currentId);
@@ -581,7 +604,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
     setTierData(prev => {
       const copy = {};
       tiers.forEach(t => { copy[t.id] = [...(prev[t.id] || [])]; });
-      
+
       watchedMovies.forEach(m => {
         const rating = Number(m.rating || 5);
         let targetTierId = 'c';
@@ -657,8 +680,8 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
     setPoolFilter(detectedFilter);
 
     try {
-      localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(updated));
-      localStorage.setItem('cinelog_active_tier_list_id_v4', newId);
+      storage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(updated));
+      storage.setItem('cinelog_active_tier_list_id_v4', newId);
     } catch {}
     saveToCloud(updated, newId);
 
@@ -671,7 +694,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
     if (listId === 'default') return; // Cannot delete Global Master List
     setConfirmConfig({
       isOpen: true,
-      title: 'Delete Tier List?',
+      title: 'Delete tier list?',confirmText:'Delete tier list',
       message: `Are you sure you want to delete "${lists[listId]?.name || 'this list'}"? This action cannot be undone.`,
       isDanger: true,
       onConfirm: () => {
@@ -701,8 +724,8 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
         setConfirmConfig(prev => ({ ...prev, isOpen: false }));
 
         try {
-          localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(copy));
-          localStorage.setItem('cinelog_active_tier_list_id_v4', nextId);
+          storage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(copy));
+          storage.setItem('cinelog_active_tier_list_id_v4', nextId);
         } catch {}
         saveToCloud(copy, nextId);
 
@@ -718,6 +741,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
     setConfirmConfig({
       isOpen: true,
       title: `Clear Placements for "${listName}"?`,
+      confirmText:'Reset placements',
       message: `Are you sure you want to clear all movie rankings in "${listName}"? All movies will return to the unranked pool. Your custom tier rows (like S+, colors, etc.) will be preserved.`,
       isDanger: true,
       onConfirm: () => {
@@ -739,7 +763,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
             }
           };
           try {
-            localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(updated));
+            storage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(updated));
           } catch {}
           saveToCloud(updated, activeListId);
           return updated;
@@ -749,95 +773,39 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
   };
 
   // ── DRAG HANDLERS ──────────────────────────────────────────────────
-  const handleDragStart = (e, movieId, sourceTier) => {
-    setDragInfo({ movieId: String(movieId), sourceTier });
-    e.dataTransfer.effectAllowed = 'move';
-    const ghost = document.createElement('div');
-    ghost.style.cssText = 'position:fixed;top:-999px;left:-999px;opacity:0';
-    document.body.appendChild(ghost);
-    e.dataTransfer.setDragImage(ghost, 0, 0);
-    setTimeout(() => document.body.removeChild(ghost), 0);
+  const handleDragStart = (e,movieId,sourceTier) => {
+    // Freeze hit-test slots before the placeholder changes the layout.
+    dragSlots.current=new Map();dragRowHeights.current=new Map();
+    for(const row of boardRef.current?.querySelectorAll('.tier-row')||[]){
+      const origin=row.getBoundingClientRect();dragRowHeights.current.set(row.dataset.tierId,origin.height);
+      const cards=[...row.querySelectorAll('[data-tier-movie]')];
+      const count=cards.filter(card=>card.dataset.tierMovie!==String(movieId)).length;
+      dragSlots.current.set(row.dataset.tierId,cards.slice(0,count).map(card=>{const r=card.getBoundingClientRect();return {left:r.left-origin.left,top:r.top-origin.top,bottom:r.bottom-origin.top,width:r.width};}));
+    }
+    setDragInfo({movieId:String(movieId),sourceTier});setDropPreview(null);
+    e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',String(movieId));
   };
-
-  const handleDragOver = (e, targetTier) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDropTarget(targetTier);
+  const handleDragOver = (e,targetTier) => {
+    e.preventDefault();e.stopPropagation();if(!dragInfo)return;
+    e.dataTransfer.dropEffect='move';setDropTarget(targetTier);
+    const row=e.currentTarget.closest('.tier-row');
+    if(!row)return;
+    const origin=row.getBoundingClientRect();
+    const index=tierInsertionIndex(dragSlots.current.get(targetTier)||[],e.clientX-origin.left,e.clientY-origin.top);
+    setDropPreview(previous=>previous?.tierId===targetTier&&previous.index===index?previous:{tierId:targetTier,index});
   };
-
-  const handleDragLeave = () => {
-    setDropTarget(null);
-  };
-
-  const handleDrop = (e, targetTier) => {
-    e.preventDefault();
-    setDropTarget(null);
-    setHoveredCardId(null);
-    if (!dragInfo) return;
-
-    const { movieId, sourceTier } = dragInfo;
-
-    setTierData(prev => {
-      const updated = {};
-      tiers.forEach(t => { updated[t.id] = [...(prev[t.id] || [])]; });
-      
-      // Remove from source
-      if (sourceTier && sourceTier !== 'pool') {
-        updated[sourceTier] = updated[sourceTier].filter(id => id !== movieId);
-      } else {
-        tiers.forEach(t => {
-          updated[t.id] = updated[t.id].filter(id => id !== movieId);
-        });
-      }
-      
-      // Add to target
-      if (!updated[targetTier]) updated[targetTier] = [];
-      if (!updated[targetTier].includes(movieId)) {
-        updated[targetTier] = [...updated[targetTier], movieId];
-      }
-      return updated;
-    });
-    setDragInfo(null);
-  };
-
-  const handleDropOnCard = (e, targetTier, targetMovieId) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDropTarget(null);
-    setHoveredCardId(null);
-    if (!dragInfo) return;
-
-    const { movieId, sourceTier } = dragInfo;
-
-    setTierData(prev => {
-      const updated = {};
-      tiers.forEach(t => { updated[t.id] = [...(prev[t.id] || [])]; });
-
-      // Remove from source
-      if (sourceTier && sourceTier !== 'pool') {
-        updated[sourceTier] = updated[sourceTier].filter(id => id !== movieId);
-      } else {
-        tiers.forEach(t => {
-          updated[t.id] = updated[t.id].filter(id => id !== movieId);
-        });
-      }
-
-      // Insert before target
-      const targetIndex = updated[targetTier].indexOf(targetMovieId);
-      if (targetIndex !== -1) {
-        updated[targetTier].splice(targetIndex, 0, movieId);
-      } else {
-        updated[targetTier].push(movieId);
-      }
-      return updated;
-    });
-    setDragInfo(null);
+  const handleDragLeave = () => {};
+  const handleDrop = (e,targetTier) => {
+    e.preventDefault();e.stopPropagation();if(!dragInfo)return;
+    const index=dropPreview?.tierId===targetTier?dropPreview.index:(tierData[targetTier]||[]).filter(id=>String(id)!==dragInfo.movieId).length;
+    setTierData(previous=>moveTierPoster(previous,dragInfo.movieId,targetTier,index));
+    setDragInfo(null);setDropPreview(null);setDropTarget(null);
   };
 
   const handleDropToPool = (e) => {
     e.preventDefault();
     setDropTarget(null);
-    setHoveredCardId(null);
+    setDropPreview(null);
     if (!dragInfo || dragInfo.sourceTier === 'pool') return;
     const { movieId } = dragInfo;
     setTierData(prev => {
@@ -851,14 +819,14 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
   const handleDragEnd = () => {
     setDragInfo(null);
     setDropTarget(null);
-    setHoveredCardId(null);
+    setDropPreview(null);
   };
 
   // ── TIER ACTIONS ───────────────────────────────────────────────────
   const openEditPanel = (tier) => {
     setEditingTierId(tier.id);
     setEditLabel(tier.label);
-    setEditColor(tier.color);
+    setEditColor(tierDisplayColor(tier));
   };
 
   const saveTierEdit = () => {
@@ -895,7 +863,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
   const deleteTier = (tierId) => {
     setConfirmConfig({
       isOpen: true,
-      title: 'Delete Tier?',
+      title: 'Remove this tier?',confirmText:'Remove tier',
       message: 'Are you sure you want to delete this tier? All ranked movies inside will return to the pool.',
       isDanger: true,
       onConfirm: () => {
@@ -934,9 +902,11 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
     setQuickAssignTarget(null);
   };
 
+  if (!library.some(m => m.status === 'watched')) return <section className="studio-library"><div className="studio-page-heading"><div><span className="studio-eyebrow">A PERSONAL ORDER OF GREATNESS</span><h1>Tier lists</h1><p>Your favorites deserve a little friendly competition.</p></div></div><div className="studio-tier-welcome"><div className="studio-tier-example">{[['S','The unforgettable'],['A','The exceptional'],['B','The very good']].map(([tier,label])=><div key={tier}><strong>{tier}</strong><span>{label}</span><i/><i/><i/></div>)}</div><h2>Make room for strong opinions.</h2><p>Log a film as watched to start ranking. Your watched films will appear in the pool, ready to drag into place.</p><button className="studio-primary" onClick={onOpenExplore}>Explore films <Plus size={16}/></button></div></section>;
+
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
-      
+    <div ref={boardRef} className="animate-fade-in tier-studio" style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+
       {/* Header */}
       <div
         className="tier-header-bar"
@@ -950,7 +920,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
       >
         <div style={{ flexShrink: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <h2 style={{ fontSize: '24px', margin: 0, letterSpacing: '-0.5px', whiteSpace: 'nowrap' }}>Custom Tier Maker</h2>
+            <h2 style={{ fontSize: '24px', margin: 0, letterSpacing: '-0.5px', whiteSpace: 'nowrap' }}>Your tier lists</h2>
             {currentUser?.id && isSupabaseConfigured && (
               <div style={{
                 display: 'inline-flex',
@@ -975,11 +945,12 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
         </div>
 
         {/* Toolbar Controls */}
-        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap', flexShrink: 0 }}>
+        <div className="tier-toolbar" style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap', flexShrink: 0 }}>
           {/* List Selector Dropdown + Optional Trash Icon */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-dim)', whiteSpace: 'nowrap' }}>Rank List:</span>
+            <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-dim)', whiteSpace: 'nowrap' }}>Ranking:</span>
             <select
+              aria-label="Ranking list"
               value={activeListId}
               onChange={e => selectList(e.target.value)}
               className="form-input"
@@ -1013,7 +984,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
 
           {/* New List Button */}
           <button
-            className="btn btn-ghost"
+            className="btn btn-primary tier-create"
             onClick={() => {
               setNewListNameInput('');
               setShowNewListModal(true);
@@ -1033,9 +1004,10 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
             title="Toggle between wrapping grid and horizontal swiping rows"
           >
             {rowLayoutMode === 'wrap' ? <Grid3X3 size={13} color="var(--accent)" /> : <MoveHorizontal size={13} color="var(--accent)" />}
-            <span>{rowLayoutMode === 'wrap' ? 'Grid View' : 'Row View'}</span>
+            <span>{rowLayoutMode === 'wrap' ? 'Layout: grid' : 'Layout: rows'}</span>
           </button>
 
+          <details ref={moreOptionsRef} className="tier-more"><summary>More options</summary><div onClick={event=>{if(event.target.closest('button')&&moreOptionsRef.current)moreOptionsRef.current.open=false;}}>
           <button
             className="btn btn-ghost"
             onClick={() => setShowSyncModal(true)}
@@ -1058,18 +1030,19 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
             <RefreshCw size={12} />
             <span>Reset Placements</span>
           </button>
+          <button className="btn btn-ghost" disabled={!readLocalBackup()} onClick={loadLocalBackup}>Restore last local backup</button></div></details>
         </div>
       </div>
 
       {/* Info banner */}
-      <div style={{ background: '#141414', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12.5px', color: 'var(--text-muted)' }}>
+      <div className="tier-instructions" style={{ background: '#141414', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12.5px', color: 'var(--text-muted)' }}>
         <span style={{ fontSize: '11px', fontWeight: 800, padding: '2px 6px', background: 'var(--accent)', color: '#fff', borderRadius: '4px' }}>TIP</span>
         <span>Drag posters to rank, or <strong style={{ color: 'var(--accent)' }}>tap to assign</strong> on mobile. Only titles marked as <strong>Watched</strong> appear in the ranking pool.</span>
       </div>
 
       {/* ── TIER ROWS CONTAINER ────────────────────────────────────────── */}
       <div
-        className="glass"
+        className="glass tier-board"
         style={{
           borderRadius: 'var(--radius-lg)',
           overflow: 'hidden',
@@ -1082,15 +1055,20 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
         {tiers.map((tier, idx) => {
           const isTarget = dropTarget === tier.id;
           const moviesList = tierData[tier.id] || [];
-          
+          const visibleMovies=dragInfo?moviesList.filter(id=>String(id)!==dragInfo.movieId):moviesList;
+          const previewMovies=[...visibleMovies];
+          if(dragInfo&&dropPreview?.tierId===tier.id)previewMovies.splice(dropPreview.index,0,'__drop_preview__');
+          // Keep the native drag source mounted, but take it out of the visual flow.
+          if(dragInfo&&moviesList.some(id=>String(id)===dragInfo.movieId))previewMovies.push(dragInfo.movieId);
+
           return (
             <div key={tier.id} style={{ display: 'flex', flexDirection: 'column' }}>
               <div
-                className="tier-row"
+                className="tier-row" data-tier-id={tier.id}
                 style={{
                   display: 'flex',
                   borderBottom: idx < tiers.length - 1 || editingTierId === tier.id ? '1px solid var(--border)' : 'none',
-                  minHeight: '130px',
+                  minHeight: dragInfo ? (dragRowHeights.current.get(tier.id)||130) : 130,
                   background: isTarget ? 'rgba(136,8,8,0.08)' : 'transparent',
                   transition: 'background 0.2s',
                   position: 'relative'
@@ -1099,12 +1077,13 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
                 onDragLeave={handleDragLeave}
                 onDrop={e => handleDrop(e, tier.id)}
               >
-                
+
                 {/* ── TIER LABEL (Left Panel) ── */}
                 <div style={{
                   width: '110px',
-                  background: tier.color,
-                  color: '#0a0a0f',
+                  '--tier-color': tierDisplayColor(tier),
+                  background: 'transparent',
+                  color: tierDisplayColor(tier),
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -1162,31 +1141,32 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
                     alignItems: 'center',
                     minHeight: '96px',
                   }}>
-                  {moviesList.map(id => {
+                  {previewMovies.map(id => {
+                    if(id==='__drop_preview__'){const ghost=getMovie(dragInfo.movieId);return <div key="drop-preview" className="tier-drop-ghost" aria-hidden="true">{ghost?.poster_path&&<img src={ghost.poster_path.startsWith('http')?ghost.poster_path:'https://image.tmdb.org/t/p/w185'+ghost.poster_path} alt=""/>}<span>Drop here</span></div>;}
                     const movie = getMovie(id);
                     if (!movie) return null;
-                    const isDragging = dragInfo?.movieId === id;
-                    
+                    const isDragging = dragInfo?.movieId === String(id);
+
                     return (
                       <div
                         key={id}
+                        data-tier-movie={String(id)}
                         draggable
                         onDragStart={e => handleDragStart(e, id, tier.id)}
                         onDragEnd={handleDragEnd}
-                        onDragOver={e => { e.preventDefault(); e.stopPropagation(); }}
-                        onDragEnter={e => { if (dragInfo && dragInfo.movieId !== id) setHoveredCardId(id); }}
-                        onDragLeave={() => setHoveredCardId(null)}
-                        onDrop={e => { setHoveredCardId(null); handleDropOnCard(e, tier.id, id); }}
-                        className="tier-poster-item glass-card"
+                        onDragOver={e=>handleDragOver(e,tier.id)}
+                        onDrop={e=>handleDrop(e,tier.id)}
+                        role="button" tabIndex={0} aria-label={`Reassign ${movie.title}`} onKeyDown={e=>{if(e.target===e.currentTarget&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.currentTarget.click();}}} className="tier-poster-item glass-card tier-draggable"
                         style={{
-                          position: 'relative',
+                          position: isDragging ? 'absolute' : 'relative',
+                          pointerEvents: isDragging ? 'none' : undefined,
                           cursor: 'grab',
-                          opacity: isDragging ? 0.4 : 1,
+                          opacity: isDragging ? 0 : 1,
                           transform: isDragging ? 'scale(0.95)' : 'scale(1)',
                           transition: 'all 0.15s ease',
                           borderRadius: '6px',
                           border: quickAssignTarget?.id === id ? '2px solid var(--accent)' : `2px solid ${isDragging ? 'var(--accent)' : 'transparent'}`,
-                          borderLeft: hoveredCardId === id ? '4px solid var(--accent)' : (quickAssignTarget?.id === id ? '2px solid var(--accent)' : (isDragging ? '2px solid var(--accent)' : '2px solid transparent')),
+                          borderLeft: '2px solid transparent',
                           width: '74px',
                           height: '110px',
                           flexShrink: 0,
@@ -1234,25 +1214,25 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
                         )}
 
                         {/* Bottom-Right Rating Badge */}
-                        {movie.rating != null && (
+                        {Number(movie.rating) > 0 && (
                           <div style={{
                             position: 'absolute', bottom: '3px', right: '3px',
                             background: 'rgba(10,8,19,0.95)',
                             border: '1px solid rgba(255,255,255,0.08)',
                             borderRadius: '3px', padding: '1px 3px',
-                            fontSize: '8px', fontWeight: 800, color: 'var(--gold)',
+                            fontSize: '11px', fontWeight: 800, color: getRatingColor(movie.rating),
                             display: 'flex', alignItems: 'center', gap: '1px',
                             boxShadow: '0 2px 4px rgba(0,0,0,0.6)'
                           }}>
-                            <Star size={7} fill="var(--gold)" color="var(--gold)" />
+                            <Star size={9} fill="currentColor" color="currentColor" />
                             {Number(movie.rating).toFixed(1)}
                           </div>
                         )}
                       </div>
                     );
                   })}
-                  
-                  {moviesList.length === 0 && (
+
+                  {previewMovies.length === 0 && (
                     <div style={{
                       color: isTarget ? 'var(--accent)' : 'var(--text-dim)',
                       fontSize: '13px',
@@ -1283,7 +1263,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
                     </button>
                   </div>
                   <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
-                    
+
                     {/* Label Input */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                       <label style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700 }}>TIER NAME</label>
@@ -1379,7 +1359,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
       {/* Add New Tier Row Option */}
       <button
         onClick={addTier}
-        className="glass"
+        className="glass tier-add-row"
         style={{
           border: '2px dashed var(--border)',
           borderRadius: 'var(--radius-lg)',
@@ -1402,8 +1382,9 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
       </button>
 
       {/* ── MOVIE POOL ────────────────────────────────────────────────── */}
+      <p className="workspace-context">Drag a poster into a tier, or focus a poster and press Enter to choose its tier. On touch screens, tap a poster to assign it.</p>
       <div
-        className="glass"
+        aria-label="Unranked film pool" className="glass tier-pool"
         onDragOver={e => { e.preventDefault(); setDropTarget('pool'); }}
         onDragLeave={handleDragLeave}
         onDrop={handleDropToPool}
@@ -1491,17 +1472,17 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
         </div>
 
         {watchedMovies.length > 0 ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(86px, 1fr))', gap: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(var(--tier-poster-width,108px), 1fr))', gap: '14px' }}>
             {watchedMovies.map(movie => {
               const id = String(movie.id || movie.tmdb_id);
               const isDragging = dragInfo?.movieId === id;
               return (
                 <div
                   key={id}
-                  draggable
+                  draggable role="button" tabIndex={0} aria-label={`Assign ${movie.title} to a tier`} onKeyDown={e=>{if(e.target===e.currentTarget&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.currentTarget.click();}}}
                   onDragStart={e => handleDragStart(e, id, 'pool')}
                   onDragEnd={handleDragEnd}
-                  className="glass-card"
+                  className="glass-card tier-pool-poster"
                   style={{
                     borderRadius: '6px',
                     overflow: 'visible',
@@ -1547,7 +1528,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
                     className="pool-hover-stats"
                   >
                     <div style={{ fontSize: '8px', fontWeight: 900, color: '#fff', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{movie.title}</div>
-                    {movie.rating > 0 && <div style={{ fontSize: '8px', color: 'var(--gold)', fontWeight: 800 }}>★ {Number(movie.rating).toFixed(1)}</div>}
+                    {movie.rating > 0 && <div style={{ fontSize: '8px', color: getRatingColor(movie.rating), fontWeight: 800 }}>★ {Number(movie.rating).toFixed(1)}</div>}
                     {movie.release_year && <div style={{ fontSize: '7px', color: 'rgba(255,255,255,0.6)' }}>{movie.release_year}</div>}
                   </div>
 
@@ -1565,17 +1546,17 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
                   )}
 
                   {/* Bottom-Right Rating Badge */}
-                  {movie.rating != null && (
+                  {Number(movie.rating) > 0 && (
                     <div style={{
                       position: 'absolute', bottom: '4px', right: '4px',
                       background: 'rgba(10,8,19,0.9)', backdropFilter: 'blur(4px)',
                       border: '1px solid rgba(255,255,255,0.08)',
                       borderRadius: '4px', padding: '1px 4px',
-                      fontSize: '9px', fontWeight: 800, color: 'var(--gold)',
+                      fontSize: '11px', fontWeight: 800, color: getRatingColor(movie.rating),
                       display: 'flex', alignItems: 'center', gap: '1px',
                       boxShadow: '0 2px 4px rgba(0,0,0,0.6)'
                     }}>
-                      <Star size={7} fill="var(--gold)" color="var(--gold)" />
+                      <Star size={9} fill="currentColor" color="currentColor" />
                       {Number(movie.rating).toFixed(1)}
                     </div>
                   )}
@@ -1588,7 +1569,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
                     background: 'linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 40%)',
                     pointerEvents: 'none'
                   }}>
-                    <GripVertical size={12} color="rgba(255,255,255,0.6)" />
+
                   </div>
                 </div>
               );
@@ -1602,11 +1583,11 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
           </div>
         )}
       </div>
-      
+
       {/* ── SYNC & DEVICE TRANSFER MODAL (Centered via Portal directly in document.body) ── */}
       {showSyncModal && typeof document !== 'undefined' && createPortal(
         <div
-          className="modal-backdrop"
+          className="modal-backdrop cine-backdrop"
           style={{
             position: 'fixed',
             top: 0,
@@ -1627,7 +1608,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
           onClick={e => e.target === e.currentTarget && setShowSyncModal(false)}
         >
           <div
-            className="glass animate-fade-in"
+            className="cine-dialog cine-transfer" ref={syncRef} role="dialog" aria-modal="true" aria-label="Transfer tier lists" tabIndex={-1} onKeyDown={e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();setShowSyncModal(false);}}}
             style={{
               width: '100%',
               maxWidth: '520px',
@@ -1643,7 +1624,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
             }}
           >
             <button
-              onClick={() => setShowSyncModal(false)}
+              aria-label="Close tier transfer" onClick={() => setShowSyncModal(false)}
               style={{ position: 'absolute', right: '16px', top: '16px', background: 'none', border: 'none', color: '#888', cursor: 'pointer' }}
             >
               <X size={20} />
@@ -1738,7 +1719,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button
                       className="btn btn-secondary"
-                      onClick={handleForcePushCloud}
+                      onClick={()=>setConfirmConfig({isOpen:true,title:'Replace your cloud tier lists?',message:'This uploads the tier lists from this device over the saved cloud copy. Your film library stays unchanged.',confirmText:'Upload this copy',isDanger:true,onConfirm:handleForcePushCloud})}
                       disabled={cloudManualSyncing}
                       style={{ flex: 1, height: '36px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                     >
@@ -1746,7 +1727,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
                     </button>
                     <button
                       className="btn btn-secondary"
-                      onClick={handleForcePullCloud}
+                      onClick={()=>setConfirmConfig({isOpen:true,title:'Load tier lists from cloud?',message:'This replaces the tier lists on this device with your cloud copy. Your current tiers will be backed up locally.',confirmText:'Load cloud copy',isDanger:true,onConfirm:async()=>{backupBeforeReplace();await handleForcePullCloud();}})}
                       disabled={cloudManualSyncing}
                       style={{ flex: 1, height: '36px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                     >
@@ -1779,7 +1760,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
       {/* ── CREATE NEW LIST MODAL (Centered via Portal) ── */}
       {showNewListModal && typeof document !== 'undefined' && createPortal(
         <div
-          className="modal-backdrop"
+          className="modal-backdrop cine-backdrop"
           style={{
             position: 'fixed',
             top: 0,
@@ -1800,7 +1781,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
           onClick={e => e.target === e.currentTarget && setShowNewListModal(false)}
         >
           <div
-            className="glass animate-fade-in"
+            className="cine-dialog cine-new-tier-list" ref={newListRef} role="dialog" aria-modal="true" aria-label="New tier list" tabIndex={-1} onKeyDown={e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();setShowNewListModal(false);}}}
             style={{
               width: '100%',
               maxWidth: '420px',
@@ -1821,7 +1802,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
                 <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800 }}>Create New Tier List</h3>
               </div>
               <button
-                onClick={() => setShowNewListModal(false)}
+                aria-label="Close new tier list" onClick={() => setShowNewListModal(false)}
                 style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
               >
                 <X size={18} />
@@ -1904,11 +1885,11 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
             setQuickAssignTarget(null);
           }}
         >
-          <div
+          <div className="cine-menu cine-tier-assign" ref={assignRef} role="dialog" aria-modal="true" aria-label="Assign a tier" tabIndex={-1} onKeyDown={e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();setQuickAssignTarget(null);}}}
             style={{
               position: 'fixed',
               top: (() => {
-                const popoverHeight = 185;
+                const popoverHeight = Math.min(window.innerHeight-24,tiers.length*44+100);
                 const rect = quickAssignTarget.rect;
                 if (rect.bottom + popoverHeight > window.innerHeight - 10) {
                   return Math.max(10, rect.top - popoverHeight - 6);
@@ -2010,6 +1991,7 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
         isOpen={confirmConfig.isOpen}
         title={confirmConfig.title}
         message={confirmConfig.message}
+        confirmText={confirmConfig.confirmText||'Confirm change'}
         onConfirm={confirmConfig.onConfirm}
         onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
         isDanger={confirmConfig.isDanger}
@@ -2017,4 +1999,3 @@ export default function TierListTab({ library = [], currentUser = null, onOpenAu
     </div>
   );
 }
-

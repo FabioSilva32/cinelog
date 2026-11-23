@@ -1,0 +1,23 @@
+/* Keep native selection, labels, keyboard navigation and mobile accessibility.
+   Supporting browsers render the popup in the top layer, outside clipped panels. */
+select{color-scheme:dark;cursor:pointer;min-height:38px;border-radius:10px!important;background-color:#181617!important;color:#eee!important;border:1px solid #44383c!important;padding:8px 32px 8px 12px!important;font:inherit;transition:border-color .15s,background-color .15s}
+select:hover{border-color:#79505b!important;background-color:#211b1d!important}
+select:focus-visible{outline:2px solid #da536e!important;outline-offset:3px}
+select:disabled{opacity:.45;cursor:not-allowed}
+select option,select optgroup{background:#1b1819!important;color:#eee!important}
+@supports (appearance:base-select){
+ select,select::picker(select){appearance:base-select}
+ select{display:inline-flex;align-items:center;gap:12px;padding:9px 12px!important;line-height:1.4}
+ select::picker-icon{color:#bba6ad;transition:transform .18s;font-size:11px}
+ select:open{border-color:#b94760!important;background-color:#261c20!important}
+ select:open::picker-icon{transform:rotate(180deg)}
+ select::picker(select){margin-block:7px;padding:6px;background:#1b1819;border:1px solid #514048;border-radius:12px;box-shadow:0 16px 40px #0009;max-height:min(360px,55dvh);overflow-y:auto;scrollbar-width:thin;scrollbar-color:#61414b #1b1819;min-width:anchor-size(width)}
+ select option{display:flex;align-items:center;gap:12px;min-height:38px;padding:10px 12px;border-radius:7px;font-size:12px;font-weight:500;line-height:1.4;cursor:pointer;white-space:normal}
+ select option:hover,select option:focus{background:#33232a!important;color:#fff!important;outline:none}
+ select option:checked{background:#48232e!important;color:#ffdce4!important;font-weight:650}
+ select option::checkmark{color:#f07992;order:1;margin-left:auto;font-size:12px}
+ select option:disabled{color:#82767a!important;opacity:.65;cursor:not-allowed}
+ select optgroup{font-size:10px;letter-spacing:.5px;font-weight:650;padding-top:8px}
+ select optgroup option{letter-spacing:normal}
+}
+@media(max-width:767px){select{min-height:44px}select option{min-height:44px}}

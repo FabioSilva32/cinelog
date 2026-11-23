@@ -1,11 +1,15 @@
+import {avatarCropRect} from '../utils/avatarCrop';
+import { useDialogFocus } from '../hooks/useDialogFocus';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Sparkles, Mail, User, Phone, FileText, Camera, Check, AlertCircle, Eye, EyeOff } from 'lucide-react';
-import { MOCK_USERS, TESTER_PROFILE } from '../mockData';
+import { X, Film, Check, AlertCircle, Eye, EyeOff, ArrowUpRight } from 'lucide-react';
+import {submitAccount} from '../utils/accountAuth';
+import {SIGNATURE_AVATARS} from '../utils/profileCatalog';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 // ── Simple Canvas-based Image Cropper ───────────────────────────────
 function ImageCropper({ src, onCrop, onCancel }) {
+  const cropRef=useDialogFocus();
   const canvasRef = useRef(null);
   const imgRef = useRef(null);
   const [drag, setDrag] = useState(null);
@@ -21,7 +25,8 @@ function ImageCropper({ src, onCrop, onCancel }) {
     ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
     // Draw image
-    ctx.drawImage(img, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
+    const source=avatarCropRect(img.naturalWidth,img.naturalHeight);
+    ctx.drawImage(img,source.x,source.y,source.size,source.size,0,0,CANVAS_SIZE,CANVAS_SIZE);
 
     // Overlay
     ctx.fillStyle = 'rgba(0,0,0,0.55)';
@@ -35,7 +40,7 @@ function ImageCropper({ src, onCrop, onCancel }) {
     ctx.beginPath();
     ctx.arc(cx + r, cy + r, r, 0, Math.PI * 2);
     ctx.clip();
-    ctx.drawImage(img, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
+    ctx.drawImage(img,source.x,source.y,source.size,source.size,0,0,CANVAS_SIZE,CANVAS_SIZE);
     ctx.restore();
 
     // Border circle
@@ -105,17 +110,13 @@ function ImageCropper({ src, onCrop, onCancel }) {
     ctx.arc(100, 100, 100, 0, Math.PI * 2);
     ctx.clip();
 
-    const scaleX = img.naturalWidth / CANVAS_SIZE;
-    const scaleY = img.naturalHeight / CANVAS_SIZE;
-    const sx = crop.x * CANVAS_SIZE * scaleX;
-    const sy = crop.y * CANVAS_SIZE * scaleY;
-    const sSize = crop.size * CANVAS_SIZE * Math.min(scaleX, scaleY);
-    ctx.drawImage(img, sx, sy, sSize, sSize, 0, 0, 200, 200);
+    const source=avatarCropRect(img.naturalWidth,img.naturalHeight,crop);
+    ctx.drawImage(img,source.x,source.y,source.size,source.size,0,0,200,200);
     onCrop(output.toDataURL('image/jpeg', 0.85));
   };
 
   return (
-    <div style={{
+    <div className="cine-backdrop cine-cropper" ref={cropRef} role="dialog" aria-modal="true" aria-label="Crop profile photo" tabIndex={-1} onKeyDown={e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();onCancel();}}} style={{
       position: 'fixed', inset: 0, background: 'rgba(8,7,11,0.92)',
       backdropFilter: 'blur(14px)', zIndex: 1200,
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '20px'
@@ -132,6 +133,7 @@ function ImageCropper({ src, onCrop, onCancel }) {
         onMouseMove={onMouseMove}
         onMouseUp={onMouseUp}
         onMouseLeave={onMouseUp}
+        onTouchStart={onMouseDown} onTouchMove={onMouseMove} onTouchEnd={onMouseUp}
       />
 
       {/* Size slider */}
@@ -155,576 +157,31 @@ function ImageCropper({ src, onCrop, onCancel }) {
   );
 }
 
-const DEFAULT_AVATARS = [
-  { id: 'cinephile', name: 'Cinephile', path: '/avatar_cinephile.png', border: '2px solid #c0392b' },
-  { id: 'reviewer', name: 'Reviewer', path: '/avatar_reviewer.png', border: '2px solid #06b6d4' },
-  { id: 'watcher', name: 'Watcher', path: '/avatar_watcher.png', border: '2px solid #0ea5e9' },
-  { id: 'critic', name: 'Critic', path: '/avatar_critic.png', border: '2px solid #880808' }
-];
 
-// ── Required field label helper ──────────────────────────────────────
-function FieldLabel({ children, required }) {
-  return (
-    <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-      {children}
-      {required && <span style={{ color: 'var(--red)', fontSize: '14px', lineHeight: 1 }}>*</span>}
-    </label>
-  );
+export default function AuthModal({onClose,onLoginSuccess}){
+ useBodyScrollLock(true);
+ const [mode,setMode]=useState('login'),[showPass,setShowPass]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState(''),[pending,setPending]=useState(false);
+ const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[name,setName]=useState(''),[phone,setPhone]=useState(''),[bio,setBio]=useState(''),[avatar,setAvatar]=useState(SIGNATURE_AVATARS[0].url),[cropSource,setCropSource]=useState(null);
+ const busy=useRef(false),dialogRef=useDialogFocus(!cropSource);
+ const close=useCallback(()=>{if(!busy.current&&!cropSource)onClose?.();},[onClose,cropSource]);
+ useEffect(()=>{const escape=e=>{if(e.key==='Escape'&&!cropSource){e.preventDefault();close();}};window.addEventListener('keydown',escape);return()=>window.removeEventListener('keydown',escape);},[close,cropSource]);
+ const changeMode=value=>{if(busy.current)return;setMode(value);setError('');setMessage('');setPassword('');};
+ const submit=async e=>{e.preventDefault();if(busy.current)return;setError('');setMessage('');if(!isSupabaseConfigured){setError('Account services are unavailable. Please try again later.');return;}if(mode==='signup'&&!name.trim()){setError('Enter your display name.');return;}busy.current=true;setPending(true);try{const result=await submitAccount(supabase,{mode,email,password,redirectTo:window.location.origin,profile:{display_name:name.trim(),full_name:name.trim(),phone:phone.trim(),bio:bio.trim(),avatar_url:avatar}});if(result.user)onLoginSuccess(result.user);else setMessage(result.message);}catch(err){setError(err.message==='Failed to fetch'?'We could not connect. Check your connection and try again.':err.message||'Account request failed. Please try again.');}finally{busy.current=false;setPending(false);}};
+ const upload=event=>{const file=event.target.files?.[0];if(!file)return;if(!file.type.startsWith('image/')||file.size>5*1024*1024){setError('Choose an image smaller than 5 MB.');return;}const reader=new FileReader();reader.onload=()=>setCropSource(reader.result);reader.readAsDataURL(file);};
+ return <>{cropSource&&<ImageCropper src={cropSource} onCrop={value=>{setAvatar(value);setCropSource(null);}} onCancel={()=>setCropSource(null)}/>}
+ <div className="cine-backdrop account-backdrop" onClick={e=>{if(e.target===e.currentTarget)close();}}><section className="cine-dialog account-dialog" ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="account-title" tabIndex={-1} inert={cropSource?true:undefined}>
+ <header className="account-heading"><span className="account-brand"><Film size={20}/> CINELOG <i>/ YOUR FILM JOURNAL</i></span><button className="account-close" aria-label="Close account dialog" disabled={pending} onClick={close}><X size={20}/></button></header>
+ <div className="account-body"><span className="account-eyebrow">{mode==='reset'?'BACK TO YOUR JOURNAL':mode==='signup'?'YOUR NEXT CHAPTER':'TAKE YOUR SEAT'}</span><h2 id="account-title">{mode==='reset'?'A fresh start.':mode==='signup'?'Make it your cinema.':'Good to see you again.'}</h2><p>{mode==='reset'?'We’ll email you a link to reset your password.':mode==='signup'?'Collect your favorites, share your perspective, and find your people.':'Your films, lists, and conversations are waiting.'}</p>
+ {mode!=='reset'&&<div className="account-tabs"><button disabled={pending} aria-pressed={mode==='login'} onClick={()=>changeMode('login')}>Sign in</button><button disabled={pending} aria-pressed={mode==='signup'} onClick={()=>changeMode('signup')}>Create account</button></div>}
+ {error&&<p role="alert" className="account-alert"><AlertCircle size={17}/>{error}</p>}{message&&<p role="status" className="account-notice"><Check size={17}/>{message}</p>}
+ <form onSubmit={submit} aria-busy={pending}><fieldset disabled={pending}>
+ {mode==='signup'&&<label>Display name<input required maxLength={80} autoComplete="nickname" value={name} onChange={e=>setName(e.target.value)} placeholder="How should we call you?"/></label>}
+ <label>Email address<input required type="email" autoComplete="email" inputMode="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com"/></label>
+ {mode!=='reset'&&<label>Password<span className="account-password"><input required type={showPass?'text':'password'} minLength={mode==='signup'?6:undefined} autoComplete={mode==='signup'?'new-password':'current-password'} value={password} onChange={e=>setPassword(e.target.value)} placeholder={mode==='signup'?'At least 6 characters':'Your password'}/><button type="button" aria-label={showPass?'Hide password':'Show password'} aria-pressed={showPass} onClick={()=>setShowPass(v=>!v)}>{showPass?<EyeOff size={18}/>:<Eye size={18}/>}</button></span></label>}
+ {mode==='login'&&<button className="account-text" type="button" onClick={()=>changeMode('reset')}>Forgot password?</button>}
+ {mode==='signup'&&<details className="account-options"><summary>Add a photo and a little about you <span>Optional</span></summary><div className="account-avatar-options">{SIGNATURE_AVATARS.slice(0,6).map(item=><button key={item.id} type="button" aria-label={'Choose '+item.name} aria-pressed={avatar===item.url} onClick={()=>setAvatar(item.url)}><img src={item.url} alt=""/></button>)}</div><label className="account-upload">Upload a photo<input type="file" accept="image/*" onChange={upload}/></label>{avatar.startsWith('data:')&&<img className="account-upload-preview" src={avatar} alt="Selected profile photo"/>}<label>About you<textarea maxLength={500} rows={3} value={bio} onChange={e=>setBio(e.target.value)}/></label><label>Phone number <small>Optional</small><input type="tel" autoComplete="tel" value={phone} onChange={e=>setPhone(e.target.value)}/></label></details>}
+ <button type="submit" className="studio-primary account-submit" disabled={!isSupabaseConfigured||pending}>{pending?'Please wait…':mode==='reset'?'Send recovery link':mode==='signup'?'Create account':'Sign in'}<ArrowUpRight size={17}/></button>
+ </fieldset></form>
+ {mode==='reset'&&<button disabled={pending} className="account-text" onClick={()=>changeMode('login')}>Back to sign in</button>}
+ <footer>Your account stays in sync across your devices.</footer></div></section></div></>;
 }
-
-// ── Main AuthModal ───────────────────────────────────────────────────
-export default function AuthModal({ onClose, onLoginSuccess, useSupabase, setUseSupabase }) {
-  useBodyScrollLock(true);
-
-  const [isLogin, setIsLogin] = useState(true);
-  const [isForgotPassword, setIsForgotPassword] = useState(false);
-  const [showPass, setShowPass] = useState(false);
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
-  const [showCropper, setShowCropper] = useState(false);
-  const [rawImageSrc, setRawImageSrc] = useState(null);
-
-  // Form fields
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [bio, setBio] = useState('');
-  const [avatarDataUrl, setAvatarDataUrl] = useState(null);
-
-  const fileInputRef = useRef(null);
-
-  // Close modal or cropper on Escape key
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        if (showCropper) {
-          setShowCropper(false);
-          setRawImageSrc(null);
-        } else {
-          onClose?.();
-        }
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showCropper, onClose]);
-
-  const handleImagePick = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setRawImageSrc(ev.target.result);
-      setShowCropper(true);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleCropDone = (dataUrl) => {
-    setAvatarDataUrl(dataUrl);
-    setShowCropper(false);
-    setRawImageSrc(null);
-  };
-
-  const handleLocalAuth = (cleanEmail, nameVal, dispName, userBio, avatarUrl) => {
-    const users = JSON.parse(localStorage.getItem('cinelog_accounts_v1')) || MOCK_USERS;
-
-    if (isLogin) {
-      const found = users.find(u =>
-        u.email?.toLowerCase() === cleanEmail ||
-        u.username?.toLowerCase() === cleanEmail.split('@')[0]
-      );
-      if (found) {
-        onLoginSuccess(found);
-      } else {
-        const newUser = {
-          username: cleanEmail.split('@')[0],
-          email: cleanEmail,
-          displayName: cleanEmail.split('@')[0],
-          avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
-          bio: '',
-          favorites: [],
-          followersCount: 0,
-          followingCount: 0,
-        };
-        localStorage.setItem('cinelog_accounts_v1', JSON.stringify([...users, newUser]));
-        onLoginSuccess(newUser);
-      }
-    } else {
-      if (users.some(u => u.email?.toLowerCase() === cleanEmail)) {
-        setError('An account with this email already exists.');
-        return;
-      }
-      const derivedDisplay = dispName.trim() || nameVal.trim() || cleanEmail.split('@')[0];
-      const newUser = {
-        username: cleanEmail.split('@')[0],
-        email: cleanEmail,
-        fullName: nameVal.trim(),
-        displayName: derivedDisplay,
-        phone: phone.trim(),
-        avatar: avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
-        bio: userBio.trim() || 'CineLog movie tracking fan.',
-        favorites: [],
-        followersCount: 0,
-        followingCount: 0,
-      };
-      localStorage.setItem('cinelog_accounts_v1', JSON.stringify([...users, newUser]));
-      onLoginSuccess(newUser);
-    }
-  };
-
-  const handleQuickTesterLogin = () => {
-    try {
-      localStorage.setItem('cinelog_supabase_cached_user', JSON.stringify(TESTER_PROFILE));
-      localStorage.setItem(`equipped_border_${TESTER_PROFILE.id}`, TESTER_PROFILE.equippedBorder);
-    } catch {}
-    onLoginSuccess(TESTER_PROFILE);
-  };
-
-  const handleAuthError = (authError) => {
-    const msg = authError?.message || String(authError);
-    if (msg === 'Failed to fetch' || authError?.status === 0 || !authError?.status) {
-      setError('Cannot connect to the database. DNS propagation may still be in progress, or Brave Shields/ad-blockers may be blocking the request.');
-    } else {
-      setError(msg);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setMessage('');
-
-    const cleanEmail = email.trim().toLowerCase();
-    if (!cleanEmail) { setError('Email address is required.'); return; }
-
-    // Instant tester login bypass
-    if (isLogin && (
-      cleanEmail === 'tester@cinelog.app' ||
-      cleanEmail === 'tester' ||
-      cleanEmail === 'demo@cinelog.app' ||
-      cleanEmail === 'elena@cinelog.app' ||
-      cleanEmail === 'test@cinelog.app'
-    )) {
-      handleQuickTesterLogin();
-      return;
-    }
-
-    if (isForgotPassword) {
-      if (useSupabase && isSupabaseConfigured) {
-        try {
-          const { error: resetError } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
-            redirectTo: window.location.origin
-          });
-          if (resetError) { handleAuthError(resetError); return; }
-          setMessage('Reset link sent! Please check your email inbox.');
-        } catch (err) {
-          handleAuthError(err);
-        }
-      } else {
-        setMessage('Mock password reset link sent to ' + cleanEmail);
-      }
-      return;
-    }
-
-    if (!isLogin && !fullName.trim()) { setError('Full name is required.'); return; }
-    if (!password.trim()) { setError('Password is required.'); return; }
-
-    const derivedDisplay = displayName.trim() || fullName.trim() || cleanEmail.split('@')[0];
-
-    if (useSupabase && isSupabaseConfigured) {
-      try {
-        if (isLogin) {
-          const { data, error: authError } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
-          if (authError) { handleAuthError(authError); return; }
-          if (data.user) {
-            const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).single();
-            onLoginSuccess({
-              id: data.user.id,
-              username: profile?.username || cleanEmail.split('@')[0],
-              email: cleanEmail,
-              displayName: profile?.display_name || derivedDisplay,
-              avatar: profile?.avatar_url || avatarDataUrl,
-              bio: profile?.bio || '',
-              favorites: profile?.favorites || [],
-              followersCount: 0,
-              followingCount: 0,
-            });
-          }
-        } else {
-          const { data, error: authError } = await supabase.auth.signUp({ email: cleanEmail, password });
-          if (authError) { handleAuthError(authError); return; }
-          if (data.user) {
-            await supabase.from('profiles').update({
-              display_name: derivedDisplay,
-              bio: bio.trim() || 'CineLog movie tracking fan.',
-              avatar_url: avatarDataUrl,
-            }).eq('id', data.user.id);
-            onLoginSuccess({
-              id: data.user.id,
-              username: cleanEmail.split('@')[0],
-              email: cleanEmail,
-              fullName: fullName.trim(),
-              displayName: derivedDisplay,
-              phone: phone.trim(),
-              avatar: avatarDataUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
-              bio: bio.trim() || 'CineLog movie tracking fan.',
-              favorites: [],
-              followersCount: 0,
-              followingCount: 0,
-            });
-          }
-        }
-      } catch (err) {
-        handleAuthError(err);
-      }
-    } else {
-      handleLocalAuth(cleanEmail, fullName, displayName, bio, avatarDataUrl);
-    }
-  };
-
-  return (
-    <>
-      {/* Image Cropper overlay */}
-      {showCropper && rawImageSrc && (
-        <ImageCropper
-          src={rawImageSrc}
-          onCrop={handleCropDone}
-          onCancel={() => { setShowCropper(false); setRawImageSrc(null); }}
-        />
-      )}
-
-      {/* Modal overlay */}
-      <div
-        className="modal-backdrop"
-        style={{
-          position: 'fixed', inset: 0,
-          background: 'rgba(8,7,11,0.85)', backdropFilter: 'blur(12px)',
-          zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px',
-          overscrollBehavior: 'contain'
-        }}
-        onClick={e => e.target === e.currentTarget && onClose()}
-        onWheel={e => e.stopPropagation()}
-      >
-        <div
-          className="glass animate-fade-in"
-          style={{
-            width: '100%', maxWidth: '460px', borderRadius: 'var(--radius-lg)',
-            border: '1px solid var(--border)', position: 'relative', padding: '32px',
-            maxHeight: '92vh', overflowY: 'auto', overscrollBehavior: 'contain'
-          }}
-          onWheel={e => e.stopPropagation()}
-        >
-          <button
-            onClick={onClose}
-            style={{ position: 'absolute', right: '18px', top: '18px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
-          >
-            <X size={20} />
-          </button>
-
-          {/* Title block */}
-          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-            <div style={{ display: 'inline-flex', padding: '12px', background: 'rgba(136,8,8,0.1)', borderRadius: '50%', color: 'var(--accent)', marginBottom: '12px' }}>
-              <Sparkles size={24} />
-            </div>
-            <h2 style={{ fontSize: '22px' }}>
-              {isForgotPassword ? 'Reset Password' : isLogin ? 'Welcome back to CineLog' : 'Create Your Account'}
-            </h2>
-            <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '4px', lineHeight: 1.4 }}>
-              {isForgotPassword
-                ? 'Enter your email address and we will send you a recovery link.'
-                : isLogin
-                  ? 'Sign in to access your personal library and tier lists.'
-                  : 'Build your cinematic profile and start tracking.'}
-            </p>
-          </div>
-
-          {/* Success Message */}
-          {message && (
-            <div style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)', color: 'var(--green)', borderRadius: '8px', padding: '10px 14px', fontSize: '12.5px', marginBottom: '16px', lineHeight: 1.5, display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-              <Check size={16} style={{ marginTop: '1px', flexShrink: 0 }} />
-              {message}
-            </div>
-          )}
-
-          {/* Error */}
-          {error && (
-            <div style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: 'var(--red)', borderRadius: '8px', padding: '10px 14px', fontSize: '12.5px', marginBottom: '16px', lineHeight: 1.5, display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-              <AlertCircle size={16} style={{ marginTop: '1px', flexShrink: 0 }} />
-              <div>{error}</div>
-            </div>
-          )}
-
-          {/* Mandatory fields note */}
-          {!isLogin && !isForgotPassword && (
-            <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span style={{ color: 'var(--red)' }}>*</span> Required fields
-            </div>
-          )}
-
-          {/* Quick 1-Click Tester Account Access */}
-          {isLogin && !isForgotPassword && (
-            <div style={{
-              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.14), rgba(168, 85, 247, 0.09))',
-              border: '1px solid rgba(139, 92, 246, 0.4)',
-              borderRadius: '12px',
-              padding: '12px 14px',
-              marginBottom: '18px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '12px',
-              boxShadow: '0 4px 20px rgba(99, 102, 241, 0.15)'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                <img
-                  src={TESTER_PROFILE.avatar}
-                  alt="Tester"
-                  style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid #ef4444', objectFit: 'cover', flexShrink: 0 }}
-                />
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: '13px', fontWeight: 800, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span>Tester Account</span>
-                    <span style={{ fontSize: '9.5px', background: 'rgba(99,102,241,0.35)', color: '#c7d2fe', padding: '1px 6px', borderRadius: '6px', fontWeight: 800 }}>DEMO</span>
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    Elena Rodriguez (@elena_films) • 9 reviews & badges
-                  </div>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={handleQuickTesterLogin}
-                style={{
-                  background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '7px 14px',
-                  fontSize: '12px',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 10px rgba(99, 102, 241, 0.4)',
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0,
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                Log In →
-              </button>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-
-            {/* Profile image picker (register only) */}
-            {!isLogin && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '4px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    style={{
-                      width: '72px', height: '72px', borderRadius: '50%',
-                      border: '2px dashed var(--accent)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      cursor: 'pointer', overflow: 'hidden', flexShrink: 0, position: 'relative',
-                      background: avatarDataUrl ? 'transparent' : 'rgba(136,8,8,0.08)',
-                    }}
-                  >
-                    {avatarDataUrl ? (
-                      <img src={avatarDataUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      <Camera size={22} color="var(--accent)" />
-                    )}
-                    <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImagePick} style={{ display: 'none' }} />
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: '13px' }}>Profile Photo</div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '2px' }}>
-                      {avatarDataUrl ? 'Photo selected ✓ Click to change' : 'Click to upload a photo'}
-                    </div>
-                    {avatarDataUrl && (
-                      <button type="button" onClick={() => setAvatarDataUrl(null)} style={{ background: 'none', border: 'none', color: 'var(--red)', fontSize: '11px', cursor: 'pointer', marginTop: '2px', padding: 0 }}>
-                        Remove photo
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Badge selector row */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <div style={{ fontSize: '12.2px', color: 'var(--text-muted)', fontWeight: 650 }}>Or choose a premium theme badge:</div>
-                  <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-                    {DEFAULT_AVATARS.map(item => (
-                      <div key={item.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                        <button
-                          type="button"
-                          onClick={() => setAvatarDataUrl(item.path)}
-                          style={{
-                            width: '54px',
-                            height: '54px',
-                            borderRadius: '50%',
-                            overflow: 'hidden',
-                            cursor: 'pointer',
-                            background: 'rgba(255,255,255,0.03)',
-                            border: avatarDataUrl === item.path ? item.border : '2px solid transparent',
-                            boxShadow: avatarDataUrl === item.path ? '0 0 10px rgba(136,8,8,0.4)' : 'none',
-                            padding: 0,
-                            transition: 'all 0.2s',
-                            transform: avatarDataUrl === item.path ? 'scale(1.1)' : 'scale(1)'
-                          }}
-                          title={item.name}
-                        >
-                          <img src={item.path} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        </button>
-                        <span style={{ 
-                          fontSize: '10px', 
-                          fontWeight: 700, 
-                          color: avatarDataUrl === item.path ? 'var(--accent)' : 'var(--text-muted)',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px'
-                        }}>
-                          {item.name}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Email */}
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <FieldLabel required>Email Address</FieldLabel>
-              <div style={{ position: 'relative' }}>
-                <Mail size={15} color="var(--text-dim)" style={{ position: 'absolute', left: '13px', top: '50%', transform: 'translateY(-50%)' }} />
-                <input
-                  type="email" placeholder="you@example.com"
-                  value={email} onChange={e => setEmail(e.target.value)}
-                  className="form-input" style={{ width: '100%', paddingLeft: '38px' }}
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Password */}
-            {!isForgotPassword && (
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <FieldLabel required>Password</FieldLabel>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type={showPass ? 'text' : 'password'}
-                    placeholder={isLogin ? 'Your password' : 'Create a password'}
-                    value={password} onChange={e => setPassword(e.target.value)}
-                    className="form-input" style={{ width: '100%', paddingRight: '44px' }}
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPass(s => !s)}
-                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: '4px' }}
-                  >
-                    {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-                {isLogin && (
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
-                    <button
-                      type="button"
-                      onClick={() => { setIsForgotPassword(true); setError(''); setMessage(''); }}
-                      style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '11.5px', cursor: 'pointer', fontWeight: 650, padding: 0 }}
-                    >
-                      Forgot password?
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Register-only fields */}
-            {!isLogin && !isForgotPassword && (
-              <>
-                {/* Full Name */}
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <FieldLabel required>Full Name</FieldLabel>
-                  <div style={{ position: 'relative' }}>
-                    <User size={15} color="var(--text-dim)" style={{ position: 'absolute', left: '13px', top: '50%', transform: 'translateY(-50%)' }} />
-                    <input
-                      type="text" placeholder="Your full name"
-                      value={fullName} onChange={e => setFullName(e.target.value)}
-                      className="form-input" style={{ width: '100%', paddingLeft: '38px' }}
-                    />
-                  </div>
-                </div>
-
-                {/* Display Name */}
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <FieldLabel>Display Name <span style={{ color: 'var(--text-dim)', fontWeight: 400, fontSize: '11px' }}>(defaults to your full name)</span></FieldLabel>
-                  <input
-                    type="text" placeholder="e.g. ElenaVance99"
-                    value={displayName} onChange={e => setDisplayName(e.target.value)}
-                    className="form-input"
-                  />
-                </div>
-
-                {/* Phone */}
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <FieldLabel>Phone Number</FieldLabel>
-                  <div style={{ position: 'relative' }}>
-                    <Phone size={15} color="var(--text-dim)" style={{ position: 'absolute', left: '13px', top: '50%', transform: 'translateY(-50%)' }} />
-                    <input
-                      type="tel" placeholder="+1 555 000 0000"
-                      value={phone} onChange={e => setPhone(e.target.value)}
-                      className="form-input" style={{ width: '100%', paddingLeft: '38px' }}
-                    />
-                  </div>
-                </div>
-
-                {/* Bio */}
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <FieldLabel>About You</FieldLabel>
-                  <div style={{ position: 'relative' }}>
-                    <FileText size={15} color="var(--text-dim)" style={{ position: 'absolute', left: '13px', top: '14px' }} />
-                    <textarea
-                      placeholder="What kind of movies do you love? Tell the community…"
-                      value={bio} onChange={e => setBio(e.target.value)}
-                      className="form-input"
-                      style={{ width: '100%', minHeight: '70px', resize: 'vertical', paddingLeft: '38px' }}
-                    />
-                  </div>
-                </div>
-              </>
-            )}
-
-            <button type="submit" className="btn btn-primary" style={{ width: '100%', height: '46px', marginTop: '12px', fontSize: '15px' }}>
-              {isForgotPassword ? 'Send Reset Link' : isLogin ? 'Sign In' : 'Create Account'}
-            </button>
-          </form>
-
-          <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '13px', color: 'var(--text-muted)' }}>
-            {isForgotPassword ? (
-              <button onClick={() => { setIsForgotPassword(false); setError(''); setMessage(''); }} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: 700, cursor: 'pointer', fontSize: '13px' }}>
-                Back to Sign In
-              </button>
-            ) : isLogin ? (
-              <>New to CineLog?{' '}
-                <button onClick={() => { setIsLogin(false); setError(''); }} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: 700, cursor: 'pointer', fontSize: '13px' }}>
-                  Create Account
-                </button>
-              </>
-            ) : (
-              <>Already have an account?{' '}
-                <button onClick={() => { setIsLogin(true); setError(''); }} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: 700, cursor: 'pointer', fontSize: '13px' }}>
-                  Sign In
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
-

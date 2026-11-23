@@ -1,0 +1,13 @@
+/* Keep poster quick actions comfortable to hit without changing desktop density. */
+@media (pointer: coarse) {
+  .studio-main .explore-poster-add {
+    min-width: 44px;
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+  .library-quick-status summary {
+    min-height: 44px;
+    box-sizing: border-box;
+    touch-action: manipulation;
+  }
+}

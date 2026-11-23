@@ -1,8 +1,63 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Trophy, HelpCircle, ArrowRight, Zap, RefreshCw, Award, Volume2, VolumeX, Sparkles, User, History, CheckCircle2, XCircle } from 'lucide-react';
+import {Trophy,ArrowRight,RefreshCw,Volume2,VolumeX,CheckCircle2,XCircle,Clock} from 'lucide-react';
+import ConfirmModal from './ConfirmModal';
 import { useToast } from './ToastSystem';
 
 export const ALL_TRIVIA_QUESTIONS = [
+{"id":75,"question":"Who directed The Grand Budapest Hotel?","options":["Wes Anderson","Tim Burton","Terry Gilliam","Edgar Wright"],"answer":"Wes Anderson","points":100},
+{"id":76,"question":"Which film features the fictional nation of Wakanda?","options":["Black Panther","Aquaman","Wonder Woman","Black Adam"],"answer":"Black Panther","points":100},
+{"id":77,"question":"Who plays Furiosa in Mad Max: Fury Road?","options":["Charlize Theron","Emily Blunt","Rebecca Ferguson","Alicia Vikander"],"answer":"Charlize Theron","points":100},
+{"id":78,"question":"Which film features the spaceship Nostromo?","options":["Alien","Interstellar","Solaris","Event Horizon"],"answer":"Alien","points":100},
+{"id":79,"question":"What is the name of the hotel in The Shining?","options":["Overlook Hotel","Bates Motel","Grand Budapest Hotel","Hotel California"],"answer":"Overlook Hotel","points":100},
+{"id":80,"question":"Which director made the original Halloween (1978)?","options":["John Carpenter","Wes Craven","George A. Romero","Tobe Hooper"],"answer":"John Carpenter","points":100},
+{"id":81,"question":"Which actor plays Neo in The Matrix?","options":["Keanu Reeves","Brad Pitt","Tom Cruise","Nicolas Cage"],"answer":"Keanu Reeves","points":100},
+{"id":82,"question":"Who directed Portrait of a Lady on Fire?","options":["Celine Sciamma","Agnes Varda","Claire Denis","Sofia Coppola"],"answer":"Celine Sciamma","points":100},
+{"id":83,"question":"Who directed the film The Farewell (2019)?","options":["Lulu Wang","Chloe Zhao","Greta Gerwig","Mira Nair"],"answer":"Lulu Wang","points":100},
+{"id":84,"question":"Which filmmaker directed A Separation?","options":["Asghar Farhadi","Abbas Kiarostami","Jafar Panahi","Majid Majidi"],"answer":"Asghar Farhadi","points":100},
+{"id":85,"question":"Which film features the character Chihiro?","options":["Spirited Away","Ponyo","Howl’s Moving Castle","Kiki’s Delivery Service"],"answer":"Spirited Away","points":100},
+{"id":86,"question":"Which anime features a notebook that can kill people whose names are written in it?","options":["Death Note","Monster","Erased","Psycho-Pass"],"answer":"Death Note","points":100},
+{"id":87,"question":"Who is the captain of the Straw Hat Pirates?","options":["Monkey D. Luffy","Roronoa Zoro","Sanji","Shanks"],"answer":"Monkey D. Luffy","points":100},
+{"id":88,"question":"Which anime centers on giant humanoid creatures called Titans?","options":["Attack on Titan","Demon Slayer","Jujutsu Kaisen","Chainsaw Man"],"answer":"Attack on Titan","points":100},
+{"id":89,"question":"What is the name of the bounty hunter in The Mandalorian?","options":["Din Djarin","Cassian Andor","Poe Dameron","Cal Kestis"],"answer":"Din Djarin","points":100},
+{"id":90,"question":"Which series features the Roy family?","options":["Succession","Billions","Industry","Mad Men"],"answer":"Succession","points":100},
+{"id":91,"question":"What is the advertising agency at the start of Mad Men?","options":["Sterling Cooper","Dunder Mifflin","Pearson Hardman","Waystar Royco"],"answer":"Sterling Cooper","points":100},
+{"id":92,"question":"Which city is the principal setting of The Wire?","options":["Baltimore","Boston","Chicago","Philadelphia"],"answer":"Baltimore","points":100},
+{"id":93,"question":"Which series features a restaurant called The Original Beef of Chicagoland?","options":["The Bear","Chef’s Table","The Menu","Boiling Point"],"answer":"The Bear","points":100},
+{"id":94,"question":"Which German series is set in the fictional town of Winden?","options":["Dark","1899","Babylon Berlin","Deutschland 83"],"answer":"Dark","points":100},
+{"id":95,"question":"What is an establishing shot used to communicate?","options":["The setting of a scene","Only a character’s thoughts","The final credits","A camera malfunction"],"answer":"The setting of a scene","points":100},
+{"id":96,"question":"What is diegetic sound?","options":["Sound originating within the story world","Only the orchestral score","All sound added after filming","Sound heard only by the audience"],"answer":"Sound originating within the story world","points":100},
+{"id":97,"question":"What does a gaffer lead on a film set?","options":["The lighting department","The costume department","The casting team","The editing team"],"answer":"The lighting department","points":100},
+{"id":98,"question":"What does ADR usually replace or re-record?","options":["Dialogue","Camera movements","Set construction","Costumes"],"answer":"Dialogue","points":100},
+{"id":99,"question":"What is a storyboard?","options":["A sequence of drawings planning shots","A distribution contract","A sound mixing console","A finished film poster"],"answer":"A sequence of drawings planning shots","points":100},
+{"id":100,"question":"Which actor played Jack Sparrow in Pirates of the Caribbean?","options":["Johnny Depp","Orlando Bloom","Geoffrey Rush","Javier Bardem"],"answer":"Johnny Depp","points":100},
+{"id":101,"question":"Which musical features the songs America and Tonight?","options":["West Side Story","Chicago","Cabaret","Moulin Rouge!"],"answer":"West Side Story","points":100},
+{"id":102,"question":"Who directed Singin’ in the Rain with Stanley Donen?","options":["Gene Kelly","Fred Astaire","Bob Fosse","Vincente Minnelli"],"answer":"Gene Kelly","points":100},
+{"id":103,"question":"Which film features a giant robot befriended by Hogarth Hughes?","options":["The Iron Giant","WALL-E","Big Hero 6","Robots"],"answer":"The Iron Giant","points":100},
+{"id":104,"question":"Which film follows a rat named Remy who loves cooking?","options":["Ratatouille","Flushed Away","The Tale of Despereaux","Fantastic Mr. Fox"],"answer":"Ratatouille","points":100},
+{"id":51,"question":"Which studio produced Spirited Away?","options":["Studio Ghibli","Pixar","Laika","DreamWorks"],"answer":"Studio Ghibli","points":100},
+{"id":52,"question":"Who directed the animated film Your Name?","options":["Makoto Shinkai","Hayao Miyazaki","Satoshi Kon","Mamoru Hosoda"],"answer":"Makoto Shinkai","points":100},
+{"id":53,"question":"In Cowboy Bebop, what is the name of the spaceship used by the main crew?","options":["Bebop","Serenity","Nostromo","Discovery"],"answer":"Bebop","points":100},
+{"id":54,"question":"Which anime follows the Elric brothers?","options":["Fullmetal Alchemist","Death Note","One Piece","Bleach"],"answer":"Fullmetal Alchemist","points":100},
+{"id":55,"question":"Who plays Eleven in Stranger Things?","options":["Millie Bobby Brown","Sadie Sink","Maya Hawke","Natalia Dyer"],"answer":"Millie Bobby Brown","points":100},
+{"id":56,"question":"In Breaking Bad, what subject does Walter White teach?","options":["Chemistry","Physics","Biology","Mathematics"],"answer":"Chemistry","points":100},
+{"id":57,"question":"Which fictional continent is the main setting of Game of Thrones?","options":["Westeros","Middle-earth","Narnia","Arrakis"],"answer":"Westeros","points":100},
+{"id":58,"question":"What is the name of the paper company in the US version of The Office?","options":["Dunder Mifflin","Sterling Cooper","Waystar Royco","Initech"],"answer":"Dunder Mifflin","points":100},
+{"id":59,"question":"Which filmmaker directed Seven Samurai?","options":["Akira Kurosawa","Yasujiro Ozu","Bong Joon-ho","Wong Kar-wai"],"answer":"Akira Kurosawa","points":100},
+{"id":60,"question":"Who composed the music for The Good, the Bad and the Ugly?","options":["Ennio Morricone","John Williams","Hans Zimmer","Nino Rota"],"answer":"Ennio Morricone","points":100},
+{"id":61,"question":"Which film features the character Amelie Poulain?","options":["Amelie","Chocolat","A Very Long Engagement","The Artist"],"answer":"Amelie","points":100},
+{"id":62,"question":"Which country produced the film Cinema Paradiso?","options":["Italy","France","Spain","Greece"],"answer":"Italy","points":100},
+{"id":63,"question":"What does a Foley artist primarily create?","options":["Sound effects","Costume designs","Visual effects","Storyboards"],"answer":"Sound effects","points":100},
+{"id":64,"question":"What does cinematography primarily concern?","options":["The photography of moving images","Writing dialogue","Casting actors","Distributing films"],"answer":"The photography of moving images","points":100},
+{"id":65,"question":"What is a match cut?","options":["An edit linking visually or conceptually similar shots","A shot filmed without sound","A camera zoom","A lighting technique"],"answer":"An edit linking visually or conceptually similar shots","points":100},
+{"id":66,"question":"What is stop-motion animation made from?","options":["Photographs of objects moved incrementally","Only hand-drawn frames","Live broadcast footage","A single long exposure"],"answer":"Photographs of objects moved incrementally","points":100},
+{"id":67,"question":"Who voices Woody in the original English-language Toy Story films?","options":["Tom Hanks","Tim Allen","Billy Crystal","John Goodman"],"answer":"Tom Hanks","points":100},
+{"id":68,"question":"Which film features a robot named WALL-E?","options":["WALL-E","Robots","Big Hero 6","The Iron Giant"],"answer":"WALL-E","points":100},
+{"id":69,"question":"Who directed Moonlight (2016)?","options":["Barry Jenkins","Jordan Peele","Ryan Coogler","Steve McQueen"],"answer":"Barry Jenkins","points":100},
+{"id":70,"question":"Which film follows a drummer named Andrew Neiman?","options":["Whiplash","Sound of Metal","La La Land","Inside Llewyn Davis"],"answer":"Whiplash","points":100},
+{"id":71,"question":"Which instrument does the main character play in The Pianist?","options":["Piano","Violin","Cello","Trumpet"],"answer":"Piano","points":100},
+{"id":72,"question":"Who directed Pan’s Labyrinth?","options":["Guillermo del Toro","Alfonso Cuaron","Alejandro Gonzalez Inarritu","Pedro Almodovar"],"answer":"Guillermo del Toro","points":100},
+{"id":73,"question":"What is the family surname in The Simpsons?","options":["Simpson","Griffin","Belcher","Smith"],"answer":"Simpson","points":100},
+{"id":74,"question":"Which series features the town of Twin Peaks?","options":["Twin Peaks","Dark","Lost","Fargo"],"answer":"Twin Peaks","points":100},
   {
     id: 1,
     question: "Who directed the 2010 mind-bending blockbuster 'Inception'?",
@@ -372,7 +427,7 @@ const getRandomRound = (count = 10) => {
   }));
 };
 
-export default function TriviaTab({ currentUser, onUpdateProfile }) {
+export default function TriviaTab({ currentUser, onUpdateProfile, onOpenAuth, storage=localStorage }) {
   const toast = useToast();
   const [gameState, setGameState] = useState('start'); // 'start' | 'playing' | 'ended'
   const [activeQuestions, setActiveQuestions] = useState(() => getRandomRound(10));
@@ -384,12 +439,15 @@ export default function TriviaTab({ currentUser, onUpdateProfile }) {
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [flash, setFlash] = useState(null); // 'correct' | 'wrong' | null
   const [claimed, setClaimed] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  const [claimPending,setClaimPending]=useState(false),[claimError,setClaimError]=useState(''),[showExit,setShowExit]=useState(false);
+  const answerLock=useRef(false),answerTimeout=useRef(null),claimBusy=useRef(false),answerHandler=useRef(null),soundHandler=useRef(null),pauseRef=useRef(false);
+  useEffect(()=>()=>clearTimeout(answerTimeout.current),[]);
 
   // Local storage personal record and play history (No fake bots)
   const [triviaStats, setTriviaStats] = useState(() => {
     try {
-      const saved = localStorage.getItem('cinelog_trivia_stats');
+      const saved = storage.getItem('cinelog_trivia_stats');
       if (saved) return JSON.parse(saved);
     } catch {}
     return {
@@ -411,6 +469,7 @@ export default function TriviaTab({ currentUser, onUpdateProfile }) {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
+      osc.onended=()=>ctx.close().catch(()=>{});
       osc.connect(gain);
       gain.connect(ctx.destination);
 
@@ -443,29 +502,22 @@ export default function TriviaTab({ currentUser, onUpdateProfile }) {
     }
   };
 
-  useEffect(() => {
-    if (gameState !== 'playing') return;
-
-    setTimer(15);
-    timerRef.current = setInterval(() => {
-      setTimer(prev => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current);
-          handleAnswer(null, true);
-          return 0;
-        }
-        if (prev <= 5) {
-          playSound('tick');
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timerRef.current);
-  }, [currentIdx, gameState]);
+  soundHandler.current=playSound;
+  useEffect(()=>{
+    if(gameState!=='playing')return;
+    let deadline=Date.now()+15000,lastTick=Date.now();setTimer(15);
+    timerRef.current=setInterval(()=>{const now=Date.now();if(pauseRef.current){deadline+=now-lastTick;lastTick=now;return;}lastTick=now;const remaining=Math.max(0,Math.ceil((deadline-Date.now())/1000));setTimer(remaining);if(remaining===0){clearInterval(timerRef.current);answerHandler.current?.(null,true);}else if(remaining<=5)soundHandler.current?.('tick');},1000);
+    return ()=>clearInterval(timerRef.current);
+  },[currentIdx,gameState]);
 
   const handleStartGame = () => {
-    const roundQuestions = getRandomRound(10);
+    clearTimeout(answerTimeout.current);clearInterval(timerRef.current);answerLock.current=false;pauseRef.current=false;setClaimError('');
+    let seen=[];try{seen=JSON.parse(storage.getItem('cinelog_trivia_seen')||'[]');if(!Array.isArray(seen))seen=[];}catch{}
+    const unseen=shuffle(ALL_TRIVIA_QUESTIONS.filter(q=>!seen.includes(q.id)));
+    const refill=shuffle(ALL_TRIVIA_QUESTIONS.filter(q=>seen.includes(q.id)));
+    const roundQuestions=[...unseen,...refill].slice(0,10).map(q=>({...q,options:shuffle(q.options)}));
+    const nextSeen=unseen.length>=10?[...seen,...roundQuestions.map(q=>q.id)]:roundQuestions.map(q=>q.id);
+    try{storage.setItem('cinelog_trivia_seen',JSON.stringify(nextSeen));}catch{/* Rounds still work when device storage is unavailable. */}
     setActiveQuestions(roundQuestions);
     setGameState('playing');
     setCurrentIdx(0);
@@ -478,11 +530,12 @@ export default function TriviaTab({ currentUser, onUpdateProfile }) {
   };
 
   const handleAnswer = (option, isTimeout = false) => {
-    if (selectedOption !== null) return;
+    if (answerLock.current) return;
+    answerLock.current=true;
     clearInterval(timerRef.current);
 
     const question = activeQuestions[currentIdx];
-    setSelectedOption(option);
+    setSelectedOption(isTimeout?'__timeout__':option);
 
     let nextScore = score;
     let nextCorrect = correctAnswers;
@@ -507,7 +560,8 @@ export default function TriviaTab({ currentUser, onUpdateProfile }) {
     }
 
     // Go to next question or complete game
-    setTimeout(() => {
+    answerTimeout.current=setTimeout(() => {
+      answerLock.current=false;
       setFlash(null);
       setSelectedOption(null);
       if (currentIdx < activeQuestions.length - 1) {
@@ -519,6 +573,8 @@ export default function TriviaTab({ currentUser, onUpdateProfile }) {
       }
     }, 1800);
   };
+
+  answerHandler.current=handleAnswer;
 
   const saveGameResult = (finalScore, finalCorrect, totalQ) => {
     setTriviaStats(prev => {
@@ -542,7 +598,7 @@ export default function TriviaTab({ currentUser, onUpdateProfile }) {
       };
 
       try {
-        localStorage.setItem('cinelog_trivia_stats', JSON.stringify(updated));
+        storage.setItem('cinelog_trivia_stats', JSON.stringify(updated));
       } catch (e) {
         console.error(e);
       }
@@ -550,275 +606,27 @@ export default function TriviaTab({ currentUser, onUpdateProfile }) {
     });
   };
 
-  const handleClaimPoints = () => {
-    if (claimed) return;
-    const earnedPoints = Math.round(score * 0.1);
-    if (earnedPoints > 0) {
-      const currentTriviaPoints = currentUser?.triviaCinePoints || 0;
-      onUpdateProfile({
-        ...currentUser,
-        triviaCinePoints: currentTriviaPoints + earnedPoints
-      });
-
-      // Update total points earned in triviaStats
-      setTriviaStats(prev => {
-        const updated = {
-          ...prev,
-          totalPointsEarned: (prev.totalPointsEarned || 0) + earnedPoints
-        };
-        try {
-          localStorage.setItem('cinelog_trivia_stats', JSON.stringify(updated));
-        } catch {}
-        return updated;
-      });
-
-      toast.success("CinePoints Claimed!", `+🪙 ${earnedPoints} CinePoints added to your profile.`);
-      setClaimed(true);
-    } else {
-      toast.info("No Points to Claim", "Score higher in the next round to claim CinePoints!");
-    }
+  const handleClaimPoints = async () => {
+    if(claimed||claimBusy.current||!currentUser||!onUpdateProfile)return;
+    const earnedPoints=Math.round(score*.1);if(earnedPoints<=0)return;
+    claimBusy.current=true;setClaimPending(true);setClaimError('');
+    try{
+      const result=await onUpdateProfile({...currentUser,triviaCinePoints:(currentUser.triviaCinePoints||0)+earnedPoints});
+      if(result===false||result?.saved===false)throw new Error(result?.error||'Your points could not be saved. Please try again.');
+      setTriviaStats(previous=>{const updated={...previous,totalPointsEarned:(previous.totalPointsEarned||0)+earnedPoints};try{storage.setItem('cinelog_trivia_stats',JSON.stringify(updated));}catch{}return updated;});
+      setClaimed(true);toast.success('CinePoints claimed','+'+earnedPoints+' CinePoints added to your profile.');
+    }catch(error){setClaimError(error.message);}finally{claimBusy.current=false;setClaimPending(false);}
   };
+  const leaveRound=()=>{clearInterval(timerRef.current);clearTimeout(answerTimeout.current);answerLock.current=false;pauseRef.current=false;setGameState('start');setShowExit(false);setFlash(null);};
 
   const currentQuestion = activeQuestions[currentIdx] || activeQuestions[0];
   const accuracyPct = triviaStats.totalQuestions > 0
     ? Math.round((triviaStats.totalCorrect / triviaStats.totalQuestions) * 100)
     : 0;
 
-  return (
-    <div className="trivia-page-layout animate-fade-in">
-      
-      {/* Main Game Screen */}
-      <div className="glass trivia-game-card">
-        
-        {/* Flash overlay for feedback */}
-        {flash === 'correct' && (
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(16,185,129,0.08)', border: '2px solid var(--green)', borderRadius: 'var(--radius-xl)', pointerEvents: 'none', zIndex: 10, animation: 'pulse 1.8s infinite' }} />
-        )}
-        {flash === 'wrong' && (
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(239,68,68,0.08)', border: '2px solid var(--red)', borderRadius: 'var(--radius-xl)', pointerEvents: 'none', zIndex: 10, animation: 'shake 0.4s' }} />
-        )}
-
-        {/* Header Controls */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <HelpCircle size={18} color="var(--accent)" />
-            <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>CineLog Trivia</span>
-            <span style={{ fontSize: '11px', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', padding: '2px 8px', borderRadius: '12px', color: 'var(--text-muted)' }}>
-              Pool: {ALL_TRIVIA_QUESTIONS.length} Questions
-            </span>
-          </div>
-          <button onClick={() => setSoundEnabled(!soundEnabled)} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', padding: '6px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-            {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
-          </button>
-        </div>
-
-        {/* Game State Screens */}
-        {gameState === 'start' && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, textAlign: 'center', gap: '20px' }}>
-            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(var(--accent-rgb, 136,8,8), 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(var(--accent-rgb, 136,8,8), 0.35)', boxShadow: '0 0 24px rgba(var(--accent-rgb, 136,8,8), 0.25)' }}>
-              <Trophy size={30} color="var(--accent)" />
-            </div>
-            <div>
-              <h2 style={{ fontSize: '24px', fontWeight: 900, marginBottom: '8px' }}>Cinema Trivia Challenge</h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: '14px', maxWidth: '440px', lineHeight: 1.6 }}>
-                Test your movie knowledge across legendary directors, Academy Award winners, cult classics, and cinematic history. Every round is randomly selected from our 50-question vault!
-              </p>
-            </div>
-            <div className="trivia-feature-pills">
-              <span className="trivia-feature-pill">⏱ 15s Per Question</span>
-              <span className="trivia-feature-pill">🔥 Answer Streaks</span>
-              <span className="trivia-feature-pill">🪙 Claim CinePoints</span>
-            </div>
-            <button className="btn btn-primary" onClick={handleStartGame} style={{ padding: '12px 32px', fontSize: '15px', fontWeight: 800, marginTop: '8px' }}>
-              Play Challenge <ArrowRight size={16} style={{ marginLeft: '6px', display: 'inline' }} />
-            </button>
-          </div>
-        )}
-
-        {gameState === 'playing' && (
-          <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-            {/* Stats row */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px', color: 'var(--text-muted)', marginBottom: '16px', fontWeight: 700 }}>
-              <span>Question {currentIdx + 1} of {activeQuestions.length}</span>
-              <div style={{ display: 'flex', gap: '16px' }}>
-                <span style={{ color: 'var(--gold)' }}>★ Score: {score}</span>
-                {streak > 0 && <span style={{ color: '#ef4444' }}>🔥 Streak: {streak}x</span>}
-              </div>
-            </div>
-
-            {/* Timer bar */}
-            <div style={{ height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden', marginBottom: '16px', position: 'relative' }}>
-              <div style={{ height: '100%', width: `${(timer / 15) * 100}%`, background: timer > 5 ? 'var(--accent)' : 'linear-gradient(to right, var(--red), #ef4444)', transition: 'width 1s linear', borderRadius: '3px' }} />
-            </div>
-
-            {/* Question title */}
-            <h3 style={{ fontSize: '17px', fontWeight: 800, lineHeight: 1.4, marginBottom: '18px', minHeight: '44px' }}>
-              {currentQuestion.question}
-            </h3>
-
-            {/* Options grid */}
-            <div className="trivia-options-grid">
-              {currentQuestion.options.map((option, idx) => {
-                const isSelected = selectedOption === option;
-                const isCorrect = option === currentQuestion.answer;
-                const showResults = selectedOption !== null;
-                const optionLetters = ['A', 'B', 'C', 'D'];
-                const letter = optionLetters[idx] || (idx + 1);
-
-                let stateClass = '';
-                if (showResults) {
-                  if (isCorrect) stateClass = 'correct';
-                  else if (isSelected) stateClass = 'incorrect';
-                  else stateClass = 'dimmed';
-                }
-
-                return (
-                  <button
-                    key={option}
-                    disabled={showResults}
-                    onClick={() => handleAnswer(option)}
-                    className={`trivia-option-btn ${stateClass}`}
-                  >
-                    <span className="trivia-option-badge">{letter}</span>
-                    <span className="trivia-option-text">{option}</span>
-                    {showResults && isCorrect && <CheckCircle2 size={16} color="var(--green)" style={{ flexShrink: 0, marginLeft: 'auto' }} />}
-                    {showResults && isSelected && !isCorrect && <XCircle size={16} color="var(--red)" style={{ flexShrink: 0, marginLeft: 'auto' }} />}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {gameState === 'ended' && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, textAlign: 'center', gap: '20px' }}>
-            <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(16,185,129,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(16,185,129,0.3)', marginBottom: '8px', boxShadow: '0 0 20px rgba(16,185,129,0.2)' }}>
-              <Award size={28} color="var(--green)" />
-            </div>
-            <h2 style={{ fontSize: '22px', fontWeight: 900 }}>Round Completed!</h2>
-            <div className="trivia-results-grid">
-              <div className="trivia-result-stat-box">
-                <div className="stat-label">Correct</div>
-                <div className="stat-val" style={{ color: 'var(--green)' }}>{correctAnswers} / {activeQuestions.length}</div>
-              </div>
-              <div className="trivia-result-stat-box">
-                <div className="stat-label">Final Score</div>
-                <div className="stat-val" style={{ color: 'var(--gold)' }}>{score}</div>
-              </div>
-              <div className="trivia-result-stat-box">
-                <div className="stat-label">Points Earned</div>
-                <div className="stat-val" style={{ color: 'var(--accent)' }}>🪙 {Math.round(score * 0.1)}</div>
-              </div>
-            </div>
-            
-            <div style={{ display: 'flex', gap: '12px', marginTop: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
-              <button disabled={claimed || Math.round(score * 0.1) === 0} className="btn btn-primary" onClick={handleClaimPoints} style={{ opacity: claimed ? 0.5 : 1, cursor: claimed ? 'default' : 'pointer' }}>
-                {claimed ? "✓ Points Claimed" : "Claim CinePoints"}
-              </button>
-              <button className="btn btn-secondary" onClick={handleStartGame} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <RefreshCw size={14} /> New Random Round
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Real Player Record & Statistics Sidebar */}
-      <div className="glass trivia-sidebar-card">
-        
-        {/* User Card */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
-          {currentUser?.avatar ? (
-            <img src={currentUser.avatar} alt="" style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent)' }} />
-          ) : (
-            <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border)' }}>
-              <User size={20} color="var(--text-muted)" />
-            </div>
-          )}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 800, fontSize: '14.5px', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {currentUser?.displayName || "Player Record"}
-            </div>
-            <div style={{ fontSize: '11.5px', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span>🪙 {currentUser?.triviaCinePoints || 0} CinePoints</span>
-            </div>
-          </div>
-        </div>
-
-        {/* High Score Banner */}
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(234,179,8,0.12), rgba(var(--accent-rgb, 136,8,8), 0.18))',
-          border: '1px solid rgba(234,179,8,0.3)',
-          borderRadius: '12px',
-          padding: '16px',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--gold)', marginBottom: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-            <Trophy size={14} color="var(--gold)" /> Personal High Score
-          </div>
-          <div style={{ fontSize: '28px', fontWeight: 900, color: '#ffffff' }}>
-            {triviaStats.highScore || 0} <span style={{ fontSize: '14px', color: 'var(--gold)', fontWeight: 700 }}>pts</span>
-          </div>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="trivia-stats-boxes-grid">
-          <div className="trivia-stat-box">
-            <div className="stat-label">Rounds Played</div>
-            <div className="stat-val">{triviaStats.gamesPlayed || 0}</div>
-          </div>
-          <div className="trivia-stat-box">
-            <div className="stat-label">Accuracy</div>
-            <div className="stat-val" style={{ color: 'var(--green)' }}>{accuracyPct}%</div>
-          </div>
-        </div>
-
-        {/* Recent Runs Log */}
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <History size={13} /> Recent Games
-            </div>
-            {triviaStats.recentRuns?.length > 0 && (
-              <span style={{ fontSize: '10.5px', color: 'var(--text-dim)' }}>Last {triviaStats.recentRuns.length}</span>
-            )}
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {(!triviaStats.recentRuns || triviaStats.recentRuns.length === 0) ? (
-              <div style={{ padding: '20px 12px', textAlign: 'center', color: 'var(--text-dim)', fontSize: '12px', background: 'rgba(255,255,255,0.015)', borderRadius: '8px', border: '1px dashed var(--border)' }}>
-                No games logged yet. Finish a challenge to record your first score!
-              </div>
-            ) : (
-              triviaStats.recentRuns.map((run, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '8px 12px',
-                    background: 'rgba(255,255,255,0.02)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '8px',
-                    fontSize: '12px'
-                  }}
-                >
-                  <div>
-                    <div style={{ fontWeight: 700, color: '#ffffff' }}>{run.score} pts</div>
-                    <div style={{ fontSize: '10px', color: 'var(--text-dim)' }}>{run.date}</div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--green)', fontWeight: 800, fontSize: '11.5px' }}>
-                    <CheckCircle2 size={12} /> {run.correct}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-      </div>
-
-    </div>
-  );
+  return <div className="extras-page trivia-room"><header className="extras-page-heading"><div><span className="studio-eyebrow">THE SCREEN TEST</span><h1>How well do you know cinema?</h1><p>Ten questions. Fifteen seconds each. A fresh round every time.</p></div><span className="extras-heading-emblem"><Trophy size={32}/></span></header><div className="trivia-room-layout"><section className="trivia-stage" data-state={gameState}><header className="trivia-stage-header"><span>{gameState==='start'?'READY WHEN YOU ARE':gameState==='playing'?'QUESTION '+(currentIdx+1)+' / '+activeQuestions.length:'THE FINAL SCORE'}</span><div>{gameState==='playing'&&<button className="studio-text-button" disabled={selectedOption!==null} onClick={()=>{pauseRef.current=true;setShowExit(true);}}>Leave round</button>}<button className="trivia-sound-toggle" aria-label={soundEnabled?'Mute trivia sounds':'Enable trivia sounds'} aria-pressed={soundEnabled} onClick={()=>setSoundEnabled(value=>!value)}>{soundEnabled?<Volume2 size={16}/>:<VolumeX size={16}/>}</button></div></header>
+ {gameState==='start'&&<div className="trivia-opening"><span className="trivia-opening-number">10<span>QUESTIONS</span></span><span className="studio-eyebrow">FROM THE OPENING SCENE TO THE FINAL CREDIT</span><h2>Your next scene<br/>is a question.</h2><p>Directors, landmark films, memorable performances, and the moments that made movie history. Can you beat your personal best?</p><div className="trivia-rules"><span><Clock size={14}/>15 seconds per question</span><span>Streaks boost your score</span><span>Earn CinePoints</span></div><button className="studio-primary" onClick={handleStartGame}>Start a round <ArrowRight size={16}/></button><small>{ALL_TRIVIA_QUESTIONS.length} questions in the vault · Sounds start muted</small></div>}
+ {gameState==='playing'&&<div className="trivia-question-panel"><div className="trivia-live-score"><strong>{score}<small>POINTS</small></strong><span>{streak>0?streak+' answer streak':'Make the first one count.'}</span><span className="trivia-time" data-urgent={timer<=5}>{timer}s</span></div><div className="extras-progress trivia-timer" role="progressbar" aria-label="Time remaining" aria-valuenow={timer} aria-valuemin={0} aria-valuemax={15}><i style={{width:timer/15*100+'%'}}/></div><h2>{currentQuestion.question}</h2><div className="trivia-answer-grid">{currentQuestion.options.map((option,index)=>{const answered=selectedOption!==null,correct=option===currentQuestion.answer,chosen=selectedOption===option;return <button key={option} disabled={answered} data-result={answered?(correct?'correct':chosen?'wrong':'other'):undefined} onClick={()=>handleAnswer(option)}><span>{String.fromCharCode(65+index)}</span><strong>{option}</strong>{answered&&correct&&<CheckCircle2 size={17}/>}{answered&&chosen&&!correct&&<XCircle size={17}/>}</button>;})}</div><p className="trivia-answer-feedback" role="status">{flash?(selectedOption==='__timeout__'?'Time is up. The correct answer is highlighted.':flash==='correct'?'Correct. Keep the streak going.':'Not this time. The correct answer is highlighted.'):'Choose your answer before the clock runs out.'}</p></div>}
+ {gameState==='ended'&&<div className="trivia-finale"><span className="studio-eyebrow">THAT’S A WRAP</span><h2>A round worth remembering.</h2><strong className="trivia-final-score">{score}<small>points</small></strong><div className="trivia-finale-stats"><span><strong>{correctAnswers} / {activeQuestions.length}</strong>Correct answers</span><span><strong>{Math.round(score*.1)}</strong>CinePoints earned</span></div>{claimError&&<p className="extras-error" role="alert">{claimError}</p>}<div className="trivia-final-actions">{currentUser?<button className="studio-primary" disabled={claimed||claimPending||Math.round(score*.1)===0} onClick={handleClaimPoints}>{claimPending?'Saving points…':claimed?'Points claimed':'Claim CinePoints'}</button>:<button className="studio-primary" onClick={()=>onOpenAuth?.()}>Sign in to claim points</button>}<button className="studio-secondary" disabled={claimPending} onClick={handleStartGame}><RefreshCw size={14}/>Play another round</button></div></div>}
+ </section><aside className="extras-sidebar trivia-records"><span className="studio-eyebrow">YOUR PERSONAL BEST</span><div className="trivia-record-score">{triviaStats.highScore||0}<small>POINTS</small></div><div className="trivia-record-metrics"><span><strong>{triviaStats.gamesPlayed||0}</strong>Rounds</span><span><strong>{accuracyPct}%</strong>Accuracy</span></div><h3>Recent screenings of skill.</h3><div className="trivia-recent-runs">{triviaStats.recentRuns?.length?triviaStats.recentRuns.map((run,index)=><div key={index}><span><strong>{run.score} pts</strong><small>{run.date}</small></span><span>{run.correct}</span></div>):<p className="extras-note">Finish a round to record your first result.</p>}</div><p className="extras-note">Your game record is kept on this device. Claimed CinePoints are saved to your signed-in profile.</p></aside></div><ConfirmModal isOpen={showExit} title="Leave this round?" message="This unfinished round will not be added to your record." confirmText="Leave round" cancelText="Keep playing" isDanger={false} onConfirm={leaveRound} onCancel={()=>{pauseRef.current=false;setShowExit(false);}}/></div>;
 }

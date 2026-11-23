@@ -1,3 +1,9 @@
+import ContinueWatching from './ContinueWatching';
+import DiscoveryFilters from './DiscoveryFilters';
+import {useToast} from './ToastSystem';
+import {mediaLabel} from '../utils/mediaLabel';
+import TonightPicker from './TonightPicker';
+import { useCountry } from '../utils/useCountry';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Star, Plus, Check, Shuffle, ChevronLeft, ChevronRight, Film, Sparkles } from 'lucide-react';
 import { triggerBackdropHover } from '../utils/backdrop';
@@ -12,7 +18,7 @@ const GENRE_MAP = {
   10765: 'Sci-Fi & Fantasy', 10764: 'Reality',
 };
 
-function SharpPosterRow({ title, items = [], onCardClick, inLib, onAdd, actionButton }) {
+function SharpPosterRow({ description, title, items = [], onCardClick, inLib, onAdd, actionButton }) {
   const scrollRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -94,6 +100,7 @@ function SharpPosterRow({ title, items = [], onCardClick, inLib, onAdd, actionBu
             ›
           </button>
         </div>
+      {description&&<p className="discovery-row-description">{description}</p>}
       </div>
 
       <div
@@ -109,7 +116,7 @@ function SharpPosterRow({ title, items = [], onCardClick, inLib, onAdd, actionBu
         }}
       >
         {displayItems.map((movie) => {
-          const year = (movie.release_date || movie.first_air_date || '').slice(0, 4);
+          const year = String(movie.release_date || movie.first_air_date || movie.release_year || '').slice(0,4);
           const isSaved = inLib ? inLib(movie.id) : false;
 
           return (
@@ -182,32 +189,10 @@ function SharpPosterRow({ title, items = [], onCardClick, inLib, onAdd, actionBu
                   </span>
                 </div>
 
-                {/* Media Type Badge: highlight TV series clearly */}
-                {(movie.media_type === 'tv' || Boolean(movie.first_air_date) || Boolean(movie.name && !movie.title)) && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '8px',
-                    left: '8px',
-                    background: 'rgba(10, 10, 14, 0.85)',
-                    backdropFilter: 'blur(8px)',
-                    border: '1px solid rgba(59, 130, 246, 0.45)',
-                    color: '#60A5FA',
-                    fontSize: '9px',
-                    fontWeight: 800,
-                    letterSpacing: '0.06em',
-                    padding: '2px 7px',
-                    borderRadius: '4px',
-                    textTransform: 'uppercase',
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.6)',
-                    pointerEvents: 'none',
-                    zIndex: 2
-                  }}>
-                    TV Series
-                  </div>
-                )}
-
                 {/* Subtle Add Quick Button in top-right corner to leave poster art pristine */}
                 <button
+                  className="explore-poster-add"
+                  aria-label={isSaved ? 'In Library' : `Add ${movie.title || movie.name} to Library`}
                   onClick={(e) => {
                     e.stopPropagation();
                     if (!isSaved && onAdd) {
@@ -248,8 +233,9 @@ function SharpPosterRow({ title, items = [], onCardClick, inLib, onAdd, actionBu
 
               {/* Title & Release Year / Rating */}
               <div className="sharp-poster-text-wrap" style={{ marginTop: '2px' }}>
-                <div
-                  className="sharp-poster-title"
+                <button
+                  onClick={e=>{e.stopPropagation();onCardClick(movie,movie.media_type||(movie.first_air_date||movie.name?'tv':'movie'));}}
+                  className="sharp-poster-title poster-title-link"
                   style={{
                     fontSize: '13px',
                     fontWeight: 700,
@@ -265,7 +251,7 @@ function SharpPosterRow({ title, items = [], onCardClick, inLib, onAdd, actionBu
                   title={movie.title || movie.name}
                 >
                   {movie.title || movie.name}
-                </div>
+                </button>
                 <div
                   className="sharp-poster-meta"
                   style={{
@@ -278,10 +264,11 @@ function SharpPosterRow({ title, items = [], onCardClick, inLib, onAdd, actionBu
                     gap: '6px'
                   }}
                 >
-                  <span>{year || '2024'}</span>
+                  {year&&<span>{year}</span>}
+                  <span className="poster-media-type">{mediaLabel(movie)}</span>
                   {movie.vote_average > 0 && (
-                    <span style={{ color: 'var(--gold)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '2px' }}>
-                      · ★ {movie.vote_average.toFixed(1)}
+                    <span className="poster-public-rating">
+                      ★ {movie.vote_average.toFixed(1)}
                     </span>
                   )}
                 </div>
@@ -294,8 +281,9 @@ function SharpPosterRow({ title, items = [], onCardClick, inLib, onAdd, actionBu
   );
 }
 
-export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
-  const [addedNotif, setAddedNotif] = useState(null);
+export default function ExploreTab({ onAddMovie, onSaveMovie, library = [], onMovieClick, modalOpen = false }) {
+  const [country] = useCountry();
+  const toast = useToast();
 
   // Discover rows
   const [trending, setTrending] = useState([]);
@@ -317,27 +305,34 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
   };
 
   useEffect(() => {
-    const p = new URLSearchParams({ api_key: TMDB_KEY, language: 'en-US' });
+    let cancelled = false;
+    setIsDiscoverLoading(true);
+    const p = new URLSearchParams({ api_key: TMDB_KEY, language: 'en-US', region: country });
+    const today = new Date().toISOString().slice(0,10);
+    const cutoff = `${new Date().getFullYear()-20}-12-31`;
     const randomPage = Math.floor(Math.random() * 6) + 1;
     Promise.all([
       fetch(`https://api.themoviedb.org/3/trending/movie/week?${p}`).then(r => r.json()),
-      fetch(`https://api.themoviedb.org/3/movie/top_rated?${p}`).then(r => r.json()),
-      fetch(`https://api.themoviedb.org/3/movie/upcoming?${p}`).then(r => r.json()),
+      fetch(`https://api.themoviedb.org/3/discover/movie?${p}&sort_by=vote_average.desc&vote_count.gte=1000&primary_release_date.lte=${cutoff}`).then(r => r.json()),
+      fetch(`https://api.themoviedb.org/3/discover/movie?${p}&sort_by=primary_release_date.asc&with_release_type=2|3&release_date.gte=${today}&release_date.lte=${new Date(Date.now()+90*86400000).toISOString().slice(0,10)}`).then(r => r.json()),
       fetch(`https://api.themoviedb.org/3/trending/tv/week?${p}`).then(r => r.json()),
-      fetch(`https://api.themoviedb.org/3/movie/now_playing?${p}`).then(r => r.json()),
-      fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&language=en-US&sort_by=vote_average.desc&vote_count.gte=350&vote_count.lte=3500&vote_average.gte=7.8&page=1`).then(r => r.json()),
+      fetch(`https://api.themoviedb.org/3/discover/movie?${p}&sort_by=popularity.desc&with_release_type=2|3&release_date.gte=${new Date(Date.now()-45*86400000).toISOString().slice(0,10)}&release_date.lte=${today}`).then(r => r.json()),
+      fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&language=en-US&sort_by=vote_average.desc&vote_count.gte=350&popularity.lte=20&primary_release_date.lte=${today}&vote_average.gte=7.5&page=1`).then(r => r.json()),
       fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&language=en-US&sort_by=popularity.desc&vote_average.gte=7.3&vote_count.gte=200&page=${randomPage}`).then(r => r.json()),
     ]).then(([t, tr, u, tv, np, hg, rp]) => {
+      if (cancelled) return;
+      const excluded = new Set([...(t.results || []), ...(tr.results || []), ...(np.results || []), ...(u.results || [])].map(m => m.id));
       setTrending(t.results || []);
       setTopRated(tr.results || []);
-      setUpcoming(u.results || []);
+      setUpcoming((u.results || []).filter(m => !(np.results || []).some(n => n.id === m.id)));
       setTrendingTV(tv.results || []);
       setNowPlaying(np.results || []);
-      setHiddenGems(hg.results || []);
+      setHiddenGems((hg.results || []).filter(m => !excluded.has(m.id)));
       setRoulettePicks(rp.results || []);
       setIsDiscoverLoading(false);
-    }).catch(() => setIsDiscoverLoading(false));
-  }, []);
+    }).catch(() => { if (!cancelled) setIsDiscoverLoading(false); });
+    return () => { cancelled = true; };
+  }, [country]);
 
   // Genre filtering state
   const [activeGenreFilter, setActiveGenreFilter] = useState('all');
@@ -388,7 +383,7 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
       .catch(() => setIsShufflingRoulette(false));
   };
 
-  const quickAdd = (item, type = 'movie') => {
+  const quickAdd = async (item, type = 'movie') => {
     const isTv = type === 'tv' ||
                  item.media_type === 'tv' ||
                  item.number_of_seasons !== undefined ||
@@ -409,9 +404,8 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
       rating: null, review: '', favorite: false,
       date_added: new Date().toISOString(), tags: [], rewatched: 0
     };
-    onAddMovie(entry);
-    setAddedNotif(`"${entry.title}" added to library!`);
-    setTimeout(() => setAddedNotif(''), 3000);
+    try{const saved=await onAddMovie(entry);if(saved===false)return;}catch{toast.error('Could not add title','Please try again.');return;}
+
   };
 
   // Dynamic Hero Carousel of New In-Cinema & Trending Releases
@@ -445,25 +439,18 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
   const [isHeroPaused, setIsHeroPaused] = useState(false);
 
   useEffect(() => {
-    if (heroMovies.length <= 1 || isHeroPaused) return;
+    if (heroMovies.length <= 1 || isHeroPaused || modalOpen) return;
     const timer = setInterval(() => {
       setHeroIndex(prev => (prev + 1) % heroMovies.length);
     }, 5500);
     return () => clearInterval(timer);
-  }, [heroMovies.length, isHeroPaused]);
+  }, [heroMovies.length, isHeroPaused, modalOpen]);
 
   const currentHero = heroMovies[heroIndex % heroMovies.length] || heroMovies[0];
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
-
-      {/* Added notification toast */}
-      {addedNotif && (
-        <div className="toast" style={{ bottom: '80px' }}>
-          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--green)', flexShrink: 0 }} />
-          <span style={{ fontSize: '13px', fontWeight: 600 }}>{addedNotif}</span>
-        </div>
-      )}
+    <div className="animate-fade-in studio-explore" style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+      <div className="studio-discover-heading"><div><span className="studio-eyebrow">FOR THE LOVE OF CINEMA</span><h1>Worth your next two hours.</h1><p>New discoveries. Old favorites. Stories that stay with you.</p></div><span>YOUR DAILY DOSE OF CINEMA</span></div>
 
       {/* ── DYNAMIC NEW RELEASES HERO CAROUSEL ── */}
       <div
@@ -548,7 +535,7 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
               borderRadius: '4px',
               textTransform: 'uppercase'
             }}>
-              NEW IN CINEMAS & TRENDING
+              IN THE SPOTLIGHT
             </span>
 
             {/* Prev / Next arrows */}
@@ -606,25 +593,6 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
 
           {/* Bottom Cluster: Docks official poster, title, rating, actions and dots together at the bottom */}
           <div className="explore-hero-bottom-cluster">
-            {/* Overview text (desktop only) */}
-            <p
-              className="explore-hero-overview"
-              style={{
-                fontSize: '13px',
-                color: '#A0A0A0',
-                lineHeight: 1.6,
-                margin: '0 0 16px 0',
-                maxWidth: '520px',
-                display: '-webkit-box',
-                WebkitLineClamp: 3,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-                height: '62px'
-              }}
-            >
-              {currentHero.overview}
-            </p>
-
             {/* Movie Main Info Block (incorporates sharp official poster thumbnail on mobile) */}
             <div className="explore-hero-info-wrapper">
               {currentHero.poster_path && (
@@ -691,12 +659,32 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
               </div>
             </div>
 
+            {/* Overview text (desktop only) */}
+            <p
+              className="explore-hero-overview"
+              style={{
+                fontSize: '13px',
+                color: '#A0A0A0',
+                lineHeight: 1.6,
+                margin: '0 0 16px 0',
+                maxWidth: '520px',
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                height: '62px'
+              }}
+            >
+              {currentHero.overview}
+            </p>
+
             {/* Action buttons */}
             <div
               className="explore-hero-actions"
               style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}
             >
               <button
+                disabled={inLib(currentHero.id)}
                 onClick={() => quickAdd(currentHero, currentHero.media_type || (currentHero.first_air_date || currentHero.name ? 'tv' : 'movie'))}
                 style={{
                   background: inLib(currentHero.id) ? '#10b981' : 'var(--accent)',
@@ -744,7 +732,7 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
                 onMouseLeave={e => { e.currentTarget.style.borderColor = '#333333'; e.currentTarget.style.background = '#1A1A1A'; }}
               >
                 <Star size={14} color="#FFB800" />
-                Log / Rate
+                View film
               </button>
             </div>
 
@@ -773,6 +761,9 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
       </div>
 
       {/* ── TRENDING THIS WEEK SHELF ── */}
+      <details className="studio-tonight"><summary><Shuffle size={18}/><span className="tonight-intro"><span className="tonight-eyebrow">TONIGHT’S PICK</span><strong>Less choosing. More watching.</strong><span className="tonight-description">A little serendipity, from your own collection.</span></span><small className="tonight-pick-action">Find tonight’s film ↗</small></summary><div className="studio-tonight-content"><TonightPicker library={library} onMovieClick={onMovieClick}/></div></details>
+      <ContinueWatching library={library} onMovieClick={onMovieClick} onSaveMovie={onSaveMovie}/>
+      <DiscoveryFilters library={library} onMovieClick={onMovieClick} onAddMovie={onAddMovie}/>
       <SharpPosterRow
         title="Trending This Week"
         items={trending}
@@ -857,6 +848,7 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
 
       {/* ── TOP RATED CLASSICS SHELF ── */}
       <SharpPosterRow
+        description="Released at least 20 years ago, with at least 1,000 votes. Highest-rated first."
         title="Top Rated Classics"
         items={topRated}
         onCardClick={handleExploreCardClick}
@@ -884,6 +876,7 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
 
       {/* ── HIDDEN GEMS & CULT FAVORITES SHELF ── */}
       <SharpPosterRow
+        description="Popularity below 20, rated 7.5+, with at least 350 votes. Titles already featured above are excluded."
         title="Hidden Gems & Cult Favorites"
         items={hiddenGems}
         onCardClick={handleExploreCardClick}
@@ -971,7 +964,7 @@ export default function ExploreTab({ onAddMovie, library = [], onMovieClick }) {
           </span>
         </div>
         <div style={{ fontSize: '11px', color: '#555555', fontWeight: 600 }}>
-          Powered by live TMDb cinema catalog · All posters rendered in razor-sharp 180px format
+          Powered by the TMDb cinema catalog
         </div>
       </div>
 

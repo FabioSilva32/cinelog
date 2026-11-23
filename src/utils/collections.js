@@ -1,3 +1,5 @@
+import verifiedCatalogues from '../data/franchiseCatalogues.json';
+import {tmdbMediaType} from './screeningDetails';
 // Centralized Franchise & Collections Registry for CineLog
 // Provides comprehensive keyword, tag, and metadata detection for all movie franchises,
 // ensuring accurate matching in CollectionsTab, TierListTab, MovieDetailModal, and Library.
@@ -38,127 +40,16 @@ export const NON_MCU_MARVEL_IDS = new Set([
 ]);
 
 // Full Canonical MCU Movie & Special Presentation Catalogue
-export const MCU_FULL_CATALOGUE = [
-  // Phase 1
-  { id: 1726, tmdb_id: 1726, title: 'Iron Man', release_year: '2008', poster_path: '/78lPtwv72eTNqFW9COBYI0dWDJa.jpg', rating: 7.7, phase: 'Phase 1' },
-  { id: 1724, tmdb_id: 1724, title: 'The Incredible Hulk', release_year: '2008', poster_path: '/gKzYx79y0AQTL4UAk1cBQJ3nvrm.jpg', rating: 6.3, phase: 'Phase 1' },
-  { id: 10138, tmdb_id: 10138, title: 'Iron Man 2', release_year: '2010', poster_path: '/6WBeq4fCfn7AN0o21W9qNcRF2l9.jpg', rating: 6.9, phase: 'Phase 1' },
-  { id: 10195, tmdb_id: 10195, title: 'Thor', release_year: '2011', poster_path: '/prSfAi1xGrhLQNxVSUFh61xQ4Qy.jpg', rating: 6.8, phase: 'Phase 1' },
-  { id: 1771, tmdb_id: 1771, title: 'Captain America: The First Avenger', release_year: '2011', poster_path: '/vSNxAJTlD0r02V9sPYpOjqDZXUK.jpg', rating: 7.0, phase: 'Phase 1' },
-  { id: 24428, tmdb_id: 24428, title: 'The Avengers', release_year: '2012', poster_path: '/RYMX2wcKCBAr24UyPD7xwmjaTn.jpg', rating: 8.1, phase: 'Phase 1' },
-  // Phase 2
-  { id: 68721, tmdb_id: 68721, title: 'Iron Man 3', release_year: '2013', poster_path: '/qhPtAc1TKbMPqNvcdXSOn9Bn7hZ.jpg', rating: 6.9, phase: 'Phase 2' },
-  { id: 76338, tmdb_id: 76338, title: 'Thor: The Dark World', release_year: '2013', poster_path: '/wp6OxE4poJ4G7c0U2ZIXasTSMR7.jpg', rating: 6.5, phase: 'Phase 2' },
-  { id: 100402, tmdb_id: 100402, title: 'Captain America: The Winter Soldier', release_year: '2014', poster_path: '/tVFRpFw3xTedgPGqxW0AOI8Qhh0.jpg', rating: 7.7, phase: 'Phase 2' },
-  { id: 118340, tmdb_id: 118340, title: 'Guardians of the Galaxy', release_year: '2014', poster_path: '/r7vmZjiyZw9rpJMQJdXpjgiCOk9.jpg', rating: 7.9, phase: 'Phase 2' },
-  { id: 99861, tmdb_id: 99861, title: 'Avengers: Age of Ultron', release_year: '2015', poster_path: '/4ssDuvEDkSArWEdyBl2X5EHvYKU.jpg', rating: 7.3, phase: 'Phase 2' },
-  { id: 102899, tmdb_id: 102899, title: 'Ant-Man', release_year: '2015', poster_path: '/rQRnQfUl3kfp78nCWq8Ks04vnq1.jpg', rating: 7.1, phase: 'Phase 2' },
-  // Phase 3
-  { id: 271110, tmdb_id: 271110, title: 'Captain America: Civil War', release_year: '2016', poster_path: '/rAGiXaUfPzY7CDEyNKUofk3Kw2e.jpg', rating: 7.5, phase: 'Phase 3' },
-  { id: 284052, tmdb_id: 284052, title: 'Doctor Strange', release_year: '2016', poster_path: '/uGBVj3bEbCoZbDjjl9wTxcygko1.jpg', rating: 7.4, phase: 'Phase 3' },
-  { id: 283995, tmdb_id: 283995, title: 'Guardians of the Galaxy Vol. 2', release_year: '2017', poster_path: '/y4MBh0EjBlMuOzv9axM4qJlmhzz.jpg', rating: 7.6, phase: 'Phase 3' },
-  { id: 315635, tmdb_id: 315635, title: 'Spider-Man: Homecoming', release_year: '2017', poster_path: '/c24sv2weTHPsmDa7jEMN0m2P3RT.jpg', rating: 7.3, phase: 'Phase 3' },
-  { id: 284053, tmdb_id: 284053, title: 'Thor: Ragnarok', release_year: '2017', poster_path: '/rzRwTcFvttcN1ZpX2xv4j3tSdJu.jpg', rating: 7.6, phase: 'Phase 3' },
-  { id: 284054, tmdb_id: 284054, title: 'Black Panther', release_year: '2018', poster_path: '/uxzzxijgPIY7slzFvMotPv8wjKA.jpg', rating: 7.4, phase: 'Phase 3' },
-  { id: 299536, tmdb_id: 299536, title: 'Avengers: Infinity War', release_year: '2018', poster_path: '/7WsyChQLEftFiDOVTGkv3hFpyyt.jpg', rating: 8.2, phase: 'Phase 3' },
-  { id: 363088, tmdb_id: 363088, title: 'Ant-Man and the Wasp', release_year: '2018', poster_path: '/cFQEO687n1K6umXbInzocxcnAQz.jpg', rating: 6.9, phase: 'Phase 3' },
-  { id: 299537, tmdb_id: 299537, title: 'Captain Marvel', release_year: '2019', poster_path: '/AtsgWhDnHTq68L0lLsUrCnM7TjG.jpg', rating: 6.8, phase: 'Phase 3' },
-  { id: 299534, tmdb_id: 299534, title: 'Avengers: Endgame', release_year: '2019', poster_path: '/bR8ISy1O9XQxqiy0fQFw2BX72RQ.jpg', rating: 8.2, phase: 'Phase 3' },
-  { id: 429617, tmdb_id: 429617, title: 'Spider-Man: Far From Home', release_year: '2019', poster_path: '/4q2NNj4S5dG2RLF9CpXsej7yXl.jpg', rating: 7.4, phase: 'Phase 3' },
-  // Phase 4
-  { id: 497698, tmdb_id: 497698, title: 'Black Widow', release_year: '2021', poster_path: '/qAZ0pzat24kLdO3o8ejmbLxyOac.jpg', rating: 7.1, phase: 'Phase 4' },
-  { id: 566525, tmdb_id: 566525, title: 'Shang-Chi and the Legend of the Ten Rings', release_year: '2021', poster_path: '/9f2Q0U3IOsLgrI2HkvldwSABZy5.jpg', rating: 7.5, phase: 'Phase 4' },
-  { id: 524434, tmdb_id: 524434, title: 'Eternals', release_year: '2021', poster_path: '/lFByFSLV5WDJEv3KabbdAF959F2.jpg', rating: 6.7, phase: 'Phase 4' },
-  { id: 634649, tmdb_id: 634649, title: 'Spider-Man: No Way Home', release_year: '2021', poster_path: '/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg', rating: 7.9, phase: 'Phase 4' },
-  { id: 453395, tmdb_id: 453395, title: 'Doctor Strange in the Multiverse of Madness', release_year: '2022', poster_path: '/ddJcSKbcp4rKZTmuyWaMhuwcfMz.jpg', rating: 7.2, phase: 'Phase 4' },
-  { id: 616037, tmdb_id: 616037, title: 'Thor: Love and Thunder', release_year: '2022', poster_path: '/pIkRyD18kl4FhoCNQuWxWu5cBLM.jpg', rating: 6.4, phase: 'Phase 4' },
-  { id: 505642, tmdb_id: 505642, title: 'Black Panther: Wakanda Forever', release_year: '2022', poster_path: '/sv1xJUazXeYqALzczSZ3O6nkH75.jpg', rating: 7.0, phase: 'Phase 4' },
-  // Phase 5
-  { id: 640146, tmdb_id: 640146, title: 'Ant-Man and the Wasp: Quantumania', release_year: '2023', poster_path: '/qnqGbB22YJ7dSs4o6M7exTpNxPz.jpg', rating: 6.2, phase: 'Phase 5' },
-  { id: 447365, tmdb_id: 447365, title: 'Guardians of the Galaxy Vol. 3', release_year: '2023', poster_path: '/r2J02Z2OpNTctfOSN1Ydgii51I3.jpg', rating: 7.9, phase: 'Phase 5' },
-  { id: 609681, tmdb_id: 609681, title: 'The Marvels', release_year: '2023', poster_path: '/9GBhzXMFjgcZ3FdR9w3bUMMTps5.jpg', rating: 5.9, phase: 'Phase 5' },
-  { id: 533535, tmdb_id: 533535, title: 'Deadpool & Wolverine', release_year: '2024', poster_path: '/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg', rating: 7.6, phase: 'Phase 5' },
-  // Official Marvel Studios Special Presentations
-  { id: 894205, tmdb_id: 894205, title: 'Werewolf by Night', release_year: '2022', poster_path: '/mvIvNKRIJPPS7WSFarFhOAGIVnU.jpg', rating: 7.0, phase: 'Special' },
-  { id: 774752, tmdb_id: 774752, title: 'The Guardians of the Galaxy Holiday Special', release_year: '2022', poster_path: '/8dqXyslZ2hv49Oiob9UjlGSHSTR.jpg', rating: 6.8, phase: 'Special' },
-  // Phase 5 Continued & Phase 6 / Upcoming
-  { id: 822119, tmdb_id: 822119, title: 'Captain America: Brave New World', release_year: '2025', poster_path: '/pzIddUEMWhWzfvLI3TwxUG2wGoi.jpg', rating: 6.0, phase: 'Phase 5' },
-  { id: 986056, tmdb_id: 986056, title: 'Thunderbolts*', release_year: '2025', poster_path: '/hqcexYHbiTBfDIdDWxrxPtVndBX.jpg', rating: 7.3, phase: 'Phase 5' },
-  { id: 617126, tmdb_id: 617126, title: 'The Fantastic 4: First Steps', release_year: '2025', poster_path: '/nf5qaSEvyYSNeFH0YhSs5EsBLX9.jpg', rating: 6.9, phase: 'Phase 6' },
-  { id: 969681, tmdb_id: 969681, title: 'Spider-Man: Brand New Day', release_year: '2026', poster_path: '/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg', rating: 9.3, phase: 'Phase 6' },
-  // Canonical Marvel Studios Disney+ Series
-  { id: 85271, tmdb_id: 85271, title: 'WandaVision', release_year: '2021', poster_path: '/ijWWwINc8h71NQ8j1LTJMFSj5wr.jpg', rating: 8.2, media_type: 'tv', phase: 'Series' },
-  { id: 88396, tmdb_id: 88396, title: 'The Falcon and the Winter Soldier', release_year: '2021', poster_path: '/6kbAMLteGO8yyewYau6bJ683sw7.jpg', rating: 7.6, media_type: 'tv', phase: 'Series' },
-  { id: 84958, tmdb_id: 84958, title: 'Loki', release_year: '2021', poster_path: '/kEl2t3OhXc3Zb9FBh1AuYzRTgZp.jpg', rating: 8.2, media_type: 'tv', phase: 'Series' },
-  { id: 88329, tmdb_id: 88329, title: 'Hawkeye', release_year: '2021', poster_path: '/ct5pNE5dDHryHLDnxyZPYcqO1sz.jpg', rating: 7.8, media_type: 'tv', phase: 'Series' },
-  { id: 92749, tmdb_id: 92749, title: 'Moon Knight', release_year: '2022', poster_path: '/9K3lbMf8TKvL9xGEbzi7TggWCNQ.jpg', rating: 7.6, media_type: 'tv', phase: 'Series' },
-  { id: 92782, tmdb_id: 92782, title: 'Ms. Marvel', release_year: '2022', poster_path: '/3HWWh92kZbD7odwJX7nKmXNZsYo.jpg', rating: 6.3, media_type: 'tv', phase: 'Series' },
-  { id: 92783, tmdb_id: 92783, title: 'She-Hulk: Attorney at Law', release_year: '2022', poster_path: '/5xz2orV8f0usyrfGNshcoXHmiaV.jpg', rating: 6.1, media_type: 'tv', phase: 'Series' },
-  { id: 114472, tmdb_id: 114472, title: 'Secret Invasion', release_year: '2023', poster_path: '/3rINdUPSy9AklJg74jWHOyUXuZd.jpg', rating: 6.4, media_type: 'tv', phase: 'Series' },
-  { id: 122226, tmdb_id: 122226, title: 'Echo', release_year: '2024', poster_path: '/vFyJH630cF68LohVYjQW49074Sy.jpg', rating: 6.0, media_type: 'tv', phase: 'Series' },
-  { id: 138501, tmdb_id: 138501, title: 'Agatha All Along', release_year: '2024', poster_path: '/mGsxKwXUjojitRv2E9qMTbxbBRd.jpg', rating: 7.4, media_type: 'tv', phase: 'Series' },
-  { id: 202555, tmdb_id: 202555, title: 'Daredevil: Born Again', release_year: '2025', poster_path: '/xDUoAsU8lQHOOoRkFiBuarmACDN.jpg', rating: 8.2, media_type: 'tv', phase: 'Series' }
-];
-
+export const MCU_FULL_CATALOGUE = verifiedCatalogues.collections.mcu.movies;
 // Complete Marvel Multiverse & Legacy Movie and Series Catalogue (76 Films & Shows)
-export const MARVEL_COMPLETE_CATALOGUE = [
-  ...MCU_FULL_CATALOGUE,
-  // ── 20th Century Fox X-Men & Wolverine Saga ──
-  { id: 36657, tmdb_id: 36657, title: 'X-Men', release_year: '2000', poster_path: '/bRDAc4GogyS9ci3ow7UnInOcriN.jpg', rating: 7.0 },
-  { id: 36658, tmdb_id: 36658, title: 'X2: X-Men United', release_year: '2003', poster_path: '/bst4alFUXCxISwdRUKSMhhkrX1M.jpg', rating: 7.0 },
-  { id: 36668, tmdb_id: 36668, title: 'X-Men: The Last Stand', release_year: '2006', poster_path: '/a2xicU8DpKtRizOHjQLC1JyCSRS.jpg', rating: 6.4 },
-  { id: 2080, tmdb_id: 2080, title: 'X-Men Origins: Wolverine', release_year: '2009', poster_path: '/yj8LbTju1p7CUJg7US2unSBk33s.jpg', rating: 6.3 },
-  { id: 49538, tmdb_id: 49538, title: 'X-Men: First Class', release_year: '2011', poster_path: '/hNEokmUke0dazoBhttFN0o3L7Xv.jpg', rating: 7.3 },
-  { id: 76170, tmdb_id: 76170, title: 'The Wolverine', release_year: '2013', poster_path: '/t2wVAcoRlKvEIVSbiYDb8d0QqqS.jpg', rating: 6.4 },
-  { id: 127585, tmdb_id: 127585, title: 'X-Men: Days of Future Past', release_year: '2014', poster_path: '/tYfijzolzgoMOtegh1Y7j2Enorg.jpg', rating: 7.5 },
-  { id: 293660, tmdb_id: 293660, title: 'Deadpool', release_year: '2016', poster_path: '/3E53WEZJqP6aM84D8CckXx4pIHw.jpg', rating: 7.6 },
-  { id: 246655, tmdb_id: 246655, title: 'X-Men: Apocalypse', release_year: '2016', poster_path: '/ikA8UhYdTGpqbatFa93nIf6noSr.jpg', rating: 6.5 },
-  { id: 263115, tmdb_id: 263115, title: 'Logan', release_year: '2017', poster_path: '/fnbjcRDYn6YviCcePDnGdyAkYsB.jpg', rating: 7.8 },
-  { id: 383498, tmdb_id: 383498, title: 'Deadpool 2', release_year: '2018', poster_path: '/gyfPKfFYcVW54MoqhYlwwDDIfJR.jpg', rating: 7.5 },
-  { id: 320288, tmdb_id: 320288, title: 'Dark Phoenix', release_year: '2019', poster_path: '/cCTJPelKGLhALq3r51A9uMonxKj.jpg', rating: 6.0 },
-  { id: 340102, tmdb_id: 340102, title: 'The New Mutants', release_year: '2020', poster_path: '/xiDGcXJTvu1lazFRYip6g1eLt9c.jpg', rating: 6.0 },
-
-  // ── Spider-Man Legacy & Sony Universe ──
-  { id: 557, tmdb_id: 557, title: 'Spider-Man', release_year: '2002', poster_path: '/or6XJBVpcEbIkma0V9zshnbEtx4.jpg', rating: 7.4 },
-  { id: 558, tmdb_id: 558, title: 'Spider-Man 2', release_year: '2004', poster_path: '/aGuvNAaaZuWXYQQ6N2v7DeuP6mB.jpg', rating: 7.3 },
-  { id: 559, tmdb_id: 559, title: 'Spider-Man 3', release_year: '2007', poster_path: '/qFmwhVUoUSXjkKRmca5yGDEXBIj.jpg', rating: 6.5 },
-  { id: 1930, tmdb_id: 1930, title: 'The Amazing Spider-Man', release_year: '2012', poster_path: '/jexoNYnPd6vVrmygwF6QZmWPFdu.jpg', rating: 6.8 },
-  { id: 102382, tmdb_id: 102382, title: 'The Amazing Spider-Man 2', release_year: '2014', poster_path: '/bU7nTmvmy0h3VUP01v1T2imgH6N.jpg', rating: 6.6 },
-  { id: 324857, tmdb_id: 324857, title: 'Spider-Man: Into the Spider-Verse', release_year: '2018', poster_path: '/iiZZdoQBEYBv6id8su7ImL0oCbD.jpg', rating: 8.4 },
-  { id: 569094, tmdb_id: 569094, title: 'Spider-Man: Across the Spider-Verse', release_year: '2023', poster_path: '/8Vt6mWEReuy4Of61Lnj5Xj704m8.jpg', rating: 8.4 },
-  { id: 335983, tmdb_id: 335983, title: 'Venom', release_year: '2018', poster_path: '/2uNW4WbgBXL25BAbXGLnLqX71Sw.jpg', rating: 6.8 },
-  { id: 580489, tmdb_id: 580489, title: 'Venom: Let There Be Carnage', release_year: '2021', poster_path: '/pzKsRuKLFmYrW5Q0q8E8G78Tcgo.jpg', rating: 6.7 },
-  { id: 526896, tmdb_id: 526896, title: 'Morbius', release_year: '2022', poster_path: '/Av8Z2jZhEm1FLkFzMThzz9hndJF.jpg', rating: 5.9 },
-  { id: 634492, tmdb_id: 634492, title: 'Madame Web', release_year: '2024', poster_path: '/rULWuutDcN5NvtiZi4FRPzRYWSh.jpg', rating: 5.3 },
-
-  // ── Fantastic Four, Blade & Marvel Classics ──
-  { id: 9738, tmdb_id: 9738, title: 'Fantastic Four', release_year: '2005', poster_path: '/4YMcYEFS8sFuW3soP1HVmgR3cSm.jpg', rating: 5.8 },
-  { id: 1979, tmdb_id: 1979, title: 'Fantastic Four: Rise of the Silver Surfer', release_year: '2007', poster_path: '/9wRfzTcMyyzkQxVDqBHv8RwuZOv.jpg', rating: 5.6 },
-  { id: 166424, tmdb_id: 166424, title: 'Fantastic Four', release_year: '2015', poster_path: '/cDroz5qSlP8xZ6tOpeYoPkBvKyL.jpg', rating: 4.4 },
-  { id: 36647, tmdb_id: 36647, title: 'Blade', release_year: '1998', poster_path: '/oWT70TvbsmQaqyphCZpsnQR7R32.jpg', rating: 6.9 },
-  { id: 36586, tmdb_id: 36586, title: 'Blade II', release_year: '2002', poster_path: '/wAn6VYamKbnOtfyTZ6arVtkMzDv.jpg', rating: 6.6 },
-  { id: 36648, tmdb_id: 36648, title: 'Blade: Trinity', release_year: '2004', poster_path: '/6f7iXvPOnf83MaLB1JmPzUor1rr.jpg', rating: 5.9 },
-  { id: 9480, tmdb_id: 9480, title: 'Daredevil', release_year: '2003', poster_path: '/oCDBwSkntYamuw8VJIxMRCtDBmi.jpg', rating: 5.3 },
-  { id: 9947, tmdb_id: 9947, title: 'Elektra', release_year: '2005', poster_path: '/Z4dAOxjAHTUZO6DJ2WVAsxzwe3.jpg', rating: 5.0 },
-  { id: 1250, tmdb_id: 1250, title: 'Ghost Rider', release_year: '2007', poster_path: '/4quwR1VwZouD0YF9AaD72kQAjxH.jpg', rating: 5.6 },
-  { id: 71676, tmdb_id: 71676, title: 'Ghost Rider: Spirit of Vengeance', release_year: '2011', poster_path: '/xEoBT6lYfQNpSpTm8gJMTrQytiw.jpg', rating: 5.0 },
-  { id: 7220, tmdb_id: 7220, title: 'The Punisher', release_year: '2004', poster_path: '/7rmA1HwYp2GKM85BL0cVwCaosGr.jpg', rating: 6.4 },
-  { id: 13056, tmdb_id: 13056, title: 'Punisher: War Zone', release_year: '2008', poster_path: '/oOvKJgYUIpfswGHAdW6159bPbvM.jpg', rating: 5.9 },
-  { id: 1927, tmdb_id: 1927, title: 'Hulk', release_year: '2003', poster_path: '/UllIft2jLSBaay3zQyMV4GNdfy.jpg', rating: 5.6 },
-
-  // ── Hit Marvel Series & TV ──
-  { id: 138502, tmdb_id: 138502, title: 'X-Men \'97', release_year: '2024', poster_path: '/2HKBc5UiFw8JrruHq8S1Y7TnlW0.jpg', rating: 8.7, media_type: 'tv' },
-  { id: 61889, tmdb_id: 61889, title: 'Marvel\'s Daredevil', release_year: '2015', poster_path: '/QWbPaDxiB6LW2LjASknzYBvjMj.jpg', rating: 8.2, media_type: 'tv' },
-  { id: 67178, tmdb_id: 67178, title: 'Marvel\'s The Punisher', release_year: '2017', poster_path: '/tM6xqRKXoloH9UchaJEyyRE9O1w.jpg', rating: 8.2, media_type: 'tv' }
-];
-
+export const MARVEL_COMPLETE_CATALOGUE = verifiedCatalogues.collections.marvel.movies;
 export const FRANCHISE_COLLECTIONS = [
   {
     id: 'mcu',
     title: 'Marvel Cinematic Universe (MCU)',
     shortTitle: 'Marvel (MCU Canon)',
     emoji: '⚡',
-    desc: "Marvel Studios official Sacred Timeline & Multiverse: Phase 1 through Phase 5 (all 34 canonical feature films + specials).",
+    desc: "Marvel Studios films, specials, and series across the Sacred Timeline and Multiverse.",
     group: 'franchise',
     tag: 'MCU',
     catalogue: MCU_FULL_CATALOGUE,
@@ -676,4 +567,15 @@ export function getSuggestedTags(movie) {
   });
 
   return suggestions;
+}
+
+// Use a verified snapshot for every built-in catalogue and membership check.
+for(const franchise of FRANCHISE_COLLECTIONS){
+ const verified=verifiedCatalogues.collections[franchise.id];
+ if(!verified)continue;
+ franchise.catalogue=verified.movies;
+ franchise.desc=verified.scope;
+ franchise.sources=verified.sources;
+ const keys=new Set(verified.movies.map(m=>m.media_type+':'+m.tmdb_id));
+ franchise.matcher=movie=>keys.has(tmdbMediaType(movie)+':'+(movie.tmdb_id||movie.id));
 }

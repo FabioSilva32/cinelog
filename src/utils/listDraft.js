@@ -1,0 +1,1 @@
+export function listDraftFingerprint(list={}){return JSON.stringify({title:list.title||'',description:list.description||'',isRanked:Boolean(list.isRanked),isPublic:Boolean(list.isPublic),entries:(list.entries||[]).map(movie=>(movie.media_type||'movie')+':'+String(movie.tmdb_id||movie.id))});}
