@@ -56,7 +56,7 @@ try{
   await evaluate('document.querySelector(".episode-season-journal summary").click()');await input('.episode-season-journal input[type=number]','8.4');await input('.episode-season-journal textarea','Season thoughts');
   failSeason=true;await click('.episode-seasons button','Season 2');assert.ok(await waitFor('document.querySelector(".episode-tracker [role=alert]")'));failSeason=false;await click('.episode-tracker button','Retry season');assert.ok(await waitFor('document.querySelector(".episode-row h4")?.textContent.includes("A new season")'));
   await click('.episode-seasons button','Season 1');assert.ok(await waitFor('document.querySelectorAll(".episode-row").length===3'));
-  fixtures.failures.add('library');await click('.episode-tracker-heading button','Save progress');assert.ok(await waitFor('document.querySelector(".save-indicator")?.textContent.includes("Retry save")'));fixtures.failures.clear();await click('.episode-tracker-heading button','Save progress');assert.ok(await waitFor('document.querySelector(".save-indicator")?.textContent.includes("Saved to your account")'));
+  fixtures.failures.add('library');await click('.episode-tracker-heading button','Save progress');assert.ok(await waitFor('document.querySelector(".save-indicator")?.textContent.includes("Retry save")'));fixtures.failures.clear();await click('.v2-film-rail button','Save progress');assert.ok(await waitFor('document.querySelector(".save-indicator")?.textContent.includes("Saved to your account")'));
   const saved=JSON.parse(series.review.split('__EPISODE_DATA__:')[1]);assert.equal(saved.notes.S01E01,'Updated episode note');assert.equal(saved.ratings.S01E01,7.5);assert.equal(saved.season_ratings['1'],8.4);assert.equal(saved.season_notes['1'],'Season thoughts');assert.equal(saved.screenings[0].review,'Preserve historical review');assert.equal(saved.screenings[0].date,'2025-02-01');assert.equal(saved.screenings[0].rating,9);assert.ok(saved.watched.S01E02);assert.ok(!saved.watched.S01E03);
   assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+2'));
   await evaluate('document.querySelector(".episode-tracker").scrollIntoView({block:"start"})');const shot=await send('Page.captureScreenshot',{format:'png'});await writeFile('studio-previews/episode-tracker-'+device+'.png',Buffer.from(shot.data,'base64'));
@@ -69,5 +69,3 @@ try{
  assert.equal(exceptions.length,0);assert.equal(mockErrors.length,0);console.log(JSON.stringify({passed,exceptions,mockErrors},null,2));await writeFile('browser-episode-tracker-report.json',JSON.stringify({passed,exceptions,mockErrors},null,2));
  try{await Promise.race([send('Browser.close'),pause(1000)]);}catch{}
 }catch(e){console.error(e);process.exitCode=1;}finally{socket?.close();chrome.kill();}
-
-

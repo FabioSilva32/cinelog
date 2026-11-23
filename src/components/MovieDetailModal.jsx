@@ -702,7 +702,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
     }
   };
 
-  const handleSave = async ({progressOnly=false}={}) => {
+  const handleSave = async ({progressOnly=activeSection==='episodes'}={}) => {
     if(saveBusy.current)return;saveBusy.current=true;setSavePending(true);setSaveError('');try{
     const isTv = mediaApiType === 'tv' ||
                  movie.number_of_seasons !== undefined ||
@@ -861,7 +861,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
               onClick={handleSave} disabled={savePending}
               style={{ fontSize: '14px', padding: '11px 26px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800 }}
             >
-              <Plus size={17} /> {savePending?'Saving…':movie.date_added && inLibrary ? 'Save Changes' : 'Add to Library'}
+              <Plus size={17} /> {savePending?'Saving…':activeSection==='episodes'?'Save progress':movie.date_added && inLibrary ? 'Save Changes' : 'Add to Library'}
             </button>
 
             <div style={{ display: 'flex', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: '10px', padding: '3px', gap: '2px' }}>
