@@ -1,0 +1,73 @@
+import {enablePreviewAccess} from './preview-browser-access.mjs';
+const origin=process.env.CINELOG_PREVIEW_ORIGIN||'http://127.0.0.1:5180';
+import {createFixtures,viewerId,memberId} from './release-browser-fixtures.mjs';
+import {spawn} from 'node:child_process';
+import {mkdtemp,readFile,writeFile} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import assert from 'node:assert/strict';
+const pause=ms=>new Promise(r=>setTimeout(r,ms));
+const profile=await mkdtemp(join(tmpdir(),'cinelog-art-proof-'));
+const chrome=spawn('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',['--headless=new','--disable-gpu','--no-first-run','--no-default-browser-check','--remote-debugging-port=0','--user-data-dir='+profile,'about:blank'],{windowsHide:true,stdio:'ignore'});
+let socket;
+try{
+ let port;for(let i=0;i<80;i++){try{port=Number((await readFile(join(profile,'DevToolsActivePort'),'utf8')).split('\n')[0]);break;}catch{await pause(100);}}
+ assert.ok(port,'Headless Chrome is available');
+ const targets=await(await fetch('http://127.0.0.1:'+port+'/json/list')).json();
+ socket=new WebSocket(targets.find(t=>t.type==='page').webSocketDebuggerUrl);await new Promise((ok,no)=>{socket.onopen=ok;socket.onerror=no;});
+ let serial=0;const pending=new Map();socket.onmessage=e=>{const message=JSON.parse(e.data);if(message.id){const task=pending.get(message.id);pending.delete(message.id);if(message.error)task?.reject(new Error(message.error.message));else task?.resolve(message.result);}};
+ const send=(method,params={})=>new Promise((resolve,reject)=>{const id=++serial;pending.set(id,{resolve,reject});socket.send(JSON.stringify({id,method,params}));});
+ const evaluate=async expression=>{const response=await send('Runtime.evaluate',{expression,returnByValue:true});if(response.exceptionDetails)throw Error(response.exceptionDetails.exception?.description||response.exceptionDetails.text);return response.result.value;};
+ await send('Page.enable');
+ const fixtures=createFixtures(); const discoveryRequests=[];let schemaMissing=false,failSeason=false;const env=await readFile('.env.local','utf8');const backend=env.match(/^VITE_SUPABASE_URL=(.*)$/m)[1].trim().replace(/^['"]|['"]$/g,'');
+ const exceptions=[],mockErrors=[];socket.addEventListener('message',async event=>{const m=JSON.parse(event.data);if(m.method==='Runtime.exceptionThrown')exceptions.push(m.params.exceptionDetails.exception?.description||m.params.exceptionDetails.text);if(m.method==='Fetch.requestPaused'){if(new URL(m.params.request.url).origin===new URL(origin).origin)return;try{const req=m.params.request,url=new URL(req.url);let r;if(url.hostname==='api.themoviedb.org'){
+ let body={results:[],total_pages:1};
+ if(url.pathname.endsWith('/tv/1399'))body={id:1399,name:'Progress Series',first_air_date:'2025-01-01',number_of_seasons:2,overview:'A series used only for local interface tests.',seasons:[{season_number:0,name:'Specials',episode_count:1},{season_number:1,name:'Season 1',episode_count:3},{season_number:2,name:'Season 2',episode_count:1}]};
+ if(url.pathname.endsWith('/tv/1399/season/1'))body={episodes:[{season_number:1,episode_number:1,name:'Pilot',air_date:'2025-01-01'},{season_number:1,episode_number:2,name:'Return',air_date:'2025-01-02'},{season_number:1,episode_number:3,name:'Future',air_date:'2099-01-01'}]};
+ if(url.pathname.endsWith('/tv/1399/season/2'))body={episodes:[{season_number:2,episode_number:1,name:'A new season',air_date:'2025-01-03'}]};if(url.pathname.endsWith('/tv/1399/season/0'))body={episodes:[{season_number:0,episode_number:1,name:'Special',air_date:'2025-01-03'}]};if(url.pathname.endsWith('/search/movie'))body={results:[{id:717171,title:'Compact Recommendation',poster_path:'/3bhkrj58Vtu7enYsRolD1fZdja1.jpg',release_date:'2000-01-01'}]};if(url.pathname.endsWith('/watch/providers/movie'))body={results:[{provider_id:8,provider_name:'Netflix'}]};
+ if(url.pathname.endsWith('/discover/movie')){discoveryRequests.push(Object.fromEntries([...url.searchParams].filter(([k])=>k!=='api_key')));body={results:[{id:777777,title:'Discovery Film',poster_path:'/3bhkrj58Vtu7enYsRolD1fZdja1.jpg',release_date:'1995-01-01',vote_average:8}],total_pages:1};}
+ r={status:failSeason&&url.pathname.endsWith('/season/2')?503:200,body};
+ }else if(url.hostname==='generativelanguage.googleapis.com')r={status:403,body:{error:'Isolated test fallback'}};else if(req.method==='GET'&&schemaMissing&&url.pathname.endsWith('/profiles')&&url.searchParams.get('select')==='pinned_list_ids')r={status:400,body:{code:'42703',message:'column unavailable'}};else r=fixtures.respond(req);await send('Fetch.fulfillRequest',{requestId:m.params.requestId,responseCode:r.status,responseHeaders:[{name:'Content-Type',value:'application/json'},{name:'Access-Control-Expose-Headers',value:'Content-Range'},{name:'Access-Control-Allow-Origin',value:origin},{name:'Access-Control-Allow-Headers',value:'authorization,apikey,x-client-info,content-type,prefer,accept-profile,content-profile'},{name:'Access-Control-Allow-Methods',value:'GET,HEAD,POST,PATCH,PUT,DELETE,OPTIONS'},...(r.headers||[])],body:r.body===null?'':Buffer.from(JSON.stringify(r.body)).toString('base64')});}catch(e){if(/Invalid InterceptionId/.test(e.message))return;mockErrors.push(e.message);await send('Fetch.fulfillRequest',{requestId:m.params.requestId,responseCode:500,body:Buffer.from('{}').toString('base64')});}}});
+ await send('Runtime.enable');await enablePreviewAccess(send,socket,origin,[{urlPattern:backend+'/*'},{urlPattern:'https://api.themoviedb.org/*'},{urlPattern:'https://generativelanguage.googleapis.com/*'}]);
+ const key='sb-'+new URL(backend).hostname.split('.')[0]+'-auth-token';
+ await send('Page.addScriptToEvaluateOnNewDocument',{source:'window.__releaseDocument=crypto.randomUUID();localStorage.setItem('+JSON.stringify(key)+','+JSON.stringify(JSON.stringify(fixtures.session))+');'});
+ const waitFor=async expression=>{for(let i=0;i<100;i++){if(await evaluate('Boolean('+expression+')'))return true;await pause(100);}console.log('WAIT FAILED',expression,await evaluate('({body:document.body.innerText.slice(-1800),notice:document.querySelector(".save-indicator")?.innerText,card:document.querySelector(".continue-card")?.innerText})'),exceptions);return false;};
+ const navigate=async path=>{const oldDocument=await evaluate('window.__releaseDocument');await send('Page.navigate',{url:origin+path});assert.ok(await waitFor('window.__releaseDocument!=='+JSON.stringify(oldDocument||'')+' && location.pathname==='+JSON.stringify(new URL(path,origin).pathname)+' && document.querySelector(".studio-account")'),'Signed-in shell loaded');};
+ const click=async(selector,text)=>{const code=`(()=>{const button=[...document.querySelectorAll(${JSON.stringify(selector)})].find(b=>b.textContent.trim().includes(${JSON.stringify(text)}));if(!button)throw Error('Missing '+${JSON.stringify(text)});button.click();})()`;await evaluate(code);await pause(150);};
+ const input=async(selector,value)=>{await evaluate(`(()=>{const el=document.querySelector(${JSON.stringify(selector)});if(!el)throw Error('Missing input');const prototype=el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(prototype,'value').set.call(el,${JSON.stringify(value)});el.dispatchEvent(new Event('input',{bubbles:true}));})()`);};
+
+ const film=fixtures.tables.library.find(m=>m.user_id===viewerId);
+ fixtures.tables.library=fixtures.tables.library.filter(m=>m.id===film.id);
+ const series={...film,id:'88888888-8888-4888-8888-888888888888',tmdb_id:1399,media_type:'tv',title:'Progress Series',status:'watching',rating:null};fixtures.tables.library.push(series);
+ fixtures.tables.custom_lists.push({...fixtures.tables.custom_lists[0],id:'own-public',user_id:viewerId,title:'My public list'});
+ const passed=[];
+ for(const [device,width,height] of [['desktop',1440,1000],['mobile',390,844]]){
+  series.review='\n__EPISODE_DATA__:'+JSON.stringify({ratings:{S01E01:7.5},notes:{S01E01:'Preserve episode note'},dates:{S01E01:'2025-01-01'},screenings:[{id:'history',date:'2025-02-01',rating:9,review:'Preserve historical review'}]});
+  await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:device==='mobile'});
+  await navigate('/film/tv/1399');assert.ok(await waitFor('document.querySelector(".episode-tracker-entry")'));
+  await click('.episode-tracker-entry','Episode tracker');assert.ok(await waitFor('document.querySelectorAll(".episode-row").length===3'));
+  assert.ok(await evaluate('!document.querySelector(".v2-film-masthead")'),'No duplicate banner inside tracker');
+  assert.ok(await evaluate('document.querySelector(".episode-watch-toggle").getAttribute("aria-pressed")==="true"'));
+  assert.ok(await evaluate('document.querySelectorAll(".episode-watch-toggle")[2].disabled'),'Unaired episode cannot be newly marked watched');
+  await evaluate('document.querySelector(".episode-watch-toggle").click()');assert.ok(await waitFor('document.querySelector(".episode-watch-toggle").getAttribute("aria-pressed")==="false"'));
+  await click('.episode-next-actions button','Mark E1 watched');await click('.episode-next-actions button','Mark aired season watched');
+  assert.ok(await evaluate('document.querySelectorAll(".episode-watch-toggle")[1].getAttribute("aria-pressed")==="true"'));
+  await evaluate('document.querySelector(".episode-personal-log summary").click()');await input('.episode-personal-log textarea','Updated episode note');
+  await evaluate('document.querySelector(".episode-season-journal summary").click()');await input('.episode-season-journal input[type=number]','8.4');await input('.episode-season-journal textarea','Season thoughts');
+  failSeason=true;await click('.episode-seasons button','Season 2');assert.ok(await waitFor('document.querySelector(".episode-tracker [role=alert]")'));failSeason=false;await click('.episode-tracker button','Retry season');assert.ok(await waitFor('document.querySelector(".episode-row h4")?.textContent.includes("A new season")'));
+  await click('.episode-seasons button','Season 1');assert.ok(await waitFor('document.querySelectorAll(".episode-row").length===3'));
+  fixtures.failures.add('library');await click('.episode-tracker-heading button','Save progress');assert.ok(await waitFor('document.querySelector(".save-indicator")?.textContent.includes("Retry save")'));fixtures.failures.clear();await click('.episode-tracker-heading button','Save progress');assert.ok(await waitFor('document.querySelector(".save-indicator")?.textContent.includes("Saved to your account")'));
+  const saved=JSON.parse(series.review.split('__EPISODE_DATA__:')[1]);assert.equal(saved.notes.S01E01,'Updated episode note');assert.equal(saved.ratings.S01E01,7.5);assert.equal(saved.season_ratings['1'],8.4);assert.equal(saved.season_notes['1'],'Season thoughts');assert.equal(saved.screenings[0].review,'Preserve historical review');assert.equal(saved.screenings[0].date,'2025-02-01');assert.equal(saved.screenings[0].rating,9);assert.ok(saved.watched.S01E02);assert.ok(!saved.watched.S01E03);
+  assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+2'));
+  await evaluate('document.querySelector(".episode-tracker").scrollIntoView({block:"start"})');const shot=await send('Page.captureScreenshot',{format:'png'});await writeFile('studio-previews/episode-tracker-'+device+'.png',Buffer.from(shot.data,'base64'));
+  passed.push(device+': tracker navigation, watched/unwatched, bulk aired completion, ratings/notes, load/save retry and history preservation');
+  schemaMissing=true;await navigate('/profile');assert.ok(await waitFor('document.body.textContent.includes("Profile pinning is not available yet")'));assert.equal(await evaluate('document.querySelectorAll(".profile-pin").length'),0);assert.ok(await evaluate('document.querySelector(".profile-list-shelves")?.textContent.includes("My public list")'));schemaMissing=false;await navigate('/profile');assert.ok(await waitFor('document.querySelector(".profile-pin")'));passed.push(device+': missing pin schema handled without broken save controls');
+  await navigate('/picked-for-you');assert.ok(await waitFor('document.querySelector(".v2-recommendation-heading button")'));await click('.v2-recommendation-heading button','Build my shortlist');assert.ok(await waitFor('document.querySelector(".v2-recommendation-card")'));
+  const size=await evaluate('({poster:document.querySelector(".v2-featured-poster").getBoundingClientRect().width,card:document.querySelector(".v2-recommendation-card").getBoundingClientRect().width,overflow:document.documentElement.scrollWidth>innerWidth+2})');assert.ok(size.poster<=150);assert.ok(size.card<=190);assert.equal(size.overflow,false);
+  const pickShot=await send('Page.captureScreenshot',{format:'png'});await writeFile('studio-previews/compact-picks-'+device+'.png',Buffer.from(pickShot.data,'base64'));passed.push(device+': compact recommendations at desktop/mobile sizes');
+ }
+ assert.equal(exceptions.length,0);assert.equal(mockErrors.length,0);console.log(JSON.stringify({passed,exceptions,mockErrors},null,2));await writeFile('browser-episode-tracker-report.json',JSON.stringify({passed,exceptions,mockErrors},null,2));
+ try{await Promise.race([send('Browser.close'),pause(1000)]);}catch{}
+}catch(e){console.error(e);process.exitCode=1;}finally{socket?.close();chrome.kill();}
+
+

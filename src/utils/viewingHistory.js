@@ -30,9 +30,11 @@ export function updateScreenings(movie, rows) {
   return { ...movie, screenings, episode_data: data, ...(latest ? { watch_date: latest.date, rating: latest.rating ?? null, review: latest.review ?? '' } : { watch_date: null, rating: null, review: '' }), is_rewatch: screenings.length > 1, rewatch_count: screenings.length };
 }
 export const episodeKey = (season, episode) => `S${String(season).padStart(2, '0')}E${String(episode).padStart(2, '0')}`;
+export function isEpisodeWatched(data,key){if(typeof data.watched?.[key]==='boolean')return data.watched[key];return !!(data.dates?.[key]||Number(data.ratings?.[key])>0);}
+export function setEpisodeWatched(data,episode,watched,date=localDateKey(new Date())){const key=episodeKey(episode.season_number,episode.episode_number);return {...data,watched:{...data.watched,[key]:watched},...(watched?{dates:{...data.dates,[key]:data.dates?.[key]||date}}:{})};}
 export function episodeProgress(movie, episodes, today = localDateKey(new Date())) {
   const data = episodeData(movie);
-  const watched = e => {const key=episodeKey(e.season_number,e.episode_number);return !!(data.watched?.[key] || data.dates?.[key] || Number(data.ratings?.[key])>0);};
+  const watched = e => isEpisodeWatched(data,episodeKey(e.season_number,e.episode_number));
   const aired = episodes.filter(e => e.season_number > 0 && e.air_date && e.air_date <= today).sort((a,b) => a.season_number-b.season_number || a.episode_number-b.episode_number);
   return { completed: aired.filter(watched).length, total: aired.length, next: aired.find(e => !watched(e)), aired };
 }

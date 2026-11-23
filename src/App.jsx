@@ -506,7 +506,7 @@ function AppInner() {
       .catch(err => console.error('Error fetching movie details:', err));
   }, [library]);
 
-  useEffect(()=>{if(initialRoute.current?.modal==='movie'&&!restoredInitialMovie.current){restoredInitialMovie.current=true;const route=initialRoute.current;handleMovieClick(route.target,route.mediaType,{restore:true});}},[handleMovieClick]);
+  useEffect(()=>{if(isLibraryLoaded&&initialRoute.current?.modal==='movie'&&!restoredInitialMovie.current){restoredInitialMovie.current=true;const route=initialRoute.current;const target=typeof route.target==='object'?(route.target.tmdb_id||route.target.id):route.target;handleMovieClick(target,route.mediaType||route.target?.media_type,{restore:true});}},[handleMovieClick,isLibraryLoaded]);
   const openMovieDetail = handleMovieClick;
 
   const openSettings = useCallback(() => {

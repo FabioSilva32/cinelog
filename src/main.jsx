@@ -49,3 +49,5 @@ import './styles/search.css'
 import './styles/quick-log.css'
 
 import './styles/viewing.css'
+
+import './styles/episodes.css'
