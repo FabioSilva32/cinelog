@@ -1,6 +1,8 @@
+import {resolveOpenMovie} from './utils/openMovie';
 import {useSaveFeedback} from './hooks/useSaveFeedback';
 import SaveIndicator from './components/SaveIndicator';
-import {reviewSpoilerFlag} from './utils/reviews';
+import {reviewSpoilerFlag,readableReview} from './utils/reviews';
+import {episodeData as readEpisodeData} from './utils/viewingHistory';
 import {BORDER_STYLES,isUserCreator} from './utils/achievements';
 import { withViewingStatus } from './utils/quickStatus';
 import {tmdbMediaType} from './utils/screeningDetails';
@@ -34,7 +36,7 @@ const TriviaTab = lazy(() => import('./components/TriviaTab'));
 const ChallengesTab = lazy(() => import('./components/ChallengesTab'));
 const WrappedTab = lazy(() => import('./components/WrappedTab'));
 const ForYouTab = lazy(() => import('./components/ForYouTab'));
-const SocialTab = lazy(() => import('./components/SocialTab'));
+const SocialTab = lazy(() => import('./components/CommunityHub'));
 import UserProfileModal from './components/UserProfileModal';
 
 import SettingsPanel, { applyTheme, THEMES } from './components/SettingsPanel';
@@ -448,7 +450,7 @@ function AppInner() {
   const handleMovieClick = useCallback((movieOrId, mediaType, navigation = {}) => {
     lastBackPressRef.current = 0;
     if (typeof movieOrId === 'object' && movieOrId !== null) {
-      setActiveEditMovie(enhanceMovie(movieOrId));
+      setActiveEditMovie(enhanceMovie(resolveOpenMovie(movieOrId,library)));
       const tmdbId = movieOrId.tmdb_id || movieOrId.id;
       try {
         if (!navigation.restore) window.history[window.history.state?.modal==='movie'||window.history.state?.modal==='quickadd'?'replaceState':'pushState']({ modal: 'movie', id: tmdbId, movie: typeof movieOrId === 'object' ? movieOrId : null, mediaType, tab: activeTabRef.current, sub: profileSubTabRef.current }, '', filmPath(tmdbId,typeof movieOrId==='object'?tmdbMediaType(movieOrId):tmdbMediaType(library.find(item=>String(item.tmdb_id)===String(tmdbId))||{media_type:mediaType||'movie'})));
@@ -1323,36 +1325,18 @@ function AppInner() {
         tags: cleanMovie.tags,
       };
 
-      const { data: existingAddRows, error: lookupError } = await supabase
-        .from('library')
-        .select('id')
-        .eq('user_id', currentUser.id)
-        .eq('tmdb_id', cleanMovie.tmdb_id).eq('media_type',cleanMovie.media_type);
+      const { data: candidates, error: lookupError } = await supabase.from('library').select('*').eq('user_id',currentUser.id).eq('tmdb_id',cleanMovie.tmdb_id);
       if(lookupError){if(!options.silent)toast.error('Could not add title','Your library could not be checked. Please try again.');return false;}
-
-      let data, error;
-      if (existingAddRows && existingAddRows.length > 0) {
-        const targetId = existingAddRows[0].id;
-        cleanMovie.id = targetId;
-        const res = await supabase
-          .from('library')
-          .update({
-            ...addPayload,
-            id: targetId
-          })
-          .eq('id', targetId)
-          .eq('user_id', currentUser.id)
-          .select();
-        data = res.data;
-        error = res.error;
-      } else {
-        const res = await supabase
-          .from('library')
-          .insert(addPayload)
-          .select();
-        data = res.data;
-        error = res.error;
+      const existing=(candidates||[]).find(row=>row.media_type===cleanMovie.media_type||row.media_type==='anime'&&row.title?.toLowerCase()===cleanMovie.title?.toLowerCase());
+      if(existing){
+        if(activeOwner.current!==currentUser.id)return false;
+        const metadata=readEpisodeData(existing);
+        const restored={...existing,review:readableReview(existing.review),episode_data:metadata,screenings:metadata.screenings||[],episode_ratings:metadata.ratings||{},episode_notes:metadata.notes||{},episode_watch_dates:metadata.dates||{},season_ratings:metadata.season_ratings||{},season_notes:metadata.season_notes||{},season_dates:metadata.season_dates||{},watch_date:metadata.watch_date||null,contains_spoilers:reviewSpoilerFlag(existing)};
+        setLibrary(previous=>previous.some(m=>m.id===existing.id)?previous:[restored,...previous]);
+        if(!options.silent)toast.info('Already in your library',existing.title);
+        return true;
       }
+      const {data,error}=await supabase.from('library').insert(addPayload).select();
 
       if (error||!data?.[0]) {
         if(!options.silent)toast.error("Could not add title","The cloud save failed. Please try again.");return false;
@@ -1457,6 +1441,7 @@ function AppInner() {
     if (typeof userObjOrUsername === 'string') {
       target = { username: userObjOrUsername };
     }
+    setActiveEditMovie(null);setShowQuickAdd(false);setShowCommandCenter(false);
     setViewingUserProfile(target);
     setActiveTab('profile');setProfileSubTab('overview');window.scrollTo({top:0});
     try {
@@ -1468,6 +1453,13 @@ function AppInner() {
     setViewingUserProfile(null);setActiveTab('collections');
     window.history.pushState({tab:'collections',entity:true},'',listPath(list.id));
     window.dispatchEvent(new Event('cinelog:route-change'));window.scrollTo({top:0});
+  };
+  const handleOpenSocial = path => {
+    if(!String(path).startsWith('/community')&&!String(path).startsWith('/u/')&&!String(path).startsWith('/lists/'))return;
+    setActiveEditMovie(null);setShowQuickAdd(false);
+    if(String(path).startsWith('/u/')){handleOpenUserProfile({username:decodeURIComponent(path.split('/')[2]||'')});return;}
+    if(String(path).startsWith('/lists/')){handleOpenListPage({id:decodeURIComponent(path.split('/')[2]||'')});return;}
+    handleTabChange('social');window.history.replaceState({tab:'social'},'',path);window.dispatchEvent(new Event('cinelog:route-change'));
   };
 
   const updateProfileInCloud = async (updatedDetails) => {
@@ -1720,6 +1712,7 @@ function AppInner() {
       >
         <SaveIndicator sync={sync}/>
         <Header
+          onOpenSocial={handleOpenSocial}
           profileSubTab={profileSubTab}
           activeTab={activeTab}
           setActiveTab={handleTabChange}
@@ -1803,7 +1796,7 @@ function AppInner() {
           <ForYouTab library={library} currentUser={currentUser} onAddMovie={handleAddMovie} onMovieClick={handleMovieClick} />
         )}
         {activeTab === 'social' && !viewingUserProfile && (
-          <SocialTab onOpenAuth={openAuth} currentUser={currentUser} onMovieClick={handleMovieClick} onOpenUserProfile={handleOpenUserProfile} onOpenListPage={handleOpenListPage} />
+          <SocialTab key={currentUser?.id||'guest'} library={library} onAddMovie={handleAddMovie} onOpenAuth={openAuth} currentUser={currentUser} onMovieClick={handleMovieClick} onOpenUserProfile={handleOpenUserProfile} onOpenListPage={handleOpenListPage} />
         )}
         {viewingUserProfile && <ProfileTab key={viewingUserProfile.username||viewingUserProfile.id} targetUser={viewingUserProfile} currentUser={currentUser} library={library} onMovieClick={handleMovieClick} onOpenUserProfile={handleOpenUserProfile} onOpenListPage={handleOpenListPage} onOpenAuth={openAuth} onUpdateProfile={handleUpdateProfile}/>}
         </Suspense>
@@ -1811,6 +1804,7 @@ function AppInner() {
 
       {activeEditMovie && (
         <MovieDetailModal
+          onOpenSocial={handleOpenSocial}
           key={activeEditMovie.tmdb_id}
           inLibrary={library.some(m => String(m.tmdb_id) === String(activeEditMovie.tmdb_id))}
           onOpenMovie={handleMovieClick}

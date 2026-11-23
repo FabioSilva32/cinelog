@@ -1,5 +1,7 @@
 # Viewing, profiles and discovery
 
+This records the earlier viewing/profile iteration. For the complete current scope, social database setup and testing checklist, use `TODAYS-CHANGES-2026-11-23.md`. The combined social migration now includes profile pins.
+
 Production is unchanged. The reviewed source baseline was copied to `../backups/deployed-2026-11-23` before this work. All implementation work is in the experimental copy.
 
 ## Changes
@@ -14,7 +16,7 @@ Production is unchanged. The reviewed source baseline was copied to `../backups/
 
 ## Database setup
 
-Run `supabase/migrations/20261123_profile_pinned_lists.sql` in the same Supabase project used by CineLog. It adds one `text[]` profile field with an empty default, preserves all existing records, and leaves ownership controlled by the existing profile UPDATE policy. No other feature requires a schema change.
+For the current release candidate, run `supabase/migrations/20261123_social_community.sql` in the same Supabase project used by CineLog; it includes this field plus the new community tables and permissions. The earlier standalone `20261123_profile_pinned_lists.sql` only enables pins. It adds one `text[]` profile field with an empty default, preserves all existing records, and leaves ownership controlled by the existing profile UPDATE policy.
 
 ```sql
 begin;

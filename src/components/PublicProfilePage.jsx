@@ -1,3 +1,4 @@
+import TasteComparison from './social/TasteComparison';
 
 import { useEffect,useState } from 'react';
 import { supabase } from '../supabaseClient';
@@ -5,8 +6,8 @@ import { supabase } from '../supabaseClient';
 import { useFollowing } from '../hooks/useFollowing';
 import ProfileJournal from './ProfileJournal';
 import ListDetailModal from './ListDetailModal';
-export default function PublicProfilePage({targetUser,currentUser,onMovieClick,onOpenUserProfile,onOpenAuth,onOpenListPage}){
- const [data,setData]=useState(null),[error,setError]=useState(''),[selected,setSelected]=useState(null),[retry,setRetry]=useState(0);
+export default function PublicProfilePage({targetUser,currentUser,onMovieClick,onOpenUserProfile,onOpenAuth,onOpenListPage,library:viewerLibrary=[]}){
+ const [data,setData]=useState(null),[error,setError]=useState(''),[selected,setSelected]=useState(null),[retry,setRetry]=useState(0),[comparing,setComparing]=useState(false);
  const {following,toggle,pending,error:followError}=useFollowing(currentUser);
  useEffect(()=>{let live=true;setData(null);setError('');setSelected(null);
   (async()=>{
@@ -25,5 +26,5 @@ export default function PublicProfilePage({targetUser,currentUser,onMovieClick,o
  if(error)return <section className="studio-empty-results"><h1>Profile unavailable</h1><p role="alert">{error}</p><button className="studio-secondary" onClick={()=>setRetry(v=>v+1)}>Try again</button></section>;
  if(!data)return <div className="studio-loading" role="status">Loading this film journal…</div>;
  const own=data.profile.id===currentUser?.id;
- return <><ProfileJournal onOpenUserProfile={onOpenUserProfile} key={data.profile.id} currentUser={data.profile} library={data.library} readOnly lists={data.lists} listError={data.listError} onOpenList={list=>onOpenListPage?onOpenListPage(list):setSelected(list)} onMovieClick={onMovieClick} headerActions={!own&&<button className={following.has(data.profile.id)?'studio-secondary':'studio-primary'} aria-pressed={following.has(data.profile.id)} disabled={pending===data.profile.id} onClick={async()=>{if(!currentUser){onOpenAuth?.();return;}const followed=await toggle(data.profile.id);if(typeof followed==='boolean')setData(prev=>({...prev,profile:{...prev.profile,followersCount:typeof prev.profile.followersCount==='number'?Math.max(0,prev.profile.followersCount+(followed?1:-1)):undefined}}));}}>{pending?'Updating…':following.has(data.profile.id)?'Following':'Follow'}</button>}/>{followError&&<p className="screening-error" role="alert">{followError}</p>}{selected&&<ListDetailModal backLabel="Back to profile" list={selected} currentUser={currentUser} onClose={()=>setSelected(null)} onMovieClick={onMovieClick} onOpenUserProfile={onOpenUserProfile}/>}</>;
+ return <><ProfileJournal onOpenUserProfile={onOpenUserProfile} key={data.profile.id} currentUser={data.profile} library={data.library} readOnly lists={data.lists} listError={data.listError} onOpenList={list=>onOpenListPage?onOpenListPage(list):setSelected(list)} onMovieClick={onMovieClick} headerActions={<>{!own&&<button className={following.has(data.profile.id)?'studio-secondary':'studio-primary'} aria-pressed={following.has(data.profile.id)} disabled={pending===data.profile.id} onClick={async()=>{if(!currentUser){onOpenAuth?.();return;}const followed=await toggle(data.profile.id);if(typeof followed==='boolean')setData(prev=>({...prev,profile:{...prev.profile,followersCount:typeof prev.profile.followersCount==='number'?Math.max(0,prev.profile.followersCount+(followed?1:-1)):undefined}}));}}>{pending?'Updating…':following.has(data.profile.id)?'Following':'Follow'}</button>}{!own&&currentUser&&<button className="studio-secondary" onClick={()=>setComparing(true)}>Compare our taste</button>}</>}/>{comparing&&<TasteComparison ownLibrary={viewerLibrary} otherLibrary={data.library} name={data.profile.displayName||data.profile.username} onMovieClick={onMovieClick} onClose={()=>setComparing(false)}/>} {followError&&<p className="screening-error" role="alert">{followError}</p>}{selected&&<ListDetailModal backLabel="Back to profile" list={selected} currentUser={currentUser} onClose={()=>setSelected(null)} onMovieClick={onMovieClick} onOpenUserProfile={onOpenUserProfile}/>}</>;
 }

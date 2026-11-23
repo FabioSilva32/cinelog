@@ -51,3 +51,5 @@ import './styles/quick-log.css'
 import './styles/viewing.css'
 
 import './styles/episodes.css'
+
+import './styles/community.css'

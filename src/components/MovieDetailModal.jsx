@@ -1,3 +1,6 @@
+import FilmSocial from './social/FilmSocial';
+import {useSocialReady} from '../hooks/useSocial';
+import {socialPath} from '../utils/socialModel';
 import EpisodeTracker from './EpisodeTracker';
 import {episodeKey,isEpisodeWatched} from '../utils/viewingHistory';
 import {reviewSpoilerFlag} from '../utils/reviews';
@@ -64,9 +67,10 @@ const formatMoney = (n) => {
   return `$${(n / 1e6).toFixed(1)}M`;
 };
 
-export default function MovieDetailModal({ movie, currentUser, onClose, onSave, onToggleFavorite, isFavorite, onOpenUserProfile, onOpenMovie, inLibrary }) {
+export default function MovieDetailModal({ movie, currentUser, onClose, onSave, onToggleFavorite, isFavorite, onOpenUserProfile, onOpenMovie, inLibrary,onOpenSocial }) {
   useBodyScrollLock(true);
   const [mediaApiType,setMediaApiType]=useState(()=>tmdbMediaType(movie));
+  const socialReady=useSocialReady(Boolean(currentUser));
   const [detailsStatus,setDetailsStatus]=useState('loading'),[detailsError,setDetailsError]=useState(''),[detailsRetry,setDetailsRetry]=useState(0),[overviewLanguage,setOverviewLanguage]=useState('en'),[trailerInfo,setTrailerInfo]=useState(null);
   const [screeningRemoval,setScreeningRemoval]=useState(null);
 
@@ -1695,7 +1699,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
             </div>
           </div>
 
-          {activeSection==='episodes'&&<EpisodeTracker seasons={details?.seasons||[]} selectedSeason={selectedSeason} onSelectSeason={setSelectedSeason} episodes={seasonEpisodes} loading={loadingEpisodes} error={episodeLoadError} onRetry={()=>setEpisodeRetry(n=>n+1)} data={episodeData} onChange={setEpisodeData} seasonRatings={seasonRatings} seasonNotes={seasonNotes} seasonDates={seasonDates} onSeasonRating={updateSeasonRating} onSeasonNote={updateSeasonNote} onSeasonDate={updateSeasonWatchDate} onSave={()=>handleSave({progressOnly:true})} saving={savePending}/>}
+          {activeSection==='episodes'&&<EpisodeTracker seasons={details?.seasons||[]} selectedSeason={selectedSeason} onSelectSeason={setSelectedSeason} episodes={seasonEpisodes} loading={loadingEpisodes} error={episodeLoadError} onRetry={()=>setEpisodeRetry(n=>n+1)} data={episodeData} onChange={setEpisodeData} seasonRatings={seasonRatings} seasonNotes={seasonNotes} seasonDates={seasonDates} onSeasonRating={updateSeasonRating} onSeasonNote={updateSeasonNote} onSeasonDate={updateSeasonWatchDate} onSave={()=>handleSave({progressOnly:true})} saving={savePending} currentUser={currentUser} movieId={targetTmdbId} onOpenUserProfile={onOpenUserProfile} onOpenSocial={onOpenSocial}/>}
 
           {/* ── DETAILS SECTION ── */}
           {activeSection === 'details' && (
@@ -1828,6 +1832,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
               {trailerKey?<div className="screening-trailer"><div className="screening-section-heading"><h3>{trailerInfo?.official?'Official '+(trailerInfo.type||'trailer').toLowerCase():trailerInfo?.type||'Trailer'}</h3><a href={'https://www.youtube.com/watch?v='+encodeURIComponent(trailerKey)} target="_blank" rel="noopener noreferrer">Watch on YouTube ↗</a></div><TrailerPlayer videoId={trailerKey} title={(movie.title||movie.name||'Film')+' trailer'}/></div>:<div className="film-trailer-empty" role="status"><h3>{detailsStatus==='loading'?'Finding a trailer…':'Trailer'}</h3><p>{detailsStatus==='loading'?'Checking the available videos for this title.':detailsStatus==='error'||detailsError?'Trailer information could not be loaded. Try again above.':'No trailer or teaser is listed for this title yet.'}</p>{detailsStatus==='ready'&&<a href={'https://www.youtube.com/results?search_query='+encodeURIComponent((movie.title||movie.name||'')+' official trailer')} target="_blank" rel="noopener noreferrer">Find a trailer on YouTube ↗</a>}</div>}
               {cast.length > 0 && <div className="film-overview-cast"><div className="screening-section-heading"><h3>Starring</h3><button className="studio-text-button" onClick={() => setActiveSection('cast')}>View full cast →</button></div><div className="overview-cast">{cast.slice(0,6).map(person => <div key={person.id}>{person.profile_path && <img src={`https://image.tmdb.org/t/p/w185`+person.profile_path} alt="" loading="lazy" />}<strong>{person.name}</strong><span>{person.character}</span></div>)}</div></div>}
               <button className="btn btn-secondary" onClick={() => setActiveSection('streaming')}>Where to watch →</button>
+              <FilmSocial movie={{...movie,details}} currentUser={currentUser} onOpenUserProfile={onOpenUserProfile} onOpenSocial={onOpenSocial}/>
             </section>
           )}
 
@@ -1949,6 +1954,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
                             <span>{userLikedReviews[r.id] ? '❤️' : '🤍'}</span>
                             <span>{reviewLikesCounts[r.id] || 0}</span>
                           </button>
+                          {socialReady.available&&onOpenSocial&&<button className="studio-text-button" onClick={()=>onOpenSocial(socialPath('reviews',r.id))}>Discuss review ↗</button>}
                         </div>
                       </div>
                     </div>
