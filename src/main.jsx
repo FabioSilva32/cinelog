@@ -55,3 +55,5 @@ import './styles/episodes.css'
 import './styles/community.css'
 
 import './styles/screening-log.css'
+
+import './styles/community-feed.css'
