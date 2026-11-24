@@ -91,3 +91,18 @@
 @media(prefers-reduced-motion:reduce){.quick-rate-card{transition:none}}
 .quick-rate-demo{max-width:980px;padding:40px 24px;margin:auto;color:#eee}.quick-rate-demo h1{font-size:34px;letter-spacing:-1px;margin:14px 0}.quick-rate-demo p{font-size:13px;line-height:1.8;color:#bcbcbc}.quick-rate-demo-tools{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:25px 0}.quick-rate-demo-tools a{font-size:12px;color:#ddd}.quick-rate-demo section{display:grid;gap:12px;margin-top:20px}.quick-rate-demo article{display:flex;gap:20px;flex-wrap:wrap;background:#191919;border:1px solid #3b3b3b;border-radius:10px;padding:20px;font-size:13px}.quick-rate-demo article p{flex-basis:100%;margin:0}.quick-rate-demo article>span{color:#aaa}
 .quick-rate-phone-demo{padding:16px;display:grid;justify-content:center;gap:12px}.quick-rate-phone-demo>p{font-size:12px;color:#bbb;margin:0;text-align:center}.quick-rate-phone-demo a{color:#eee}.quick-rate-phone-demo iframe{display:block;width:390px;max-width:calc(100vw - 32px);height:844px;border:1px solid #444;border-radius:16px;background:#131313}
+/* Confirmation stays reachable while the poster and optional date scroll. */
+.quick-rate-dialog>footer{flex-wrap:wrap}
+.quick-rate-dialog>footer .quick-rate-confirm{margin:0;flex:0 0 100%;width:100%;gap:12px}
+.quick-rate-dialog>footer .quick-rate-confirm button{font-size:12px;min-height:44px}
+.quick-rate-fine .cinelog-rating-slider::-webkit-slider-thumb{background:var(--thumb-color)!important;box-shadow:none!important}
+.quick-rate-fine .cinelog-rating-slider::-moz-range-thumb{background:var(--thumb-color)!important;box-shadow:none!important}
+@media(max-width:650px){
+ .quick-rate-stage[data-rating=true] .quick-rate-deck{min-height:98px}
+ .quick-rate-stage[data-rating=true] .quick-rate-card-shadow{display:none}
+ .quick-rate-stage[data-rating=true] .quick-rate-card{width:100%;display:flex;align-items:center;border-radius:9px;box-shadow:none;cursor:default}
+ .quick-rate-stage[data-rating=true] .quick-rate-card>img,.quick-rate-stage[data-rating=true] .quick-rate-no-poster{width:64px;height:96px;flex-shrink:0}
+ .quick-rate-stage[data-rating=true] .quick-rate-no-poster svg{width:28px}
+ .quick-rate-stage[data-rating=true] .quick-rate-card>div:last-child{padding:12px 16px}
+}
+@media(max-width:450px){.quick-rate-score-buttons{grid-template-columns:repeat(5,minmax(0,1fr))}.quick-rate-score-buttons button{min-height:42px;font-size:12px}}
