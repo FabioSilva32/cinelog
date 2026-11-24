@@ -14,71 +14,34 @@ const ICONS = {
   warning: Zap,
 };
 
-const COLORS = {
-  success: { bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.3)', icon: '#10b981' },
-  error: { bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.3)', icon: '#ef4444' },
-  info: { bg: 'rgba(136,8,8,0.1)', border: 'rgba(136,8,8,0.3)', icon: '#c0392b' },
-  warning: { bg: 'rgba(251,191,36,0.1)', border: 'rgba(251,191,36,0.3)', icon: '#fbbf24' },
-};
-
 function ToastItem({ toast, onDismiss }) {
-  const [exiting, setExiting] = useState(false);
-  const theme = COLORS[toast.type] || COLORS.info;
-  const Icon = ICONS[toast.type] || Info;
-
+  const [paused, setPaused] = useState(false);
+  const [busy,setBusy]=useState(false),[error,setError]=useState('');
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setExiting(true);
-      setTimeout(() => onDismiss(toast.id), 320);
-    }, toast.duration || 3500);
+    if (paused || busy || error) return;
+    const timer = setTimeout(() => onDismiss(toast.id), toast.duration ?? (toast.type === 'error' ? 8000 : 2400));
     return () => clearTimeout(timer);
-  }, [toast.id, toast.duration, onDismiss]);
-
-  return (
-    <div
-      style={{
-        display: 'flex', alignItems: 'flex-start', gap: '12px',
-        background: `linear-gradient(${theme.bg}, ${theme.bg}), #141414`,
-        border: `1px solid ${theme.border}`,
-        borderLeft: `3px solid ${theme.icon}`,
-        borderRadius: '12px', padding: '12px 16px',
-        backdropFilter: 'blur(20px)', boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-        minWidth: '280px', maxWidth: '400px', cursor: 'pointer',
-        animation: exiting ? 'toastExit 0.32s cubic-bezier(0.4,0,0.2,1) forwards' : 'toastEnter 0.3s cubic-bezier(0.4,0,0.2,1) forwards',
-      }}
-      onClick={() => { setExiting(true); setTimeout(() => onDismiss(toast.id), 320); }}
-    >
-      <Icon size={18} color={theme.icon} style={{ flexShrink: 0, marginTop: '1px' }} />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        {toast.title && (
-          <div style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text)', marginBottom: '2px' }}>
-            {toast.title}
-          </div>
-        )}
-        {toast.message && (
-          <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-            {toast.message}
-          </div>
-        )}
-      </div>
-      <button
-        onClick={e => { e.stopPropagation(); setExiting(true); setTimeout(() => onDismiss(toast.id), 320); }}
-        style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: '2px', flexShrink: 0, display: 'flex', transition: 'color 0.15s' }}
-        onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
-        onMouseLeave={e => e.currentTarget.style.color = 'var(--text-dim)'}
-      >
-        <X size={14} />
-      </button>
+  }, [toast.id, toast.duration, toast.type, onDismiss, paused,busy,error]);
+  const Icon = ICONS[toast.type] || Info;
+  return <div className="cine-notice" data-type={toast.type}
+    onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}
+    onFocus={() => setPaused(true)} onBlur={() => setPaused(false)}>
+    <Icon className="cine-notice-icon" size={16} aria-hidden="true"/>
+    <div className="cine-notice-copy" role={toast.type === 'error' ? 'alert' : 'status'} aria-atomic="true">
+      {toast.title && <strong>{toast.title}</strong>}
+      {toast.message && <span>{toast.message}</span>}
+      {error&&<span role="alert">{error}</span>}
     </div>
-  );
+    {toast.action&&<button className="cine-notice-action" disabled={busy} onClick={async()=>{setBusy(true);setError('');try{await toast.action.onClick();onDismiss(toast.id);}catch(e){setError(e.message||'Could not undo. Try again.');}finally{setBusy(false);}}}>{busy?'Saving…':toast.action.label}</button>}
+    <button className="cine-notice-dismiss" aria-label="Dismiss notification" onClick={() => onDismiss(toast.id)}><X size={15}/></button>
+  </div>;
 }
-
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
 
   const addToast = useCallback((opts) => {
     const id = Date.now() + Math.random();
-    setToasts(prev => [...prev, { id, type: 'info', ...opts }]);
+    setToasts([{ id, type: 'info', ...opts }]);
     return id;
   }, []);
 
@@ -104,24 +67,9 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={toast}>
       {children}
-      <div style={{ position: 'fixed', bottom: '28px', right: '28px', zIndex: 9999, display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'flex-end', pointerEvents: 'none' }}>
-        {toasts.map(t => (
-          <div key={t.id} style={{ pointerEvents: 'all' }}>
-            <ToastItem toast={t} onDismiss={dismissToast} />
-          </div>
-        ))}
+      <div className="cine-notices" aria-label="Notifications">
+        {toasts.map(t => <ToastItem key={t.id} toast={t} onDismiss={dismissToast}/>)}
       </div>
-      <style>{`
-        @keyframes toastEnter {
-          from { opacity: 0; transform: translateX(20px) scale(0.96); }
-          to { opacity: 1; transform: translateX(0) scale(1); }
-        }
-        @keyframes toastExit {
-          from { opacity: 1; transform: translateX(0) scale(1); }
-          to { opacity: 0; transform: translateX(20px) scale(0.96); }
-        }
-      `}</style>
     </ToastContext.Provider>
   );
 }
-

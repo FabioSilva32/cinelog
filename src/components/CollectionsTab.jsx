@@ -1,3 +1,9 @@
+import {tmdbRequest,asCatalogueMovie} from '../utils/tmdbSearch';
+import {mergeCatalogue} from '../utils/catalogue';
+import {presentEditorialList} from '../utils/editorialLists';
+import {removeOwnedRecord} from '../utils/removeOwnedRecord';
+import { DEMO_USER_ID } from '../utils/following';
+import { readHistoryDestination, listPath, franchisePath, canViewCachedList } from '../utils/navigation';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, FolderHeart, Heart, Sparkles, Trash, X, Film, List, Tag, Check, Loader2, Trophy, MessageSquare, ArrowRight, BookOpen, Layers } from 'lucide-react';
 import ConfirmModal from './ConfirmModal';
@@ -10,108 +16,13 @@ import { supabase, isSupabaseConfigured } from '../supabaseClient';
 
 const COLLECTION_EMOJIS = ['📚','🎬','⭐','🔥','💎','🎭','🌟','🎪','🏆','🎯','🌙','❤️'];
 
-const MOODS = [
-  { id: 'watchlist', label: '⏳ From Watchlist', filter: m => m.status === 'plan_to_watch' },
-  { id: 'chill', label: '😌 Chill Night', filter: m => m.genres && (m.genres.includes('Comedy') || m.genres.includes('Animation') || m.genres.includes('Romance')) },
-  { id: 'excited', label: '💥 Action Packed', filter: m => m.genres && (m.genres.includes('Action') || m.genres.includes('Thriller')) },
-  { id: 'scared', label: '👻 Scare Me', filter: m => m.genres && m.genres.includes('Horror') },
-  { id: 'smart', label: '🧠 Brainy', filter: m => m.genres && (m.genres.includes('Sci-Fi') || m.genres.includes('Mystery') || m.genres.includes('Drama')) },
-  { id: 'romantic', label: '💖 Romance', filter: m => m.genres && m.genres.includes('Romance') },
-  { id: 'adventure', label: '🗺️ Adventure', filter: m => m.genres && m.genres.includes('Adventure') },
-  { id: 'favorites', label: '❤️ Re-watch Fav', filter: m => m.favorite && m.status === 'watched' },
-  { id: 'unwatched', label: '🎯 Hidden in Library', filter: m => m.status === 'plan_to_watch' && m.rating == null },
-  { id: 'any', label: '🎲 Anything!', filter: () => true },
-];
-
-function TonightPicker({ library, onMovieClick }) {
-  const [mood, setMood] = React.useState('watchlist');
-  const [pick, setPick] = React.useState(null);
-  const [spinning, setSpinning] = React.useState(false);
-  const [pickError, setPickError] = React.useState('');
-
-  const handlePick = () => {
-    const moodObj = MOODS.find(m => m.id === mood);
-    const pool = library.filter(moodObj.filter);
-    if (pool.length === 0) {
-      setPickError(`No titles match "${moodObj.label}" in your library. Try a different mood!`);
-      setTimeout(() => setPickError(''), 3000);
-      return;
-    }
-    setPickError('');
-    setSpinning(true);
-    setPick(null);
-    setTimeout(() => {
-      const chosen = pool[Math.floor(Math.random() * pool.length)];
-      setPick(chosen);
-      setSpinning(false);
-    }, 600);
-  };
-
-  return (
-    <div>
-      {/* Mood Grid */}
-      <div className="collections-mood-picker" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
-        {MOODS.map(m => (
-          <button key={m.id} onClick={() => { setMood(m.id); setPick(null); }}
-            style={{ background: mood === m.id ? 'var(--accent)' : 'rgba(255,255,255,0.04)', color: mood === m.id ? '#fff' : 'var(--text-muted)', border: `1px solid ${mood === m.id ? 'var(--accent)' : 'var(--border)'}`, borderRadius: '20px', padding: '6px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap', flexShrink: 0 }}>
-            {m.label}
-          </button>
-        ))}
-      </div>
-
-      <div style={{ display: 'flex', gap: '14px', alignItems: 'center', flexWrap: 'wrap' }}>
-        <button
-          onClick={handlePick}
-          className="btn btn-primary"
-          style={{ height: '44px', padding: '0 24px', fontSize: '14px', gap: '8px', minWidth: '180px' }}
-        >
-          {spinning ? (
-            <><div style={{ width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} /> Picking…</>
-          ) : (
-            <>🎲 Pick for Me!</>
-          )}
-        </button>
-        {pickError && (
-          <div className="animate-fade-in" style={{ fontSize: '12px', color: 'var(--red)', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', padding: '7px 14px', flex: 1 }}>
-            {pickError}
-          </div>
-        )}
-
-        {pick && (
-          <div
-            onClick={() => onMovieClick && onMovieClick(pick.tmdb_id || pick.id, pick.media_type || (pick.first_air_date || pick.name ? 'tv' : 'movie'))}
-            className="animate-fade-in"
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(136,8,8,0.08)', border: '1px solid rgba(136,8,8,0.25)', borderRadius: '12px', padding: '10px 16px', cursor: 'pointer', flex: 1, minWidth: '200px', transition: 'all 0.2s' }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(136,8,8,0.14)'; e.currentTarget.style.borderColor = 'rgba(136,8,8,0.4)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(136,8,8,0.08)'; e.currentTarget.style.borderColor = 'rgba(136,8,8,0.25)'; }}
-          >
-            {pick.poster_path ? (
-              <img src={`https://image.tmdb.org/t/p/w92${pick.poster_path}`} alt={pick.title}
-                style={{ width: '36px', height: '54px', objectFit: 'cover', borderRadius: '5px', flexShrink: 0 }} />
-            ) : (
-              <div style={{ width: '36px', height: '54px', background: 'rgba(136,8,8,0.2)', borderRadius: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>🎬</div>
-            )}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 800, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>🎬 {pick.title}</div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                {pick.release_year || '—'} · {pick.media_type === 'tv' ? 'Series' : pick.media_type === 'anime' ? 'Anime' : 'Movie'}
-                {pick.genres && pick.genres.length > 0 && ` · ${pick.genres.slice(0,2).join(', ')}`}
-              </div>
-              <div style={{ fontSize: '10px', color: 'var(--accent)', marginTop: '3px', fontWeight: 700 }}>Click to view details →</div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export default function CollectionsTab({
   library = [],
   currentUser,
   onMovieClick,
   onOpenUserProfile,
-  onSaveMovie
+  onSaveMovie,
+  onBatchAdd
 }) {
   // ── Letterboxd-Style Lists State ──────────────────────────────────────────
   const [lists, setLists] = useState(() => {
@@ -122,6 +33,7 @@ export default function CollectionsTab({
     return INITIAL_COMMUNITY_LISTS;
   });
 
+  const [cloudError,setCloudError]=useState(''),[cloudRetry,setCloudRetry]=useState(0);
   const [listsTab, setListsTab] = useState('popular'); // 'popular' | 'recent' | 'my_lists'
   const [selectedListModal, setSelectedListModal] = useState(null);
   const [showCreateListModal, setShowCreateListModal] = useState(false);
@@ -147,7 +59,7 @@ export default function CollectionsTab({
   const [isTagging, setIsTagging] = useState(false);
 
   // Sync lists to localStorage and Supabase custom_lists table
-  const handleUpdateList = async (updatedList) => {
+  const handleUpdateList = async (updatedList,{skipCloud=false}={}) => {
     setLists(prev => {
       const next = prev.map(l => l.id === updatedList.id ? updatedList : l);
       try { localStorage.setItem('cinelog_community_lists_v2', JSON.stringify(next)); } catch {}
@@ -157,7 +69,7 @@ export default function CollectionsTab({
       setSelectedListModal(updatedList);
     }
 
-    if (currentUser?.id && supabase && isSupabaseConfigured) {
+    if (!skipCloud && currentUser?.id && currentUser.id!==DEMO_USER_ID && supabase && isSupabaseConfigured) {
       try {
         await supabase.from('custom_lists').update({
           title: updatedList.title,
@@ -176,17 +88,16 @@ export default function CollectionsTab({
     }
   };
 
-  const handleSaveNewList = async (newList) => {
-    setLists(prev => {
-      const next = [newList, ...prev];
-      try { localStorage.setItem('cinelog_community_lists_v2', JSON.stringify(next)); } catch {}
-      return next;
-    });
-    setSelectedListModal(newList);
+  const handleEditList=async updated=>{
+    if(currentUser?.id&&currentUser.id!==DEMO_USER_ID&&isSupabaseConfigured){const {data,error}=await supabase.from('custom_lists').update({title:updated.title,description:updated.description||'',is_public:updated.isPublic,is_ranked:updated.isRanked,entries:updated.entries||[],updated_at:new Date().toISOString()}).eq('id',String(updated.id)).eq('user_id',currentUser.id).select('id').maybeSingle();if(error||!data)throw new Error('Your list changes could not be saved. Please try again.');}
+    await handleUpdateList(updated,{skipCloud:true});return true;
+  };
 
-    if (currentUser?.id && supabase && isSupabaseConfigured) {
+  const handleSaveNewList = async (newList) => {
+
+    if (currentUser?.id && currentUser.id!==DEMO_USER_ID && supabase && isSupabaseConfigured) {
       try {
-        await supabase.from('custom_lists').upsert({
+        const { error } = await supabase.from('custom_lists').upsert({
           id: String(newList.id),
           user_id: currentUser.id,
           title: newList.title,
@@ -204,35 +115,32 @@ export default function CollectionsTab({
             avatar: currentUser.avatar
           }
         });
+        if (error) throw error;
       } catch (e) {
-        console.warn('Could not save custom_list to Supabase:', e);
+        throw new Error('Could not sync your list. Your draft is still here; please try again.', { cause: e });
       }
     }
-  };
-
-  const handleDeleteList = async (listId) => {
     setLists(prev => {
-      const next = prev.filter(l => l.id !== listId);
+      const next = [newList, ...prev];
       try { localStorage.setItem('cinelog_community_lists_v2', JSON.stringify(next)); } catch {}
       return next;
     });
-    if (selectedListModal && selectedListModal.id === listId) {
-      setSelectedListModal(null);
-    }
+    openListPage(newList);
 
-    if (currentUser?.id && supabase && isSupabaseConfigured) {
-      try {
-        await supabase.from('custom_lists').delete().eq('id', String(listId)).eq('user_id', currentUser.id);
-      } catch (e) {
-        console.warn('Could not delete custom_list from Supabase:', e);
-      }
-    }
+    return true;
+  };
+
+  const handleDeleteList = async (listId) => {
+    if(currentUser?.id && currentUser.id!==DEMO_USER_ID && isSupabaseConfigured)await removeOwnedRecord(supabase,'custom_lists',listId,currentUser.id);
+    setLists(previous=>{const next=previous.filter(item=>item.id!==listId);try{localStorage.setItem('cinelog_community_lists_v2',JSON.stringify(next));}catch{}return next;});
+    setSelectedListModal(null);window.history.replaceState({tab:'collections'},'','/collections');window.dispatchEvent(new Event('cinelog:route-change'));return true;
   };
 
   // Fetch community and user lists from Supabase custom_lists table on mount
   useEffect(() => {
     let isMounted = true;
     async function loadCloudLists() {
+      setCloudError('');
       if (!supabase || !isSupabaseConfigured) return;
       try {
         const { data, error } = await supabase
@@ -240,9 +148,10 @@ export default function CollectionsTab({
           .select('*')
           .order('created_at', { ascending: false });
 
-        if (!error && data && data.length > 0 && isMounted) {
+        if(error)throw error;
+        if (data && data.length > 0 && isMounted) {
           const mapped = data.map(row => ({
-            id: row.id,
+            id: row.id,user_id:row.user_id,
             title: row.title,
             description: row.description,
             coverImage: row.cover_image,
@@ -251,7 +160,7 @@ export default function CollectionsTab({
             entries: row.entries || [],
             tags: row.tags || [],
             likesCount: row.likes_count || 0,
-            author: row.author_info || { id: row.user_id, username: 'cinephile' },
+            author: {...(row.author_info||{username:'cinephile'}),id:row.user_id},
             createdAt: row.created_at
           }));
 
@@ -265,12 +174,12 @@ export default function CollectionsTab({
           });
         }
       } catch (err) {
-        console.warn('Error loading custom_lists from Supabase:', err);
+        console.warn('Error loading custom_lists from Supabase:', err);if(isMounted)setCloudError('Online lists could not be loaded. Your saved lists are still available.');
       }
     }
     loadCloudLists();
     return () => { isMounted = false; };
-  }, [currentUser?.id]);
+  }, [currentUser?.id,cloudRetry]);
 
   // Real-time synchronization when movies or collections update
   useEffect(() => {
@@ -385,30 +294,7 @@ export default function CollectionsTab({
 
     // Map all franchise collections with robust keyword, tag & studio matching
     const franchiseItems = FRANCHISE_COLLECTIONS.map(f => {
-      const catalogue = f.catalogue || [];
-      const userMatched = library.filter(m => f.matcher(m));
-
-      let movies = [];
-      if (catalogue.length > 0) {
-        // Merge catalogue with user library items
-        movies = catalogue.map(catMovie => {
-          const found = library.find(libM =>
-            String(libM.tmdb_id || libM.id) === String(catMovie.tmdb_id || catMovie.id) ||
-            (libM.title && catMovie.title && libM.title.toLowerCase().trim() === catMovie.title.toLowerCase().trim())
-          );
-          return found ? { ...catMovie, ...found, inLibrary: true } : { ...catMovie, inLibrary: false, status: 'unwatched' };
-        });
-
-        // Also add any extra user movies that matched the franchise matcher but weren't in static catalogue
-        userMatched.forEach(userM => {
-          const already = movies.some(m => String(m.tmdb_id || m.id) === String(userM.tmdb_id || userM.id));
-          if (!already) {
-            movies.push({ ...userM, inLibrary: true });
-          }
-        });
-      } else {
-        movies = userMatched;
-      }
+      const movies = mergeCatalogue(f.catalogue || [],library);
 
       return {
         id: f.id,
@@ -432,7 +318,7 @@ export default function CollectionsTab({
     const crime = filterByGenre('crime');
     const thriller = filterByGenre('thriller');
     const documentary = filterByGenre('documentary');
-    const animation = filterByGenre('animation').filter(m => 
+    const animation = filterByGenre('animation').filter(m =>
       !(m.tags && m.tags.some(t => t.toLowerCase() === 'anime'))
     );
 
@@ -464,36 +350,59 @@ export default function CollectionsTab({
 
   const getMovie = (id) => library.find(m => String(m.id) === String(id) || String(m.tmdb_id) === String(id));
 
+  const [listSearch,setListSearch] = useState('');
+  const [collectionTab, setCollectionTab] = useState('community');
+
   // Filtered Community / User Lists
   const displayedLists = useMemo(() => {
-    let result = [...lists];
+    let result = lists.filter(list=>canViewCachedList(list,currentUser?.id));
     if (listsTab === 'popular') {
       result.sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0));
     } else if (listsTab === 'recent') {
       result.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     } else if (listsTab === 'my_lists') {
       result = result.filter(l =>
-        l.author?.username === currentUser?.username ||
-        l.author?.id === currentUser?.id
+        currentUser?.id && (l.user_id??l.author?.id)===currentUser.id
       );
     }
-    return result;
-  }, [lists, listsTab, currentUser]);
+    return result.filter(list => !listSearch || (list.title || '').toLowerCase().includes(listSearch.toLowerCase())).map(presentEditorialList);
+  }, [lists, listsTab, currentUser,listSearch]);
 
   const myListsCount = useMemo(() => {
     return lists.filter(l =>
-      l.author?.username === currentUser?.username ||
-      l.author?.id === currentUser?.id
+      currentUser?.id && (l.user_id??l.author?.id)===currentUser.id
     ).length;
   }, [lists, currentUser]);
 
+  const [entityLocation,setEntityLocation]=useState(()=>window.location.href);
+  const [entityError,setEntityError]=useState('');
+  const [entityRevision,setEntityRevision]=useState(0);
+  const entity=readHistoryDestination(entityLocation).entity;
+  useEffect(()=>{const sync=()=>{setEntityLocation(window.location.href);setEntityRevision(value=>value+1);setEntityError('');};window.addEventListener('popstate',sync);window.addEventListener('cinelog:route-change',sync);return()=>{window.removeEventListener('popstate',sync);window.removeEventListener('cinelog:route-change',sync);};},[]);
+  const openEntity=(kind,item)=>{window.history.pushState({tab:'collections',entity:true,collectionOwner:currentUser?.id||null,collection:kind==='franchise'?item:undefined},'',kind==='list'?listPath(item.id):franchisePath(item.id));setEntityLocation(window.location.href);setEntityError('');if(kind==='list'){setSelectedCollectionModal(null);setSelectedListModal(item);}else{setSelectedListModal(null);setSelectedCollectionModal(item);}window.scrollTo({top:0});};
+  const openListPage=item=>openEntity('list',item);
+  const openFranchisePage=item=>openEntity('franchise',{...item,id:item.id||'custom-'+String(item.title).toLowerCase().replace(/[^a-z0-9]+/g,'-')});
+  const closeEntity=()=>{if(window.history.state?.entity&&!window.history.state?.root){window.history.back();return;}window.history.replaceState({tab:'collections'},'','/collections');setEntityLocation(window.location.href);setSelectedListModal(null);setSelectedCollectionModal(null);setEntityError('');};
+  useEffect(()=>{let live=true;const route=readHistoryDestination(entityLocation).entity;if(!route)return;
+   if(route.kind==='franchise'&&route.id.startsWith('tmdb-')){
+    setSelectedListModal(null);setSelectedCollectionModal(null);
+    tmdbRequest('collection/'+encodeURIComponent(route.id.slice(5))).then(data=>{if(live)setSelectedCollectionModal({id:route.id,title:data.name,desc:data.overview||'The complete TMDB collection, in release order.',movies:(data.parts||[]).map(m=>asCatalogueMovie({...m,media_type:'movie'})).sort((a,b)=>(a.release_date||'9999').localeCompare(b.release_date||'9999'))});}).catch(e=>{if(live)setEntityError(e.message);});return()=>{live=false;};
+   }
+   if(route.kind==='franchise'){const item=automaticCollections.find(item=>String(item.id)===route.id)||(window.history.state?.collectionOwner===(currentUser?.id||null)?window.history.state?.collection:null);if(item)setSelectedCollectionModal(item);else setEntityError('This franchise could not be found.');return;}
+   const cached=lists.find(item=>String(item.id)===route.id);if(cached && canViewCachedList(cached,currentUser?.id)){setEntityError('');setSelectedListModal(cached);return;}
+   setSelectedListModal(null);
+   supabase.from('custom_lists').select('*').eq('id',route.id).maybeSingle().then(({data,error})=>{if(!live)return;if(error||!data){setEntityError('This list is private, unavailable, or has been removed.');return;}setSelectedListModal({...data,isRanked:data.is_ranked,isPublic:data.is_public,author:data.author_info,createdAt:data.created_at});}).catch(()=>{if(live)setEntityError('This list could not be loaded. Please try again.');});return()=>{live=false;};
+  },[entityLocation,entityRevision,lists,automaticCollections,currentUser?.id]);
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '42px', paddingBottom: '60px' }}>
+    <div data-detail-open={Boolean(entity)} data-collection-view={collectionTab} className="studio-collections" style={{ display: 'flex', flexDirection: 'column', gap: '28px', paddingBottom: '40px' }}>
+      <div className="studio-page-heading"><div><span className="studio-eyebrow">CURATED WITH A POINT OF VIEW</span><h1>Follow a thread.<br/>Find a whole world.</h1><p>Find a new obsession. Or put your own into a list.</p></div></div>
 
+      <nav className="studio-collection-tabs" aria-label="Collections" style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>{[['community','Community Lists'],['franchises','Franchises'],['mine',`My Lists (${myListsCount})`]].map(([id,label]) => <button key={id} className={collectionTab === id ? 'btn btn-primary' : 'btn btn-secondary'} aria-pressed={collectionTab === id} onClick={() => { setCollectionTab(id); setListsTab(id === 'mine' ? 'my_lists' : 'popular'); }}>{label}</button>)}</nav>
       {/* ────────────────────────────────────────────────────────────────────────── */}
       {/* 1. TOP SECTION: LETTERBOXD-STYLE COMMUNITY LISTS & RANKINGS                */}
       {/* ────────────────────────────────────────────────────────────────────────── */}
-      <div>
+      <div hidden={collectionTab === 'franchises'}>
+        {cloudError&&<div className="workspace-state" role="alert"><p>{cloudError}</p><button className="studio-secondary" onClick={()=>setCloudRetry(n=>n+1)}>Try again</button></div>}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -506,11 +415,11 @@ export default function CollectionsTab({
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
               <BookOpen size={22} color="var(--accent)" />
               <h2 style={{ fontSize: '26px', fontWeight: 900, letterSpacing: '-0.5px', margin: 0, color: '#fff' }}>
-                Community Lists & Curations
+                {collectionTab === 'mine' ? 'My Lists' : 'Community Lists'}
               </h2>
             </div>
             <p style={{ color: 'var(--text-muted)', fontSize: '13.5px', margin: 0 }}>
-              Browse cinephile rankings, themed lists, or build your own custom Letterboxd-style list with personal film notes.
+              Browse cinephile rankings, themed lists, or build your own custom list with personal film notes.
             </p>
           </div>
 
@@ -531,13 +440,15 @@ export default function CollectionsTab({
           </button>
         </div>
 
-        {/* List Subtabs: Popular | Recent | My Lists */}
+        <label className="studio-library-search v2-list-search"><BookOpen size={17}/><input value={listSearch} onChange={e=>setListSearch(e.target.value)} placeholder="Find a list by name…" aria-label="Search collections"/></label>
+        {collectionTab==='community'&&displayedLists[0]&&<button className="v2-editorial-list" onClick={()=>openListPage(displayedLists[0])}><div><span className="studio-eyebrow">THE CURATOR'S SHELF</span><h2>{displayedLists[0].title}</h2><p>{displayedLists[0].description || 'One point of view. A collection of great stories.'}</p><strong>Open the collection ↗</strong></div><div className="v2-list-art">{(displayedLists[0].entries || []).slice(0,4).map((entry,i)=>entry.poster_path&&<img key={entry.tmdb_id || i} src={`https://image.tmdb.org/t/p/w342${entry.poster_path}`} alt=""/>)}</div></button>}
+      {/* List Subtabs: Popular | Recent | My Lists */}
         <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', flexWrap: 'wrap' }}>
-          {[
-            { id: 'popular', label: '🔥 Popular Lists' },
-            { id: 'recent', label: '✨ Recent' },
-            { id: 'my_lists', label: `👤 My Lists (${myListsCount})` },
-          ].map(tab => (
+          {(collectionTab === 'mine' ? [] : [
+            { id: 'popular', label: 'Popular lists' },
+            { id: 'recent', label: 'Recently added' },
+
+          ]).map(tab => (
             <button
               key={tab.id}
               onClick={() => setListsTab(tab.id)}
@@ -560,7 +471,7 @@ export default function CollectionsTab({
 
         {/* Lists Grid */}
         {displayedLists.length > 0 ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 340px), 1fr))', gap: '20px' }}>
             {displayedLists.map(list => {
               const entries = list.entries || [];
               const previewPosters = entries.filter(e => e.poster_path).slice(0, 5);
@@ -568,7 +479,8 @@ export default function CollectionsTab({
               return (
                 <div
                   key={list.id}
-                  onClick={() => setSelectedListModal(list)}
+                  role="button" tabIndex={0} onKeyDown={e=>{if(e.target===e.currentTarget&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.currentTarget.click();}}} onClick={() => openListPage(list)}
+                  role="button" tabIndex={0} onKeyDown={e => { if(e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openListPage(list); } }}
                   className="glass"
                   style={{
                     borderRadius: '20px',
@@ -597,7 +509,7 @@ export default function CollectionsTab({
                     <div
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (onOpenUserProfile && list.author) {
+                        if (!list.isEditorial && onOpenUserProfile && list.author) {
                           onOpenUserProfile(list.author);
                         }
                       }}
@@ -624,7 +536,7 @@ export default function CollectionsTab({
                           fontSize: '10px',
                           fontWeight: 800
                         }}>
-                          🏆 RANKED
+                          RANKED
                         </span>
                       )}
                       <span style={{
@@ -798,27 +710,9 @@ export default function CollectionsTab({
       </div>
 
       {/* ────────────────────────────────────────────────────────────────────────── */}
-      {/* 2. TONIGHT'S PICK INTERACTIVE ROULETTE                                    */}
-      {/* ────────────────────────────────────────────────────────────────────────── */}
-      <div className="glass" style={{ borderRadius: 'var(--radius-lg)', padding: '24px', border: '1px solid rgba(136,8,8,0.2)', background: 'linear-gradient(135deg, rgba(136,8,8,0.06) 0%, rgba(59,130,246,0.04) 100%)', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '140px', height: '140px', background: 'radial-gradient(circle, rgba(136,8,8,0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
-          <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--accent-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <span style={{ fontSize: '18px' }}>🎲</span>
-          </div>
-          <div>
-            <h3 style={{ fontSize: '17px', fontWeight: 800 }}>Tonight's Pick</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '1px' }}>Can't decide? We'll pick something from your watchlist!</p>
-          </div>
-        </div>
-
-        <TonightPicker library={library} onMovieClick={onMovieClick} />
-      </div>
-
-      {/* ────────────────────────────────────────────────────────────────────────── */}
       {/* 3. CINELOG ORIGINALS & FRANCHISES (MOVED TO BOTTOM WITH DIRECT OPENING)    */}
       {/* ────────────────────────────────────────────────────────────────────────── */}
-      <div>
+      <div hidden={collectionTab !== 'franchises'}>
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -901,8 +795,9 @@ export default function CollectionsTab({
             return (
               <div
                 key={col.id}
-                onClick={() => setSelectedCollectionModal(col)}
-                className="glass"
+                onClick={() => openFranchisePage(col)}
+                role="button" tabIndex={0} onKeyDown={e => { if(e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openFranchisePage(col); } }}
+                className="glass franchise-catalogue-card"
                 style={{
                   borderRadius: 'var(--radius-lg)',
                   overflow: 'hidden',
@@ -1041,18 +936,18 @@ export default function CollectionsTab({
       {/* ────────────────────────────────────────────────────────────────────────── */}
       {/* 4. SMART AUTO-TAG COLLECTIONS (DEDUPLICATED AGAINST FRANCHISES)           */}
       {/* ────────────────────────────────────────────────────────────────────────── */}
-      {Object.keys(smartCollections).length > 0 && (
+      {collectionTab === 'mine' && Object.keys(smartCollections).length > 0 && (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
             <Sparkles size={18} color="var(--accent)" />
             <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>Smart Tag Collections</h3>
             <span style={{ fontSize: '12px', color: 'var(--text-dim)', marginLeft: '4px' }}>Auto-grouped from your unique custom tags</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: '16px' }}>
             {Object.entries(smartCollections).map(([tag, movies]) => (
               <div
                 key={tag}
-                onClick={() => setSelectedCollectionModal({
+                onClick={() => openFranchisePage({
                   id: 'tag-' + tag,
                   title: tag,
                   emoji: '🏷️',
@@ -1133,7 +1028,7 @@ export default function CollectionsTab({
               return (
                 <div
                   key={title}
-                  onClick={() => setSelectedCollectionModal({
+                  onClick={() => openFranchisePage({
                     id: 'custom-' + title,
                     title,
                     emoji: meta.emoji || '🎬',
@@ -1176,15 +1071,17 @@ export default function CollectionsTab({
         </div>
       )}
 
+      {entity&&!selectedListModal&&!selectedCollectionModal&&<section className="entity-page studio-empty-results"><h1>{entityError?'Page unavailable':'Loading collection…'}</h1>{entityError&&<><p role="alert">{entityError}</p><button className="studio-secondary" onClick={()=>{setEntityError('');setEntityRevision(n=>n+1);}}>Try again</button></>}<button className="studio-secondary" onClick={closeEntity}>Back to collections</button></section>}
       {/* ── MODALS ── */}
       {selectedListModal && (
-        <ListDetailModal
+        <ListDetailModal isPage
           list={selectedListModal}
           currentUser={currentUser}
-          onClose={() => setSelectedListModal(null)}
+          onClose={closeEntity}
           onMovieClick={onMovieClick}
           onOpenUserProfile={onOpenUserProfile}
           onUpdateList={handleUpdateList}
+          onEditList={handleEditList} library={library}
           onDeleteList={handleDeleteList}
         />
       )}
@@ -1200,9 +1097,9 @@ export default function CollectionsTab({
       )}
 
       {selectedCollectionModal && (
-        <CollectionDetailModal
-          collection={selectedCollectionModal}
-          onClose={() => setSelectedCollectionModal(null)}
+        <CollectionDetailModal isPage
+          collection={selectedCollectionModal} library={library} onBatchAdd={onBatchAdd}
+          onClose={closeEntity}
           onMovieClick={onMovieClick}
         />
       )}

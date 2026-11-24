@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:extras": "node scripts/extras-interactions.mjs",
+    "check:release": "node scripts/check-release.mjs",
+    "test:security": "node --test scripts/release-security.test.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",
@@ -21,10 +24,12 @@
     "react-dom": "^19.2.7"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.6.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
     "oxlint": "^1.69.0",
+    "react-test-renderer": "^19.2.7",
     "sharp": "^0.35.5",
     "vite": "^8.1.0"
   }

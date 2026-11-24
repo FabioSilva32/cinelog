@@ -1,0 +1,17 @@
+node_modules
+android
+dist
+.env*
+.git
+.vercel
+studio-previews
+public/mockups
+backups
+*.log
+*.apk
+*.aab
+*-report.json
+audit-*.json
+public-api-audit.json
+supabase
+*.sql

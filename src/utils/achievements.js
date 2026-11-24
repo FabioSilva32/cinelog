@@ -1,6 +1,31 @@
 // CineLog System: Strictly Separated Achievements & Shop Catalog (Zero Overlaps)
 
 export const ACHIEVEMENTS = [
+{id:"lunar_archive",title:"Lunar Archivist",description:"Watch fifteen science-fiction titles.",target:15,check:lib=>lib.filter(m=>m.status==='watched'&&(m.genres||[]).some(g=>/science fiction|sci-fi/i.test(String(g.name||g)))).length,reward:{type:'border_and_badge',badgeName:"Lunar Archivist",borderId:"lunar-archivist",borderName:"Lunar Archivist"}},
+{id:"tidebound",title:"Tidebound",description:"Watch fifteen adventure titles.",target:15,check:lib=>lib.filter(m=>m.status==='watched'&&(m.genres||[]).some(g=>/^adventure$/i.test(String(g.name||g)))).length,reward:{type:'border_and_badge',badgeName:"Tidebound",borderId:"tidebound",borderName:"Tidebound"}},
+{id:"velvet_marquee",title:"Velvet Marquee",description:"Watch fifteen titles released before 1980.",target:15,check:lib=>lib.filter(m=>m.status==='watched'&&parseInt(m.release_year)>0&&parseInt(m.release_year)<1980).length,reward:{type:'border_and_badge',badgeName:"Velvet Marquee",borderId:"velvet-marquee",borderName:"Velvet Marquee"}},
+{id:"paper_crane",title:"Paper Crane",description:"Watch fifteen animated titles.",target:15,check:lib=>lib.filter(m=>m.status==='watched'&&(m.genres||[]).some(g=>/^animation$/i.test(String(g.name||g)))).length,reward:{type:'border_and_badge',badgeName:"Paper Crane",borderId:"paper-crane",borderName:"Paper Crane"}},
+{id:"orbital_voyager",title:"Orbital Voyager",description:"Watch ten science-fiction titles.",target:10,check:lib=>lib.filter(m=>m.status==='watched'&&(m.genres||[]).some(g=>/science fiction|sci-fi/i.test(String(g.name||g)))).length,reward:{type:'border_and_badge',badgeName:"Orbital Voyager",borderId:"orbit-voyager",borderName:"Orbital Voyager"}},
+{id:"noir_raven",title:"Noir Raven",description:"Watch ten crime or thriller titles.",target:10,check:lib=>lib.filter(m=>m.status==='watched'&&(m.genres||[]).some(g=>/^(crime|thriller)$/i.test(String(g.name||g)))).length,reward:{type:'border_and_badge',badgeName:"Noir Raven",borderId:"noir-raven",borderName:"Noir Raven"}},
+{id:"critics_quill",title:"The Critics Quill",description:"Write ten reviews of at least 200 characters.",target:10,check:lib=>lib.filter(m=>(m.review||'').trim().length>=200).length,reward:{type:'border_and_badge',badgeName:"The Critics Quill",borderId:"critics-quill",borderName:"The Critics Quill"}},
+{id:"emerald_dragon",title:"Emerald Dragon",description:"Watch ten fantasy titles.",target:10,check:lib=>lib.filter(m=>m.status==='watched'&&(m.genres||[]).some(g=>/^fantasy$/i.test(String(g.name||g)))).length,reward:{type:'border_and_badge',badgeName:"Emerald Dragon",borderId:"dragon-screen",borderName:"Emerald Dragon"}},
+{id:"archive_keeper",title:"Archive Keeper",description:"Watch titles from six different decades.",target:6,check:lib=>new Set(lib.filter(m=>m.status==='watched').map(m=>Math.floor(parseInt(m.release_year)/10)).filter(Number.isFinite)).size,reward:{type:'border_and_badge',badgeName:"Archive Keeper",borderId:"archive-reel",borderName:"Archive Keeper"}},
+{id:"festival_wreath",title:"Festival Wreath",description:"Watch fifty titles and write ten reviews.",target:1,check:lib=>Number(lib.filter(m=>m.status==='watched').length>=50&&lib.filter(m=>(m.review||'').trim().length>=20).length>=10),reward:{type:'border_and_badge',badgeName:"Festival Wreath",borderId:"festival-wreath",borderName:"Festival Wreath"}},
+{id:'shelf_mystery',title:'Mystery Collector',description:'Watch ten mystery titles.',target:10,check:lib=>lib.filter(m=>m.status==='watched'&&(m.genres||[]).some(g=>String(g.name||g).toLowerCase()==='mystery')).length,reward:{type:'badge',badgeName:'Mystery Collector'}},
+{id:'shelf_fantasy',title:'Fantasy Collector',description:'Watch ten fantasy titles.',target:10,check:lib=>lib.filter(m=>m.status==='watched'&&(m.genres||[]).some(g=>String(g.name||g).toLowerCase()==='fantasy')).length,reward:{type:'badge',badgeName:'Fantasy Collector'}},
+{id:'shelf_adventure',title:'Adventure Collector',description:'Watch ten adventure titles.',target:10,check:lib=>lib.filter(m=>m.status==='watched'&&(m.genres||[]).some(g=>String(g.name||g).toLowerCase()==='adventure')).length,reward:{type:'badge',badgeName:'Adventure Collector'}},
+{id:'shelf_romance',title:'Romance Collector',description:'Watch ten romance titles.',target:10,check:lib=>lib.filter(m=>m.status==='watched'&&(m.genres||[]).some(g=>String(g.name||g).toLowerCase()==='romance')).length,reward:{type:'badge',badgeName:'Romance Collector'}},
+{id:'shelf_crime',title:'Crime Collector',description:'Watch ten crime titles.',target:10,check:lib=>lib.filter(m=>m.status==='watched'&&(m.genres||[]).some(g=>String(g.name||g).toLowerCase()==='crime')).length,reward:{type:'badge',badgeName:'Crime Collector'}},
+{id:'shelf_history',title:'History Collector',description:'Watch ten history titles.',target:10,check:lib=>lib.filter(m=>m.status==='watched'&&(m.genres||[]).some(g=>String(g.name||g).toLowerCase()==='history')).length,reward:{type:'badge',badgeName:'History Collector'}},
+{id:"decade_hopper",title:"Decade Hopper",description:"Watch titles from five different decades.",target:5,check:library=>new Set(library.filter(m=>m.status==='watched').map(m=>Math.floor(parseInt(m.release_year)/10)).filter(Number.isFinite)).size,reward:{type:'badge',badgeName:"Decade Hopper"}},
+{id:"animation_evening",title:"Animated Imagination",description:"Watch ten animated titles.",target:10,check:library=>library.filter(m=>m.status==='watched'&&(m.genres||[]).some(g=>String(g.name||g).toLowerCase()==='animation')).length,reward:{type:'badge',badgeName:"Animated Imagination"}},
+{id:"comedy_club",title:"Comedy Club",description:"Watch ten comedies.",target:10,check:library=>library.filter(m=>m.status==='watched'&&(m.genres||[]).some(g=>String(g.name||g).toLowerCase()==='comedy')).length,reward:{type:'badge',badgeName:"Comedy Club"}},
+{id:"documentary_eye",title:"Documentary Eye",description:"Watch five documentaries.",target:5,check:library=>library.filter(m=>m.status==='watched'&&(m.genres||[]).some(g=>String(g.name||g).toLowerCase()==='documentary')).length,reward:{type:'badge',badgeName:"Documentary Eye"}},
+{id:"words_matter",title:"Words Matter",description:"Write five reviews of at least 200 characters.",target:5,check:library=>library.filter(m=>(m.review||'').trim().length>=200).length,reward:{type:'badge',badgeName:"Words Matter"}},
+{id:"century_screen",title:"A Century on Screen",description:"Watch a title released before 1960.",target:1,check:library=>library.filter(m=>m.status==='watched'&&parseInt(m.release_year)>0&&parseInt(m.release_year)<1960).length,reward:{type:'badge',badgeName:"A Century on Screen"}},
+  {id:'opening_frame',title:'Opening Frame',description:'Log your first watched title.',target:1,check:library=>library.filter(m=>m.status==='watched').length,reward:{type:'badge',badgeName:'Opening Frame'}},
+  {id:'encore',title:'Encore',description:'Return to a favorite with a second logged screening.',target:1,check:library=>library.filter(m=>(m.screenings||m.episode_data?.screenings||[]).length>=2).length,reward:{type:'badge',badgeName:'Encore'}},
+  {id:'personal_canon',title:'Personal Canon',description:'Mark six titles as favorites.',target:6,check:library=>library.filter(m=>m.favorite||m.is_favorite).length,reward:{type:'badge',badgeName:'Personal Canon'}},
   {
     id: 'bronze_watcher',
     title: 'Bronze Watcher',
@@ -227,221 +252,494 @@ export const ACHIEVEMENTS = [
 // ── BORDER STYLES CATALOG ───────────────────────────────────────────────────
 // Divided cleanly between (1) Achievements, (2) CinePoints Shop, (3) Creator
 export const BORDER_STYLES = {
-  none: {
-    name: 'Default Border',
-    category: 'base',
-    style: { border: '3px solid rgba(255,255,255,0.1)' }
-  },
-
-  // ── ACHIEVEMENT BORDERS (Unlocked via Milestones) ──
-  bronze: {
-    name: '🥉 Bronze Border',
-    category: 'achievement',
-    style: { border: '3px solid #cd7f32', boxShadow: '0 0 10px rgba(205,127,50,0.5)' }
-  },
-  silver: {
-    name: '🥈 Silver Border',
-    category: 'achievement',
-    style: { border: '3px solid #e0e0e0', boxShadow: '0 0 12px rgba(255,255,255,0.6)' }
-  },
-  gold: {
-    name: '🥇 Gold Border',
-    category: 'achievement',
-    style: { border: '3px solid #fbbf24', boxShadow: '0 0 15px rgba(251,191,36,0.75)' }
-  },
-  'crystal-diamond': {
-    name: '💎 Crystal Diamond Border',
-    category: 'achievement',
-    style: {
-      border: '4px solid transparent',
-      backgroundImage: 'linear-gradient(#0a0813, #0a0813), linear-gradient(135deg, #38bdf8, #fff, #818cf8)',
-      backgroundOrigin: 'border-box',
-      backgroundClip: 'padding-box, border-box',
-      boxShadow: '0 0 20px rgba(56,189,248,0.9)',
-      animation: 'pulse-glow 2.5s infinite alternate'
+  "orbit-voyager": {
+    "name": "Orbital Voyager",
+    "desc": "An orbital arc and satellite that travel beyond the portrait.",
+    "category": "achievement",
+    "style": {
+      "border": "3px solid #64d9f5",
+      "background": "#18181b",
+      "boxShadow": "0 2px 12px #0006"
     }
   },
-  'cinema-overlord': {
-    name: '👑 Cinema Overlord Border',
-    category: 'achievement',
-    style: {
-      border: '4px solid transparent',
-      backgroundImage: 'linear-gradient(#0a0813, #0a0813), linear-gradient(135deg, #f59e0b, #ec4899, #8b5cf6, #f59e0b)',
-      backgroundOrigin: 'border-box',
-      backgroundClip: 'padding-box, border-box',
-      boxShadow: '0 0 24px rgba(245,158,11,0.9), inset 0 0 8px rgba(236,72,153,0.5)',
-      animation: 'hue-rotation 5s infinite linear'
+  "noir-raven": {
+    "name": "Noir Raven",
+    "desc": "Sculpted raven wings framing the face.",
+    "category": "achievement",
+    "style": {
+      "border": "3px solid #c9c3e2",
+      "background": "#18181b",
+      "boxShadow": "0 2px 12px #0006"
     }
   },
-  'emerald-glow': {
-    name: '🌿 Emerald Glow Border',
-    category: 'achievement',
-    style: { border: '3.5px solid #10b981', boxShadow: '0 0 16px rgba(16,185,129,0.85)' }
-  },
-  'sapphire-glow': {
-    name: '💙 Sapphire Glow Border',
-    category: 'achievement',
-    style: { border: '3.5px solid #3b82f6', boxShadow: '0 0 16px rgba(59,130,246,0.85)' }
-  },
-  'rose-quartz': {
-    name: '🌸 Rose Quartz Border',
-    category: 'achievement',
-    style: { border: '3.5px solid #f472b6', boxShadow: '0 0 16px rgba(244,114,182,0.85)' }
-  },
-  'scifi-nebula': {
-    name: '🚀 Sci-Fi Nebula Border',
-    category: 'achievement',
-    style: {
-      border: '4px solid transparent',
-      backgroundImage: 'linear-gradient(#0a0813, #0a0813), linear-gradient(135deg, #06b6d4, #3b82f6, #8b5cf6)',
-      backgroundOrigin: 'border-box',
-      backgroundClip: 'padding-box, border-box',
-      boxShadow: '0 0 18px rgba(6,182,212,0.85)',
-      animation: 'pulse-glow 2s infinite alternate'
+  "critics-quill": {
+    "name": "The Critics Quill",
+    "desc": "An engraved feather and inkwell for thoughtful reviews.",
+    "category": "achievement",
+    "style": {
+      "border": "3px solid #e9c786",
+      "background": "#18181b",
+      "boxShadow": "0 2px 12px #0006"
     }
   },
-  'nightmare-blood': {
-    name: '🩸 Nightmare Crimson Border',
-    category: 'achievement',
-    style: { border: '3.5px solid #dc2626', boxShadow: '0 0 18px rgba(220,38,38,0.9), inset 0 0 6px rgba(220,38,38,0.5)' }
-  },
-  'anime-sakura': {
-    name: '🌸 Anime Sakura Border',
-    category: 'achievement',
-    style: { border: '3.5px solid #ec4899', boxShadow: '0 0 18px rgba(236,72,153,0.85)' }
-  },
-  'genre-prismatic': {
-    name: '🌈 Prismatic Genre Border',
-    category: 'achievement',
-    style: {
-      border: '4px solid transparent',
-      backgroundImage: 'linear-gradient(#0a0813, #0a0813), linear-gradient(135deg, #ef4444, #f59e0b, #10b981, #3b82f6, #8b5cf6)',
-      backgroundOrigin: 'border-box',
-      backgroundClip: 'padding-box, border-box',
-      boxShadow: '0 0 20px rgba(139,92,246,0.85)',
-      animation: 'hue-rotation 6s infinite linear'
+  "dragon-screen": {
+    "name": "Emerald Dragon",
+    "desc": "A scaled crest, horns and a dragon seal.",
+    "category": "achievement",
+    "style": {
+      "border": "3px solid #69d9aa",
+      "background": "#18181b",
+      "boxShadow": "0 2px 12px #0006"
     }
   },
-  'curator-heart': {
-    name: '💖 Curator Passion Border',
-    category: 'achievement',
-    style: { border: '3.5px solid #f43f5e', boxShadow: '0 0 18px rgba(244,63,94,0.9)' }
-  },
-  'chrono-rewind': {
-    name: '⏳ Chrono Rewind Border',
-    category: 'achievement',
-    style: { border: '3.5px solid #06b6d4', boxShadow: '0 0 16px rgba(6,182,212,0.85)', animation: 'pulse-glow 2s infinite alternate' }
-  },
-  'fire-glow': {
-    name: '🔥 Solar Flare Border',
-    category: 'achievement',
-    style: { border: '3.5px solid #f97316', boxShadow: '0 0 18px rgba(249,115,22,0.9)', animation: 'pulse-glow 1.5s infinite alternate' }
-  },
-
-  // ── EXCLUSIVE CINEPOINTS SHOP BORDERS (Purchased with Points Only) ──
-  'cyber-violet': {
-    name: '🌌 Cyber Violet Aura',
-    category: 'shop',
-    cost: 150,
-    desc: 'Glowing animated violet cyber border',
-    style: { border: '4px solid #8b5cf6', boxShadow: '0 0 20px rgba(139,92,246,0.95), 0 0 30px rgba(168,85,247,0.5)', animation: 'pulse-glow 2s infinite alternate' }
-  },
-  'plasma-red': {
-    name: '⚡ Plasma Crimson Pulse',
-    category: 'shop',
-    cost: 250,
-    desc: 'Animated fiery red plasma surges',
-    style: { border: '4px solid #ef4444', boxShadow: '0 0 22px rgba(239,68,68,0.95), inset 0 0 8px rgba(248,113,113,0.6)', animation: 'pulse-glow 1.5s infinite alternate' }
-  },
-  'matrix-code': {
-    name: '💻 Matrix Code Shift',
-    category: 'shop',
-    cost: 350,
-    desc: 'Cascading digital cyber cipher ring',
-    style: { border: '4px solid #22c55e', boxShadow: '0 0 22px rgba(34,197,94,0.95), inset 0 0 8px rgba(34,197,94,0.6)' }
-  },
-  'hyperdrive': {
-    name: '🚀 Hyperdrive Warp Speed',
-    category: 'shop',
-    cost: 500,
-    desc: 'Chrono light-speed warp streak animation',
-    style: {
-      border: '4px solid transparent',
-      backgroundImage: 'linear-gradient(#0a0813, #0a0813), linear-gradient(135deg, #06b6d4, #3b82f6, #fff)',
-      backgroundOrigin: 'border-box',
-      backgroundClip: 'padding-box, border-box',
-      boxShadow: '0 0 24px rgba(6,182,212,0.95), inset 0 0 8px rgba(59,130,246,0.6)',
-      animation: 'pulse-glow 1.8s infinite alternate'
+  "archive-reel": {
+    "name": "Archive Reel",
+    "desc": "Perforated film rails and a miniature reel.",
+    "category": "achievement",
+    "style": {
+      "border": "3px solid #d9aa76",
+      "background": "#18181b",
+      "boxShadow": "0 2px 12px #0006"
     }
   },
-  'royal-amethyst': {
-    name: '💎 Royal Amethyst Crown',
-    category: 'shop',
-    cost: 750,
-    desc: 'Imperial royal gemstone aura with hue rotation',
-    style: {
-      border: '4px solid transparent',
-      backgroundImage: 'linear-gradient(#0a0813, #0a0813), linear-gradient(135deg, #c084fc, #fbbf24, #a855f7)',
-      backgroundOrigin: 'border-box',
-      backgroundClip: 'padding-box, border-box',
-      boxShadow: '0 0 25px rgba(192,132,252,0.95), 0 0 10px rgba(251,191,36,0.6)',
-      animation: 'hue-rotation 6s infinite linear'
+  "festival-wreath": {
+    "name": "Festival Wreath",
+    "desc": "A champagne laurel wreath and star medallion.",
+    "category": "achievement",
+    "style": {
+      "border": "3px solid #efd591",
+      "background": "#18181b",
+      "boxShadow": "0 2px 12px #0006"
     }
   },
-  'supernova-gold': {
-    name: '🌟 Supernova Stellar Blast',
-    category: 'shop',
-    cost: 1000,
-    desc: 'Ultra-radiant celestial cosmic explosion',
-    style: {
-      border: '4px solid transparent',
-      backgroundImage: 'linear-gradient(#0a0813, #0a0813), linear-gradient(135deg, #fbbf24, #f59e0b, #fff, #fbbf24)',
-      backgroundOrigin: 'border-box',
-      backgroundClip: 'padding-box, border-box',
-      boxShadow: '0 0 0 2px rgba(251,191,36,0.4), 0 0 28px rgba(251,191,36,0.95), inset 0 0 10px rgba(255,255,255,0.7)',
-      animation: 'hue-rotation 8s infinite linear'
+  "copper-reel": {
+    "name": "Copper Reel",
+    "cost": 300,
+    "desc": "Warm brushed copper, framed in charcoal.",
+    "style": {
+      "border": "5px ridge #cd8b5b",
+      "background": "#39251e",
+      "boxShadow": "0 0 0 2px #201a18"
+    },
+    "category": "shop"
+  },
+  "porcelain": {
+    "name": "Porcelain",
+    "cost": 350,
+    "desc": "A crisp ivory double rim.",
+    "style": {
+      "border": "5px double #eee8d9",
+      "background": "#33312b",
+      "boxShadow": "0 0 0 2px #535047"
+    },
+    "category": "shop"
+  },
+  "emerald-premiere": {
+    "name": "Emerald Premiere",
+    "cost": 550,
+    "desc": "Deep emerald with a champagne edge.",
+    "style": {
+      "border": "5px double #4bdca2",
+      "background": "#123e2f",
+      "boxShadow": "0 0 0 2px #b99a59"
+    },
+    "category": "shop"
+  },
+  "red-carpet": {
+    "name": "Red Carpet",
+    "cost": 600,
+    "desc": "Lacquer red with a satin black inset.",
+    "style": {
+      "border": "5px ridge #ed2347",
+      "background": "#4f101c",
+      "boxShadow": "0 0 0 2px #252525"
+    },
+    "category": "shop"
+  },
+  "ruby-signet": {
+    "name": "Ruby Signet",
+    "cost": 450,
+    "desc": "A lacquered crimson rim with a fine silver inner edge.",
+    "style": {
+      "border": "4px double #ff3554",
+      "boxShadow": "0 0 0 2px #291015, inset 0 0 0 1px #edc8cc",
+      "background": "#5b1427"
+    },
+    "category": "shop"
+  },
+  "celluloid": {
+    "name": "Celluloid",
+    "cost": 400,
+    "desc": "Perforated ivory film stock against a charcoal reel.",
+    "style": {
+      "border": "4px dashed #e5d7b9",
+      "boxShadow": "0 0 0 3px #26231e, 0 0 0 4px #81745c",
+      "background": "#171613"
+    },
+    "category": "shop"
+  },
+  "platinum-cut": {
+    "name": "Platinum Cut",
+    "cost": 650,
+    "desc": "Brushed platinum, cut with a precise dark inner ring.",
+    "style": {
+      "border": "5px ridge #d6dce4",
+      "boxShadow": "0 0 0 2px #32363d, 0 5px 16px #0008",
+      "background": "#a0a7b2"
+    },
+    "category": "shop"
+  },
+  "festival-laurel": {
+    "name": "Festival Laurel",
+    "cost": 700,
+    "desc": "A champagne wreath for your personal premiere.",
+    "style": {
+      "border": "5px double #e8c778",
+      "boxShadow": "0 0 0 2px #514124, 0 4px 18px #0007",
+      "background": "#2b2417"
+    },
+    "category": "shop"
+  },
+  "noir-etch": {
+    "name": "Noir Etching",
+    "cost": 350,
+    "desc": "An understated graphite frame with an etched silver edge.",
+    "style": {
+      "border": "4px groove #82828c",
+      "boxShadow": "0 0 0 2px #161619",
+      "background": "#38383f"
+    },
+    "category": "shop"
+  },
+  "ruby-halo": {
+    "name": "Ruby halo",
+    "category": "base",
+    "style": {
+      "border": "3px solid #a6354d",
+      "boxShadow": "0 0 0 3px #1b1114,0 0 0 4px #55303a"
     }
   },
-  'frostbite-ice': {
-    name: '❄️ Cryo Frostbite Ring',
-    category: 'shop',
-    cost: 600,
-    desc: 'Glacial cryo-freeze frost ring',
-    style: {
-      border: '4px solid #67e8f9',
-      boxShadow: '0 0 22px rgba(103,232,249,0.95), inset 0 0 8px rgba(255,255,255,0.8)',
-      animation: 'pulse-glow 2s infinite alternate'
+  "silverline": {
+    "name": "Brushed silver",
+    "category": "base",
+    "style": {
+      "border": "3px solid #aaa9a3",
+      "boxShadow": "0 0 0 3px #151515,0 0 0 4px #4a4b48"
     }
   },
-  'void-shadow': {
-    name: '🌑 Abyssal Void Horizon',
-    category: 'shop',
-    cost: 850,
-    desc: 'Dark matter event horizon vortex',
-    style: {
-      border: '4px solid #6366f1',
-      boxShadow: '0 0 26px rgba(99,102,241,0.95), 0 0 40px rgba(15,23,42,0.9)',
-      animation: 'pulse-glow 3s infinite alternate'
+  "gilt": {
+    "name": "Gilt edge",
+    "category": "base",
+    "style": {
+      "border": "3px solid #b79a65",
+      "boxShadow": "0 0 0 3px #181512,0 0 0 4px #655338"
     }
   },
-
-  // ── EXCLUSIVE CREATOR BORDER ──
-  creator: {
-    name: '👑 Creator Border',
-    category: 'creator',
-    style: {
-      border: '4px solid transparent',
-      backgroundImage: 'linear-gradient(#0a0813, #0a0813), linear-gradient(to right, #7c6ff7, #fbbf24, #ec4899, #7c6ff7)',
-      backgroundOrigin: 'border-box',
-      backgroundClip: 'padding-box, border-box',
-      boxShadow: '0 0 0 2px rgba(124,111,247,0.3), 0 0 25px rgba(124,111,247,0.95), 0 0 10px rgba(251,191,36,0.5), inset 0 0 8px rgba(236,72,153,0.5)',
-      animation: 'hue-rotation 4s infinite linear'
+  "none": {
+    "name": "Default Border",
+    "category": "base",
+    "style": {
+      "border": "3px solid rgba(255,255,255,0.1)"
+    }
+  },
+  "bronze": {
+    "name": "🥉 Bronze Border",
+    "category": "achievement",
+    "style": {
+      "border": "3px solid #cd7f32",
+      "boxShadow": "0 0 10px rgba(205,127,50,0.5)"
+    }
+  },
+  "silver": {
+    "name": "🥈 Silver Border",
+    "category": "achievement",
+    "style": {
+      "border": "3px solid #e0e0e0",
+      "boxShadow": "0 0 12px rgba(255,255,255,0.6)"
+    }
+  },
+  "gold": {
+    "name": "🥇 Gold Border",
+    "category": "achievement",
+    "style": {
+      "border": "3px solid #fbbf24",
+      "boxShadow": "0 0 15px rgba(251,191,36,0.75)"
+    }
+  },
+  "crystal-diamond": {
+    "name": "Crystal Reliquary",
+    "category": "achievement",
+    "style": {
+      "border": "3px solid #bde9f4",
+      "background": "#17191d",
+      "boxShadow": "0 2px 10px #0006"
+    },
+    "desc": "Cut-glass facets, inset enamel and polished silver edges."
+  },
+  "cinema-overlord": {
+    "name": "The Grand Marquee",
+    "category": "achievement",
+    "style": {
+      "border": "3px solid #f0cb85",
+      "background": "#17191d",
+      "boxShadow": "0 2px 10px #0006"
+    },
+    "desc": "An architectural cinema marquee in engraved champagne metal."
+  },
+  "emerald-glow": {
+    "name": "Evergreen Laurel",
+    "category": "achievement",
+    "style": {
+      "border": "3px solid #91d5b4",
+      "background": "#17191d",
+      "boxShadow": "0 2px 10px #0006"
+    },
+    "desc": "Sculpted evergreen leaves and a polished leaf seal."
+  },
+  "sapphire-glow": {
+    "name": "Silver Tide",
+    "category": "achievement",
+    "style": {
+      "border": "3px solid #97cbf2",
+      "background": "#17191d",
+      "boxShadow": "0 2px 10px #0006"
+    },
+    "desc": "A curling ocean crest with etched foam and water droplets."
+  },
+  "rose-quartz": {
+    "name": "Rosecut Reliquary",
+    "category": "achievement",
+    "style": {
+      "border": "3px solid #e6b3c8",
+      "background": "#17191d",
+      "boxShadow": "0 2px 10px #0006"
+    },
+    "desc": "Rose-cut crystals held by dark enamel settings."
+  },
+  "scifi-nebula": {
+    "name": "Deep Space Relay",
+    "category": "achievement",
+    "style": {
+      "border": "3px solid #b7c4f4",
+      "background": "#17191d",
+      "boxShadow": "0 2px 10px #0006"
+    },
+    "desc": "An orbital satellite, star trail and layered planetary rim."
+  },
+  "nightmare-blood": {
+    "name": "Midnight Gargoyle",
+    "category": "achievement",
+    "style": {
+      "border": "3px solid #ed7d88",
+      "background": "#17191d",
+      "boxShadow": "0 2px 10px #0006"
+    },
+    "desc": "Gothic bat wings and an engraved midnight skull."
+  },
+  "anime-sakura": {
+    "name": "Sakura Branch",
+    "category": "achievement",
+    "style": {
+      "border": "3px solid #f3c9d0",
+      "background": "#17191d",
+      "boxShadow": "0 2px 10px #0006"
+    },
+    "desc": "Sculpted cherry blossoms on asymmetrical branches."
+  },
+  "genre-prismatic": {
+    "name": "Mosaic Atelier",
+    "category": "achievement",
+    "style": {
+      "border": "3px solid #e1ca99",
+      "background": "#17191d",
+      "boxShadow": "0 2px 10px #0006"
+    },
+    "desc": "A mosaic of jewel-toned enamel tiles."
+  },
+  "curator-heart": {
+    "name": "Heart of Cinema",
+    "category": "achievement",
+    "style": {
+      "border": "3px solid #f4a4ae",
+      "background": "#17191d",
+      "boxShadow": "0 2px 10px #0006"
+    },
+    "desc": "An enamel heart held by a folded ceremonial ribbon."
+  },
+  "chrono-rewind": {
+    "name": "The Timekeeper",
+    "category": "achievement",
+    "style": {
+      "border": "3px solid #dfca9c",
+      "background": "#17191d",
+      "boxShadow": "0 2px 10px #0006"
+    },
+    "desc": "An engraved watch dial with a miniature timepiece."
+  },
+  "fire-glow": {
+    "name": "Phoenix Crest",
+    "category": "achievement",
+    "style": {
+      "border": "3px solid #ffc58b",
+      "background": "#17191d",
+      "boxShadow": "0 2px 10px #0006"
+    },
+    "desc": "Carved phoenix feathers and a flame crest."
+  },
+  "cyber-violet": {
+    "name": "Violet Mainframe",
+    "category": "shop",
+    "cost": 150,
+    "desc": "Layered violet circuit rails with metal contact points.",
+    "style": {
+      "border": "3px solid #c7b4ef",
+      "background": "#17191d",
+      "boxShadow": "0 2px 10px #0006"
+    }
+  },
+  "plasma-red": {
+    "name": "Crimson Shards",
+    "category": "shop",
+    "cost": 250,
+    "desc": "Crimson crystal facets in dark metal housings.",
+    "style": {
+      "border": "3px solid #ff8b9c",
+      "background": "#17191d",
+      "boxShadow": "0 2px 10px #0006"
+    }
+  },
+  "matrix-code": {
+    "name": "Emerald Circuit",
+    "category": "shop",
+    "cost": 350,
+    "desc": "Precision circuit rails and a silicon chip clasp.",
+    "style": {
+      "border": "3px solid #8eddb6",
+      "background": "#17191d",
+      "boxShadow": "0 2px 10px #0006"
+    }
+  },
+  "hyperdrive": {
+    "name": "🚀 Hyperdrive Warp Speed",
+    "category": "shop",
+    "cost": 500,
+    "desc": "Chrono light-speed warp streak animation",
+    "style": {
+      "border": "4px solid transparent",
+      "backgroundImage": "linear-gradient(#0a0813, #0a0813), linear-gradient(135deg, #06b6d4, #3b82f6, #fff)",
+      "backgroundOrigin": "border-box",
+      "backgroundClip": "padding-box, border-box",
+      "boxShadow": "0 0 24px rgba(6,182,212,0.95), inset 0 0 8px rgba(59,130,246,0.6)",
+      "animation": "pulse-glow 1.8s infinite alternate"
+    }
+  },
+  "royal-amethyst": {
+    "name": "💎 Royal Amethyst Crown",
+    "category": "shop",
+    "cost": 750,
+    "desc": "Imperial royal gemstone aura with hue rotation",
+    "style": {
+      "border": "4px solid transparent",
+      "backgroundImage": "linear-gradient(#0a0813, #0a0813), linear-gradient(135deg, #c084fc, #fbbf24, #a855f7)",
+      "backgroundOrigin": "border-box",
+      "backgroundClip": "padding-box, border-box",
+      "boxShadow": "0 0 25px rgba(192,132,252,0.95), 0 0 10px rgba(251,191,36,0.6)",
+      "animation": "hue-rotation 6s infinite linear"
+    }
+  },
+  "supernova-gold": {
+    "name": "🌟 Supernova Stellar Blast",
+    "category": "shop",
+    "cost": 1000,
+    "desc": "Ultra-radiant celestial cosmic explosion",
+    "style": {
+      "border": "4px solid transparent",
+      "backgroundImage": "linear-gradient(#0a0813, #0a0813), linear-gradient(135deg, #fbbf24, #f59e0b, #fff, #fbbf24)",
+      "backgroundOrigin": "border-box",
+      "backgroundClip": "padding-box, border-box",
+      "boxShadow": "0 0 0 2px rgba(251,191,36,0.4), 0 0 28px rgba(251,191,36,0.95), inset 0 0 10px rgba(255,255,255,0.7)",
+      "animation": "hue-rotation 8s infinite linear"
+    }
+  },
+  "frostbite-ice": {
+    "name": "Glacial Crown",
+    "category": "shop",
+    "cost": 600,
+    "desc": "Ice-cut facets in a polished cryogenic setting.",
+    "style": {
+      "border": "3px solid #c1f1f4",
+      "background": "#17191d",
+      "boxShadow": "0 2px 10px #0006"
+    }
+  },
+  "void-shadow": {
+    "name": "The Eventide",
+    "category": "shop",
+    "cost": 850,
+    "desc": "A lunar crescent, broken orbit and inset stars.",
+    "style": {
+      "border": "3px solid #c5b8e4",
+      "background": "#17191d",
+      "boxShadow": "0 2px 10px #0006"
+    }
+  },
+  "creator": {
+    "name": "Founder · The First Reel",
+    "category": "creator",
+    "desc": "A bespoke cinema crest: crimson reel, champagne laurels and the founder seal. Reserved for the creator.",
+    "style": {
+      "border": "4px solid #35131d",
+      "background": "#171315",
+      "boxShadow": "0 0 0 1px #c7a16b, 0 4px 16px #0008"
+    }
+  },
+  "lunar-archivist": {
+    "name": "Lunar Archivist",
+    "desc": "A carved crescent, interrupted orbit and inset stars.",
+    "category": "achievement",
+    "style": {
+      "border": "3px solid #e7d9b0",
+      "background": "#17191d",
+      "boxShadow": "0 2px 10px #0006"
+    }
+  },
+  "tidebound": {
+    "name": "Tidebound",
+    "desc": "A sculpted ocean swell around a sea-glass rim.",
+    "category": "achievement",
+    "style": {
+      "border": "3px solid #92ddd8",
+      "background": "#17191d",
+      "boxShadow": "0 2px 10px #0006"
+    }
+  },
+  "velvet-marquee": {
+    "name": "Velvet Marquee",
+    "desc": "A miniature Art Deco cinema entrance in ruby enamel.",
+    "category": "achievement",
+    "style": {
+      "border": "3px solid #eccb90",
+      "background": "#17191d",
+      "boxShadow": "0 2px 10px #0006"
+    }
+  },
+  "paper-crane": {
+    "name": "Paper Crane",
+    "desc": "Folded porcelain wings and stitched paper arcs.",
+    "category": "achievement",
+    "style": {
+      "border": "3px solid #ecdcca",
+      "background": "#17191d",
+      "boxShadow": "0 2px 10px #0006"
     }
   }
 };
 
 // ── BADGE COLORS CATALOG ────────────────────────────────────────────────────
 export const BADGE_COLORS = {
+  'Opening Frame':{border:'1px solid #925164',color:'#e6b4c1',bg:'#24171b'},
+  'Encore':{border:'1px solid #87724f',color:'#dcc595',bg:'#231f17'},
+  'Personal Canon':{border:'1px solid #737972',color:'#c3cbbb',bg:'#1d211c'},
   // Creator Exclusives
   'Creator': { border: '1px solid #fbbf24', color: '#fbbf24', bg: 'linear-gradient(135deg, rgba(251,191,36,0.25) 0%, rgba(184,124,248,0.25) 100%)' },
   'The Maker.': { border: '1px solid #a855f7', color: '#c084fc', bg: 'rgba(168,85,247,0.2)' },
@@ -526,23 +824,12 @@ export function getBadgeColors(badgeName) {
 // ── CREATOR RECOGNITION ─────────────────────────────────────────────────────
 export function isUserCreator(user) {
   if (!user) return false;
-  const username = String(user.username || '').toLowerCase().trim();
-  const displayName = String(user.displayName || user.display_name || '').toLowerCase().trim();
   const id = String(user.id || '').toLowerCase().trim();
-  const email = String(user.email || '').toLowerCase().trim();
-
-  const creatorUsernames = ['lynnx', 'itzfabiopt2006', 'fabiosilva', 'fabiosilva32', 'creator', 'the maker.'];
   const creatorIds = [
     '2436dd73-13e2-45a9-b2af-664a221250d8',
     '754ce8a9-e74a-4277-ab9c-847408153029',
     '2bf89559-f45b-48c1-9b44-1c79bc951a80'
   ];
 
-  return (
-    creatorUsernames.includes(username) ||
-    creatorUsernames.includes(displayName) ||
-    creatorIds.includes(id) ||
-    email.includes('itzfa') ||
-    email.includes('fabio')
-  );
+  return creatorIds.includes(id);
 }

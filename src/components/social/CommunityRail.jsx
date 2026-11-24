@@ -1,0 +1,20 @@
+import {supabase} from '../../supabaseClient';
+import {useSocialResource} from '../../hooks/useSocial';
+import {socialResult} from '../../utils/socialApi';
+import {socialPath} from '../../utils/socialModel';
+import {SocialPerson} from './SocialPrimitives';
+export default function CommunityRail({currentUser,following,toggle,pending,followError,onNavigate,onOpenUserProfile}){
+ const resource=useSocialResource('community-rail:'+currentUser.id+':'+[...following].sort().join(','),async()=>{
+  const results=await Promise.allSettled([
+   socialResult(supabase.from('profiles').select('id,username,display_name,avatar_url,equipped_border').neq('id',currentUser.id).order('username',{ascending:true}).limit(12)),
+   socialResult(supabase.from('social_watchlists').select('id,title,watch_at,visibility').order('created_at',{ascending:false}).limit(3)),
+   socialResult(supabase.from('social_clubs').select('id,name,theme,visibility').order('created_at',{ascending:false}).limit(3))
+  ]);const rows=results.map(r=>r.status==='fulfilled'?r.value||[]:null);
+  return {people:rows[0]?.filter(p=>!following.has(p.id)).slice(0,3)??null,nights:rows[1],clubs:rows[2]};
+ });const data=resource.data;
+ return <aside className="community-feed-rail" aria-label="Your community">
+  <section className="community-circle"><header><span className="studio-eyebrow">YOUR CIRCLE</span><button className="studio-text-button" onClick={()=>onNavigate(socialPath('people'))}>Find people ↗</button></header><div className="community-circle-count"><strong>{following.size}</strong><span>{following.size===1?'perspective you follow':'perspectives you follow'}</span></div>{resource.loading&&!data&&<p role="status">Finding your next connection…</p>}{data?.people?.map(person=><div className="community-rail-person" key={person.id}><SocialPerson person={person} onOpen={onOpenUserProfile}/><button className="studio-secondary" disabled={pending===person.id} onClick={()=>toggle(person.id)}>{pending===person.id?'…':'Follow'}</button></div>)}{data?.people===null&&<p className="community-muted">Suggestions couldn’t load. <button className="studio-text-button" onClick={resource.reload}>Retry</button></p>}{data?.people?.length===0&&<p className="community-muted">Find another perspective in the people directory.</p>}{followError&&<p role="alert" className="community-muted">{followError}</p>}</section>
+  <section><header><span className="studio-eyebrow">WATCH TOGETHER</span><span className="community-rail-symbol" aria-hidden="true">↗</span></header><h3>Make a night of it.</h3>{data?.nights?.map(night=><button className="community-rail-resource" key={night.id} onClick={()=>onNavigate(socialPath('watchlists',night.id))}><strong>{night.title}</strong><small>{night.watch_at?new Date(night.watch_at).toLocaleDateString(undefined,{month:'short',day:'numeric'}):night.visibility==='private'?'Invitation only':'Open shortlist'} <span>→</span></small></button>)}{data?.nights?.length===0&&<p>Bring a shortlist. Let everyone vote. Find something you’ll all want to watch.</p>}{data?.nights===null&&<p>Watch nights couldn’t load. <button className="studio-text-button" onClick={resource.reload}>Retry</button></p>}<button className="studio-secondary" onClick={()=>onNavigate(socialPath('watchlists'))}>Browse watch nights ↗</button></section>
+  <section><header><span className="studio-eyebrow">AFTER THE CREDITS</span><span className="community-rail-symbol" aria-hidden="true">✳</span></header><h3>Find your film club.</h3>{data?.clubs?.map(club=><button className="community-rail-resource" key={club.id} onClick={()=>onNavigate(socialPath('clubs',club.id))}><strong>{club.name}</strong><small>{club.theme||'Open the conversation'} <span>→</span></small></button>)}{data?.clubs?.length===0&&<p>A weekly theme and a conversation worth coming back for.</p>}{data?.clubs===null&&<p>Clubs couldn’t load. <button className="studio-text-button" onClick={resource.reload}>Retry</button></p>}<button className="studio-text-button" onClick={()=>onNavigate(socialPath('clubs'))}>Explore film clubs ↗</button></section>
+ </aside>;
+}

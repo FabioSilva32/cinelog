@@ -1,35 +1,46 @@
-import React, { useState, useEffect } from 'react';
+import {presentEditorialList} from '../utils/editorialLists';
+import {persistReaction} from '../utils/reactions';
+import CreateListModal from './CreateListModal';
+import ConfirmModal from './ConfirmModal';
+import {removeOwnedRecord} from '../utils/removeOwnedRecord';
+import {DEMO_USER_ID} from '../utils/following';
+import {listPath} from '../utils/navigation';
+import { useDialogFocus } from '../hooks/useDialogFocus';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Heart, MessageSquare, Share2, ArrowLeft, X, Trophy, Film, Send, Trash2 } from 'lucide-react';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
 
 export default function ListDetailModal({
-  list,
+  list:rawList,
   currentUser,
   onClose,
   onMovieClick,
   onOpenUserProfile,
   onUpdateList,
-  onDeleteList
+  onDeleteList,
+  onEditList,
+  library=[],
+  backLabel = 'Back to Lists',
+  isPage = false
 }) {
-  useBodyScrollLock(true);
+  const list=presentEditorialList(rawList);
+  useBodyScrollLock(!isPage);
+  const [removeAction,setRemoveAction]=useState(null),[editingList,setEditingList]=useState(false);
+  const dialogRef = useDialogFocus(!isPage&&!removeAction&&!editingList);
   const [commentText, setCommentText] = useState('');
+  const [posting,setPosting]=useState(false),[actionError,setActionError]=useState(''),[commentError,setCommentError]=useState(''),[commentRetry,setCommentRetry]=useState(0);
   const [localComments, setLocalComments] = useState(list?.comments || []);
-  const [liked, setLiked] = useState(() => {
-    try {
-      const likedSet = JSON.parse(localStorage.getItem('cinelog_liked_lists') || '[]');
-      return likedSet.includes(list?.id);
-    } catch {
-      return false;
-    }
-  });
+  const [liked,setLiked]=useState(false),[likePending,setLikePending]=useState(false),[likeLoading,setLikeLoading]=useState(Boolean(currentUser?.id));const likeBusy=useRef(false),commentBusy=useRef(false);
   const [likesCount, setLikesCount] = useState(list?.likesCount || 0);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
     async function loadSupabaseComments() {
+      setCommentError('');if(list?.isEditorial)return;
+      const counts=await supabase.from('list_likes').select('user_id',{count:'exact',head:true}).eq('list_id',String(list.id));if(isMounted&&!counts.error&&typeof counts.count==='number')setLikesCount(counts.count);
       if (!isSupabaseConfigured || !list?.id) return;
       try {
         const { data, error } = await supabase
@@ -37,7 +48,8 @@ export default function ListDetailModal({
           .select('*')
           .eq('list_id', String(list.id))
           .order('created_at', { ascending: true });
-        if (!error && data && data.length > 0 && isMounted) {
+        if(error)throw error;
+        if (data && isMounted) {
           const mapped = data.map(c => ({
             id: c.id,
             user_id: c.user_id,
@@ -53,28 +65,30 @@ export default function ListDetailModal({
           setLocalComments(mapped);
         }
       } catch (err) {
-        console.warn('Could not load comments from Supabase:', err);
+        console.warn('Could not load comments from Supabase:', err);if(isMounted)setCommentError('Comments could not be loaded.');
       }
     }
     loadSupabaseComments();
     return () => { isMounted = false; };
-  }, [list?.id]);
+  }, [list?.id,commentRetry]);
 
   useEffect(() => {
     let isMounted = true;
     async function checkUserLike() {
-      if (!isSupabaseConfigured || !currentUser?.id || !list?.id) return;
+      setLiked(false);setLikeLoading(Boolean(currentUser?.id));
+      if (list?.isEditorial || !isSupabaseConfigured || !currentUser?.id || !list?.id){setLikeLoading(false);return;}
       try {
-        const { data } = await supabase
+        const { data,error } = await supabase
           .from('list_likes')
           .select('list_id')
           .eq('list_id', String(list.id))
           .eq('user_id', currentUser.id)
           .maybeSingle();
-        if (data && isMounted) {
-          setLiked(true);
+        if(error)throw error;
+        if (isMounted) {
+          setLiked(Boolean(data));
         }
-      } catch {}
+      } catch {if(isMounted)setActionError('Your list reaction could not be loaded.');}finally{if(isMounted)setLikeLoading(false);}
     }
     checkUserLike();
     return () => { isMounted = false; };
@@ -82,132 +96,29 @@ export default function ListDetailModal({
 
   if (!list || typeof document === 'undefined') return null;
 
-  const isOwner = currentUser?.username && (
-    list.author?.username === currentUser.username ||
-    list.author?.id === currentUser.id
-  );
+  const isOwner=Boolean(currentUser?.id&&(list.user_id??list.author?.id)===currentUser.id);
 
-  const handleToggleLike = async () => {
-    const nextLiked = !liked;
-    const nextCount = nextLiked ? likesCount + 1 : Math.max(0, likesCount - 1);
-    setLiked(nextLiked);
-    setLikesCount(nextCount);
+  const handleToggleLike=async()=>{if(likeBusy.current||likeLoading)return;if(!currentUser?.id){setActionError('Sign in to like this list.');return;}likeBusy.current=true;setLikePending(true);setActionError('');try{const next=!liked;await persistReaction(supabase,'list_likes',list.id,currentUser.id,next);const count=Math.max(0,likesCount+(next?1:-1));setLiked(next);setLikesCount(count);await onUpdateList?.({...list,likesCount:count},{skipCloud:true});}catch(error){setActionError(error.message);}finally{likeBusy.current=false;setLikePending(false);}};
 
-    try {
-      const likedSet = new Set(JSON.parse(localStorage.getItem('cinelog_liked_lists') || '[]'));
-      if (nextLiked) likedSet.add(list.id);
-      else likedSet.delete(list.id);
-      localStorage.setItem('cinelog_liked_lists', JSON.stringify([...likedSet]));
-    } catch {}
+  const handleShare=async()=>{const url=window.location.origin+listPath(list.id);try{await navigator.clipboard.writeText(url);setCopied(true);setActionError('');setTimeout(()=>setCopied(false),2500);}catch{setActionError('Copy this link: '+url);}};
+  const handleAddComment=async event=>{event.preventDefault();if(commentBusy.current||!currentUser||!commentText.trim())return;commentBusy.current=true;setPosting(true);setActionError('');try{
+    const text=commentText.trim();let comment={id:'comm-'+Date.now(),userId:currentUser.id,username:currentUser.username,displayName:currentUser.displayName||currentUser.username,avatar:currentUser.avatar,text,createdAt:new Date().toISOString()};
+    comment={...comment,user_id:currentUser.id,user:{id:currentUser.id,username:comment.username,displayName:comment.displayName,avatar:comment.avatar}};
+    if(isSupabaseConfigured&&currentUser.id!==DEMO_USER_ID){const {data,error}=await supabase.from('list_comments').insert({list_id:String(list.id),user_id:currentUser.id,username:comment.username,display_name:comment.displayName,avatar_url:comment.avatar||'',comment_text:text}).select().single();if(error||!data)throw new Error('Your comment could not be saved. Please try again.');comment={...comment,id:data.id,createdAt:data.created_at||comment.createdAt};}
+    const next=[...localComments,comment];setLocalComments(next);setCommentText('');if(currentUser.id===DEMO_USER_ID)onUpdateList?.({...list,comments:next});
+  }catch(error){setActionError(error.message);}finally{commentBusy.current=false;setPosting(false);}};
 
-    if (onUpdateList) {
-      onUpdateList({
-        ...list,
-        likesCount: nextCount
-      });
-    }
-
-    if (isSupabaseConfigured && currentUser?.id && list?.id) {
-      try {
-        if (nextLiked) {
-          await supabase.from('list_likes').upsert({
-            list_id: String(list.id),
-            user_id: currentUser.id
-          });
-        } else {
-          await supabase.from('list_likes').delete().eq('list_id', String(list.id)).eq('user_id', currentUser.id);
-        }
-      } catch (err) {
-        console.warn('Could not sync list like to Supabase:', err);
-      }
-    }
-  };
-
-  const handleShare = () => {
-    const url = window.location.origin + '?list=' + list.id;
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    }
-  };
-
-  const handleAddComment = async (e) => {
-    e.preventDefault();
-    const text = commentText.trim();
-    if (!text) return;
-
-    const tempId = 'comm-' + Date.now();
-    const newComment = {
-      id: tempId,
-      user_id: currentUser?.id || 'anon',
-      user: {
-        id: currentUser?.id || 'anon',
-        username: currentUser?.username || 'cinephile',
-        displayName: currentUser?.displayName || currentUser?.username || 'Cinephile',
-        avatar: currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&fit=crop&q=80'
-      },
-      text: text,
-      createdAt: new Date().toISOString()
-    };
-
-    const nextList = [...(localComments || []), newComment];
-    setLocalComments(nextList);
-    setCommentText('');
-
-    if (onUpdateList) {
-      onUpdateList({
-        ...list,
-        comments: nextList
-      });
-    }
-
-    if (isSupabaseConfigured && currentUser?.id) {
-      try {
-        const { data, error } = await supabase
-          .from('list_comments')
-          .insert({
-            list_id: String(list.id),
-            user_id: currentUser.id,
-            username: currentUser.username || 'cinephile',
-            display_name: currentUser.displayName || currentUser.username || 'Cinephile',
-            avatar_url: currentUser.avatar || '',
-            comment_text: text
-          })
-          .select()
-          .single();
-        if (!error && data) {
-          setLocalComments(prev => prev.map(c => c.id === tempId ? { ...c, id: data.id } : c));
-        }
-      } catch (err) {
-        console.warn('Could not save comment to Supabase:', err);
-      }
-    }
-  };
-
-  const handleDeleteComment = async (commentId) => {
-    const nextList = (localComments || []).filter(c => c.id !== commentId);
-    setLocalComments(nextList);
-    if (onUpdateList) {
-      onUpdateList({
-        ...list,
-        comments: nextList
-      });
-    }
-    if (isSupabaseConfigured && currentUser?.id) {
-      try {
-        await supabase.from('list_comments').delete().eq('id', commentId).eq('user_id', currentUser.id);
-      } catch (err) {
-        console.warn('Could not delete comment from Supabase:', err);
-      }
-    }
+  const handleDeleteComment = async commentId => {
+    if(isSupabaseConfigured&&currentUser?.id&&currentUser.id!==DEMO_USER_ID&&!String(commentId).startsWith('comm-'))await removeOwnedRecord(supabase,'list_comments',commentId,currentUser.id);
+    const next=(localComments||[]).filter(comment=>comment.id!==commentId);setLocalComments(next);if(currentUser?.id===DEMO_USER_ID)onUpdateList?.({...list,comments:next});return true;
   };
 
   const entries = list.entries || [];
 
-  return createPortal(
+  const renderSurface = content => isPage ? content : createPortal(content,document.body);
+  return renderSurface(
     <div
-      className="modal-backdrop"
+      className={isPage?"modal-backdrop entity-page":"modal-backdrop cine-backdrop"}
       style={{
         position: 'fixed',
         top: 0,
@@ -229,11 +140,12 @@ export default function ListDetailModal({
         animation: 'fadeInOverlay 0.18s ease-out'
       }}
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (!isPage && e.target === e.currentTarget) onClose();
       }}
     >
       <div
-        className="glass"
+        className="glass screening-collection-detail reading-list-detail"
+        ref={dialogRef} tabIndex={-1} role={isPage?"region":"dialog"} aria-modal={isPage?undefined:true} aria-label={list?.title || 'Collection'}
         style={{
           width: '100%',
           maxWidth: '880px',
@@ -281,7 +193,7 @@ export default function ListDetailModal({
             onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
             onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'none'; }}
           >
-            <ArrowLeft size={16} /> Back to Lists
+            <ArrowLeft size={16} /> {backLabel}
           </button>
 
           <button
@@ -318,7 +230,7 @@ export default function ListDetailModal({
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '12px' }}>
               <div
                 onClick={() => {
-                  if (onOpenUserProfile && list.author) {
+                  if (!list.isEditorial && onOpenUserProfile && list.author) {
                     onClose();
                     onOpenUserProfile(list.author);
                   }
@@ -407,10 +319,11 @@ export default function ListDetailModal({
               </p>
             )}
 
+            {actionError&&<p role="alert" className="cine-inline-error">{actionError}</p>}
             {/* Action Row: Like, Share, Delete */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
               <button
-                onClick={handleToggleLike}
+                onClick={handleToggleLike} disabled={list.isEditorial||likePending||likeLoading} aria-pressed={liked}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -427,7 +340,7 @@ export default function ListDetailModal({
                 }}
               >
                 <Heart size={14} fill={liked ? '#ff4d4d' : 'none'} color={liked ? '#ff4d4d' : '#fff'} />
-                <span>{likesCount} {likesCount === 1 ? 'Like' : 'Likes'}</span>
+                <span>{list.isEditorial?'Editorial collection':likesCount+' '+(likesCount===1?'Like':'Likes')}</span>
               </button>
 
               <button
@@ -451,9 +364,10 @@ export default function ListDetailModal({
                 <span>{copied ? 'Link Copied!' : 'Share'}</span>
               </button>
 
+              {isOwner&&onEditList&&<button className="studio-secondary" onClick={()=>setEditingList(true)}>Edit list</button>}
               {isOwner && onDeleteList && (
                 <button
-                  onClick={() => onDeleteList(list.id)}
+                  onClick={() => setRemoveAction({kind:'list'})}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -477,7 +391,7 @@ export default function ListDetailModal({
 
           {/* SIDE-BY-SIDE POSTER GRID (Letterboxd Style, No Giant Review Blocks) */}
           <div style={{ padding: 'clamp(16px, 3vw, 24px) clamp(16px, 3vw, 30px)' }}>
-            <div style={{
+            <div className="reading-list-entries" style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fill, minmax(102px, 1fr))',
               gap: '12px'
@@ -486,6 +400,7 @@ export default function ListDetailModal({
                 const rankNum = index + 1;
                 return (
                   <div
+                    className="reading-list-entry" data-ranked={Boolean(list.isRanked)} role="button" tabIndex={0} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();onMovieClick?.(entry.tmdb_id||entry.id,entry.media_type||'movie');}}}
                     key={entry.tmdb_id || entry.id || index}
                     onClick={() => onMovieClick && onMovieClick(entry.tmdb_id || entry.id, entry.media_type || 'movie')}
                     style={{
@@ -498,14 +413,6 @@ export default function ListDetailModal({
                       border: '1px solid rgba(255, 255, 255, 0.08)',
                       position: 'relative',
                       transition: 'transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.18s'
-                    }}
-                    onMouseEnter={e => {
-                      e.currentTarget.style.transform = 'translateY(-4px)';
-                      e.currentTarget.style.borderColor = 'var(--accent)';
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
                     }}
                   >
                     {/* Poster with Rank Badge Overlaid */}
@@ -566,58 +473,11 @@ export default function ListDetailModal({
                         />
                       )}
 
-                      {/* Prominent Ranked Number Badge #1..N */}
-                      {list.isRanked && (
-                        <div style={{
-                          position: 'absolute',
-                          top: '6px',
-                          left: '6px',
-                          zIndex: 10,
-                          background: rankNum <= 3
-                            ? 'linear-gradient(135deg, rgba(245,158,11,0.98) 0%, rgba(217,119,6,0.98) 100%)'
-                            : 'rgba(10, 8, 20, 0.92)',
-                          backdropFilter: 'blur(8px)',
-                          WebkitBackdropFilter: 'blur(8px)',
-                          border: `1.5px solid ${rankNum <= 3 ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.25)'}`,
-                          color: rankNum <= 3 ? '#000' : '#fff',
-                          borderRadius: '6px',
-                          padding: '2px 8px',
-                          fontSize: '11px',
-                          fontWeight: 900,
-                          letterSpacing: '0.3px',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.7)',
-                          pointerEvents: 'none'
-                        }}>
-                          #{rankNum}
-                        </div>
-                      )}
 
-                      {/* Rating Badge */}
-                      {entry.rating && (
-                        <div style={{
-                          position: 'absolute',
-                          bottom: '6px',
-                          left: '6px',
-                          zIndex: 10,
-                          background: 'rgba(10, 8, 20, 0.88)',
-                          backdropFilter: 'blur(8px)',
-                          WebkitBackdropFilter: 'blur(8px)',
-                          border: '1px solid rgba(255, 255, 255, 0.18)',
-                          borderRadius: '6px',
-                          padding: '2px 6px',
-                          fontSize: '10px',
-                          fontWeight: 800,
-                          color: 'var(--gold)',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.6)',
-                          pointerEvents: 'none'
-                        }}>
-                          ★ {entry.rating}
-                        </div>
-                      )}
                     </div>
 
                     {/* Meta info underneath */}
-                    <div style={{ padding: '8px 10px 10px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <div className="reading-list-meta" style={{ padding: '8px 10px 10px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                       <div style={{
                         fontSize: '12.5px',
                         fontWeight: 800,
@@ -632,8 +492,10 @@ export default function ListDetailModal({
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginTop: '3px' }}>
                         {entry.release_year || '—'}
+                        {Number(entry.rating)>0 && <span className="reading-list-rating" aria-label={`Rating ${entry.rating} out of 10`}>★ {entry.rating}</span>}
                       </div>
                     </div>
+                    {list.isRanked && <span className="reading-list-placement" data-podium={rankNum<=3?rankNum:undefined} aria-label={`Position ${rankNum}`}>#{rankNum}</span>}
                   </div>
                 );
               })}
@@ -641,6 +503,7 @@ export default function ListDetailModal({
           </div>
 
           {/* Comments Section */}
+          {commentError&&<div className="workspace-state" role="alert"><p>{commentError}</p><button className="studio-secondary" onClick={()=>setCommentRetry(n=>n+1)}>Try again</button></div>}
           <div style={{
             padding: '24px 30px 32px',
             borderTop: '1px solid rgba(255, 255, 255, 0.08)',
@@ -653,8 +516,9 @@ export default function ListDetailModal({
               </h3>
             </div>
 
+            {list.isEditorial&&<p className="extras-note">A curated CineLog collection. Discussions and likes belong to published member lists.</p>}
             {/* Add Comment Input */}
-            <form onSubmit={handleAddComment} style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+            {!list.isEditorial&&<form onSubmit={handleAddComment} style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
               <img
                 src={currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&fit=crop&q=80'}
                 alt=""
@@ -663,7 +527,7 @@ export default function ListDetailModal({
               <div style={{ flex: 1, display: 'flex', gap: '8px' }}>
                 <input
                   type="text"
-                  placeholder="Leave a comment, debate a ranking, or suggest a film..."
+                  placeholder="Leave a comment, debate a ranking, or suggest a film..." maxLength={3000} aria-label="List comment"
                   value={commentText}
                   onChange={e => setCommentText(e.target.value)}
                   className="form-input"
@@ -671,14 +535,14 @@ export default function ListDetailModal({
                 />
                 <button
                   type="submit"
-                  disabled={!commentText.trim()}
+                  disabled={posting||!commentText.trim()}
                   className="btn btn-primary"
                   style={{ padding: '0 18px', borderRadius: '10px', gap: '6px', fontSize: '13px' }}
                 >
                   <Send size={13} /> Post
                 </button>
               </div>
-            </form>
+            </form>}
 
             {/* Comment List */}
             {(localComments && localComments.length > 0) ? (
@@ -722,7 +586,7 @@ export default function ListDetailModal({
                           )}
                           {canDelete && (
                             <button
-                              onClick={() => handleDeleteComment(comm.id)}
+                              onClick={() => setRemoveAction({kind:'comment',id:comm.id})}
                               title="Delete comment"
                               style={{
                                 background: 'transparent',
@@ -758,6 +622,8 @@ export default function ListDetailModal({
           </div>
         </div>
       </div>
+      {editingList&&<CreateListModal initialList={list} currentUser={currentUser} library={library} onClose={()=>setEditingList(false)} onSaveList={onEditList}/>}
+      <ConfirmModal isOpen={Boolean(removeAction)} title={removeAction?.kind==='list'?'Delete this list?':'Remove this comment?'} message={removeAction?.kind==='list'?'This deletes the list and its saved ordering. Films in your library stay in your library.':'This permanently removes your comment from the conversation.'} item={removeAction?.kind==='list'?{title:list.title}:undefined} confirmText={removeAction?.kind==='list'?'Delete list':'Remove comment'} cancelText="Keep it" onCancel={()=>setRemoveAction(null)} onConfirm={()=>removeAction.kind==='list'?onDeleteList(list.id):handleDeleteComment(removeAction.id)}/>
     </div>,
     document.body
   );

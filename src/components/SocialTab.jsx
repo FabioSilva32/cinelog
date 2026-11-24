@@ -1,7 +1,9 @@
+import { readableReview,reviewSpoilerFlag } from '../utils/reviews';
+import { useFollowing } from '../hooks/useFollowing';
 import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "../supabaseClient";
 import { Search, UserPlus, UserMinus, UserCheck, Activity, Users } from "lucide-react";
-import { ELENA_PROFILE, ELENA_LIBRARY } from "../mockData";
+
 
 const IGNORED_USERNAMES = new Set([
   'fabiosilva',
@@ -23,365 +25,66 @@ function timeAgo(ts) {
   return d + "d ago";
 }
 
-const STATUS_EMOJI = { watched: "✅", plan_to_watch: "📋", watching: "▶️", dropped: "❌" };
 const STATUS_LABEL = { watched: "watched", plan_to_watch: "added to watchlist", watching: "is watching", dropped: "dropped" };
 
 const isUUID = (str) => typeof str === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 
-export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile }) {
+export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile, onOpenAuth }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
-  const [following, setFollowing] = useState(() => {
-    try {
-      const saved = localStorage.getItem('cinelog_following_ids');
-      if (saved) return new Set(JSON.parse(saved));
-    } catch {}
-    return new Set();
-  });
+  const {following,toggle:handleFollow,error:followError,pending:followPending}=useFollowing(currentUser);
   const [followingUsers, setFollowingUsers] = useState([]);
   const [loadingFollowing, setLoadingFollowing] = useState(false);
   const [feed, setFeed] = useState([]);
   const [loadingFeed, setLoadingFeed] = useState(false);
+  const [feedLens,setFeedLens] = useState("all");
   const [activeTab, setActiveTab] = useState("feed"); // feed | following | discover
   const [suggestedUsers, setSuggestedUsers] = useState([]);
   const [loadingSuggested, setLoadingSuggested] = useState(false);
   const [dbError, setDbError] = useState(null);
+  const [retry,setRetry]=useState(0);
 
-  // Load who the current user follows from Supabase and sync with localStorage
-  useEffect(() => {
-    if (!currentUser?.id || !isUUID(currentUser.id)) return;
-    supabase.from("follows").select("following_id").eq("follower_id", currentUser.id)
-      .then(({ data, error }) => {
-        if (error) {
-          if (error.code === "42P01") {
-            setDbError("Social features require the 'follows' table in your database.");
-          } else {
-            console.warn("Follows query note:", error.message);
-          }
-          return;
-        }
-        if (data) {
-          const dbIds = data.map(r => r.following_id);
-          setFollowing(prev => {
-            const next = new Set([...prev, ...dbIds]);
-            try { localStorage.setItem('cinelog_following_ids', JSON.stringify([...next])); } catch {}
-            return next;
-          });
-        }
-      })
-      .catch(err => {
-        console.warn("Follows query exception:", err);
-      });
-  }, [currentUser?.id]);
 
-  // Load activity feed (following users, or rich community feed if not following anyone yet)
-  const loadFeed = useCallback(async () => {
-    setLoadingFeed(true);
-    try {
-      const followingIds = [...following].filter(isUUID);
-      let query = supabase
-        .from("library")
-        .select("user_id, title, poster_path, status, rating, review, date_added, tmdb_id, media_type, profiles!library_user_id_fkey(username, display_name, avatar_url)")
-        .order("date_added", { ascending: false })
-        .limit(40);
+  const loadFeed=useCallback(async()=>{if(!currentUser?.id){setFeed([]);return;}setLoadingFeed(true);setDbError(null);try{const ids=[...following].filter(isUUID);let query=supabase.from('library').select('id,user_id,title,poster_path,status,rating,review,date_added,tmdb_id,media_type').order('date_added',{ascending:false}).limit(40);query=ids.length?query.in('user_id',ids):query.not('review','is',null).neq('review','');const {data,error}=await query;if(error)throw error;const uids=[...new Set((data||[]).map(item=>item.user_id))];let people=[];if(uids.length){const result=await supabase.from('profiles').select('id,username,display_name,avatar_url').in('id',uids);if(result.error)throw result.error;people=result.data||[];}const profiles=new Map(people.map(p=>[p.id,p]));setFeed((data||[]).map(item=>({...item,review:readableReview(item.review),contains_spoilers:reviewSpoilerFlag(item),profiles:profiles.get(item.user_id)})).filter(item=>item.profiles&&!IGNORED_USERNAMES.has(item.profiles.username?.toLowerCase())));}catch{setDbError('Community activity could not be loaded. Please try again.');}finally{setLoadingFeed(false);}},[following,currentUser?.id]);
+  useEffect(()=>{loadFeed();},[loadFeed,retry]);
+  useEffect(()=>{let live=true;const ids=[...following].filter(isUUID);setFollowingUsers([]);if(!currentUser?.id||!ids.length){setLoadingFollowing(false);return;}setLoadingFollowing(true);supabase.from('profiles').select('id,username,display_name,avatar_url,bio').in('id',ids).then(({data,error})=>{if(!live)return;if(error)throw error;setFollowingUsers(data||[]);}).catch(()=>{if(live)setDbError('Your following list could not be loaded. Please try again.');}).finally(()=>{if(live)setLoadingFollowing(false);});return()=>{live=false;};},[following,currentUser?.id,retry]);
+  useEffect(()=>{let live=true;if(!currentUser?.id)return;setLoadingSuggested(true);supabase.from('profiles').select('id,username,display_name,avatar_url,bio').limit(30).then(({data,error})=>{if(!live)return;if(error)throw error;setSuggestedUsers((data||[]).filter(p=>p.id!==currentUser.id&&!following.has(p.id)&&!IGNORED_USERNAMES.has(p.username?.toLowerCase())));}).catch(()=>{if(live)setDbError('People could not be loaded. Please try again.');}).finally(()=>{if(live)setLoadingSuggested(false);});return()=>{live=false;};},[currentUser?.id,following,retry]);
+  useEffect(()=>{let live=true;const q=searchQuery.toLowerCase().replace(/[^\p{L}\p{N}_ .-]/gu,' ').trim().slice(0,80);if(!q){setSearchResults([]);setSearching(false);return;}setSearching(true);const timer=setTimeout(async()=>{try{const {data,error}=await supabase.from('profiles').select('id,username,display_name,avatar_url,bio').or('username.ilike.%'+q+'%,display_name.ilike.%'+q+'%').limit(10);if(error)throw error;if(live)setSearchResults((data||[]).filter(p=>p.id!==currentUser?.id&&!IGNORED_USERNAMES.has(p.username?.toLowerCase())));}catch{if(live){setSearchResults([]);setDbError('Search could not be loaded. Please try again.');}}finally{if(live)setSearching(false);}},300);return()=>{live=false;clearTimeout(timer);};},[searchQuery,currentUser?.id]);
 
-      if (followingIds.length > 0) {
-        query = query.in("user_id", followingIds);
-      } else {
-        query = query.not("review", "is", null).neq("review", "");
-      }
-
-      let rawFeed = [];
-      const { data, error } = await query;
-      if (!error && data) {
-        rawFeed = data;
-      } else if (error) {
-        console.warn("Feed query join note, executing resilient fallback:", error.message);
-        let fallbackQuery = supabase
-          .from("library")
-          .select("user_id, title, poster_path, status, rating, review, date_added, tmdb_id, media_type")
-          .order("date_added", { ascending: false })
-          .limit(40);
-        if (followingIds.length > 0) {
-          fallbackQuery = fallbackQuery.in("user_id", followingIds);
-        } else {
-          fallbackQuery = fallbackQuery.not("review", "is", null).neq("review", "");
-        }
-        const { data: rawLib } = await fallbackQuery;
-        if (rawLib) {
-          const uids = [...new Set(rawLib.map(r => r.user_id).filter(isUUID))];
-          let pMap = {};
-          if (uids.length > 0) {
-            const { data: profs } = await supabase.from("profiles").select("id, username, display_name, avatar_url").in("id", uids);
-            (profs || []).forEach(p => { pMap[p.id] = p; });
-          }
-          rawFeed = rawLib.map(item => ({ ...item, profiles: pMap[item.user_id] }));
-        }
-      }
-
-      // Also query activity_feed table for real-time community stream
-      try {
-        let actQuery = supabase
-          .from("activity_feed")
-          .select("id, user_id, action_type, title, media_type, poster_path, rating, details, created_at")
-          .order("created_at", { ascending: false })
-          .limit(30);
-
-        if (followingIds.length > 0) {
-          actQuery = actQuery.in("user_id", followingIds);
-        }
-
-        const { data: actData } = await actQuery;
-        if (actData && actData.length > 0) {
-          const actUids = [...new Set(actData.map(a => a.user_id).filter(isUUID))];
-          let actProfMap = {};
-          if (actUids.length > 0) {
-            const { data: profs } = await supabase.from("profiles").select("id, username, display_name, avatar_url").in("id", actUids);
-            (profs || []).forEach(p => { actProfMap[p.id] = p; });
-          }
-
-          const mappedActivities = actData.map(a => ({
-            id: a.id,
-            user_id: a.user_id,
-            title: a.title,
-            poster_path: a.poster_path,
-            status: a.action_type || 'logged',
-            rating: a.rating,
-            review: a.details?.review || '',
-            date_added: a.created_at,
-            media_type: a.media_type,
-            profiles: actProfMap[a.user_id]
-          }));
-
-          rawFeed = [...rawFeed, ...mappedActivities];
-        }
-      } catch (actErr) {
-        console.warn("Activity feed query note:", actErr);
-      }
-
-      // Filter out unwanted test accounts and any database clone of elena from feed
-      const cleanDbFeed = rawFeed.filter(item => {
-        const u = (item.profiles?.username || '').toLowerCase();
-        return !IGNORED_USERNAMES.has(u) && u !== 'elena_films' && item.user_id !== ELENA_PROFILE.id;
-      });
-
-      // Include Elena Rodriguez's authentic reviews in feed
-      const shouldShowElena = following.has(ELENA_PROFILE.id) || following.size === 0;
-      const elenaFeedItems = shouldShowElena
-        ? ELENA_LIBRARY.filter(m => m.review).map(m => ({
-            user_id: ELENA_PROFILE.id,
-            title: m.title,
-            poster_path: m.poster_path,
-            status: m.status,
-            rating: m.rating,
-            review: m.review,
-            date_added: m.date_added,
-            tmdb_id: m.tmdb_id,
-            media_type: m.media_type,
-            profiles: {
-              username: ELENA_PROFILE.username,
-              display_name: ELENA_PROFILE.displayName,
-              avatar_url: ELENA_PROFILE.avatar
-            }
-          }))
-        : [];
-
-      const combined = [...cleanDbFeed, ...elenaFeedItems].sort((a, b) => new Date(b.date_added || 0) - new Date(a.date_added || 0));
-      setFeed(combined);
-    } catch (err) {
-      console.error("Feed load error:", err);
-    } finally {
-      setLoadingFeed(false);
-    }
-  }, [following]);
-
-  useEffect(() => { loadFeed(); }, [loadFeed]);
-
-  // Load full profile details for people the user follows
-  useEffect(() => {
-    if (!currentUser?.id && !following.has(ELENA_PROFILE.id)) {
-      setFollowingUsers([]);
-      return;
-    }
-    setLoadingFollowing(true);
-    const ids = [...following].filter(isUUID);
-
-    const hasElena = following.has(ELENA_PROFILE.id);
-    const elenaObj = {
-      id: ELENA_PROFILE.id,
-      username: ELENA_PROFILE.username,
-      display_name: ELENA_PROFILE.displayName,
-      avatar_url: ELENA_PROFILE.avatar,
-      bio: ELENA_PROFILE.bio
-    };
-
-    if (ids.length === 0) {
-      setFollowingUsers(hasElena ? [elenaObj] : []);
-      setLoadingFollowing(false);
-      return;
-    }
-    supabase.from("profiles")
-      .select("id, username, display_name, avatar_url, bio")
-      .in("id", ids)
-      .then(({ data }) => {
-        const list = (data || []).filter(u =>
-          !IGNORED_USERNAMES.has((u.username || '').toLowerCase()) &&
-          (u.username || '').toLowerCase() !== 'elena_films' &&
-          u.id !== ELENA_PROFILE.id
-        );
-        if (hasElena) {
-          list.unshift(elenaObj);
-        }
-        setFollowingUsers(list);
-      })
-      .catch(() => {
-        setFollowingUsers(hasElena ? [elenaObj] : []);
-      })
-      .finally(() => setLoadingFollowing(false));
-  }, [currentUser?.id, following]);
-
-  // Load suggested users from real profiles table + Elena Rodriguez
-  useEffect(() => {
-    setLoadingSuggested(true);
-    supabase.from("profiles")
-      .select("id, username, display_name, avatar_url, bio")
-      .limit(30)
-      .then(({ data }) => {
-        const myId = currentUser?.id;
-        const myUsername = (currentUser?.username || '').toLowerCase();
-        let filtered = (data || []).filter(u =>
-          u.id !== myId &&
-          (u.username || '').toLowerCase() !== myUsername &&
-          !IGNORED_USERNAMES.has((u.username || '').toLowerCase()) &&
-          (u.username || '').toLowerCase() !== 'elena_films' &&
-          u.id !== ELENA_PROFILE.id &&
-          !following.has(u.id)
-        );
-
-        // Always provide Elena Rodriguez as a rich, active community profile to follow & explore
-        if (!following.has(ELENA_PROFILE.id) && myUsername !== ELENA_PROFILE.username.toLowerCase()) {
-          filtered.unshift({
-            id: ELENA_PROFILE.id,
-            username: ELENA_PROFILE.username,
-            display_name: ELENA_PROFILE.displayName,
-            avatar_url: ELENA_PROFILE.avatar,
-            bio: ELENA_PROFILE.bio
-          });
-        }
-        setSuggestedUsers(filtered);
-      })
-      .catch(err => {
-        console.warn("Profiles query exception:", err);
-        if (!following.has(ELENA_PROFILE.id)) {
-          setSuggestedUsers([{
-            id: ELENA_PROFILE.id,
-            username: ELENA_PROFILE.username,
-            display_name: ELENA_PROFILE.displayName,
-            avatar_url: ELENA_PROFILE.avatar,
-            bio: ELENA_PROFILE.bio
-          }]);
-        }
-      })
-      .finally(() => setLoadingSuggested(false));
-  }, [currentUser?.id, currentUser?.username, following]);
-
-  // Search users
-  useEffect(() => {
-    if (!searchQuery.trim()) { setSearchResults([]); return; }
-    setSearching(true);
-    const t = setTimeout(async () => {
-      const q = searchQuery.trim().toLowerCase();
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, username, display_name, avatar_url, bio")
-        .or(`username.ilike.%${q}%,display_name.ilike.%${q}%`)
-        .limit(10);
-      
-      let filtered = (data || []).filter(u =>
-        u.id !== currentUser?.id &&
-        (u.username || '').toLowerCase() !== (currentUser?.username || '').toLowerCase() &&
-        !IGNORED_USERNAMES.has((u.username || '').toLowerCase()) &&
-        (u.username || '').toLowerCase() !== 'elena_films' &&
-        u.id !== ELENA_PROFILE.id
-      );
-
-      if ('elena rodriguez elena_films'.includes(q) && currentUser?.username !== ELENA_PROFILE.username) {
-        if (!filtered.some(u => u.username === ELENA_PROFILE.username)) {
-          filtered.unshift({
-            id: ELENA_PROFILE.id,
-            username: ELENA_PROFILE.username,
-            display_name: ELENA_PROFILE.displayName,
-            avatar_url: ELENA_PROFILE.avatar,
-            bio: ELENA_PROFILE.bio
-          });
-        }
-      }
-
-      setSearchResults(filtered);
-      setSearching(false);
-    }, 300);
-    return () => clearTimeout(t);
-  }, [searchQuery, currentUser?.id, currentUser?.username]);
-
-  const handleFollow = async (userId) => {
-    const isFollowing = following.has(userId);
-    setFollowing(prev => {
-      const next = new Set(prev);
-      if (isFollowing) { next.delete(userId); } else { next.add(userId); }
-      try { localStorage.setItem('cinelog_following_ids', JSON.stringify([...next])); } catch {}
-      return next;
-    });
-
-    if (currentUser?.id && isUUID(currentUser.id) && isUUID(userId) && userId !== ELENA_PROFILE.id) {
-      try {
-        if (isFollowing) {
-          await supabase.from("follows").delete()
-            .eq("follower_id", currentUser.id).eq("following_id", userId);
-        } else {
-          await supabase.from("follows").upsert({ follower_id: currentUser.id, following_id: userId }, { onConflict: "follower_id,following_id" });
-        }
-      } catch (err) {
-        console.warn("Follow action failed:", err);
-        setFollowing(prev => {
-          const next = new Set(prev);
-          if (isFollowing) { next.add(userId); } else { next.delete(userId); }
-          try { localStorage.setItem('cinelog_following_ids', JSON.stringify([...next])); } catch {}
-          return next;
-        });
-      }
-    }
+  const openFeedMovie=async item=>{
+    if(item.tmdb_id){onMovieClick?.(item.tmdb_id,item.media_type);return;}
+    try{const type=item.media_type==='tv'?'tv':'movie';const response=await fetch(`https://api.themoviedb.org/3/search/${type}?api_key=6a2fd6b9b1bb3befbb9f14c203732225&query=${encodeURIComponent(item.title)}`);if(!response.ok)throw new Error();const data=await response.json();const match=data.results?.find(m=>(m.title||m.name)?.toLowerCase()===item.title?.toLowerCase())||data.results?.[0];if(!match)throw new Error();onMovieClick?.(match.id,type);}catch{setDbError('Could not open that film. Please try searching for its title.');}
   };
+  const filteredFeed = feed.filter(item=>feedLens==='all' || feedLens==='reviews' && item.review?.trim() || feedLens==='favorites' && Number(item.rating)>=8);
 
   if (!currentUser) {
     return (
-      <div style={{ textAlign: "center", padding: "80px 20px", color: "var(--text-muted)" }}>
-        <div style={{ fontSize: "56px", marginBottom: "16px" }}>👥</div>
-        <div style={{ fontSize: "20px", fontWeight: 900, marginBottom: "8px" }}>Sign in to Connect</div>
-        <div style={{ fontSize: "14px", color: "var(--text-dim)" }}>Create an account to follow other film lovers and see their activity</div>
-      </div>
+      <section><div className="studio-page-heading"><div><span className="studio-eyebrow">A SHARED LOVE OF FILM</span><h1>The conversation<br/>after the credits.</h1><p>Find people who see cinema a little like you do.</p></div></div><div className="studio-community-welcome"><Users size={38}/><h2>The best part comes after the credits.</h2><p>Find your people, compare favorites, and follow the reviews that make you think.</p><button className="studio-primary" onClick={onOpenAuth}>Log in / Create account</button><span>Already part of CineLog? Sign in to pick up where you left off.</span></div></section>
     );
   }
 
   const displayUsers = searchQuery.trim() ? searchResults : suggestedUsers;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "24px", paddingBottom: "40px" }}>
+    <div className="v2-social" style={{ display: "flex", flexDirection: "column", gap: "24px", paddingBottom: "40px" }}>
+      <div className="studio-page-heading"><div><span className="studio-eyebrow">A SHARED LOVE OF FILM</span><h1>Community</h1><p>New perspectives, from people who love the same stories.</p></div></div>
+      {followError&&<p role="alert" className="screening-error">{followError}</p>}
       {/* Database error banner */}
       {dbError && (
         <div style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.3)", borderRadius: "12px", padding: "12px 16px", fontSize: "13px", color: "#fbbf24", display: "flex", alignItems: "flex-start", gap: "8px" }}>
           <span style={{ fontSize: "16px", flexShrink: 0 }}>⚠️</span>
-          <span>{dbError}</span>
+          <span role="alert">{dbError}</span><button className="studio-secondary" onClick={()=>{setDbError(null);setRetry(n=>n+1);}}>Try again</button>
         </div>
       )}
       {/* Sub-tabs */}
       <div className="social-subtabs-bar" style={{ display: "flex", gap: "4px", background: "rgba(255,255,255,0.03)", borderRadius: "10px", padding: "4px", width: "fit-content" }}>
         {[
-          { id: "feed", label: "Activity Feed", icon: <Activity size={14} /> },
+          { id: "feed", label: "The feed", icon: <Activity size={14} /> },
           { id: "following", label: `Following (${following.size})`, icon: <UserCheck size={14} /> },
-          { id: "discover", label: "Discover People", icon: <Users size={14} /> },
+          { id: "discover", label: "Find your people", icon: <Users size={14} /> },
         ].map(t => (
-          <button key={t.id} onClick={() => setActiveTab(t.id)} style={{
+          <button key={t.id} aria-pressed={activeTab===t.id} onClick={() => setActiveTab(t.id)} style={{
             background: activeTab === t.id ? "var(--accent)" : "transparent",
             color: activeTab === t.id ? "#fff" : "var(--text-muted)",
             border: "none", borderRadius: "7px", padding: "8px 18px",
@@ -392,6 +95,9 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
         ))}
       </div>
 
+      {activeTab==='feed'&&<div className="v2-pill-filters">{[['all','Everything'],['reviews','Written reviews'],['favorites','Rated 8+']].map(([id,label])=><button key={id} aria-pressed={feedLens===id} onClick={()=>setFeedLens(id)}>{label}</button>)}</div>}
+      <aside className="v2-community-rail"><span className="studio-eyebrow">YOUR COMMUNITY</span><h2>Your circle.</h2><div><strong>{following.size}</strong><span>{following.size===1?'person you follow':'people you follow'}</span></div><button className="studio-text-button" onClick={()=>setActiveTab('following')}>See who you follow ↗</button><hr/><p>Find a new perspective on your next favorite film.</p><button className="studio-text-button" onClick={()=>setActiveTab('discover')}>Discover people ↗</button></aside>
+      {activeTab==='feed' && !loadingFeed && feed.length>0 && filteredFeed.length===0 && <p className="v2-picks-notice">No activity matches this filter yet. Try Everything.</p>}
       {/* ACTIVITY FEED TAB */}
       {activeTab === "feed" && (
         <div>
@@ -400,7 +106,7 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
               <div style={{ fontSize: "32px", animation: "spin 1s linear infinite", display: "inline-block", marginBottom: "12px" }}>⟳</div>
               <div>Loading feed...</div>
             </div>
-          ) : following.size === 0 ? (
+          ) : following.size === 0 && feed.length === 0 ? (
             <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--text-muted)" }}>
               <div style={{ fontSize: "48px", marginBottom: "16px" }}>🌐</div>
               <div style={{ fontWeight: 800, fontSize: "17px", marginBottom: "8px" }}>Your feed is empty</div>
@@ -417,7 +123,7 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {feed.map((item, i) => {
+              {filteredFeed.map((item, i) => {
                 const profile = item.profiles;
                 const name = profile?.display_name || profile?.username || "Someone";
                 const avatar = profile?.avatar_url;
@@ -433,7 +139,7 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
                   >
                     {/* Avatar */}
                     <div
-                      onClick={() => onOpenUserProfile && onOpenUserProfile({ id: item.user_id, ...profile })}
+                      className="social-profile-link" role="link" tabIndex={0} aria-label={`Open ${name} profile`} onKeyDown={e=>{if(e.key==='Enter')e.currentTarget.click();}} onClick={() => onOpenUserProfile && onOpenUserProfile({ id: item.user_id, ...profile })}
                       style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(136,8,8,0.15)", border: "1px solid var(--border)", cursor: "pointer" }}
                     >
                       {avatar ? <img src={avatar} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> :
@@ -443,7 +149,7 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
                     {/* Poster thumbnail */}
                     {item.poster_path && (
                       <div style={{ width: "36px", height: "52px", borderRadius: "6px", overflow: "hidden", flexShrink: 0, cursor: "pointer" }}
-                        onClick={() => onMovieClick && onMovieClick(item.tmdb_id, item.media_type)}>
+                        role="button" tabIndex={0} aria-label={`Open ${item.title}`} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.currentTarget.click();}}} onClick={() => openFeedMovie(item)}>
                         <img src={`https://image.tmdb.org/t/p/w92${item.poster_path}`} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                       </div>
                     )}
@@ -459,7 +165,7 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
                         </span>{" "}
                         <span style={{ color: "var(--text-muted)" }}>{STATUS_LABEL[item.status] || "logged"}</span>{" "}
                         <span style={{ fontWeight: 800, cursor: "pointer" }}
-                          onClick={() => onMovieClick && onMovieClick(item.tmdb_id, item.media_type)}>
+                          onClick={() => openFeedMovie(item)}>
                           {item.title}
                         </span>
                         {item.rating > 0 && (
@@ -475,11 +181,11 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
                           borderRadius: '0 8px 8px 0',
                         }}>
                           <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.75)', fontStyle: 'italic', lineHeight: 1.55 }}>
-                            "{item.review.slice(0, 200)}{item.review.length > 200 ? '…' : ''}"
+                            {item.contains_spoilers?'Contains spoilers · Open the film to read this review.':String.fromCharCode(34)+item.review.slice(0,200)+(item.review.length>200?'…':'')+String.fromCharCode(34)}
                           </div>
                           {item.review.length > 200 && (
                             <div
-                              onClick={() => onMovieClick && onMovieClick(item.tmdb_id, item.media_type)}
+                              onClick={() => openFeedMovie(item)}
                               style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 700, marginTop: '4px', cursor: 'pointer' }}
                             >
                               Read full review →
@@ -533,7 +239,7 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
                   onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
                 >
                   <div
-                    onClick={() => onOpenUserProfile && onOpenUserProfile(user)}
+                    className="social-profile-link" role="link" tabIndex={0} aria-label={`Open @${user.username}`} onKeyDown={e=>{if(e.key==='Enter')e.currentTarget.click();}} onClick={() => onOpenUserProfile && onOpenUserProfile(user)}
                     style={{ width: "44px", height: "44px", borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(136,8,8,0.15)", border: "1px solid var(--border)", cursor: "pointer" }}
                   >
                     {user.avatar_url ? <img src={user.avatar_url} alt={user.username} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> :
@@ -548,7 +254,7 @@ export default function SocialTab({ currentUser, onMovieClick, onOpenUserProfile
                     {user.bio && <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.bio}</div>}
                   </div>
                   <button
-                    onClick={() => handleFollow(user.id)}
+                    disabled={followPending===user.id} onClick={() => handleFollow(user.id)}
                     style={{
                       background: "rgba(239,68,68,0.1)",
                       border: "1px solid rgba(239,68,68,0.3)",

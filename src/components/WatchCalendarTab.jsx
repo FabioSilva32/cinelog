@@ -1,3 +1,6 @@
+import DiaryEditor from './DiaryEditor';
+import {viewingEntries} from '../utils/viewingHistory';
+import { localDateKey } from '../utils/dates';
 import React, { useMemo, useState } from 'react';
 import { CalendarDays, Flame, TrendingUp, Award, ChevronLeft, ChevronRight, Film, BarChart3 } from 'lucide-react';
 
@@ -5,47 +8,26 @@ const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 const FULL_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
-export default function WatchCalendarTab({ library = [], onMovieClick }) {
+export default function WatchCalendarTab({ library = [], onMovieClick, onSaveMovie }) {
+  const [editing,setEditing]=useState(null);
+  const entries=useMemo(()=>viewingEntries(library),[library]);
   const [hoveredCell, setHoveredCell] = useState(null);
   const [tooltip, setTooltip] = useState(null);
   const [selectedMonthOffset, setSelectedMonthOffset] = useState(0); // 0 = current month
-  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [selectedDate, setSelectedDate] = useState(() => localDateKey(new Date()));
 
   // Helper: get the best date for a movie (watch_date for watched, date_added as fallback)
   const getMovieDate = (movie) => {
-    if (movie.status === 'watched' && movie.watch_date) return movie.watch_date;
+    if (movie.watch_date) return movie.watch_date;
     return movie.date_added || null;
   };
 
   // Build a map of date => [movies] (including re-logged screenings)
   const dateMap = useMemo(() => {
     const map = {};
-    library.forEach(movie => {
-      const scr = movie.screenings || movie.episode_data?.screenings;
-      if (Array.isArray(scr) && scr.length > 0) {
-        scr.forEach((s, idx) => {
-          const dStr = s.date ? s.date.slice(0, 10) : null;
-          if (!dStr) return;
-          if (!map[dStr]) map[dStr] = [];
-          map[dStr].push({
-            ...movie,
-            rating: s.rating != null ? s.rating : movie.rating,
-            watch_date: s.date || movie.watch_date,
-            review: s.review || movie.review,
-            is_rewatch: (scr.length - idx) > 1 || s.is_rewatch,
-            screeningNumber: scr.length - idx
-          });
-        });
-      } else {
-        const dateVal = getMovieDate(movie);
-        if (!dateVal) return;
-        const date = dateVal.slice(0, 10);
-        if (!map[date]) map[date] = [];
-        map[date].push(movie);
-      }
-    });
+    entries.forEach(movie=>{const date=movie.watch_date.slice(0,10);(map[date]??=[]).push(movie);});
     return map;
-  }, [library]);
+  }, [entries]);
 
   // GitHub-style heatmap (52 weeks)
   const { weeks } = useMemo(() => {
@@ -60,7 +42,7 @@ export default function WatchCalendarTab({ library = [], onMovieClick }) {
     while (current <= today) {
       const week = [];
       for (let d = 0; d < 7; d++) {
-        const dateStr = current.toISOString().slice(0, 10);
+        const dateStr = localDateKey(current);
         week.push({
           date: new Date(current), dateStr,
           movies: dateMap[dateStr] || [],
@@ -87,7 +69,7 @@ export default function WatchCalendarTab({ library = [], onMovieClick }) {
 
   // Stats
   const stats = useMemo(() => {
-    const watched = library.filter(m => m.status === 'watched' && getMovieDate(m));
+    const watched = entries;
     const streakDays = new Set(watched.map(m => getMovieDate(m).slice(0, 10)));
     const streakArr = [...streakDays].sort();
     let best = 0, cur = 0, lastDate = null;
@@ -104,7 +86,7 @@ export default function WatchCalendarTab({ library = [], onMovieClick }) {
     let todayStreak = 0;
     let checkDate = new Date();
     while (true) {
-      const ds = checkDate.toISOString().slice(0, 10);
+      const ds = localDateKey(checkDate);
       if (streakDays.has(ds)) { todayStreak++; checkDate.setDate(checkDate.getDate() - 1); }
       else break;
     }
@@ -162,6 +144,7 @@ export default function WatchCalendarTab({ library = [], onMovieClick }) {
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
 
+      {editing&&<DiaryEditor entry={editing} onSave={onSaveMovie} onClose={()=>setEditing(null)}/>}
       {/* Header */}
       <div>
         <h2 style={{ fontSize: '24px', fontWeight: 900, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -169,10 +152,12 @@ export default function WatchCalendarTab({ library = [], onMovieClick }) {
           Watch Calendar
         </h2>
         <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: 0 }}>
-          Your personal cinema diary heatmap & monthly screening log.
+          Screening dates from your journal. Rewatches appear on the dates you logged them.
         </p>
       </div>
 
+      <p className="workspace-context">Monthly view: {FULL_MONTHS[monthCalendar.month]} {monthCalendar.year} · Selected day: {selectedDate}</p>
+      {!library.length&&<div className="workspace-state"><h3>No screenings yet</h3><p>Log a watched title with a date to start your diary.</p><a className="studio-secondary" href="/explore">Explore films</a></div>}
       {/* Stats Row (Responsive Grid) */}
       <div className="calendar-stats-grid" style={{ display: 'grid', gap: '10px' }}>
         {[
@@ -210,7 +195,7 @@ export default function WatchCalendarTab({ library = [], onMovieClick }) {
             <button
               onClick={() => {
                 setSelectedMonthOffset(0);
-                setSelectedDate(new Date().toISOString().slice(0, 10));
+                setSelectedDate(localDateKey(new Date()));
               }}
               className="btn btn-secondary"
               style={{ padding: '5px 12px', fontSize: '12px', fontWeight: 700, borderRadius: '8px' }}
@@ -240,12 +225,14 @@ export default function WatchCalendarTab({ library = [], onMovieClick }) {
             const day = i + 1;
             const dateStr = getMonthDate(day);
             const dayMovies = dateMap[dateStr] || [];
-            const isToday = dateStr === new Date().toISOString().slice(0, 10);
+            const isToday = dateStr === localDateKey(new Date());
             const isSelected = selectedDate === dateStr;
             const hasMovies = dayMovies.length > 0;
             return (
               <div
                 key={day}
+                role="button" tabIndex={0} aria-label={`${dateStr}: ${dayMovies.length} screenings`} aria-pressed={isSelected}
+                onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setSelectedDate(dateStr);}}}
                 onClick={() => setSelectedDate(dateStr)}
                 style={{
                   borderRadius: '8px',
@@ -327,7 +314,7 @@ export default function WatchCalendarTab({ library = [], onMovieClick }) {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
             <span style={{ fontSize: '13px', fontWeight: 800, color: '#FFFFFF' }}>
-              {selectedDate === new Date().toISOString().slice(0, 10) ? 'Today' : selectedDate}
+              {selectedDate === localDateKey(new Date()) ? 'Today' : selectedDate}
             </span>
             <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>
               {selectedMovies.length} title{selectedMovies.length === 1 ? '' : 's'} logged
@@ -338,8 +325,8 @@ export default function WatchCalendarTab({ library = [], onMovieClick }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {selectedMovies.map(m => (
                 <div
-                  key={m.id || m.tmdb_id}
-                  onClick={() => onMovieClick && onMovieClick(m.tmdb_id || m.id, m.media_type || 'movie')}
+                  key={`${m.id}-${m.screeningId}`}
+                  role="button" tabIndex={0} onKeyDown={e=>{if(e.target===e.currentTarget&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.currentTarget.click();}}} onClick={() => onMovieClick && onMovieClick(m.tmdb_id || m.id, m.media_type || 'movie')}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -378,7 +365,7 @@ export default function WatchCalendarTab({ library = [], onMovieClick }) {
                       </span>
                     </div>
                   </div>
-                  <ChevronRight size={15} color="var(--text-muted)" />
+                  {onSaveMovie&&<div className="diary-row-actions" onClick={e=>e.stopPropagation()}><button className="studio-secondary" onClick={()=>setEditing(m)}>Edit screening</button><button className="studio-text-button" onClick={()=>setEditing({...m,screeningId:null})}>Rewatch</button></div>}<ChevronRight size={15} color="var(--text-muted)" />
                 </div>
               ))}
             </div>

@@ -1,0 +1,3 @@
+import {Award,Crown,Film,Repeat2,Heart,Star} from 'lucide-react';
+import {ACHIEVEMENTS} from '../utils/achievements';
+export default function ProfileBadge({name,compact=false}){const label=ACHIEVEMENTS.find(a=>a.id===name)?.title||name;const creator=/creator|maker/i.test(label),gold=/gold|legend|overlord|canon/i.test(label),silver=/silver|diamond/i.test(label);const Icon=creator?Crown:label==='Encore'?Repeat2:label==='Personal Canon'?Heart:label==='Opening Frame'?Film:gold?Star:Award;return <span className={'profile-badge'+(compact?' is-compact':'')} data-finish={creator||gold?'gold':silver?'silver':'ruby'}><Icon size={compact?12:15} aria-hidden="true"/><b>{label}</b></span>;}

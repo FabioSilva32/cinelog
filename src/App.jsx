@@ -1,32 +1,48 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import {resolveOpenMovie} from './utils/openMovie';
+import {useSaveFeedback} from './hooks/useSaveFeedback';
+import SaveIndicator from './components/SaveIndicator';
+import {reviewSpoilerFlag,readableReview} from './utils/reviews';
+import {episodeData as readEpisodeData} from './utils/viewingHistory';
+import {BORDER_STYLES,isUserCreator} from './utils/achievements';
+import { withViewingStatus } from './utils/quickStatus';
+import {tmdbMediaType} from './utils/screeningDetails';
+import SearchWorkspace from './components/SearchWorkspace';
+import QuickLogDialog from './components/QuickLogDialog';
+import {catalogueKey,newLibraryRow} from './utils/catalogue';
+import {useDismissiblePopovers} from './hooks/useDismissiblePopovers';
+import {useDialogFocus} from './hooks/useDialogFocus';
+import { publishProfile } from './utils/publishProfile';
+import { ownBannerUrl } from './utils/profileBanner';
+import { readHistoryDestination, pagePath, profilePath, filmPath, canonicalPath, isAuthCallbackURL, listPath } from './utils/navigation';
+import React, { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { App as CapApp } from '@capacitor/app';
-import Header from './components/Header';
+import Header from './components/StudioNavigation';
 import LandingPage from './components/LandingPage';
 import { DEFAULT_GREY_AVATAR } from './components/AvatarWithBorder';
 import LibraryTab from './components/LibraryTab';
 import ExploreTab from './components/ExploreTab';
-import CollectionsTab from './components/CollectionsTab';
-import TierListTab from './components/TierListTab';
-import ProfileTab from './components/ProfileTab';
-import AchievementsTab from './components/AchievementsTab';
-import ConstellationTab from './components/ConstellationTab';
-import WatchCalendarTab from './components/WatchCalendarTab';
+const CollectionsTab = lazy(() => import('./components/CollectionsTab'));
+const TierListTab = lazy(() => import('./components/TierListTab'));
+const ProfileTab = lazy(() => import('./components/ProfileTab'));
+const AchievementsTab = lazy(() => import('./components/AchievementsTab'));
+const ConstellationTab = lazy(() => import('./components/ConstellationTab'));
+const WatchCalendarTab = lazy(() => import('./components/WatchCalendarTab'));
 import MovieDetailModal from './components/MovieDetailModal';
-import StatsTab from './components/StatsTab';
+const StatsTab = lazy(() => import('./components/StatsTab'));
 import AuthModal from './components/AuthModal';
 import ResetPasswordModal from './components/ResetPasswordModal';
 import ConfirmModal from './components/ConfirmModal';
-import TriviaTab from './components/TriviaTab';
-import ChallengesTab from './components/ChallengesTab';
-import WrappedTab from './components/WrappedTab';
-import ForYouTab from './components/ForYouTab';
-import SocialTab from './components/SocialTab';
+const TriviaTab = lazy(() => import('./components/TriviaTab'));
+const ChallengesTab = lazy(() => import('./components/ChallengesTab'));
+const WrappedTab = lazy(() => import('./components/WrappedTab'));
+const ForYouTab = lazy(() => import('./components/ForYouTab'));
+const SocialTab = lazy(() => import('./components/CommunityHub'));
 import UserProfileModal from './components/UserProfileModal';
-import MobileBottomNav from './components/MobileBottomNav';
+
 import SettingsPanel, { applyTheme, THEMES } from './components/SettingsPanel';
 import { ToastProvider, useToast } from './components/ToastSystem';
 import { useBodyScrollLock } from './hooks/useBodyScrollLock';
-import { MOCK_USERS, TESTER_PROFILE, TESTER_LIBRARY } from './mockData';
+
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import { getSuggestedTags } from './utils/collections';
 import { getEnhancedMovieTitle, enhanceMovie, normalizeSearchQuery } from './utils/movieTitles';
@@ -52,10 +68,10 @@ export default function App() {
 
 function AppInner() {
   const toast = useToast();
-  const [activeTab, setActiveTab] = useState('explore');
-  const [profileSubTab, setProfileSubTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(() => readHistoryDestination(window.location.href).tab);
+  const [profileSubTab, setProfileSubTab] = useState(() => readHistoryDestination(window.location.href).sub);
   const [tabHistory, setTabHistory] = useState(['explore']);
-  const [viewingUserProfile, setViewingUserProfile] = useState(null);
+  const [viewingUserProfile, setViewingUserProfile] = useState(() => {const route=readHistoryDestination(window.location.href);return route.modal==='user'?route.target:null;});
 
   // Synchronize tab navigation with browser history (enables browser Back < and Forward > buttons)
   const handleTabChange = useCallback((newTab, replace = false, keepViewedUser = false) => {
@@ -65,7 +81,7 @@ function AppInner() {
     }
 
     // If navigating to a personal tracking tab that now lives inside Profile, redirect to profile sub-tab!
-    if (['stats', 'calendar', 'wrapped', 'achievements', 'constellation', 'shop', 'diary', 'watchlist', 'reviews'].includes(newTab)) {
+    if (['shop', 'diary', 'watchlist', 'reviews'].includes(newTab)) {
       setProfileSubTab(newTab);
       setActiveTab('profile');
       if (!replace) {
@@ -73,8 +89,8 @@ function AppInner() {
       }
       try {
         const url = new URL(window.location.href);
-        url.searchParams.set('tab', 'profile');
-        url.searchParams.set('sub', newTab);
+        url.hash = "";
+        url.pathname=pagePath('profile',newTab);url.search='';
         if (replace) {
           window.history.replaceState({ tab: 'profile', sub: newTab }, '', url.toString());
         } else {
@@ -96,46 +112,29 @@ function AppInner() {
     }
     try {
       const url = new URL(window.location.href);
-      url.searchParams.set('tab', resolved);
-      url.searchParams.delete('sub');
+        url.hash = "";
+      url.pathname=pagePath(resolved);url.search='';
       if (replace) {
         window.history.replaceState({ tab: resolved }, '', url.toString());
       } else {
         window.history.pushState({ tab: resolved }, '', url.toString());
       }
     } catch (e) {}
+    window.dispatchEvent(new Event('cinelog:route-change'));
   }, []);
 
-  // Initialize URL and push baseline history guard so mobile swipe-back never exits the app
+  const initialRoute = useRef(readHistoryDestination(window.location.href,window.history.state||{}));
+  const restoredInitialMovie=useRef(false);
   useEffect(() => {
-    let resolvedInitial = 'explore';
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const initialTab = params.get('tab');
-      const initialSub = params.get('sub');
-      if (['stats', 'calendar', 'wrapped', 'achievements', 'constellation', 'shop', 'diary', 'watchlist'].includes(initialTab)) {
-        setProfileSubTab(initialTab);
-        setActiveTab('profile');
-        resolvedInitial = 'profile';
-      } else if (initialTab === 'profile') {
-        if (initialSub) setProfileSubTab(initialSub);
-        setActiveTab('profile');
-        resolvedInitial = 'profile';
-      } else if (initialTab && initialTab !== 'landing') {
-        setActiveTab(initialTab);
-        resolvedInitial = initialTab;
-      } else {
-        setActiveTab('explore');
-        resolvedInitial = 'explore';
-      }
-
-      // Set clean initial state on mount
-      window.history.replaceState({ root: true, tab: resolvedInitial }, '', window.location.href);
-    } catch (e) {}
-  }, []);
+    const route=initialRoute.current;
+    if(isAuthCallbackURL(window.location.href))return;
+    window.history.replaceState({...window.history.state,root:true,tab:route.tab,sub:route.sub},'',canonicalPath(route));
+  },[]);
   const [showSettings, setShowSettings] = useState(false);
   const [showCommandCenter, setShowCommandCenter] = useState(false);
   useBodyScrollLock(showCommandCenter);
+  useDismissiblePopovers();
+  const searchDialogRef=useDialogFocus(showCommandCenter);
 
   const [cmdQuery, setCmdQuery] = useState('');
   const [cmdSearchResults, setCmdSearchResults] = useState([]);
@@ -145,6 +144,8 @@ function AppInner() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [trendingQuickPicks, setTrendingQuickPicks] = useState([]);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const quickDialogRef=useDialogFocus(showQuickAdd);
+  useBodyScrollLock(showQuickAdd);
   const [quickSearch, setQuickSearch] = useState('');
   const [quickResults, setQuickResults] = useState([]);
   const [quickLoading, setQuickLoading] = useState(false);
@@ -232,13 +233,12 @@ function AppInner() {
     const handler = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
-        setShowCommandCenter(prev => !prev);
-        setCmdQuery('');
+        if(window.location.pathname==='/search')document.querySelector('input[aria-label="Search catalogue"]')?.focus();else handleTabChange('search');
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, []);
+  }, [handleTabChange]);
 
   // Reset search when modal closes
   useEffect(() => {
@@ -335,13 +335,10 @@ function AppInner() {
   const useSupabase = true;
   const handleSetUseSupabase = () => {};
 
-  const [currentUser, setCurrentUser] = useState(() => {
-    try {
-      const stored = localStorage.getItem('cinelog_supabase_cached_user');
-      if (stored) return JSON.parse(stored);
-    } catch {}
-    return null;
-  });
+  const [currentUser, setCurrentUser] = useState(()=>{try{if(!localStorage.getItem('cinelog_tier_legacy_owner')){const cached=JSON.parse(localStorage.getItem('cinelog_supabase_cached_user')||'null');localStorage.setItem('cinelog_tier_legacy_owner',cached?.id||'unclaimed');}}catch{}return null;});
+
+  const activeOwner=useRef(currentUser?.id);activeOwner.current=currentUser?.id;
+  const sync=useSaveFeedback(currentUser?.id);
 
   const [library, setLibrary] = useState(() => {
     return [];
@@ -387,6 +384,7 @@ function AppInner() {
           return;
         }
         if (showAuth) {
+          if(document.querySelector('.account-dialog form[aria-busy=true]'))return;
           setShowAuth(false);
           return;
         }
@@ -395,10 +393,12 @@ function AppInner() {
           return;
         }
         if (activeEditMovie) {
+          if (readHistoryDestination(window.location.href,window.history.state||{}).modal==='movie') { if(window.history.state?.modal&&!window.history.state?.root){window.history.back();return;} window.history.replaceState({tab:activeTab},'',pagePath(activeTab)); }
           setActiveEditMovie(null);
           return;
         }
-        if (viewingUserProfile) {
+        if (viewingUserProfile && window.location.hash.startsWith('#user-')) {
+          if (window.location.hash.startsWith('#user-') && window.history.state?.modal) { window.history.back(); return; }
           setViewingUserProfile(null);
           return;
         }
@@ -406,7 +406,7 @@ function AppInner() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showQuickAdd, showCommandCenter, showSettings, showAuth, showRecoveryModal, activeEditMovie, viewingUserProfile]);
+  }, [showQuickAdd, showCommandCenter, showSettings, showAuth, showRecoveryModal, activeEditMovie, viewingUserProfile, activeTab]);
 
   // Synchronize state references for hardware / swipe back handling
   const activeTabRef = useRef(activeTab);
@@ -447,20 +447,20 @@ function AppInner() {
   const touchSwipeStartRef = useRef(null);
 
   // ── Unified Movie Click / Opener Helper ──
-  const handleMovieClick = useCallback((movieOrId, mediaType) => {
+  const handleMovieClick = useCallback((movieOrId, mediaType, navigation = {}) => {
     lastBackPressRef.current = 0;
     if (typeof movieOrId === 'object' && movieOrId !== null) {
-      setActiveEditMovie(enhanceMovie(movieOrId));
+      setActiveEditMovie(enhanceMovie(resolveOpenMovie(movieOrId,library)));
       const tmdbId = movieOrId.tmdb_id || movieOrId.id;
       try {
-        window.history.pushState({ modal: 'movie', id: tmdbId }, '', '#movie-' + tmdbId);
+        if (!navigation.restore) window.history[window.history.state?.modal==='movie'||window.history.state?.modal==='quickadd'?'replaceState':'pushState']({ modal: 'movie', id: tmdbId, movie: typeof movieOrId === 'object' ? movieOrId : null, mediaType, tab: activeTabRef.current, sub: profileSubTabRef.current }, '', filmPath(tmdbId,typeof movieOrId==='object'?tmdbMediaType(movieOrId):tmdbMediaType(library.find(item=>String(item.tmdb_id)===String(tmdbId))||{media_type:mediaType||'movie'})));
       } catch (e) {}
       return;
     }
 
     const tmdbId = movieOrId;
     try {
-      window.history.pushState({ modal: 'movie', id: tmdbId }, '', '#movie-' + tmdbId);
+      if (!navigation.restore) window.history[window.history.state?.modal==='movie'||window.history.state?.modal==='quickadd'?'replaceState':'pushState']({ modal: 'movie', id: tmdbId, movie: typeof movieOrId === 'object' ? movieOrId : null, mediaType, tab: activeTabRef.current, sub: profileSubTabRef.current }, '', filmPath(tmdbId,mediaType || movieOrId?.media_type || 'movie'));
     } catch (e) {}
 
     let resolvedType = mediaType;
@@ -468,10 +468,10 @@ function AppInner() {
       const match = library.find(m => String(m.tmdb_id) === String(tmdbId));
       if (match) resolvedType = match.media_type;
     }
-    const existing = library.find(m => String(m.tmdb_id) === String(tmdbId) && (!resolvedType || m.media_type === resolvedType));
+    const existing = library.find(m => String(m.tmdb_id) === String(tmdbId) && (!resolvedType || m.media_type === resolvedType)) || library.find(m=>String(m.tmdb_id)===String(tmdbId)&&tmdbMediaType(m)===resolvedType);
     if (existing) { setActiveEditMovie(enhanceMovie(existing)); return; }
 
-    const targetType = resolvedType || 'movie';
+    const targetType = tmdbMediaType({media_type:resolvedType||'movie'});
     const primaryUrl = `https://api.themoviedb.org/3/${targetType}/${tmdbId}?api_key=6a2fd6b9b1bb3befbb9f14c203732225&append_to_response=videos,credits`;
 
     fetch(primaryUrl)
@@ -500,11 +500,15 @@ function AppInner() {
           details: data,
           videos: data.videos
         });
+        const destination=readHistoryDestination(window.location.href,window.history.state||{});
+        if(destination.modal!=='movie'||String(destination.target.tmdb_id||destination.target.id||destination.target)!==String(tmdbId))return;
         setActiveEditMovie(enhancedItem);
+        window.history.replaceState({ ...window.history.state, movie: enhancedItem }, '', window.location.href);
       })
       .catch(err => console.error('Error fetching movie details:', err));
   }, [library]);
 
+  useEffect(()=>{if(isLibraryLoaded&&initialRoute.current?.modal==='movie'&&!restoredInitialMovie.current){restoredInitialMovie.current=true;const route=initialRoute.current;const target=typeof route.target==='object'?(route.target.tmdb_id||route.target.id):route.target;handleMovieClick(target,route.mediaType||route.target?.media_type,{restore:true});}},[handleMovieClick,isLibraryLoaded]);
   const openMovieDetail = handleMovieClick;
 
   const openSettings = useCallback(() => {
@@ -517,12 +521,9 @@ function AppInner() {
 
   const openCommandCenter = useCallback(() => {
     lastBackPressRef.current = 0;
-    setCmdQuery('');
-    try {
-      window.history.pushState({ modal: 'search' }, '', '#search');
-    } catch (e) {}
-    setShowCommandCenter(true);
-  }, []);
+    setShowCommandCenter(false);
+    if(window.location.pathname==='/search')document.querySelector('input[aria-label="Search catalogue"]')?.focus();else handleTabChange('search');
+  }, [handleTabChange]);
 
   const openQuickAdd = useCallback(() => {
     lastBackPressRef.current = 0;
@@ -540,12 +541,21 @@ function AppInner() {
     setShowAuth(true);
   }, []);
 
+  useEffect(() => {
+    const hash = window.location.hash;
+    if ((!showCommandCenter && hash === '#search')) {
+      window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search);
+    }
+  }, [showCommandCenter, activeEditMovie, activeTab]);
+
   // ── Modal Closer Helper (cleanly synchronizes history hash with state) ──
   const closeModal = useCallback((modalType) => {
+    if(modalType==='auth'&&document.querySelector('.account-dialog form[aria-busy=true]'))return;
     lastBackPressRef.current = 0;
+    if(modalType==='user'){if(!window.history.state?.root){window.history.back();return;}setViewingUserProfile(null);setActiveTab('social');window.history.replaceState({tab:'social'},'',pagePath('social'));return;}
     const hash = window.location.hash || '';
     const hasModalHash =
-      (modalType === 'movie' && hash.startsWith('#movie-')) ||
+      (modalType === 'movie' && (hash.startsWith('#movie-') || window.location.pathname.startsWith('/film/'))) ||
       (modalType === 'settings' && hash === '#settings') ||
       (modalType === 'search' && hash === '#search') ||
       (modalType === 'quickadd' && hash === '#quickadd') ||
@@ -553,10 +563,15 @@ function AppInner() {
       (modalType === 'user' && hash.startsWith('#user-')) ||
       (modalType === 'recovery' && hash === '#recovery');
 
+    if (hasModalHash && ['movie', 'user', 'quickadd'].includes(modalType) && window.history.state?.modal && !window.history.state?.root) {
+      window.history.back();
+      return;
+    }
     if (hasModalHash) {
       try {
-        const cleanUrl = window.location.pathname + window.location.search;
-        window.history.replaceState(window.history.state, '', cleanUrl);
+        const cleanUrl = modalType==='movie'?pagePath(activeTabRef.current,profileSubTabRef.current):window.location.pathname + window.location.search;
+        const {modal,movie,id,mediaType,targetUser,...pageState}=window.history.state||{};
+        window.history.replaceState({...pageState,tab:activeTabRef.current,sub:profileSubTabRef.current}, '', cleanUrl);
       } catch (e) {}
     }
 
@@ -579,7 +594,6 @@ function AppInner() {
       showQuickAdd ||
       showAuth ||
       showRecoveryModal ||
-      viewingUserProfile ||
       confirmConfig?.isOpen
     );
 
@@ -590,7 +604,7 @@ function AppInner() {
         const watcher = new window.CloseWatcher();
         watcher.onclose = () => {
           lastBackPressRef.current = 0;
-          const openDrawerCloseBtn = document.querySelector('.mobile-drawer-close-btn') ||
+          const openDrawerCloseBtn = document.querySelector('.studio-sidebar.is-open .studio-mobile-close') || document.querySelector('.mobile-drawer-close-btn') ||
             document.querySelector('.mobile-drawer-overlay');
           if (openDrawerCloseBtn) { openDrawerCloseBtn.click(); return; }
           if (showQuickAdd) { closeModal('quickadd'); return; }
@@ -609,22 +623,6 @@ function AppInner() {
     }
   }, [activeEditMovie, showSettings, showCommandCenter, showQuickAdd, showAuth, showRecoveryModal, viewingUserProfile, confirmConfig?.isOpen, closeModal]);
 
-  // ── Arm History Guard on User Activation (click / pointerup) ──
-  useEffect(() => {
-    const armHistoryOnUserTouch = () => {
-      try {
-        window.history.pushState({ cinelogGuard: true, tab: activeTabRef.current }, '', window.location.href);
-      } catch (e) {}
-    };
-
-    window.addEventListener('pointerup', armHistoryOnUserTouch, { once: true, passive: true });
-    window.addEventListener('click', armHistoryOnUserTouch, { once: true, passive: true });
-    return () => {
-      window.removeEventListener('pointerup', armHistoryOnUserTouch);
-      window.removeEventListener('click', armHistoryOnUserTouch);
-    };
-  }, []);
-
   // ── Universal Back Handler (for Capacitor, Android hardware back & WebView) ──
   const handleUniversalBack = useCallback(() => {
     const now = Date.now();
@@ -633,6 +631,8 @@ function AppInner() {
     }
     lastBackActionTimeRef.current = now;
 
+    const alertDialog=document.querySelector('[role="alertdialog"]');
+    if(alertDialog){alertDialog.querySelector('.screening-dialog-close')?.click();lastBackPressRef.current=0;return 'handled';}
     // Check if child modals want to handle it first (e.g. ProfileCustomizerModal)
     const backEvent = new CustomEvent('cinelog-back-handled', { cancelable: true });
     window.dispatchEvent(backEvent);
@@ -660,8 +660,8 @@ function AppInner() {
     if (confirmConfigRef.current?.isOpen) { closeModal('confirm'); return 'handled'; }
 
     // Check if an open custom modal close button exists in DOM
-    const openModalCloseBtn = document.querySelector('.profile-studio-card button.btn-ghost') ||
-      document.querySelector('.modal-backdrop button.btn-ghost');
+    const dialogCloseButtons=[...document.querySelectorAll('[role=dialog] button[aria-label^="Close"]')];
+    const openModalCloseBtn=dialogCloseButtons.at(-1)||document.querySelector('.modal-backdrop button.btn-ghost');
     if (openModalCloseBtn) {
       lastBackPressRef.current = 0;
       openModalCloseBtn.click();
@@ -674,8 +674,8 @@ function AppInner() {
       setProfileSubTab('overview');
       try {
         const url = new URL(window.location.href);
-        url.searchParams.set('tab', 'profile');
-        url.searchParams.delete('sub');
+        url.hash = "";
+        url.pathname=pagePath('profile');url.search='';
         window.history.replaceState({ tab: 'profile' }, '', url.toString());
       } catch (e) {}
       return 'handled';
@@ -723,93 +723,25 @@ function AppInner() {
   // ── Synchronized PopState Handler (Navigates backwards cleanly without creating history loops) ──
   useEffect(() => {
     const onPopState = (e) => {
-      const now = Date.now();
-      if (now - lastBackActionTimeRef.current < 150) {
-        return;
-      }
-      lastBackActionTimeRef.current = now;
-
-      const anyModalOpen = Boolean(
-        activeEditMovieRef.current ||
-        showSettingsRef.current ||
-        showCommandCenterRef.current ||
-        showQuickAddRef.current ||
-        showAuthRef.current ||
-        showRecoveryModalRef.current ||
-        viewingUserProfileRef.current ||
-        confirmConfigRef.current?.isOpen
-      );
-
-      // 0. Close mobile drawer if open (never navigate background tabs while drawer is up)
-      const openDrawerCloseBtn = document.querySelector('.mobile-drawer-close-btn') ||
-        document.querySelector('.mobile-drawer-overlay');
-      if (openDrawerCloseBtn) {
-        lastBackPressRef.current = 0;
-        openDrawerCloseBtn.click();
-        return;
-      }
-
-      // 1. Close open overlay modals first
-      if (anyModalOpen) {
-        lastBackPressRef.current = 0;
-        if (showQuickAddRef.current) setShowQuickAdd(false);
-        if (showCommandCenterRef.current) setShowCommandCenter(false);
-        if (showSettingsRef.current) setShowSettings(false);
-        if (showAuthRef.current) setShowAuth(false);
-        if (showRecoveryModalRef.current) setShowRecoveryModal(false);
-        if (activeEditMovieRef.current) setActiveEditMovie(null);
-        if (viewingUserProfileRef.current) setViewingUserProfile(null);
-        if (confirmConfigRef.current?.isOpen) setConfirmConfig(p => ({ ...p, isOpen: false }));
-        return;
-      }
-
-      // 2. If on a Profile subtab, return to Profile Overview
-      if (activeTabRef.current === 'profile' && profileSubTabRef.current !== 'overview') {
-        lastBackPressRef.current = 0;
-        setProfileSubTab('overview');
-        return;
-      }
-
-      // 3. Tab navigation history (pop previous tab)
-      if (tabHistoryRef.current.length > 1) {
-        lastBackPressRef.current = 0;
-        const nextHistory = [...tabHistoryRef.current];
-        nextHistory.pop();
-        const prevTab = nextHistory[nextHistory.length - 1];
-        setTabHistory(nextHistory);
-        handleTabChange(prevTab, true);
-        return;
-      }
-
-      // 4. Return to explore if currently on another tab
-      if (activeTabRef.current !== 'explore') {
-        lastBackPressRef.current = 0;
-        handleTabChange('explore', true);
-        return;
-      }
-
-      // 5. At root (explore tab, no modals, no subtabs): Double back to exit
-      if (lastBackPressRef.current > 0 && (now - lastBackPressRef.current < 2000)) {
-        try {
-          CapApp.minimizeApp();
-        } catch (err) {}
-      } else {
-        lastBackPressRef.current = now;
-        if (toast?.info) {
-          toast.info('Exit CineLog', 'Swipe back again to exit');
-        }
-        // Asynchronously re-arm a single root buffer entry outside the event loop
-        setTimeout(() => {
-          try {
-            window.history.pushState({ cinelogGuard: true, tab: 'explore' }, '', window.location.href);
-          } catch (err) {}
-        }, 80);
-      }
+      // Restore the destination entry, for both Back and Forward.
+      const destination = readHistoryDestination(window.location.href, e.state || {});
+      setActiveTab(destination.tab);
+      setProfileSubTab(destination.sub);
+      setActiveEditMovie(null);
+      setViewingUserProfile(null);
+      setShowSettings(destination.modal === 'settings');
+      setShowCommandCenter(destination.modal === 'search');
+      setShowQuickAdd(destination.modal === 'quickadd');
+      setShowAuth(destination.modal === 'auth');
+      setShowRecoveryModal(destination.modal === 'recovery');
+      setConfirmConfig(p => ({ ...p, isOpen: false }));
+      if (destination.modal === 'user') setViewingUserProfile(destination.target);
+      else if (destination.modal === 'movie') handleMovieClick(destination.target, destination.mediaType, { restore: true });
     };
 
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
-  }, [handleTabChange, toast]);
+  }, [handleMovieClick]);
 
   // ── Universal Mobile Left-Edge Touch Swipe Listener ──
   useEffect(() => {
@@ -911,7 +843,8 @@ function AppInner() {
       return;
     }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const restoreSession = async (event, session, version) => {
+      if(!alive||version!==sessionVersion)return;
       if (event === 'PASSWORD_RECOVERY') {
         setShowRecoveryModal(true);
       }
@@ -953,6 +886,7 @@ function AppInner() {
         // Parallel load of profile details from cloud DB
         supabase.from('profiles').select('*').eq('id', session.user.id).single()
           .then(({ data: profile }) => {
+            if(!alive||version!==sessionVersion)return;
             if (profile) {
               const fullUser = {
                 id: session.user.id,
@@ -968,9 +902,9 @@ function AppInner() {
                   } catch { return []; }
                 })(),
                 equippedBorder: profile.equipped_border || localShop.equippedBorder || localStorage.getItem(`equipped_border_${session.user.id}`) || 'none',
-                bannerUrl: ((profile.banner_url || localShop.bannerUrl || localStorage.getItem(`cinelog_banner_url_${session.user.id}`) || localStorage.getItem('cinelog_banner_url') || '').startsWith('animated-') ? '' : (profile.banner_url || localShop.bannerUrl || localStorage.getItem(`cinelog_banner_url_${session.user.id}`) || localStorage.getItem('cinelog_banner_url') || '')),
-                bannerFitMode: profile.banner_fit_mode || localShop.bannerFitMode || localStorage.getItem(`cinelog_banner_fit_${session.user.id}`) || localStorage.getItem('cinelog_banner_fit') || 'cover',
-                bannerPosPercent: profile.banner_pos_percent ?? localShop.bannerPosPercent ?? (localStorage.getItem(`cinelog_banner_pos_${session.user.id}`) !== null ? Number(localStorage.getItem(`cinelog_banner_pos_${session.user.id}`)) : (localStorage.getItem('cinelog_banner_pos') !== null ? Number(localStorage.getItem('cinelog_banner_pos')) : 20)),
+                bannerUrl: ownBannerUrl(profile,session.user.id,localStorage,localShop),
+                bannerFitMode: profile.banner_fit_mode ?? localShop.bannerFitMode ?? localStorage.getItem(`cinelog_banner_fit_${session.user.id}`) ?? 'cover',
+                bannerPosPercent: profile.banner_pos_percent ?? localShop.bannerPosPercent ?? Number(localStorage.getItem(`cinelog_banner_pos_${session.user.id}`) ?? 20),
                 spentCinePoints: profile.spent_cine_points ?? localShop.spentCinePoints ?? 0,
                 purchasedBorders: profile.purchased_borders || localShop.purchasedBorders || [],
                 purchasedBadges: profile.purchased_badges || localShop.purchasedBadges || [],
@@ -983,31 +917,6 @@ function AppInner() {
             }
           })
           .catch(err => console.error("Error loading user profile:", err));
-
-        // Two-way sync tier lists with Supabase cloud user_metadata
-        try {
-          const cloudTierLists = session.user.user_metadata?.cinelog_tier_lists;
-          const localTierListsStr = localStorage.getItem('cinelog_saved_tier_lists_v4');
-          if (cloudTierLists && Object.keys(cloudTierLists).length > 0) {
-            localStorage.setItem('cinelog_saved_tier_lists_v4', JSON.stringify(cloudTierLists));
-            if (session.user.user_metadata?.cinelog_active_tier_list_id) {
-              localStorage.setItem('cinelog_active_tier_list_id_v4', session.user.user_metadata.cinelog_active_tier_list_id);
-            }
-            window.dispatchEvent(new CustomEvent('cinelog_tier_lists_updated', { detail: cloudTierLists }));
-          } else if (localTierListsStr) {
-            const parsedLocal = JSON.parse(localTierListsStr);
-            if (parsedLocal && Object.keys(parsedLocal).length > 0) {
-              supabase.auth.updateUser({
-                data: {
-                  cinelog_tier_lists: parsedLocal,
-                  cinelog_active_tier_list_id: localStorage.getItem('cinelog_active_tier_list_id_v4') || 'default'
-                }
-              }).catch(e => console.warn('Tier list cloud upload error:', e));
-            }
-          }
-        } catch (e) {
-          console.warn('Tier list session sync error:', e);
-        }
 
         // Two-way sync custom lists with Supabase cloud user_metadata (cross-device sync between web and app)
         try {
@@ -1030,9 +939,8 @@ function AppInner() {
             localStorage.setItem('cinelog_community_lists_v2', JSON.stringify(merged));
             window.dispatchEvent(new CustomEvent('cinelog_collections_updated'));
           } else if (localLists.length > 0) {
-            const userLists = localLists.filter(l => 
-              l.author?.id === session.user.id || 
-              l.author?.username?.toLowerCase() === (session.user.user_metadata?.username || session.user.email?.split('@')[0])?.toLowerCase()
+            const userLists = localLists.filter(l =>
+              l.author?.id === session.user.id
             );
             if (userLists.length > 0) {
               supabase.auth.updateUser({
@@ -1050,6 +958,7 @@ function AppInner() {
           supabase.from('activity_feed').select('title, media_type, created_at, action_type').eq('user_id', session.user.id).in('action_type', ['watched', 'rated', 'reviewed']).order('created_at', { ascending: false })
         ])
           .then(([{ data: libRows, error: libErr }, { data: actRows }]) => {
+            if(!alive||version!==sessionVersion)return;
             if (libErr) {
               console.error('Supabase library load error:', libErr);
             }
@@ -1110,7 +1019,7 @@ function AppInner() {
                   status: row.status,
                   // DB rating is now directly 0-10 scale matching the UI
                   rating: row.rating != null ? Number(row.rating) : null,
-                  review: cleanReview,
+                  review: cleanReview,contains_spoilers:reviewSpoilerFlag(row),
                   episode_ratings: parsedEpisodeData.ratings || {},
                   episode_notes: parsedEpisodeData.notes || {},
                   episode_watch_dates: parsedEpisodeData.dates || {},
@@ -1139,6 +1048,7 @@ function AppInner() {
             setIsLibraryLoaded(true);
           })
           .catch(err => {
+            if(!alive||version!==sessionVersion)return;
             console.error('Error loading library from cloud database:', err);
             setLibrary([]);
             setIsLibraryLoaded(true);
@@ -1151,9 +1061,11 @@ function AppInner() {
         setLibrary([]);
         setIsLibraryLoaded(true);
       }
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    let alive=true,sessionVersion=0,sessionUserId=null;const timers=new Set();
+    const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{if(session?.user?.id===sessionUserId&&['TOKEN_REFRESHED','USER_UPDATED','SIGNED_IN'].includes(event))return;if(session?.user?.id!==sessionUserId){setLibrary([]);setIsLibraryLoaded(false);}sessionUserId=session?.user?.id||null;const version=++sessionVersion;const timer=setTimeout(()=>{timers.delete(timer);if(alive)restoreSession(event,session,version).catch(()=>{if(alive){setCurrentUser(null);setIsLibraryLoaded(true);}});},0);timers.add(timer);});
+    return()=>{alive=false;for(const timer of timers)clearTimeout(timer);subscription.unsubscribe();};
   }, [useSupabase]);
 
   useEffect(() => {
@@ -1172,15 +1084,16 @@ function AppInner() {
 
   const getDefaultSeeds = () => [];
 
-  const handleSaveMovie = async (updatedMovie, options = {}) => {
-    const { keepOpen = false } = options;
+  const saveMovieToCloud = async (updatedMovie, options = {}) => {
+    if(!currentUser?.id){openAuth();return false;}
+    const { keepOpen = false,requireCloudSuccess=false,statusOnly=false } = options;
     const tmdbId = updatedMovie.tmdb_id || updatedMovie.id;
     const isTv = updatedMovie.media_type === 'tv' ||
                  updatedMovie.type === 'tv' ||
                  updatedMovie.number_of_seasons !== undefined ||
                  updatedMovie.first_air_date !== undefined ||
                  Boolean(updatedMovie.details && (updatedMovie.details.number_of_seasons !== undefined || updatedMovie.details.first_air_date));
-    const mediaType = isTv ? 'tv' : (updatedMovie.media_type || 'movie');
+    const mediaType = updatedMovie.media_type==='anime'?'anime':isTv ? 'tv' : (updatedMovie.media_type || 'movie');
 
     const enhancedTitle = getEnhancedMovieTitle(updatedMovie) || updatedMovie.title;
     const normalizedMovie = {
@@ -1190,7 +1103,7 @@ function AppInner() {
       media_type: mediaType,
     };
 
-    const epData = normalizedMovie.episode_data || {
+    const epData = structuredClone(normalizedMovie.episode_data || {
       ratings: normalizedMovie.episode_ratings || {},
       notes: normalizedMovie.episode_notes || {},
       dates: normalizedMovie.episode_watch_dates || {},
@@ -1198,28 +1111,27 @@ function AppInner() {
       season_notes: normalizedMovie.season_notes || {},
       season_dates: normalizedMovie.season_dates || {},
       screenings: normalizedMovie.screenings || []
-    };
+    });
 
     if (normalizedMovie.screenings) {
       epData.screenings = normalizedMovie.screenings;
     }
 
-    if (normalizedMovie.watch_date) {
-      epData.watch_date = normalizedMovie.watch_date;
-    }
+    if ('watch_date' in normalizedMovie) epData.watch_date = normalizedMovie.watch_date;
 
     const baseCleanReview = (normalizedMovie.review || '')
       .replace(/__EPISODE_DATA__:.+$/s, '')
       .replace(/__EPISODE_RATINGS__:.+$/s, '')
       .trim();
 
+    epData.contains_spoilers=normalizedMovie.contains_spoilers??epData.contains_spoilers??reviewSpoilerFlag(normalizedMovie);
     normalizedMovie.review = baseCleanReview;
     normalizedMovie.screenings = epData.screenings || [];
-    normalizedMovie.is_rewatch = (epData.screenings && epData.screenings.length > 1) || normalizedMovie.is_rewatch || false;
-    normalizedMovie.rewatch_count = (epData.screenings && epData.screenings.length) || normalizedMovie.rewatch_count || 1;
+    normalizedMovie.is_rewatch = epData.screenings ? epData.screenings.length>1 : Boolean(normalizedMovie.is_rewatch);
+    normalizedMovie.rewatch_count = epData.screenings ? epData.screenings.length : normalizedMovie.rewatch_count || 1;
 
     if (useSupabase && currentUser) {
-      const hasEpisodeData = epData.watch_date ||
+      const hasEpisodeData = typeof epData.contains_spoilers==='boolean' || epData.watch_date ||
                              (epData.screenings && epData.screenings.length > 0) ||
                              Object.keys(epData.ratings || {}).length > 0 ||
                              Object.keys(epData.notes || {}).length > 0 ||
@@ -1262,11 +1174,12 @@ function AppInner() {
       };
 
       // Robust check-and-update/insert to avoid any unique constraint or onConflict errors
-      const { data: existingRows } = await supabase
+      const { data: existingRows,error:lookupError } = await supabase
         .from('library')
         .select('id, date_added')
         .eq('user_id', currentUser.id)
-        .eq('tmdb_id', normalizedMovie.tmdb_id);
+        .eq('tmdb_id', normalizedMovie.tmdb_id).eq('media_type',normalizedMovie.media_type);
+      if(lookupError){if(requireCloudSuccess)throw new Error('Your library could not be checked. Please try again.');toast.error('Could not save','Your library could not be checked. Please try again.');return false;}
 
       let data, error;
       if (existingRows && existingRows.length > 0) {
@@ -1294,12 +1207,15 @@ function AppInner() {
         error = res.error;
       }
 
-      if (error) {
-        console.error("Supabase save failed in handleSaveMovie:", error.message, error.details);
+      if (error||!data?.[0]) {
+        console.error("Supabase save failed in handleSaveMovie:", error?.message, error?.details);
+        if(requireCloudSuccess)throw new Error('Your viewing history could not be updated. Please try again.',{cause:error});
+        toast.error('Could not save','Your changes are still in the editor. Please retry.');return false;
       } else if (data && data[0]) {
         normalizedMovie.id = data[0].id;
       }
     }
+    if(activeOwner.current!==currentUser?.id)return false;
     setLibrary(prev => {
       const idx = prev.findIndex(m => m.id === normalizedMovie.id || (String(m.tmdb_id) === String(normalizedMovie.tmdb_id) && m.media_type === normalizedMovie.media_type));
       let updatedList;
@@ -1315,17 +1231,35 @@ function AppInner() {
       return updatedList;
     });
 
-    if (!keepOpen) {
+    if (statusOnly) {
+      // Keep browsing in place after a quick status edit.
+    } else if (!keepOpen) {
       setActiveEditMovie(null);
     } else {
       setActiveEditMovie(normalizedMovie);
     }
 
     const statusLabel = normalizedMovie.status === 'watched' ? 'Marked as Watched' : normalizedMovie.status === 'plan_to_watch' ? 'Added to Watchlist' : 'Saved';
-    toast.success(statusLabel, normalizedMovie.title);
+    if(!options.silent)toast.success(statusLabel, normalizedMovie.title);
+    return true;
   };
 
-  const handleAddMovie = async (newMovie, mediaTypeFromProp) => {
+  const handleSaveMovie = async (movie, options={}) => {
+    if(!currentUser?.id){openAuth();return false;}
+    const owner=currentUser.id;
+    const previous=library.find(m=>m.id===movie.id);
+    const perform=async()=>{if(activeOwner.current!==owner)throw Error('Sign in to the same account to retry.');return saveMovieToCloud(movie,options);};
+    try {
+      const saved=await sync.run(perform,'Viewing changes','library:'+catalogueKey(movie));
+      if(saved&&options.statusOnly&&previous&&previous.status!==movie.status&&!options.silent){
+        toast.success('Status updated',movie.title,{duration:10000,action:{label:'Undo',onClick:async()=>{if(activeOwner.current!==owner)throw Error('Sign in to the same account to undo.');const ok=await handleSaveMovie(previous,{statusOnly:true,requireCloudSuccess:true,silent:true});if(!ok)throw Error('Status could not be restored.');}}});
+      }
+      return saved;
+    }catch(error){if(options.requireCloudSuccess)throw error;return false;}
+  };
+
+  const addMovieToCloud = async (newMovie, mediaTypeFromProp, options = {}) => {
+    if(!currentUser?.id){openAuth();return false;}
     const tmdbId = newMovie.tmdb_id || newMovie.id;
     const isTv = mediaTypeFromProp === 'tv' ||
                  newMovie.media_type === 'tv' ||
@@ -1391,43 +1325,27 @@ function AppInner() {
         tags: cleanMovie.tags,
       };
 
-      const { data: existingAddRows } = await supabase
-        .from('library')
-        .select('id')
-        .eq('user_id', currentUser.id)
-        .eq('tmdb_id', cleanMovie.tmdb_id);
-
-      let data, error;
-      if (existingAddRows && existingAddRows.length > 0) {
-        const targetId = existingAddRows[0].id;
-        cleanMovie.id = targetId;
-        const res = await supabase
-          .from('library')
-          .update({
-            ...addPayload,
-            id: targetId
-          })
-          .eq('id', targetId)
-          .eq('user_id', currentUser.id)
-          .select();
-        data = res.data;
-        error = res.error;
-      } else {
-        const res = await supabase
-          .from('library')
-          .insert(addPayload)
-          .select();
-        data = res.data;
-        error = res.error;
+      const { data: candidates, error: lookupError } = await supabase.from('library').select('*').eq('user_id',currentUser.id).eq('tmdb_id',cleanMovie.tmdb_id);
+      if(lookupError){if(!options.silent)toast.error('Could not add title','Your library could not be checked. Please try again.');return false;}
+      const existing=(candidates||[]).find(row=>row.media_type===cleanMovie.media_type||row.media_type==='anime'&&row.title?.toLowerCase()===cleanMovie.title?.toLowerCase());
+      if(existing){
+        if(activeOwner.current!==currentUser.id)return false;
+        const metadata=readEpisodeData(existing);
+        const restored={...existing,review:readableReview(existing.review),episode_data:metadata,screenings:metadata.screenings||[],episode_ratings:metadata.ratings||{},episode_notes:metadata.notes||{},episode_watch_dates:metadata.dates||{},season_ratings:metadata.season_ratings||{},season_notes:metadata.season_notes||{},season_dates:metadata.season_dates||{},watch_date:metadata.watch_date||null,contains_spoilers:reviewSpoilerFlag(existing)};
+        setLibrary(previous=>previous.some(m=>m.id===existing.id)?previous:[restored,...previous]);
+        if(!options.silent)toast.info('Already in your library',existing.title);
+        return true;
       }
+      const {data,error}=await supabase.from('library').insert(addPayload).select();
 
-      if (error) {
-        console.error("Supabase upsert failed in handleAddMovie:", error.message, error.details);
+      if (error||!data?.[0]) {
+        if(!options.silent)toast.error("Could not add title","The cloud save failed. Please try again.");return false;
       } else if (data && data[0]) {
         cleanMovie.id = data[0].id;
       }
     }
 
+    if(activeOwner.current!==currentUser?.id)return false;
     setLibrary(prev => {
       const idx = prev.findIndex(m => String(m.tmdb_id) === String(cleanMovie.tmdb_id) && m.media_type === cleanMovie.media_type);
       if (idx !== -1) {
@@ -1438,54 +1356,81 @@ function AppInner() {
       return [cleanMovie, ...prev];
     });
 
-    if (!alreadyExists) {
+    if (!options.silent && !alreadyExists) {
       toast.success('Added to Library', cleanMovie.title);
-    } else {
+    } else if(!options.silent) {
       toast.info('Already in Library', cleanMovie.title);
     }
   };
 
+  const handleAddMovie=async(movie,type,options={})=>{if(!currentUser?.id){openAuth();return false;}const owner=currentUser.id;try{return await sync.run(async()=>{if(activeOwner.current!==owner)throw Error('Sign in to the same account to retry.');const result=await addMovieToCloud(movie,type,options);return result===false?false:true;},'Library addition','library:'+catalogueKey({...movie,media_type:type||movie.media_type}));}catch{return false;}};
+  const batchBusyRef=useRef(false);
+  const accountIdentityRef=useRef(currentUser?.id);accountIdentityRef.current=currentUser?.id;
+  const batchAddToCloud=async(items,status='plan_to_watch')=>{
+    if(!currentUser?.id){openAuth();return false;}
+    if(batchBusyRef.current)throw new Error('A batch is already being saved.');
+    batchBusyRef.current=true;
+    const owner=currentUser.id,result={added:0,skipped:0,failed:0};
+    const unique=[...new Map(items.map(m=>[catalogueKey(m),m])).values()];
+    try{
+      for(let i=0;i<unique.length;i+=25){
+        const chunk=unique.slice(i,i+25);
+        if(accountIdentityRef.current!==owner){result.failed+=unique.length-i;break;}
+        const {data:existing,error:lookupError}=await supabase.from('library').select('id,tmdb_id,media_type').eq('user_id',owner).in('tmdb_id',chunk.map(m=>Number(m.tmdb_id||m.id)));
+        if(lookupError){result.failed+=chunk.length;continue;}
+        const saved=new Set((existing||[]).map(catalogueKey));
+        const missing=chunk.filter(m=>!saved.has(catalogueKey(m)));
+        result.skipped+=chunk.length-missing.length;
+        if(!missing.length)continue;
+        const rows=missing.map(m=>newLibraryRow(m,owner,status,GENRE_MAP));
+        const {data,error}=await supabase.from('library').insert(rows).select();
+        if(error){result.failed+=rows.length;continue;}
+        result.added+=(data||[]).length;result.failed+=rows.length-(data||[]).length;
+        if(accountIdentityRef.current===owner)setLibrary(prev=>{const keys=new Set(prev.map(catalogueKey));return [...(data||[]).filter(m=>!keys.has(catalogueKey(m))),...prev];});
+      }
+      return result;
+    }finally{batchBusyRef.current=false;}
+  };
+  const handleBatchAdd=async(items,status='plan_to_watch')=>{if(!currentUser?.id){openAuth();return false;}const owner=currentUser.id;try{return await sync.run(()=>{if(activeOwner.current!==owner)throw Error('Sign in to the same account to retry.');return batchAddToCloud(items,status);},'Batch library save','batch:'+items.map(catalogueKey).sort().join('|'));}catch(e){if(e.result)return e.result;throw e;}};
+  const openSearchCollection=id=>{
+    setShowQuickAdd(false);setShowCommandCenter(false);setActiveTab('collections');
+    const path='/collections/franchise/tmdb-'+encodeURIComponent(id);
+    const method=window.history.state?.modal==='quickadd'?'replaceState':'pushState';
+    window.history[method]({tab:'collections',entity:true},'',path);
+    window.dispatchEvent(new Event('cinelog:route-change'));window.scrollTo({top:0});
+  };
   const handleRemoveMovie = async (movieId) => {
     const movie = library.find(m => m.id === movieId);
     if (!movie) return;
-    
+
     setConfirmConfig({
       isOpen: true,
-      title: 'Remove Movie?',
+      title: 'Remove from your library?',
+      confirmText: 'Remove title',
+      item: movie,
       message: `Are you sure you want to remove "${movie.title}" from your library? This will delete all its ratings and reviews.`,
       onConfirm: async () => {
-        setConfirmConfig({ isOpen: false });
-        if (activeEditMovie && (activeEditMovie.id === movieId || String(activeEditMovie.tmdb_id) === String(movie.tmdb_id))) {
-          setActiveEditMovie(null);
-        }
         try {
           if (useSupabase && currentUser?.id) {
-            await supabase.from('library').delete().eq('id', movieId).eq('user_id', currentUser.id);
+            const { error } = await supabase.from('library').delete().eq('id', movieId).eq('user_id', currentUser.id);
+            if (error) throw error;
           }
         } catch (err) {
-          console.error('Failed to delete movie from Supabase:', err);
+          throw new Error('Could not remove this title. Your library is intact. Please try again.', { cause: err });
+        }
+        if (activeEditMovie && (activeEditMovie.id === movieId || String(activeEditMovie.tmdb_id) === String(movie.tmdb_id))) {
+          closeModal('movie');
         }
         setLibrary(prev => prev.filter(m => m.id !== movieId));
         if (toast && toast.warning) {
-          toast.warning('Removed', movie.title || 'Title removed from library');
+          const owner=currentUser?.id;
+          toast.warning('Removed', movie.title || 'Title removed from library',{duration:10000,action:{label:'Undo',onClick:async()=>{if(owner!==activeOwner.current)throw Error('Sign back into the same account to restore this title.');const ok=await handleSaveMovie(movie,{statusOnly:true,requireCloudSuccess:true,silent:true});if(!ok)throw Error('Could not restore this title. Please retry.');}}});
         }
       }
     });
   };
 
-  const handleToggleFavorite = async (movieId) => {
-    let favState = false;
-    setLibrary(prev => prev.map(m => {
-      if (m.id === movieId || String(m.tmdb_id) === String(movieId)) {
-        favState = !m.favorite;
-        return { ...m, favorite: favState };
-      }
-      return m;
-    }));
-    if (useSupabase && currentUser?.id) {
-      await supabase.from('library').update({ favorite: favState }).eq('id', movieId).eq('user_id', currentUser.id);
-    }
-  };
+  const handleToggleFavorite=async movieId=>{const movie=library.find(m=>m.id===movieId||String(m.tmdb_id)===String(movieId));if(!movie)return false;const favorite=!movie.favorite;try{if(currentUser?.id){const {data,error}=await supabase.from('library').update({favorite}).eq('id',movie.id).eq('user_id',currentUser.id).select('id').maybeSingle();if(error||!data)throw new Error('Could not save favorite. Please try again.');}setLibrary(prev=>prev.map(m=>m.id===movie.id?{...m,favorite}:m));return true;}catch(error){toast.error('Favorite not saved',error.message);return false;}};
 
   const handleOpenUserProfile = useCallback((userObjOrUsername) => {
     if (!userObjOrUsername) {
@@ -1496,23 +1441,67 @@ function AppInner() {
     if (typeof userObjOrUsername === 'string') {
       target = { username: userObjOrUsername };
     }
+    setActiveEditMovie(null);setShowQuickAdd(false);setShowCommandCenter(false);
     setViewingUserProfile(target);
+    setActiveTab('profile');setProfileSubTab('overview');window.scrollTo({top:0});
     try {
-      window.history.pushState({ modal: 'user_profile', user: target?.username }, '', '#user-' + (target?.username || 'user'));
+      window.history.pushState({tab:'profile',targetUser:target},'',profilePath(target.username || target.id));
     } catch (e) {}
   }, []);
 
-  const handleUpdateProfile = async (updatedDetails) => {
-    // Immediately update local state & local storage cache
+  const handleOpenListPage = list => {
+    setViewingUserProfile(null);setActiveTab('collections');
+    window.history.pushState({tab:'collections',entity:true},'',listPath(list.id));
+    window.dispatchEvent(new Event('cinelog:route-change'));window.scrollTo({top:0});
+  };
+  const handleOpenSocial = path => {
+    if(!String(path).startsWith('/community')&&!String(path).startsWith('/u/')&&!String(path).startsWith('/lists/'))return;
+    setActiveEditMovie(null);setShowQuickAdd(false);
+    if(String(path).startsWith('/u/')){handleOpenUserProfile({username:decodeURIComponent(path.split('/')[2]||'')});return;}
+    if(String(path).startsWith('/lists/')){handleOpenListPage({id:decodeURIComponent(path.split('/')[2]||'')});return;}
+    handleTabChange('social');window.history.replaceState({tab:'social'},'',path);window.dispatchEvent(new Event('cinelog:route-change'));
+  };
+
+  const updateProfileInCloud = async (updatedDetails) => {
+    if(BORDER_STYLES[updatedDetails.equippedBorder]?.category==='creator'&&!isUserCreator(currentUser))return {saved:false,error:'This frame is reserved for the CineLog creator.'};
+    if (useSupabase && currentUser) {
+      const fullPayload = {
+        username: updatedDetails.username !== undefined ? updatedDetails.username : currentUser.username,
+        display_name: updatedDetails.displayName !== undefined ? updatedDetails.displayName : currentUser.displayName,
+        bio: updatedDetails.bio !== undefined ? updatedDetails.bio : currentUser.bio,
+        avatar_url: updatedDetails.avatar !== undefined ? updatedDetails.avatar : currentUser.avatar,
+        favorites: updatedDetails.favorites !== undefined ? updatedDetails.favorites : (currentUser.favorites || []),
+        equipped_border: updatedDetails.equippedBorder !== undefined ? updatedDetails.equippedBorder : (currentUser.equippedBorder || 'none'),
+        banner_url: updatedDetails.bannerUrl !== undefined ? updatedDetails.bannerUrl : (currentUser.bannerUrl || ''),
+        banner_fit_mode: updatedDetails.bannerFitMode !== undefined ? updatedDetails.bannerFitMode : (currentUser.bannerFitMode || 'cover'),
+        banner_pos_percent: updatedDetails.bannerPosPercent !== undefined ? updatedDetails.bannerPosPercent : (currentUser.bannerPosPercent ?? 20),
+        spent_cine_points: updatedDetails.spentCinePoints !== undefined ? updatedDetails.spentCinePoints : (currentUser.spentCinePoints || 0),
+        purchased_borders: updatedDetails.purchasedBorders !== undefined ? updatedDetails.purchasedBorders : (currentUser.purchasedBorders || []),
+        purchased_badges: updatedDetails.purchasedBadges !== undefined ? updatedDetails.purchasedBadges : (currentUser.purchasedBadges || []),
+        purchased_banners: updatedDetails.purchasedBanners !== undefined ? updatedDetails.purchasedBanners : (currentUser.purchasedBanners || []),
+        trivia_cine_points: updatedDetails.triviaCinePoints !== undefined ? updatedDetails.triviaCinePoints : (currentUser.triviaCinePoints || 0),
+        purchased_themes: updatedDetails.purchasedThemes !== undefined ? updatedDetails.purchasedThemes : (currentUser.purchasedThemes || [])
+      };
+
+      if (updatedDetails.featuredBadges !== undefined) {
+        fullPayload.featured_badges = updatedDetails.featuredBadges;
+      }
+
+      const shopFieldNames={spentCinePoints:'spent_cine_points',purchasedBorders:'purchased_borders',purchasedBadges:'purchased_badges',purchasedBanners:'purchased_banners',purchasedThemes:'purchased_themes',triviaCinePoints:'trivia_cine_points'};
+      const requiredFields=Object.entries(shopFieldNames).filter(([key])=>updatedDetails[key]!==undefined).map(([,field])=>field);
+      try { await publishProfile(supabase,currentUser.id,fullPayload,{requiredFields}); }
+      catch(error){toast.error('Profile not published',error.message);return {saved:false,error:error.message};}
+    }
+    if(activeOwner.current!==currentUser?.id)return {saved:false,error:'Your account changed. Please reopen the editor.'};
     setCurrentUser(prev => {
       const nextUser = { ...prev, ...updatedDetails };
       const bannerPos = nextUser.bannerPosPercent !== undefined ? nextUser.bannerPosPercent : (prev?.bannerPosPercent ?? 20);
       const bannerFit = nextUser.bannerFitMode || prev?.bannerFitMode || 'cover';
       const bannerUrlVal = nextUser.bannerUrl !== undefined ? nextUser.bannerUrl : (prev?.bannerUrl || '');
 
-      localStorage.setItem('cinelog_banner_pos', bannerPos);
-      localStorage.setItem('cinelog_banner_fit', bannerFit);
-      localStorage.setItem('cinelog_banner_url', bannerUrlVal);
+
+
+
 
       if (nextUser.id) {
         localStorage.setItem(`cinelog_banner_pos_${nextUser.id}`, bannerPos);
@@ -1545,43 +1534,10 @@ function AppInner() {
       return nextUser;
     });
 
-    if (useSupabase && currentUser) {
-      const fullPayload = {
-        username: updatedDetails.username !== undefined ? updatedDetails.username : currentUser.username,
-        display_name: updatedDetails.displayName !== undefined ? updatedDetails.displayName : currentUser.displayName,
-        bio: updatedDetails.bio !== undefined ? updatedDetails.bio : currentUser.bio,
-        avatar_url: updatedDetails.avatar !== undefined ? updatedDetails.avatar : currentUser.avatar,
-        favorites: updatedDetails.favorites !== undefined ? updatedDetails.favorites : (currentUser.favorites || []),
-        equipped_border: updatedDetails.equippedBorder !== undefined ? updatedDetails.equippedBorder : (currentUser.equippedBorder || 'none'),
-        banner_url: updatedDetails.bannerUrl !== undefined ? updatedDetails.bannerUrl : (currentUser.bannerUrl || ''),
-        banner_fit_mode: updatedDetails.bannerFitMode !== undefined ? updatedDetails.bannerFitMode : (currentUser.bannerFitMode || 'cover'),
-        banner_pos_percent: updatedDetails.bannerPosPercent !== undefined ? updatedDetails.bannerPosPercent : (currentUser.bannerPosPercent ?? 20),
-        spent_cine_points: updatedDetails.spentCinePoints !== undefined ? updatedDetails.spentCinePoints : (currentUser.spentCinePoints || 0),
-        purchased_borders: updatedDetails.purchasedBorders !== undefined ? updatedDetails.purchasedBorders : (currentUser.purchasedBorders || []),
-        purchased_badges: updatedDetails.purchasedBadges !== undefined ? updatedDetails.purchasedBadges : (currentUser.purchasedBadges || []),
-        purchased_banners: updatedDetails.purchasedBanners !== undefined ? updatedDetails.purchasedBanners : (currentUser.purchasedBanners || []),
-        purchased_themes: updatedDetails.purchasedThemes !== undefined ? updatedDetails.purchasedThemes : (currentUser.purchasedThemes || [])
-      };
-
-      if (updatedDetails.featuredBadges !== undefined) {
-        fullPayload.featured_badges = updatedDetails.featuredBadges;
-      }
-
-      const { error } = await supabase.from('profiles').update(fullPayload).eq('id', currentUser.id);
-
-      if (error) {
-        console.warn("Retrying profile save with basic fields...", error.message);
-        await supabase.from('profiles').update({
-          username: fullPayload.username,
-          display_name: fullPayload.display_name,
-          bio: fullPayload.bio,
-          avatar_url: fullPayload.avatar_url,
-          favorites: fullPayload.favorites
-        }).eq('id', currentUser.id);
-      }
-    }
+    return true;
   };
 
+  const handleUpdateProfile=async(details)=>{const owner=currentUser?.id;if(!owner)return {saved:false,error:'Please sign in.'};try{return await sync.run(()=>{if(activeOwner.current!==owner)throw Error('Sign in to the same account to retry.');return updateProfileInCloud(details);},'Profile changes','profile:'+owner);}catch(e){return {saved:false,error:e.message};}};
   const handleLogout = async () => {
     if (useSupabase) {
       await supabase.auth.signOut();
@@ -1596,12 +1552,8 @@ function AppInner() {
   const handleLoginSuccess = (user) => {
     setCurrentUser(user);
     setShowAuth(false);
-    if (user?.id === TESTER_PROFILE?.id || user?.username === 'elena_films' || user?.email === 'tester@cinelog.app') {
-      if (!library || library.length === 0) {
-        setLibrary(TESTER_LIBRARY);
-      }
-      handleTabChange('profile');
-    }
+    window.history.replaceState({tab:activeTab},'',viewingUserProfile?profilePath(viewingUserProfile.username):pagePath(activeTab,profileSubTab));
+
   };
 
   const handleImportMovies = async (importedMovies) => {
@@ -1755,17 +1707,20 @@ function AppInner() {
     <div style={{ background: '#000000', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Main app container with layout class */}
       <div
-        className={`app-container ${layoutMode === 'top-nav' ? 'layout-topnav' : 'layout-sidebar'}`}
+        className={`app-container studio-shell ${layoutMode === 'top-nav' ? 'layout-topnav' : 'layout-sidebar'}`}
         style={{ position: 'relative', flex: 1, minHeight: 0 }}
       >
+        <SaveIndicator sync={sync}/>
         <Header
+          onOpenSocial={handleOpenSocial}
+          profileSubTab={profileSubTab}
           activeTab={activeTab}
           setActiveTab={handleTabChange}
           currentUser={currentUser}
           onLogout={handleLogout}
           onOpenAuth={openAuth}
           onOpenSettings={openSettings}
-          onOpenCommandCenter={openCommandCenter}
+          onOpenCommandCenter={openCommandCenter} onOpenQuickAdd={openQuickAdd}
           useSupabase={useSupabase}
           setUseSupabase={handleSetUseSupabase}
           layoutMode={layoutMode}
@@ -1773,7 +1728,8 @@ function AppInner() {
           onMovieClick={handleMovieClick}
         />
 
-      <main className="page-content">
+      <main data-screen={activeTab} className="page-content studio-main" id="main-content">
+        <Suspense fallback={<div className="studio-loading" role="status"><span/>Bringing your cinema into focus…</div>}>
         {activeTab === 'landing' && (
           <LandingPage onMovieClick={handleMovieClick} setActiveTab={handleTabChange} library={library} />
         )}
@@ -1781,175 +1737,74 @@ function AppInner() {
           <LibraryTab
             library={library}
             onRemove={handleRemoveMovie}
+            onStatusChange={(movie,status)=>handleSaveMovie(withViewingStatus(movie,status),{requireCloudSuccess:true,statusOnly:true})}
             onEditClick={openMovieDetail}
             onOpenExplore={() => handleTabChange('explore')}
             onImportMovies={handleImportMovies}
           />
         )}
+        {activeTab === 'search' && <SearchWorkspace  initialQuery={new URL(window.location.href).searchParams.get('q')||''} onQueryChange={query=>{const url=new URL(window.location.href);url.pathname='/search';url.search='';if(query.trim())url.searchParams.set('q',query);window.history.replaceState({tab:'search'},'',url);}} library={library} onAddMovie={handleAddMovie} onBatchAdd={handleBatchAdd} onStatusChange={(movie,status)=>handleSaveMovie(withViewingStatus(movie,status),{requireCloudSuccess:true,statusOnly:true,silent:true})} onMovieClick={handleMovieClick} onOpenCollection={openSearchCollection}/>}
         {activeTab === 'explore' && (
-          <ExploreTab onAddMovie={handleAddMovie} library={library} onMovieClick={handleMovieClick} />
+          <ExploreTab onSaveMovie={handleSaveMovie} modalOpen={Boolean(activeEditMovie || showAuth || showSettings || showCommandCenter || showQuickAdd || viewingUserProfile || confirmConfig.isOpen)} onAddMovie={handleAddMovie} library={library} onMovieClick={handleMovieClick} />
         )}
         {activeTab === 'collections' && (
           <CollectionsTab
             library={library}
             currentUser={currentUser}
             onMovieClick={handleMovieClick}
-            onOpenUserProfile={handleOpenUserProfile}
-            onSaveMovie={handleSaveMovie}
+            onOpenUserProfile={handleOpenUserProfile} onOpenListPage={handleOpenListPage}
+            onSaveMovie={handleSaveMovie} onBatchAdd={handleBatchAdd}
           />
         )}
         {activeTab === 'tierlist' && (
-          <TierListTab library={library} currentUser={currentUser} onOpenAuth={openAuth} />
+          <TierListTab key={currentUser?.id||'guest'} onOpenExplore={() => handleTabChange('explore')} library={library} currentUser={currentUser} onOpenAuth={openAuth} />
         )}
         {activeTab === 'constellation' && (
-          <ConstellationTab library={library} onMovieClick={handleMovieClick} />
+          <ConstellationTab library={library} onMovieClick={handleMovieClick} onOpenExplore={() => handleTabChange('explore')} />
         )}
         {activeTab === 'calendar' && (
-          <WatchCalendarTab library={library} />
+          <WatchCalendarTab library={library} onSaveMovie={handleSaveMovie} onMovieClick={handleMovieClick}/>
         )}
         {activeTab === 'stats' && (
-          <StatsTab library={library} onMovieClick={handleMovieClick} />
+          <StatsTab library={library} onNavigate={handleTabChange} onMovieClick={handleMovieClick} />
         )}
         {activeTab === 'profile' && !viewingUserProfile && (
           <ProfileTab
             currentUser={currentUser}
             onUpdateProfile={handleUpdateProfile}
+            onSaveMovie={handleSaveMovie}
             library={library}
             onMovieClick={handleMovieClick}
-            onOpenUserProfile={handleOpenUserProfile}
+            onOpenUserProfile={handleOpenUserProfile} onOpenListPage={handleOpenListPage}
             initialSubTab={profileSubTab}
-            onSubTabChange={setProfileSubTab}
+            onSubTabChange={sub=>{setProfileSubTab(sub);window.history.pushState({tab:'profile',sub},'',pagePath('profile',sub));}}
           />
         )}
         {activeTab === 'achievements' && (
           <AchievementsTab library={library} currentUser={currentUser} onUpdateProfile={handleUpdateProfile} />
         )}
         {activeTab === 'trivia' && (
-          <TriviaTab currentUser={currentUser} onUpdateProfile={handleUpdateProfile} />
+          <TriviaTab currentUser={currentUser} onUpdateProfile={handleUpdateProfile} onOpenAuth={openAuth} />
         )}
         {activeTab === 'challenges' && (
           <ChallengesTab library={library} currentUser={currentUser} />
         )}
         {activeTab === 'wrapped' && (
-          <WrappedTab library={library} />
+          <WrappedTab library={library} onMovieClick={handleMovieClick} />
         )}
         {activeTab === 'foryou' && (
           <ForYouTab library={library} currentUser={currentUser} onAddMovie={handleAddMovie} onMovieClick={handleMovieClick} />
         )}
-        {activeTab === 'social' && (
-          <SocialTab currentUser={currentUser} onMovieClick={handleMovieClick} onOpenUserProfile={handleOpenUserProfile} />
+        {activeTab === 'social' && !viewingUserProfile && (
+          <SocialTab key={currentUser?.id||'guest'} library={library} onAddMovie={handleAddMovie} onOpenAuth={openAuth} currentUser={currentUser} onMovieClick={handleMovieClick} onOpenUserProfile={handleOpenUserProfile} onOpenListPage={handleOpenListPage} />
         )}
+        {viewingUserProfile && <ProfileTab key={viewingUserProfile.username||viewingUserProfile.id} targetUser={viewingUserProfile} currentUser={currentUser} library={library} onMovieClick={handleMovieClick} onOpenUserProfile={handleOpenUserProfile} onOpenListPage={handleOpenListPage} onOpenAuth={openAuth} onUpdateProfile={handleUpdateProfile}/>}
+        </Suspense>
       </main>
-
-      {/* Viewed Other User Profile Modal Overlay with Touch Swipe Back */}
-      {viewingUserProfile && (
-        <div
-          className="viewed-profile-modal-overlay"
-          onTouchStart={(e) => {
-            touchSwipeStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-          }}
-          onTouchEnd={(e) => {
-            if (!touchSwipeStartRef.current) return;
-            const deltaX = e.changedTouches[0].clientX - touchSwipeStartRef.current.x;
-            const deltaY = e.changedTouches[0].clientY - touchSwipeStartRef.current.y;
-            touchSwipeStartRef.current = null;
-            // Detect horizontal swipe to the right (drag back gesture)
-            if (deltaX > 45 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
-              handleUniversalBack(false);
-            }
-          }}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 950,
-            background: 'var(--bg, #09070f)',
-            overflowY: 'auto',
-            WebkitOverflowScrolling: 'touch',
-            paddingBottom: '90px'
-          }}
-        >
-          {/* Top navigation bar for desktop & mobile so profile can always be navigated back from */}
-          <div style={{
-            position: 'sticky',
-            top: 0,
-            zIndex: 100,
-            background: 'rgba(9, 7, 15, 0.94)',
-            backdropFilter: 'blur(16px)',
-            borderBottom: '1px solid var(--border)',
-            width: '100%',
-            boxSizing: 'border-box'
-          }}>
-            <div style={{
-              maxWidth: '1440px',
-              margin: '0 auto',
-              padding: '12px 24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              width: '100%',
-              boxSizing: 'border-box'
-            }}>
-              <button
-                onClick={() => closeModal('user')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '8px',
-                  padding: '7px 16px',
-                  color: '#fff',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s'
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.14)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
-              >
-                ← Back to Social
-              </button>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-dim)' }}>
-                Viewing {viewingUserProfile.display_name || viewingUserProfile.displayName || viewingUserProfile.username || 'Profile'}
-              </div>
-              <button
-                onClick={() => closeModal('user')}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--text-muted)',
-                  fontSize: '18px',
-                  cursor: 'pointer',
-                  padding: '4px 8px',
-                  borderRadius: '6px'
-                }}
-                onMouseEnter={e => e.currentTarget.style.color = '#fff'}
-                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
-                title="Close Profile"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-
-          <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '24px 24px 64px', width: '100%', boxSizing: 'border-box' }}>
-            <ProfileTab
-              targetUser={viewingUserProfile}
-              currentUser={currentUser}
-              onUpdateProfile={handleUpdateProfile}
-              library={library}
-              onMovieClick={handleMovieClick}
-              onOpenUserProfile={handleOpenUserProfile}
-              initialSubTab="overview"
-              onSubTabChange={() => {}}
-            />
-          </div>
-        </div>
-      )}
 
       {activeEditMovie && (
         <MovieDetailModal
+          onOpenSocial={handleOpenSocial}
           key={activeEditMovie.tmdb_id}
           inLibrary={library.some(m => String(m.tmdb_id) === String(activeEditMovie.tmdb_id))}
           onOpenMovie={handleMovieClick}
@@ -1959,7 +1814,7 @@ function AppInner() {
           onSave={handleSaveMovie}
           onToggleFavorite={handleToggleFavorite}
           isFavorite={library.find(m => String(m.tmdb_id) === String(activeEditMovie.tmdb_id))?.favorite || false}
-          onOpenUserProfile={handleOpenUserProfile}
+          onOpenUserProfile={handleOpenUserProfile} onOpenListPage={handleOpenListPage}
         />
       )}
 
@@ -1977,13 +1832,16 @@ function AppInner() {
         />
       )}
       {showSettings && (
-        <SettingsPanel onClose={() => closeModal('settings')} />
+        <SettingsPanel onNavigate={handleTabChange} onClose={() => closeModal('settings')} />
       )}
 
       <ConfirmModal
         isOpen={confirmConfig.isOpen}
         title={confirmConfig.title}
         message={confirmConfig.message}
+        item={confirmConfig.item}
+        isDanger={confirmConfig.isDanger!==false}
+        confirmText={confirmConfig.confirmText}
         onConfirm={confirmConfig.onConfirm}
         onCancel={() => closeModal('confirm')}
       />
@@ -2010,7 +1868,7 @@ function AppInner() {
           onWheel={e => e.stopPropagation()}
         >
           <div
-            className="animate-fade-in-scale"
+            className="cine-dialog cine-search" ref={searchDialogRef} role="dialog" aria-modal="true" aria-label="Search cinema" tabIndex={-1}
             style={{
               width: '100%',
               maxWidth: '580px',
@@ -2042,13 +1900,13 @@ function AppInner() {
                 value={cmdQuery}
                 onChange={e => setCmdQuery(e.target.value)}
                 onKeyDown={e => {
-                  if (e.key === 'Escape') setShowCommandCenter(false);
+                  if (e.key === 'Escape'){e.stopPropagation();closeModal('search');}
                   if (e.key === 'Enter') {
                     if (cmdSearchResults.length > 0) {
                       const first = cmdSearchResults[0];
                       if (first.media_type === 'movie' || first.media_type === 'tv') {
                         handleMovieClick(first.id, first.media_type);
-                        setShowCommandCenter(false);
+                        closeModal('search');
                       }
                     }
                   }
@@ -2142,12 +2000,12 @@ function AppInner() {
                         onClick={() => {
                           if (item.media_type === 'movie' || item.media_type === 'tv') {
                             handleMovieClick(item.id, item.media_type);
-                            setShowCommandCenter(false);
+                            closeModal('search');
                           } else if (item.media_type === 'person') {
                             if (item.known_for?.[0]?.id) {
                               handleMovieClick(item.known_for[0].id, item.known_for[0].media_type || 'movie');
                             }
-                            setShowCommandCenter(false);
+                            closeModal('search');
                           }
                         }}
                         style={{
@@ -2265,7 +2123,7 @@ function AppInner() {
                             key={m.id}
                             onClick={() => {
                               handleMovieClick(m.id, 'movie');
-                              setShowCommandCenter(false);
+                              closeModal('search');
                             }}
                             style={{
                               display: 'flex',
@@ -2442,122 +2300,7 @@ function AppInner() {
       )}
       {/* ── FLOATING ACTION BUTTON (Quick Add) ──────────────────── */}
       <>
-          {/* FAB backdrop */}
-          {showQuickAdd && (
-            <div
-              onClick={() => setShowQuickAdd(false)}
-              style={{ position: 'fixed', inset: 0, zIndex: 8998, background: 'rgba(4,3,8,0.6)', backdropFilter: 'blur(4px)' }}
-            />
-          )}
-
-          {/* Quick-add panel */}
-          {showQuickAdd && (
-            <div style={{
-              position: 'fixed', bottom: '90px', right: '24px',
-              width: 'min(380px, calc(100vw - 48px))',
-              background: 'rgba(16,13,30,0.96)',
-              border: '1px solid rgba(var(--accent-rgb, 229,9,20), 0.35)',
-              borderRadius: '20px',
-              boxShadow: '0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(var(--accent-rgb, 229,9,20), 0.15)',
-              backdropFilter: 'blur(24px)',
-              zIndex: 8999,
-              overflow: 'hidden',
-              animation: 'fabPanelIn 0.25s cubic-bezier(0.34,1.56,0.64,1)',
-            }}>
-              {/* Panel header */}
-              <div style={{ padding: '16px 18px 10px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>⚡ Quick Add</div>
-                <div style={{ position: 'relative' }}>
-                  <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '15px', pointerEvents: 'none' }}>🔍</span>
-                  <input
-                    ref={quickSearchRef}
-                    type="text"
-                    placeholder="Search movie or show…"
-                    value={quickSearch}
-                    onChange={e => setQuickSearch(e.target.value)}
-                    style={{
-                      width: '100%', boxSizing: 'border-box',
-                      background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(var(--accent-rgb, 229,9,20), 0.25)',
-                      borderRadius: '12px',
-                      padding: '10px 12px 10px 36px',
-                      color: '#fff', fontSize: '14px', fontWeight: 600,
-                      outline: 'none',
-                      fontFamily: 'var(--font-heading)',
-                      transition: 'border-color 0.2s',
-                    }}
-                    onFocus={e => e.target.style.borderColor = 'var(--accent)'}
-                    onBlur={e => e.target.style.borderColor = 'rgba(var(--accent-rgb, 229,9,20), 0.25)'}
-                  />
-                  {quickLoading && (
-                    <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', animation: 'spin 0.8s linear infinite', display: 'inline-block' }}>⟳</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Results */}
-              <div style={{ maxHeight: '320px', overflowY: 'auto', padding: '6px 8px 10px' }}>
-                {quickResults.length === 0 && !quickSearch && (
-                  <div style={{ textAlign: 'center', padding: '20px 16px', color: 'var(--text-dim)', fontSize: '13px' }}>
-                    <div style={{ fontSize: '28px', marginBottom: '8px' }}>🎬</div>
-                    <div>Type a movie or show name to log it fast</div>
-                  </div>
-                )}
-                {quickResults.length === 0 && quickSearch && !quickLoading && (
-                  <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-dim)', fontSize: '13px' }}>No results for "{quickSearch}"</div>
-                )}
-                {quickResults.map(result => {
-                  const inLibrary = library.some(m => String(m.tmdb_id) === String(result.id));
-                  const title = result.title || result.name;
-                  const year = (result.release_date || result.first_air_date || '').slice(0, 4);
-                  const type = result.media_type === 'tv' ? 'TV' : 'Film';
-                  return (
-                    <button
-                      key={result.id}
-                      onClick={() => {
-                        handleMovieClick(result.id, result.media_type);
-                        setShowQuickAdd(false);
-                      }}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '12px',
-                        width: '100%', background: 'none', border: 'none',
-                        borderRadius: '12px', padding: '8px 10px', cursor: 'pointer',
-                        color: '#fff', textAlign: 'left', transition: 'background 0.12s',
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(var(--accent-rgb, 229,9,20), 0.12)'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                    >
-                      {/* Poster */}
-                      <div style={{ flexShrink: 0, width: '38px', height: '54px', borderRadius: '7px', overflow: 'hidden', background: 'rgba(255,255,255,0.05)' }}>
-                        {result.poster_path
-                          ? <img src={`https://image.tmdb.org/t/p/w92${result.poster_path}`} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>🎬</div>
-                        }
-                      </div>
-                      {/* Info */}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 700, fontSize: '13.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</div>
-                        <div style={{ fontSize: '11.5px', color: 'var(--text-dim)', marginTop: '2px' }}>{year} · {type}</div>
-                      </div>
-                      {/* Status badge */}
-                      <div style={{ flexShrink: 0, fontSize: '11px', fontWeight: 700,
-                        padding: '3px 9px', borderRadius: '20px',
-                        background: inLibrary ? 'rgba(16,185,129,0.15)' : 'rgba(var(--accent-rgb, 229,9,20), 0.15)',
-                        color: inLibrary ? '#10b981' : 'var(--accent)',
-                        border: `1px solid ${inLibrary ? 'rgba(16,185,129,0.3)' : 'rgba(var(--accent-rgb, 229,9,20), 0.3)'}`,
-                      }}>{inLibrary ? '✓ In Library' : '+ Add'}</div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Footer shortcut hint */}
-              <div style={{ padding: '8px 18px 12px', borderTop: '1px solid rgba(255,255,255,0.04)', fontSize: '11px', color: 'var(--text-dim)', textAlign: 'center' }}>
-                Tap a result to log it · <span style={{ color: 'var(--accent)' }}>Explore</span> for full search
-              </div>
-            </div>
-          )}
-
+          {showQuickAdd&&<QuickLogDialog library={library} onClose={()=>closeModal('quickadd')} onAddMovie={handleAddMovie} onBatchAdd={handleBatchAdd} onStatusChange={(movie,status)=>handleSaveMovie(withViewingStatus(movie,status),{requireCloudSuccess:true,statusOnly:true,silent:true})} onMovieClick={(id,type)=>{setShowQuickAdd(false);handleMovieClick(id,type);}} onOpenCollection={openSearchCollection}/>}
           {/* The FAB button itself */}
           <button
             id="quick-add-fab"
@@ -2584,20 +2327,9 @@ function AppInner() {
           </button>
         </>
 
-        {/* ── NATIVE MOBILE BOTTOM NAVIGATION BAR ── */}
-        <MobileBottomNav
-          activeTab={activeTab}
-          setActiveTab={handleTabChange}
-          onOpenCommandCenter={openCommandCenter}
-          currentUser={currentUser}
-          onOpenAuth={openAuth}
-          onOpenSettings={openSettings}
-          onLogout={handleLogout}
-          libraryCount={library?.length || 0}
-        />
+
 
       </div>
     </div>
   );
 }
-
