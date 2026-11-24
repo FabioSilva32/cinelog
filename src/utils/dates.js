@@ -9,6 +9,7 @@ export function initialWatchDate(movie, today = localDateKey(new Date())) {
   const screenings = Array.isArray(movie.screenings) && movie.screenings.length ? movie.screenings : movie.episode_data?.screenings || [];
   const dates = screenings.map(s=>String(s.date || '').slice(0,10)).filter(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
   if (dates.length) return dates.at(-1);
+  if (movie.episode_data?.unknown_watch_date) return '';
   if (movie.status === 'watched' && movie.date_added) return String(movie.date_added).slice(0,10);
   return today;
 }

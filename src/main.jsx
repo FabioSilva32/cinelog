@@ -1,4 +1,4 @@
-import { StrictMode } from 'react'
+import { StrictMode, Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
@@ -9,9 +9,11 @@ if (import.meta.env.PROD) {
   injectSpeedInsights();
 }
 
+const QuickRateDemo = import.meta.env.VITE_QUICK_RATE_DEMO==='true' ? lazy(()=>import('./dev/QuickRateDemo.jsx')) : null;
+const isQuickRateDemo=Boolean(QuickRateDemo)&&window.location.pathname==='/quick-rate-demo';
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    {isQuickRateDemo?<Suspense fallback={<p>Opening Quick rate preview…</p>}><QuickRateDemo/></Suspense>:<App/>}
   </StrictMode>,
 )
 
@@ -57,3 +59,5 @@ import './styles/community.css'
 import './styles/screening-log.css'
 
 import './styles/community-feed.css'
+
+import './styles/quick-rate.css'

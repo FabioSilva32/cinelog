@@ -1,3 +1,4 @@
+import {quickRatePayload,quickRateLocalPatch,guardQuickRate} from './utils/quickRate';
 import {resolveOpenMovie} from './utils/openMovie';
 import {useSaveFeedback} from './hooks/useSaveFeedback';
 import SaveIndicator from './components/SaveIndicator';
@@ -994,9 +995,9 @@ function AppInner() {
                 }
                 const matchTitle = (row.title || '').trim().toLowerCase();
                 const activityTimestamp = actMap[matchTitle];
-                let effectiveWatchDate = parsedEpisodeData.watch_date || (row.status === 'watched' ? row.date_added : null);
+                let effectiveWatchDate = parsedEpisodeData.unknown_watch_date ? null : parsedEpisodeData.watch_date || (row.status === 'watched' ? row.date_added : null);
                 let effectiveDateAdded = row.date_added;
-                if (activityTimestamp) {
+                if (activityTimestamp && !parsedEpisodeData.unknown_watch_date) {
                   const actTime = new Date(activityTimestamp).getTime();
                   const currWatchTime = new Date(effectiveWatchDate || 0).getTime();
                   if (actTime > currWatchTime) {
@@ -1119,6 +1120,7 @@ function AppInner() {
 
     if ('watch_date' in normalizedMovie) epData.watch_date = normalizedMovie.watch_date;
 
+    if(epData.unknown_watch_date&&normalizedMovie.watch_date)epData.unknown_watch_date=false;
     const baseCleanReview = (normalizedMovie.review || '')
       .replace(/__EPISODE_DATA__:.+$/s, '')
       .replace(/__EPISODE_RATINGS__:.+$/s, '')
@@ -1126,6 +1128,7 @@ function AppInner() {
 
     epData.contains_spoilers=normalizedMovie.contains_spoilers??epData.contains_spoilers??reviewSpoilerFlag(normalizedMovie);
     normalizedMovie.review = baseCleanReview;
+    normalizedMovie.episode_data = epData;
     normalizedMovie.screenings = epData.screenings || [];
     normalizedMovie.is_rewatch = epData.screenings ? epData.screenings.length>1 : Boolean(normalizedMovie.is_rewatch);
     normalizedMovie.rewatch_count = epData.screenings ? epData.screenings.length : normalizedMovie.rewatch_count || 1;
@@ -1153,8 +1156,8 @@ function AppInner() {
         ? (normalizedMovie.watch_date.includes('T') ? normalizedMovie.watch_date : `${normalizedMovie.watch_date}T12:00:00Z`)
         : nowIso;
 
-      normalizedMovie.watch_date = normalizedMovie.status === 'watched' ? watchDateIso : null;
-      normalizedMovie.date_added = normalizedMovie.status === 'watched' ? watchDateIso : (normalizedMovie.date_added || nowIso);
+      normalizedMovie.watch_date = normalizedMovie.status === 'watched' && !epData.unknown_watch_date ? watchDateIso : null;
+      normalizedMovie.date_added = normalizedMovie.status === 'watched' && !epData.unknown_watch_date ? watchDateIso : (normalizedMovie.date_added || nowIso);
 
       const payload = {
         id: cleanId,
@@ -1170,7 +1173,7 @@ function AppInner() {
         review: dbReview,
         favorite: normalizedMovie.favorite,
         tags: normalizedMovie.tags,
-        date_added: normalizedMovie.status === 'watched' ? watchDateIso : (normalizedMovie.date_added || nowIso),
+        date_added: normalizedMovie.date_added || nowIso,
       };
 
       // Robust check-and-update/insert to avoid any unique constraint or onConflict errors
@@ -1361,6 +1364,29 @@ function AppInner() {
     } else if(!options.silent) {
       toast.info('Already in Library', cleanMovie.title);
     }
+  };
+
+  const handleQuickRate = async (id,score,date='',receipt=null) => {
+    const owner=currentUser?.id;
+    if(!owner){openAuth();throw Error('Sign in to save a rating.');}
+    if(!useSupabase)throw Error('Quick rate needs your cloud library.');
+    if(receipt&&receipt.owner!==owner)throw Error('Sign in to the same account to undo.');
+    const source=await supabase.from('library').select('*').eq('id',id).eq('user_id',owner).single();
+    if(source.error||!source.data)throw Error('This title could not be refreshed. Please try again.');
+    if(activeOwner.current!==owner)throw Error('Your account has changed.');
+    const before=source.data;
+    const fields=receipt?Object.keys(receipt.after):before.status==='plan_to_watch'?['rating','status','review']:['rating'];
+    if(receipt&&fields.some(key=>(before[key]??null)!==(receipt.after[key]??null)))throw Error('This title was edited since that rating. Open it to make further changes.');
+    const payload=receipt?receipt.before:quickRatePayload(before,score,date);
+    let request=supabase.from('library').update(payload).eq('id',id).eq('user_id',owner);
+    request=guardQuickRate(request,before,fields.filter(key=>key!=='status'));
+    const result=await request.select('*');
+    if(result.error||!result.data?.[0])throw Error('The change could not be saved, or the title was edited elsewhere. Retry or refresh Quick rate.');
+    if(activeOwner.current!==owner)throw Error('Your account has changed.');
+    const saved=result.data[0];
+    setLibrary(previous=>previous.map(movie=>movie.id===id?{...movie,...quickRateLocalPatch(saved,movie)}:movie));
+    window.dispatchEvent(new Event('cinelog:social-change'));
+    return {owner,id,before:Object.fromEntries(Object.keys(payload).map(key=>[key,before[key]??null])),after:payload};
   };
 
   const handleAddMovie=async(movie,type,options={})=>{if(!currentUser?.id){openAuth();return false;}const owner=currentUser.id;try{return await sync.run(async()=>{if(activeOwner.current!==owner)throw Error('Sign in to the same account to retry.');const result=await addMovieToCloud(movie,type,options);return result===false?false:true;},'Library addition','library:'+catalogueKey({...movie,media_type:type||movie.media_type}));}catch{return false;}};
@@ -1736,6 +1762,8 @@ function AppInner() {
         {activeTab === 'library' && (
           <LibraryTab
             library={library}
+            quickRateOwner={currentUser?.id}
+            onQuickRateSave={handleQuickRate}
             onRemove={handleRemoveMovie}
             onStatusChange={(movie,status)=>handleSaveMovie(withViewingStatus(movie,status),{requireCloudSuccess:true,statusOnly:true})}
             onEditClick={openMovieDetail}

@@ -225,7 +225,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
 
     // Ensure initial watch is preserved in screening history if it wasn't already seeded
     let baseScreenings = Array.isArray(screenings) ? [...screenings] : [];
-    if (baseScreenings.length === 0 && (movie.status === 'watched' || rating > 0 || watchDate || movie.watch_date || movie.rating > 0 || movie.date_added)) {
+    if (baseScreenings.length === 0 && !episodeData.unknown_watch_date && (movie.status === 'watched' || rating > 0 || watchDate || movie.watch_date || movie.rating > 0 || movie.date_added)) {
       const initialDate = (watchDate || movie.watch_date || movie.date_added || new Date().toISOString()).slice(0, 10);
       const cleanR = (movie.review || '')
         .replace(/__EPISODE_DATA__:.+$/s, '')
@@ -731,7 +731,7 @@ export default function MovieDetailModal({ movie, currentUser, onClose, onSave, 
         return { ...s, date: watchDate, rating: status === 'watched' ? rating : null, review };
       }
       return s;
-    }) : (status === 'watched' ? [{
+    }) : (status === 'watched' && watchDate ? [{
       id: 'screening_1',
       date: watchDate,
       rating: rating != null ? rating : null,
