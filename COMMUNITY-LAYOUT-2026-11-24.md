@@ -25,3 +25,5 @@ Build and lint passed, with existing repository advisories. Seven social model t
 5. On a phone, check card readability, navigation, the watch-night action, and the supporting sections below the feed.
 
 Changes remain on the experimental review branch and preview. Production and the original backup are unchanged.
+
+Verified preview: https://cinelog-n7a6z8m93-lynnx.vercel.app/community (protected; use the private review link in chat). The same 17-scenario desktop/mobile suite passed against this uploaded build.
